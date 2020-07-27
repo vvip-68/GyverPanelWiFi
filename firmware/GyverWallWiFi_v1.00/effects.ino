@@ -13,7 +13,7 @@
 
 // эффект "кометы"
 #define STAR_DENSE 60     // плотность комет
-#define TAIL_STEP 100     // длина хвоста кометы
+#define TAIL_STEP  80     // длина хвоста кометы
 #define SATURATION 150    // насыщенность кометы (от 0 до 255)
 
 // эффект "конфетти"
@@ -22,6 +22,7 @@
 byte hue;
 
 // *********** снегопад 2.0 ***********
+
 void snowRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -205,6 +206,7 @@ void ballRoutine() {
 }
 
 // *********** радуга дигональная ***********
+
 void rainbowDiagonalRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -221,6 +223,7 @@ void rainbowDiagonalRoutine() {
 }
 
 // *********** радуга вертикальная ***********
+
 void rainbowVertical() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -236,6 +239,7 @@ void rainbowVertical() {
 }
 
 // *********** радуга горизонтальная ***********
+
 void rainbowHorizontal() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -251,6 +255,7 @@ void rainbowHorizontal() {
 }
 
 // ---------------------------------------- ЦВЕТА ------------------------------------------
+
 void colorsRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -266,6 +271,7 @@ void colorsRoutine() {
 }
 
 // ********************** огонь **********************
+
 unsigned char matrixValue[8][16];
 unsigned char line[WIDTH];
 int pcnt = 0;
@@ -393,6 +399,7 @@ void drawFrame(int pcnt) {
 }
 
 // **************** МАТРИЦА *****************
+
 void matrixRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -423,6 +430,7 @@ void matrixRoutine() {
 
 
 // ********************************* ШАРИКИ *********************************
+
 int coord[BALLS_AMOUNT][2];
 int8_t vector[BALLS_AMOUNT][2];
 CRGB ballColors[BALLS_AMOUNT];
@@ -498,6 +506,7 @@ void fadePixel(byte i, byte j, byte step) {     // новый фейдер
 }
 
 // ********************* ЗВЕЗДОПАД ******************
+
 void starfallRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -506,7 +515,7 @@ void starfallRoutine() {
   }
   
   // заполняем головами комет левую и верхнюю линию
-  for (byte i = HEIGHT / 2; i < HEIGHT; i++) {
+  for (byte i = 4; i < HEIGHT; i++) {
     if (getPixColorXY(0, i) == 0
         && (random(0, STAR_DENSE) == 0)
         && getPixColorXY(0, i + 1) == 0
@@ -514,7 +523,7 @@ void starfallRoutine() {
       leds[getPixelNumber(0, i)] = CHSV(random(0, 200), SATURATION, 255);
   }
   
-  for (byte i = 0; i < WIDTH / 2; i++) {
+  for (byte i = 0; i < WIDTH-4; i++) {
     if (getPixColorXY(i, HEIGHT - 1) == 0
         && (random(0, map(effectScaleParam[MC_STARFALL],0,255,10,120)) == 0)
         && getPixColorXY(i + 1, HEIGHT - 1) == 0
@@ -530,10 +539,10 @@ void starfallRoutine() {
   }
 
   // уменьшаем яркость левой и верхней линии, формируем "хвосты"
-  for (byte i = HEIGHT / 2; i < HEIGHT; i++) {
+  for (byte i = 4; i < HEIGHT; i++) {
     fadePixel(0, i, TAIL_STEP);
   }
-  for (byte i = 0; i < WIDTH / 2; i++) {
+  for (byte i = 0; i < WIDTH-4; i++) {
     fadePixel(i, HEIGHT - 1, TAIL_STEP);
   }
 }
