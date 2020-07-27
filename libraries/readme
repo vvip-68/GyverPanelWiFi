@@ -1,0 +1,6 @@
+Библиотеки скопировать в папку установки ардуино в подпапку libraries
+
+Исходники библиотек:
+GyverLibs:    https://github.com/AlexGyver/GyverLibs
+Time:         https://github.com/PaulStoffregen/Time
+MP3 DFPlayer: https://github.com/DFRobot/DFRobotDFPlayerMini
