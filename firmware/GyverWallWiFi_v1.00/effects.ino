@@ -1,9 +1,9 @@
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
 // эффект "шарики"
-#define BALLS_AMOUNT 3    // количество "шариков"
-#define CLEAR_PATH 1      // очищать путь
-#define BALL_TRACK 1      // (0 / 1) - вкл/выкл следы шариков
-#define TRACK_STEP 70     // длина хвоста шарика (чем больше цифра, тем хвост короче)
+#define BALLS_AMOUNT_MAX 6 // максимальное количество "шариков"
+#define CLEAR_PATH 1       // очищать путь
+#define BALL_TRACK 1       // (0 / 1) - вкл/выкл следы шариков
+#define TRACK_STEP 70      // длина хвоста шарика (чем больше цифра, тем хвост короче)
 
 // эффект "квадратик"
 #define RANDOM_COLOR 1    // случайный цвет при отскоке
@@ -12,8 +12,7 @@
 #define SPARKLES 1        // вылетающие угольки вкл выкл
 
 // эффект "кометы"
-#define STAR_DENSE 60     // плотность комет
-#define TAIL_STEP  80     // длина хвоста кометы
+#define TAIL_STEP  80     // длина хвоста кометы (чем больше цифра, тем хвост короче)
 #define SATURATION 150    // насыщенность кометы (от 0 до 255)
 
 // эффект "конфетти"
@@ -431,14 +430,20 @@ void matrixRoutine() {
 
 // ********************************* ШАРИКИ *********************************
 
-int coord[BALLS_AMOUNT][2];
-int8_t vector[BALLS_AMOUNT][2];
-CRGB ballColors[BALLS_AMOUNT];
+int8_t BALLS_AMOUNT;
+int coord[BALLS_AMOUNT_MAX][2];
+int8_t vector[BALLS_AMOUNT_MAX][2];
+CRGB ballColors[BALLS_AMOUNT_MAX];
 
 void ballsRoutine() {
   if (loadingFlag) {
     modeCode = MC_BALLS;
     loadingFlag = false;
+    FastLED.clear();
+    
+    // Текущее количество шариков из настроек
+    BALLS_AMOUNT = map(effectScaleParam[MC_BALLS],0,255,3,6); 
+    
     for (byte j = 0; j < BALLS_AMOUNT; j++) {
       int sign;
 
@@ -507,12 +512,16 @@ void fadePixel(byte i, byte j, byte step) {     // новый фейдер
 
 // ********************* ЗВЕЗДОПАД ******************
 
+int8_t STAR_DENSE;     // плотность комет 30..90
+
 void starfallRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     modeCode = MC_STARFALL;
     FastLED.clear();  // очистить
   }
+
+  STAR_DENSE = map(effectScaleParam[MC_SPARKLES],0,255,30,90);
   
   // заполняем головами комет левую и верхнюю линию
   for (byte i = 4; i < HEIGHT; i++) {
@@ -564,6 +573,7 @@ void sparklesRoutine() {
 }
 
 // ----------------------------- СВЕТЛЯКИ ------------------------------
+
 #define LIGHTERS_AM 100
 int lightersPos[2][LIGHTERS_AM];
 int8_t lightersSpeed[2][LIGHTERS_AM];

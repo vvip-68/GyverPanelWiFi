@@ -508,7 +508,10 @@ void parsing() {
           if (tmp_eff == MC_FILL_COLOR) {  
             globalColor = getColorInt(CHSV(getEffectSpeed(MC_FILL_COLOR), effectScaleParam[MC_FILL_COLOR], 255));
             setGlobalColor(globalColor);
-          }
+          } else 
+          if (tmp_eff == MC_BALLS) {  
+            loadingFlag = true;
+          }          
         } else if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
           saveEffectUsage(tmp_eff, intData[3] == 1); 
@@ -1092,7 +1095,7 @@ void sendPageParams(int page) {
          ? "X" 
          : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255)));
       // Эффекты не имеющие настройки вариации отправляют значение "Х" - программа делает ползунок настройки недоступным
-      str+="|SS:"+(thisMode == MC_DAWN_ALARM || thisMode == MC_RAINBOW_DIAG || thisMode == MC_BALLS || thisMode == MC_STARFALL || thisMode == MC_COLORS || thisMode == MC_SWIRL
+      str+="|SS:"+(thisMode == MC_DAWN_ALARM || thisMode == MC_RAINBOW_DIAG || thisMode == MC_COLORS || thisMode == MC_SWIRL
          ? "X" 
          : String(effectScaleParam[thisMode]));
       str+=";";
