@@ -1,22 +1,3 @@
-// --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
-// эффект "шарики"
-#define BALLS_AMOUNT_MAX 6 // максимальное количество "шариков"
-#define CLEAR_PATH 1       // очищать путь
-#define BALL_TRACK 1       // (0 / 1) - вкл/выкл следы шариков
-#define TRACK_STEP 70      // длина хвоста шарика (чем больше цифра, тем хвост короче)
-
-// эффект "квадратик"
-#define RANDOM_COLOR 1    // случайный цвет при отскоке
-
-// эффект "огонь"
-#define SPARKLES 1        // вылетающие угольки вкл выкл
-
-// эффект "кометы"
-#define TAIL_STEP  80     // длина хвоста кометы (чем больше цифра, тем хвост короче)
-#define SATURATION 150    // насыщенность кометы (от 0 до 255)
-
-// эффект "конфетти"
-#define BRIGHT_STEP 70    // шаг уменьшения яркости
 
 byte hue;
 
@@ -83,8 +64,7 @@ void lightBallsRoutine() {
 
 // Trivial XY function for the SmartMatrix; use a different XY
 // function for different matrix grids. See XYMatrix example for code.
-uint16_t XY(uint8_t x, uint8_t y)
-{
+uint16_t XY(uint8_t x, uint8_t y) {
   uint16_t i;
   uint8_t reverse;
   if (WIDTH >= HEIGHT) {
@@ -160,6 +140,8 @@ uint16_t XY2( uint8_t x, uint8_t y) {
 }
 
 // ***************************** БЛУДНЫЙ КУБИК *****************************
+
+#define RANDOM_COLOR 1    // случайный цвет при отскоке
 
 int coordB[2];
 int8_t vectorB[2];
@@ -271,6 +253,8 @@ void colorsRoutine() {
 
 // ********************** огонь **********************
 
+#define SPARKLES 1        // вылетающие угольки вкл выкл
+
 unsigned char matrixValue[8][16];
 unsigned char line[WIDTH];
 int pcnt = 0;
@@ -316,7 +300,6 @@ void fireRoutine() {
   drawFrame(pcnt);
   pcnt += 30;
 }
-
 
 // Randomly generate the next line (matrix row)
 
@@ -430,6 +413,11 @@ void matrixRoutine() {
 
 // ********************************* ШАРИКИ *********************************
 
+#define BALLS_AMOUNT_MAX 6 // максимальное количество "шариков"
+#define CLEAR_PATH 1       // очищать путь
+#define BALL_TRACK 1       // (0 / 1) - вкл/выкл следы шариков
+#define TRACK_STEP 70      // длина хвоста шарика (чем больше цифра, тем хвост короче)
+
 int8_t BALLS_AMOUNT;
 int coord[BALLS_AMOUNT_MAX][2];
 int8_t vector[BALLS_AMOUNT_MAX][2];
@@ -512,6 +500,9 @@ void fadePixel(byte i, byte j, byte step) {     // новый фейдер
 
 // ********************* ЗВЕЗДОПАД ******************
 
+#define TAIL_STEP  80     // длина хвоста кометы (чем больше цифра, тем хвост короче)
+#define SATURATION 150    // насыщенность кометы (от 0 до 255)
+
 int8_t STAR_DENSE;     // плотность комет 30..90
 
 void starfallRoutine() {
@@ -556,7 +547,10 @@ void starfallRoutine() {
   }
 }
 
-// рандомные гаснущие вспышки
+// *********************  КОНФЕТИ ******************
+
+#define BRIGHT_STEP 70    // шаг уменьшения яркости
+
 void sparklesRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
