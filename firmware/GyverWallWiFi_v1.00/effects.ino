@@ -29,52 +29,88 @@ void snowRoutine() {
 
 // ------------- ПЕЙНТБОЛ -------------
 
-const uint8_t BorderWidth = 0U;
+uint8_t USE_SEGMENTS = 1;
+uint8_t BorderWidth = 0;
+uint8_t dir_mx, seg_num, seg_size, seg_offset;
+
 void lightBallsRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     modeCode = MC_PAINTBALL;
     FastLED.clear();  // очистить
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
+    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
+    BorderWidth = 0;
   }
-
+  
   // Apply some blurring to whatever's already on the matrix
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
   // an automatic trend toward black -- by design.
-  uint8_t blurAmount = dim8_raw(beatsin8(3,64,100));
+  uint8_t blurAmount = dim8_raw(beatsin8(2,64,100));
   blur2d(leds, WIDTH, HEIGHT, blurAmount);
- 
+
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();
   int16_t idx;
 
-  // Эффект работает нормально только на квадратных матрицах.
-  // Для неквадратных - вычленяем квадратные сегменты, которые равномерно распределяем по ширине / высоте матрицы
-  uint8_t  dir = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
-  uint8_t  seg_num = dir == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
-  uint16_t seg_size = dir == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
-  uint8_t  seg_offset = ((dir == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами
+  // Для неквадратных - вычленяем квадратные сегменты, которые равномерно распределяем по ширине / высоте матрицы 
+  byte cnt = map(255-effectScaleParam[MC_PAINTBALL],0,255,1, 4);
 
-  uint8_t cnt = map(255-effectScaleParam[MC_PAINTBALL],0,255,1,4);         // Количество бегающих "шаров" - 1..4
+  if (USE_SEGMENTS != 0) {
+    uint8_t  i = beatsin8(  91, 0, seg_size - BorderWidth - 1);
+    uint8_t  j = beatsin8( 109, 0, seg_size - BorderWidth - 1);
+    uint8_t  k = beatsin8(  73, 0, seg_size - BorderWidth - 1);
+    uint8_t  m = beatsin8( 123, 0, seg_size - BorderWidth - 1);
 
-  uint8_t  i = beatsin8(  91, BorderWidth, seg_size - BorderWidth);
-  uint8_t  j = beatsin8( 109, BorderWidth, seg_size - BorderWidth);
-  uint8_t  k = beatsin8(  73, BorderWidth, seg_size - BorderWidth);
-  uint8_t  m = beatsin8( 123, BorderWidth, seg_size - BorderWidth);
-
-  for (uint8_t ii = 0; ii < seg_num; ii++) {
-    uint8_t cx = dir == 0 ? (seg_offset * (ii + 1) + seg_size * ii) : 0;
-    uint8_t cy = dir == 0 ? 0 : (seg_offset * (ii + 1) + seg_size * ii);
-    if (cnt <= 1) { idx = XY(i+cx, j+cy); leds[idx] += CHSV( ms / 29, 200U, 255U); }
-    if (cnt <= 2) { idx = XY(j+cx, k+cy); leds[idx] += CHSV( ms / 41, 200U, 255U); }
-    if (cnt <= 3) { idx = XY(k+cx, m+cy); leds[idx] += CHSV( ms / 73, 200U, 255U); }
-    if (cnt <= 4) { idx = XY(m+cx, i+cy); leds[idx] += CHSV( ms / 97, 200U, 255U); }
+    uint8_t d1 = ms / 29;
+    uint8_t d2 = ms / 41;
+    uint8_t d3 = ms / 73;
+    uint8_t d4 = ms / 97;
+    
+    for (uint8_t ii = 0; ii < seg_num; ii++) {
+      delay(0); // Для предотвращения ESP8266 Watchdog Timer      
+      uint8_t cx = dir_mx == 0 ? (seg_offset * (ii + 1) + seg_size * ii) : 0;
+      uint8_t cy = dir_mx == 0 ? 0 : (seg_offset * (ii + 1) + seg_size * ii);
+      uint8_t color_shift = ii * 50;
+      if (cnt <= 1) { idx = XY(i+cx, j+cy); leds[idx] += CHSV( color_shift + d1, 200U, 255U); }
+      if (cnt <= 2) { idx = XY(j+cx, k+cy); leds[idx] += CHSV( color_shift + d2, 200U, 255U); }
+      if (cnt <= 3) { idx = XY(k+cx, m+cy); leds[idx] += CHSV( color_shift + d3, 200U, 255U); }
+      if (cnt <= 4) { idx = XY(m+cx, i+cy); leds[idx] += CHSV( color_shift + d4, 200U, 255U); }
+      
+      // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
+      // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
+      // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      for (byte i2 = cy; i2 < cy + seg_size; i2++) { 
+        fadePixel(cx + BorderWidth, i2, 15);
+        fadePixel(cx + seg_size - BorderWidth - 1, i2, 15);
+      }
+    }
   }
-}
-
-
-uint16_t XY(uint8_t x, uint8_t y) { 
-  return getPixelNumber(x, y); 
+  else 
+  {
+    uint8_t  i = beatsin8(  91, BorderWidth, WIDTH - BorderWidth - 1);
+    uint8_t  j = beatsin8( 109, BorderWidth, HEIGHT - BorderWidth - 1);
+    uint8_t  k = beatsin8(  73, BorderWidth, WIDTH - BorderWidth - 1);
+    uint8_t  m = beatsin8( 123, BorderWidth, HEIGHT - BorderWidth - 1);
+    
+    if (cnt <= 1) { idx = XY(i, j); leds[idx] += CHSV( ms / 29, 200U, 255U); }
+    if (cnt <= 2) { idx = XY(k, j); leds[idx] += CHSV( ms / 41, 200U, 255U); }
+    if (cnt <= 3) { idx = XY(k, m); leds[idx] += CHSV( ms / 73, 200U, 255U); }
+    if (cnt <= 4) { idx = XY(i, m); leds[idx] += CHSV( ms / 97, 200U, 255U); }
+  
+    if (WIDTH == HEIGHT) {
+      // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
+      // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
+      // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      for (byte i = 0; i < HEIGHT; i++) { 
+        fadePixel(0, i, 15);
+        fadePixel(WIDTH-1, i, 15);
+      }
+    } 
+  }
 }
 
 // ------------- ВОДОВОРОТ -------------
@@ -84,37 +120,98 @@ void swirlRoutine() {
     loadingFlag = false;
     modeCode = MC_SWIRL;
     FastLED.clear();  // очистить
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
+    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
+    BorderWidth = seg_num == 1 ? 0 : 1;
   }
 
   // Apply some blurring to whatever's already on the matrix
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
   // an automatic trend toward black -- by design.
-  uint8_t blurAmount = beatsin8(2,10,255);
+  uint8_t blurAmount = dim8_raw(beatsin8(2,64,100));
   blur2d( leds, WIDTH, HEIGHT, blurAmount);
 
-  // Use two out-of-sync sine waves
-  uint8_t  i = beatsin8( 27, BorderWidth, HEIGHT - BorderWidth);
-  uint8_t  j = beatsin8( 41, BorderWidth, WIDTH - BorderWidth);
-  
-  // Also calculate some reflections
-  uint8_t ni = (WIDTH-1)-i;
-  uint8_t nj = (HEIGHT-1)-j;
-
-  int16_t idx, wh = WIDTH * HEIGHT;
-  
-  // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();  
-  idx = XY2( i, j); if (idx < wh) leds[idx] += CHSV( ms / 11, 200, 255);
-  idx = XY2( j, i); if (idx < wh) leds[idx] += CHSV( ms / 13, 200, 255);
-  idx = XY2(ni,nj); if (idx < wh) leds[idx] += CHSV( ms / 17, 200, 255);
-  idx = XY2(nj,ni); if (idx < wh) leds[idx] += CHSV( ms / 29, 200, 255);
-  idx = XY2( i,nj); if (idx < wh) leds[idx] += CHSV( ms / 37, 200, 255);
-  idx = XY2(ni, j); if (idx < wh) leds[idx] += CHSV( ms / 41, 200, 255);    
+  int16_t idx;
+
+  if (USE_SEGMENTS != 0) {
+    // Use two out-of-sync sine waves
+    uint8_t  i = beatsin8( 41, 0, seg_size - BorderWidth - 1);
+    uint8_t  j = beatsin8( 27, 0, seg_size - BorderWidth - 1);
+
+    // Also calculate some reflections
+    uint8_t ni = (seg_size-1)-i;
+    uint8_t nj = (seg_size-1)-j;
+
+    uint8_t d1 = ms / 11;
+    uint8_t d2 = ms / 13;
+    uint8_t d3 = ms / 17;
+    uint8_t d4 = ms / 29;
+    uint8_t d5 = ms / 37;
+    uint8_t d6 = ms / 41;
+    
+    for (uint8_t ii = 0; ii < seg_num; ii++) {
+      delay(0); // Для предотвращения ESP8266 Watchdog Timer      
+      uint8_t cx = dir_mx == 0 ? (seg_offset * (ii + 1) + seg_size * ii) : 0;
+      uint8_t cy = dir_mx == 0 ? 0 : (seg_offset * (ii + 1) + seg_size * ii);
+      uint8_t color_shift = ii * 50;
+    
+      // The color of each point shifts over time, each at a different speed.
+      idx = XY( i+cx, j+cy); leds[idx] += CHSV( color_shift + d1, 200, 192);
+      idx = XY(ni+cx,nj+cy); leds[idx] += CHSV( color_shift + d2, 200, 192);
+      idx = XY( i+cx,nj+cy); leds[idx] += CHSV( color_shift + d3, 200, 192);
+      idx = XY(ni+cx, j+cy); leds[idx] += CHSV( color_shift + d4, 200, 192);
+      idx = XY( j+cx, i+cy); leds[idx] += CHSV( color_shift + d5, 200, 192);
+      idx = XY(nj+cx,ni+cy); leds[idx] += CHSV( color_shift + d6, 200, 192);
+      
+      // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
+      // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
+      // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      for (byte i2 = cy; i2 < cy + seg_size; i2++) { 
+        fadePixel(cx, i2, 15);
+        fadePixel(cx + BorderWidth, i2, 15);
+        fadePixel(cx + seg_size - 1, i2, 15);
+        fadePixel(cx + seg_size - BorderWidth - 1, i2, 15);
+      }
+    }
+  } 
+  else 
+  {
+    // Use two out-of-sync sine waves
+    uint8_t  i = beatsin8( 41, BorderWidth, WIDTH - BorderWidth - 1);
+    uint8_t  j = beatsin8( 27, BorderWidth, HEIGHT - BorderWidth - 1);
+
+    // Also calculate some reflections
+    uint8_t ni = (WIDTH-1)-i;
+    uint8_t nj = (HEIGHT-1)-j;
+
+    // The color of each point shifts over time, each at a different speed.
+    idx = XY( i, j); leds[idx] += CHSV( ms / 11, 200, 192);
+    idx = XY(ni,nj); leds[idx] += CHSV( ms / 13, 200, 192);
+    idx = XY( i,nj); leds[idx] += CHSV( ms / 17, 200, 192);
+    idx = XY(ni, j); leds[idx] += CHSV( ms / 29, 200, 192);
+    
+    if (HEIGHT == WIDTH) {
+      // для квадратных матриц - 6 точек создают более красивую картину
+      idx = XY( j, i); leds[idx] += CHSV( ms / 37, 200, 192);
+      idx = XY(nj,ni); leds[idx] += CHSV( ms / 41, 200, 192);
+      
+      // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
+      // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
+      // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      for (byte i = 0; i < HEIGHT; i++) { 
+        fadePixel(0, i, 15);
+        fadePixel(WIDTH-1, i, 15);
+      }
+    }  
+  }
 }
 
-uint16_t XY2( uint8_t x, uint8_t y) { 
-  return (y * WIDTH) + x; 
+uint16_t XY(uint8_t x, uint8_t y) { 
+  return getPixelNumber(x, y); 
 }
 
 // ***************************** БЛУДНЫЙ КУБИК *****************************
