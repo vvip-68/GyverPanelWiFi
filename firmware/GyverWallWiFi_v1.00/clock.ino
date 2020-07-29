@@ -202,7 +202,7 @@ byte getClockSizeType() {
   byte clock_size = CLOCK_SIZE;
   // Если часы авто или большие - определить - а поместятся ли они на матрицу по ширине
   // Большие часы для шрифта 5x7 требуют 4*5 /цифры/ + 4 /двоеточие/ + 2 /пробел между цифрами часов и минут / = 26 колонки
-  if ((clock_size == 0 || clock_size == 2) && WIDTH < 24) clock_size = 1;
+  if ((clock_size == 0 || clock_size == 2) && WIDTH < 26) clock_size = 1;
   if (clock_size == 0) clock_size = 2;
   return clock_size;  
 }
@@ -372,6 +372,7 @@ void clockTicker() {
 }
 
 void clockOverlayWrapH(int8_t posX, int8_t posY) {
+  
   byte thisLED = 0;
   byte x_size = c_size == 1 ? 15 : 26;
   byte y_size = c_size == 1 ? 5 : 7;
@@ -382,6 +383,7 @@ void clockOverlayWrapH(int8_t posX, int8_t posY) {
       thisLED++;
     }
   }
+
   clockTicker();
   if (init_time)
     drawClock(hrs, mins, dotFlag, posX, posY);

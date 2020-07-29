@@ -29,14 +29,14 @@ void snowRoutine() {
 
 // ------------- ПЕЙНТБОЛ -------------
 
-const uint8_t BorderWidth = 1U;
+const uint8_t BorderWidth = 0U;
 void lightBallsRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     modeCode = MC_PAINTBALL;
     FastLED.clear();  // очистить
   }
-  
+
   // Apply some blurring to whatever's already on the matrix
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
@@ -44,56 +44,37 @@ void lightBallsRoutine() {
   uint8_t blurAmount = dim8_raw(beatsin8(3,64,100));
   blur2d(leds, WIDTH, HEIGHT, blurAmount);
  
-  // Use two out-of-sync sine waves  
-  uint8_t  i = beatsin8(  91, BorderWidth, maxDim-BorderWidth);
-  uint8_t  j = beatsin8( 109, BorderWidth, maxDim-BorderWidth);
-  uint8_t  k = beatsin8(  73, BorderWidth, maxDim-BorderWidth);
-  uint8_t  m = beatsin8( 123, BorderWidth, maxDim-BorderWidth);
-
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();
-  int16_t idx, wh = WIDTH * HEIGHT;
+  int16_t idx;
 
-  byte cnt = map(255-effectScaleParam[MC_PAINTBALL],0,255,1, 5);
-  
-  if (cnt <= 1) { idx = XY(i, j); if (idx < wh) leds[idx] += CHSV( ms / 29, 200U, 255U); }
-  if (cnt <= 2) { idx = XY(j, k); if (idx < wh) leds[idx] += CHSV( ms / 41, 200U, 255U); }
-  if (cnt <= 3) { idx = XY(k, m); if (idx < wh) leds[idx] += CHSV( ms / 73, 200U, 255U); }
-  if (cnt <= 4) { idx = XY(m, i); if (idx < wh) leds[idx] += CHSV( ms / 97, 200U, 255U); }
+  // Эффект работает нормально только на квадратных матрицах.
+  // Для неквадратных - вычленяем квадратные сегменты, которые равномерно распределяем по ширине / высоте матрицы
+  uint8_t  dir = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+  uint8_t  seg_num = dir == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+  uint16_t seg_size = dir == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
+  uint8_t  seg_offset = ((dir == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами
+
+  uint8_t cnt = map(255-effectScaleParam[MC_PAINTBALL],0,255,1,4);         // Количество бегающих "шаров" - 1..4
+
+  uint8_t  i = beatsin8(  91, BorderWidth, seg_size - BorderWidth);
+  uint8_t  j = beatsin8( 109, BorderWidth, seg_size - BorderWidth);
+  uint8_t  k = beatsin8(  73, BorderWidth, seg_size - BorderWidth);
+  uint8_t  m = beatsin8( 123, BorderWidth, seg_size - BorderWidth);
+
+  for (uint8_t ii = 0; ii < seg_num; ii++) {
+    uint8_t cx = dir == 0 ? (seg_offset * (ii + 1) + seg_size * ii) : 0;
+    uint8_t cy = dir == 0 ? 0 : (seg_offset * (ii + 1) + seg_size * ii);
+    if (cnt <= 1) { idx = XY(i+cx, j+cy); leds[idx] += CHSV( ms / 29, 200U, 255U); }
+    if (cnt <= 2) { idx = XY(j+cx, k+cy); leds[idx] += CHSV( ms / 41, 200U, 255U); }
+    if (cnt <= 3) { idx = XY(k+cx, m+cy); leds[idx] += CHSV( ms / 73, 200U, 255U); }
+    if (cnt <= 4) { idx = XY(m+cx, i+cy); leds[idx] += CHSV( ms / 97, 200U, 255U); }
+  }
 }
 
-// Trivial XY function for the SmartMatrix; use a different XY
-// function for different matrix grids. See XYMatrix example for code.
-uint16_t XY(uint8_t x, uint8_t y) {
-  uint16_t i;
-  uint8_t reverse;
-  if (WIDTH >= HEIGHT) {
-    if (y & 0x01)
-    {
-      // Odd rows run backwards
-      reverse = (WIDTH - 1) - x;
-      i = (y * WIDTH) + reverse;
-    }
-    else
-    {
-      // Even rows run forwards
-      i = (y * WIDTH) + x;
-    }
-  } else {
-    if (x & 0x01)
-    {
-      // Odd rows run backwards
-      reverse = (HEIGHT - 1) - y;
-      i = (x * HEIGHT) + reverse;
-    }
-    else
-    {
-      // Even rows run forwards
-      i = (x * HEIGHT) + y;
-    }
-  }
 
-  return i;
+uint16_t XY(uint8_t x, uint8_t y) { 
+  return getPixelNumber(x, y); 
 }
 
 // ------------- ВОДОВОРОТ -------------
@@ -104,9 +85,6 @@ void swirlRoutine() {
     modeCode = MC_SWIRL;
     FastLED.clear();  // очистить
   }
-
-  // Как применить variation для этого эффекта?
-  // byte variation = map(255-effectScaleParam[MC_SWIRL],0,255,1, 5);
 
   // Apply some blurring to whatever's already on the matrix
   // Note that we never actually clear the matrix, we just constantly
@@ -547,7 +525,7 @@ void starfallRoutine() {
   }
 }
 
-// *********************  КОНФЕТИ ******************
+// *********************  КОНФЕТТИ ******************
 
 #define BRIGHT_STEP 70    // шаг уменьшения яркости
 
