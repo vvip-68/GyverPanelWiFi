@@ -1,4 +1,4 @@
-#define EEPROM_OK 0xAA                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define EFFECT_EEPROM 200                  // начальная ячейка eeprom с параметрами эффектов
 
 void loadSettings() {
