@@ -1,21 +1,18 @@
-#define UDP_PACKET_MAX_SIZE  1024
-#define PARSE_AMOUNT 8          // максимальное количество значений в массиве, который хотим получить
-#define header '$'              // стартовый символ
-#define divider ' '             // разделительный символ
-#define ending ';'              // завершающий символ
- 
-int16_t intData[PARSE_AMOUNT];  // массив численных значений после парсинга - для WiFi часы время синхр м.б отрицательным + 
-                                // период синхронизации м.б больше 255 мин - нужен тип int16_t
-uint32_t prevColor;
-boolean recievedFlag;
-boolean parseStarted;
-char incomeBuffer[UDP_PACKET_MAX_SIZE];           // Буфер для приема строки команды из wifi udp сокета
-char replyBuffer[8];                              // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
 
-byte ackCounter = 0;
-byte tmpSaveMode = 0;
+// ----------------------------------------------------
+
+// Временныо для вывода информации о времени цикла
+uint32_t last_ms = millis();  
+char data[100];
 
 void process() {  
+
+  uint16_t duration = millis() - last_ms;
+  if (duration > 0) {
+    sprintf(data, "duration=%d", duration);
+    Serial.println(data);
+  }
+  last_ms = millis();
   
   parsing();                                    // принимаем данные
 
@@ -260,21 +257,11 @@ void process() {
   }
 }
 
-byte parse_index;
-String string_convert = "";
-String receiveText = "";
-
-enum eModes {NORMAL, COLOR, TEXT} parseMode;
-
-bool haveIncomeData = false;
-char incomingByte;
-
-int16_t  bufIdx = 0;         // Могут приниматься пакеты > 255 байт - тип int16_t
-int16_t  packetSize = 0;
-
 // ********************* ПРИНИМАЕМ ДАННЫЕ **********************
+
 void parsing() {
-// ****************** ОБРАБОТКА *****************
+  
+  // ****************** ОБРАБОТКА *****************
   String str;
   byte b_tmp;
   int8_t tmp_eff;
@@ -351,6 +338,7 @@ void parsing() {
     23 - прочие настройки
        - $23 0 VAL  - лимит по потребляемому току
   */  
+
   // Если прием данных завершен и управляющая команда в intData[0] распознана
   if (recievedFlag && intData[0] > 0 && intData[0] <= 23) {
     recievedFlag = false;
@@ -383,6 +371,9 @@ void parsing() {
     }
     
     switch (intData[0]) {
+
+      // ----------------------------------------------------
+
       case 4:
         if (intData[1] == 0) {
           globalBrightness = intData[2];
@@ -395,6 +386,9 @@ void parsing() {
         }
         sendAcknowledge();
         break;
+
+      // ----------------------------------------------------
+
       case 6:
         loadingFlag = true;
         b_tmp = 0;
@@ -487,6 +481,9 @@ void parsing() {
         else
           sendAcknowledge();
         break;
+
+      // ----------------------------------------------------
+
       case 8:      
         tmp_eff = intData[2];        
         // intData[1] : дейстие -> 0 - выбор эффекта;  1 - параметр; 2 - вкл/выкл "использовать в демо-режиме"
@@ -523,6 +520,9 @@ void parsing() {
           sendAcknowledge();
         }
         break;
+
+      // ----------------------------------------------------
+
       case 14:
         if (intData[1] == 2) {
            // Если в строке цвет - "$14 2 00FFAA;" - цвет лампы, сохраняемый в globalColor
@@ -533,6 +533,9 @@ void parsing() {
         setSpecialMode(intData[1]);
         sendPageParams(1);
         break;
+      
+      // ----------------------------------------------------
+
       case 15: 
         if (intData[2] == 0) {
           if (intData[1] == 255) intData[1] = 254;
@@ -546,6 +549,9 @@ void parsing() {
         }
         sendAcknowledge();
         break;
+
+      // ----------------------------------------------------
+
       case 16:
         BTcontrol = intData[1] == 1;
         if (intData[1] == 0) AUTOPLAY = true;
@@ -575,6 +581,9 @@ void parsing() {
           sendAcknowledge();
         }
         break;
+
+      // ----------------------------------------------------
+
       case 17: 
         autoplayTime = ((long)intData[1] * 1000);   // секунды -> миллисек 
         idleTime = ((long)intData[2] * 60 * 1000);  // минуты -> миллисек
@@ -592,6 +601,9 @@ void parsing() {
         idleState = !BTcontrol && AUTOPLAY; 
         sendAcknowledge();
         break;
+
+      // ----------------------------------------------------
+      
       case 18: 
         if (intData[1] == 0) { // ping
           sendAcknowledge();
@@ -599,6 +611,9 @@ void parsing() {
           sendPageParams(intData[1]);
         }
         break;
+
+      // ----------------------------------------------------
+      
       case 19: 
          switch (intData[1]) {
            case 1:               // $19 1 X; - сохранить настройку X "Часы в эффектах"
@@ -696,6 +711,9 @@ void parsing() {
           sendAcknowledge();
         }
         break;
+
+      // ----------------------------------------------------
+      
       case 20:
         switch (intData[1]) { 
           case 0:  
@@ -799,6 +817,9 @@ void parsing() {
           sendPageParams(96);
         }        
         break;
+
+      // ----------------------------------------------------
+      
       case 21:
         // Настройки подключения к сети
         switch (intData[1]) { 
@@ -843,6 +864,9 @@ void parsing() {
           sendPageParams(5);
         }
         break;
+
+      // ----------------------------------------------------
+
       case 22:
       /*  22 - настройки включения режимов матрицы в указанное время
        - $22 HH1 MM1 NN1 HH2 MM2 NN2
@@ -872,6 +896,9 @@ void parsing() {
         saveSettings();
         sendPageParams(6);
         break;
+
+      // ----------------------------------------------------
+      
       case 23:
         // $23 0 VAL - лимит по потребляемому току
         switch(intData[1]) {
@@ -882,6 +909,9 @@ void parsing() {
             break;
         }
         break;
+
+      // ----------------------------------------------------
+
     }
   }
 

@@ -24,7 +24,7 @@
     oceanNoise();         // морская вода
 */
 
-byte lastOverlayMode;
+byte lastOverlayMode, lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
 
 // ************************* СВОЙ СПИСОК РЕЖИМОВ ************************
 // список можно менять, соблюдая его структуру. Можно удалять и добавлять эффекты, ставить их в
@@ -43,9 +43,9 @@ void doEffectWithOverlay(byte aMode) {
 
   if (!(effectReady || clockReady)) return;
 
-  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверэ эффекта
+  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта
   // цифры "смазываются"
-  bool needOverlay = aMode == MC_CLOCK || (aMode != MC_TEXT && overlayEnabled);
+  bool needOverlay = (aMode == MC_CLOCK || aMode == MC_TEXT) && overlayEnabled;
 
   if (needOverlay && lastOverlayMode == thisMode) {
     if (!loadingFlag) {

@@ -1,14 +1,5 @@
 // работа с бегущим текстом
 
-// **************** НАСТРОЙКИ ****************
-#define MIRR_V 0          // отразить текст по вертикали (0 / 1)
-#define MIRR_H 0          // отразить текст по горизонтали (0 / 1)
-
-#define TEXT_HEIGHT 0     // высота, на которой бежит текст (от низа матрицы)
-#define LET_WIDTH 5       // ширина буквы шрифта
-#define LET_HEIGHT 8      // высота буквы шрифта
-#define SPACE 1           // пробел
-
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
 
 int offset = WIDTH;
@@ -98,7 +89,7 @@ void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
       else thisBit = thisByte & (1 << (LH - 1 - j));
 
       // рисуем столбец (i - горизонтальная позиция, j - вертикальная)
-      if (thisBit) leds[getPixelNumber(offset + i, offset_y + TEXT_HEIGHT + j)] = letterColor;
+      if (thisBit) leds[getPixelNumber(offset + i, offset_y + j)] = letterColor;
     }
   }
 }

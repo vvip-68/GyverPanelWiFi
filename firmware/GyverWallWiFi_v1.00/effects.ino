@@ -49,8 +49,7 @@ void lightBallsRoutine() {
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
   // an automatic trend toward black -- by design.
-  uint8_t blurAmount = dim8_raw(beatsin8(2,64,100));
-  blur2d(leds, WIDTH, HEIGHT, blurAmount);
+  blur2d(leds, WIDTH, HEIGHT, 25);
 
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();
@@ -131,7 +130,7 @@ void swirlRoutine() {
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
   // an automatic trend toward black -- by design.
-  uint8_t blurAmount = dim8_raw(beatsin8(2,64,100));
+  uint8_t blurAmount = beatsin8(2,64,100);
   blur2d( leds, WIDTH, HEIGHT, blurAmount);
 
   uint32_t ms = millis();  
@@ -272,7 +271,7 @@ void rainbowDiagonalRoutine() {
   hue += 2;
   for (byte x = 0; x < WIDTH; x++) {
     for (byte y = 0; y < HEIGHT; y++) {
-      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / maxDim)), 255, 255);      
+      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / maxDim)), 255, 255);
       drawPixelXY(x, y, thisColor); 
     }
   }
