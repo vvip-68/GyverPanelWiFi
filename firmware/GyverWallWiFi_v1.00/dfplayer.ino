@@ -133,7 +133,7 @@ void PlayAlarmSound() {
   int8_t sound = alarmSound;
   // Звук будильника - случайный?
   if (sound == 0) {
-    sound = random(1, alarmSoundsCount);     // -1 - нет звука; 0 - случайный; 1..alarmSoundsCount - звук
+    sound = random8(1, alarmSoundsCount);     // -1 - нет звука; 0 - случайный; 1..alarmSoundsCount - звук
   }
   // Установлен корректный звук?
   if (sound > 0) {
@@ -163,7 +163,7 @@ void PlayDawnSound() {
   int8_t sound = dawnSound;
   // Звук рассвета - случайный?
   if (sound == 0) {
-    sound = random(1, dawnSoundsCount);     // -1 - нет звукаж 0 - случайный; 1..alarmSoundsCount - звук
+    sound = random8(1, dawnSoundsCount);     // -1 - нет звука; 0 - случайный; 1..alarmSoundsCount - звук
   }
   // Установлен корректный звук?
   if (sound > 0) {

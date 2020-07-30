@@ -300,7 +300,7 @@ void saveEffectSpeed(byte effect, int speed) {
 
 byte getEffectSpeed(byte effect) {
   const int addr = EFFECT_EEPROM;
-  return map(EEPROMread(addr + effect*3),0,255,D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
+  return map8(EEPROMread(addr + effect*3),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
 }
 
 void saveEffectUsage(byte effect, boolean use) {

@@ -7,12 +7,14 @@ char data[100];
 
 void process() {  
 
+  /*
   uint16_t duration = millis() - last_ms;
   if (duration > 0) {
     sprintf(data, "duration=%d", duration);
     Serial.println(data);
   }
   last_ms = millis();
+  */
   
   parsing();                                    // принимаем данные
 
@@ -1123,7 +1125,7 @@ void sendPageParams(int page) {
       // Эффекты не имеющие настройки скорости отправляют значение "Х" - программа делает ползунок настройки недоступным
       str+="|SE:"+(thisMode == MC_CLOCK /*|| thisMode == MC_PAINTBALL*/
          ? "X" 
-         : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255)));
+         : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации отправляют значение "Х" - программа делает ползунок настройки недоступным
       str+="|SS:"+(thisMode == MC_DAWN_ALARM || thisMode == MC_RAINBOW_DIAG || thisMode == MC_COLORS || thisMode == MC_SWIRL
          ? "X" 
@@ -1373,7 +1375,7 @@ void showCurrentIP() {
 void setRandomMode() {
     String s_tmp = String(EFFECT_LIST);    
     uint32_t cnt = CountTokens(s_tmp, ','); 
-    byte ef = random(0, cnt - 1); 
+    byte ef = random8(0, cnt - 1); 
     setEffect(ef);
 }
 
@@ -1381,7 +1383,7 @@ void setRandomMode2() {
   byte cnt = 0;
   while (cnt < 10) {
     cnt++;
-    byte newMode = random(0, MAX_EFFECT - 1);
+    byte newMode = random8(0, MAX_EFFECT - 1);
     if (!getEffectUsage(newMode)) continue;
 
     setEffect(newMode);

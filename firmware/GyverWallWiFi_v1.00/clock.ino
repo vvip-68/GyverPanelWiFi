@@ -323,7 +323,7 @@ void clockTicker() {
     // отображать показание текущего значения яркости в процентах 0..99
     if (isButtonHold) bCounter = 4;
     if (!isButtonHold && bCounter > 0 && halfSec) bCounter--;
-    byte prcBrightness = map(globalBrightness,0,255,0,99);
+    byte prcBrightness = map8(globalBrightness,0,99);
     byte m10 = getByteForDigit(prcBrightness / 10);
     byte m01 = getByteForDigit(prcBrightness % 10);
     display.displayByte(_b_, _r_, m10, m01);
@@ -847,7 +847,7 @@ void SetAutoMode(byte amode) {
       // "Случайный" режим и далее автосмена
       Serial.print(F(" демонcтрации эффектов:"));
       uint32_t cnt = CountTokens(s_tmp, ','); 
-      ef = random(0, cnt - 1); 
+      ef = random8(0, cnt - 1); 
     } else {
       ef -= 1; // Приведение номера эффекта (номер с 1) к индексу в массиве ALARM_LIST (индекс c 0)
     }

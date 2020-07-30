@@ -45,7 +45,7 @@ void doEffectWithOverlay(byte aMode) {
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта
   // цифры "смазываются"
-  bool needOverlay = (aMode == MC_CLOCK || aMode == MC_TEXT) && overlayEnabled;
+  bool needOverlay = (aMode == MC_CLOCK) || (aMode != MC_TEXT && overlayEnabled);
 
   if (needOverlay && lastOverlayMode == thisMode) {
     if (!loadingFlag) {
@@ -211,9 +211,9 @@ void prevModeHandler() {
 
 void setTimersForMode(byte aMode) {
   effectSpeed = getEffectSpeed(aMode);
-  //if (aMode == MC_PAINTBALL)
-  //  effectTimer.setInterval(10);   // Режим Пейнтбол смотрится (работает) только на максимальной скорости
-  //else
+  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL )
+    effectTimer.setInterval(2);     // Режимы Пейнтбол / Водоворот смотрятся (работают) только на максимальной скорости
+  else
     effectTimer.setInterval(effectSpeed);
   clockSpeed = getEffectSpeed(MC_CLOCK);
   if (clockSpeed >= 240) {

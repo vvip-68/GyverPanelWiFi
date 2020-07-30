@@ -20,8 +20,8 @@ void snowRoutine() {
   for (byte x = 0; x < WIDTH; x++) {
     // заполняем случайно верхнюю строку
     // а также не даём двум блокам по вертикали вместе быть
-    if (getPixColorXY(x, HEIGHT - 2) == 0 && (random(0, map(effectScaleParam[MC_SNOW],0,255,5,15)) == 0))
-      drawPixelXY(x, HEIGHT - 1, 0xE0FFFF - 0x101010 * random(0, 4));
+    if (getPixColorXY(x, HEIGHT - 2) == 0 && (random8(0, map8(effectScaleParam[MC_SNOW],5,15)) == 0))
+      drawPixelXY(x, HEIGHT - 1, 0xE0FFFF - 0x101010 * random8(0, 4));
     else
       drawPixelXY(x, HEIGHT - 1, 0x000000);
   }
@@ -29,7 +29,7 @@ void snowRoutine() {
 
 // ------------- ПЕЙНТБОЛ -------------
 
-uint8_t USE_SEGMENTS = 1;
+uint8_t USE_SEGMENTS_PAINTBALL = 1;
 uint8_t BorderWidth = 0;
 uint8_t dir_mx, seg_num, seg_size, seg_offset;
 
@@ -55,14 +55,23 @@ void lightBallsRoutine() {
   uint32_t ms = millis();
   int16_t idx;
 
-  // Для неквадратных - вычленяем квадратные сегменты, которые равномерно распределяем по ширине / высоте матрицы 
-  byte cnt = map(255-effectScaleParam[MC_PAINTBALL],0,255,1, 4);
+  byte  cnt = map8(255-effectScaleParam[MC_PAINTBALL],1,4);  // 1..4 шариков
+  float spd = map8(255-effectSpeed,10,100) / 100.0;          // 10-100% от номинальной скорости
 
-  if (USE_SEGMENTS != 0) {
-    uint8_t  i = beatsin8(  91, 0, seg_size - BorderWidth - 1);
-    uint8_t  j = beatsin8( 109, 0, seg_size - BorderWidth - 1);
-    uint8_t  k = beatsin8(  73, 0, seg_size - BorderWidth - 1);
-    uint8_t  m = beatsin8( 123, 0, seg_size - BorderWidth - 1);
+  // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
+  // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
+  byte m1 = ( 91.0 * spd) + 0.51;
+  byte m2 = (109.0 * spd) + 0.51;
+  byte m3 = ( 73.0 * spd) + 0.51;
+  byte m4 = (123.0 * spd) + 0.51;
+
+  // Для неквадратных - вычленяем квадратные сегменты, которые равномерно распределяем по ширине / высоте матрицы 
+
+  if (USE_SEGMENTS_PAINTBALL != 0) {
+    uint8_t  i = beatsin8(m1, 0, seg_size - BorderWidth - 1);
+    uint8_t  j = beatsin8(m2, 0, seg_size - BorderWidth - 1);
+    uint8_t  k = beatsin8(m3, 0, seg_size - BorderWidth - 1);
+    uint8_t  m = beatsin8(m4, 0, seg_size - BorderWidth - 1);
 
     uint8_t d1 = ms / 29;
     uint8_t d2 = ms / 41;
@@ -90,10 +99,10 @@ void lightBallsRoutine() {
   }
   else 
   {
-    uint8_t  i = beatsin8(  91, BorderWidth, WIDTH - BorderWidth - 1);
-    uint8_t  j = beatsin8( 109, BorderWidth, HEIGHT - BorderWidth - 1);
-    uint8_t  k = beatsin8(  73, BorderWidth, WIDTH - BorderWidth - 1);
-    uint8_t  m = beatsin8( 123, BorderWidth, HEIGHT - BorderWidth - 1);
+    uint8_t  i = beatsin8(m1, BorderWidth, WIDTH - BorderWidth - 1);
+    uint8_t  j = beatsin8(m1, BorderWidth, HEIGHT - BorderWidth - 1);
+    uint8_t  k = beatsin8(m3, BorderWidth, WIDTH - BorderWidth - 1);
+    uint8_t  m = beatsin8(m4, BorderWidth, HEIGHT - BorderWidth - 1);
     
     if (cnt <= 1) { idx = XY(i, j); leds[idx] += CHSV( ms / 29, 200U, 255U); }
     if (cnt <= 2) { idx = XY(k, j); leds[idx] += CHSV( ms / 41, 200U, 255U); }
@@ -113,6 +122,8 @@ void lightBallsRoutine() {
 }
 
 // ------------- ВОДОВОРОТ -------------
+
+uint8_t USE_SEGMENTS_SWIRL = 1;
 
 void swirlRoutine() {
   if (loadingFlag) {
@@ -136,10 +147,17 @@ void swirlRoutine() {
   uint32_t ms = millis();  
   int16_t idx;
 
-  if (USE_SEGMENTS != 0) {
+  float spd = map8(255-effectSpeed,10,100) / 100.0;                 // 10-100% от номинальной скорости
+
+  // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
+  // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
+  byte m1 = (41.0 * spd) + 0.51;
+  byte m2 = (27.0 * spd) + 0.51;
+
+  if (USE_SEGMENTS_SWIRL != 0) {
     // Use two out-of-sync sine waves
-    uint8_t  i = beatsin8( 41, 0, seg_size - BorderWidth - 1);
-    uint8_t  j = beatsin8( 27, 0, seg_size - BorderWidth - 1);
+    uint8_t  i = beatsin8(m1, 0, seg_size - BorderWidth - 1);
+    uint8_t  j = beatsin8(m2, 0, seg_size - BorderWidth - 1);
 
     // Also calculate some reflections
     uint8_t ni = (seg_size-1)-i;
@@ -180,8 +198,8 @@ void swirlRoutine() {
   else 
   {
     // Use two out-of-sync sine waves
-    uint8_t  i = beatsin8( 41, BorderWidth, WIDTH - BorderWidth - 1);
-    uint8_t  j = beatsin8( 27, BorderWidth, HEIGHT - BorderWidth - 1);
+    uint8_t  i = beatsin8(m1, BorderWidth, WIDTH - BorderWidth - 1);
+    uint8_t  j = beatsin8(m2, BorderWidth, HEIGHT - BorderWidth - 1);
 
     // Also calculate some reflections
     uint8_t ni = (WIDTH-1)-i;
@@ -226,33 +244,33 @@ void ballRoutine() {
   if (loadingFlag) {
     for (byte i = 0; i < 2; i++) {
       coordB[i] = WIDTH / 2 * 10;
-      vectorB[i] = random(8, 20);
-      ballColor = CHSV(random(0, 9) * 28, 255, 255);
+      vectorB[i] = random8(8, 20);
+      ballColor = CHSV(random8(0, 9) * 28, 255, 255);
     }
     modeCode = MC_BALL;
     loadingFlag = false;
   }
-  ballSize = map(effectScaleParam[MC_BALL],0,255,2, max(min(WIDTH,HEIGHT) / 3, 2));
+  ballSize = map8(effectScaleParam[MC_BALL],2, max(min(WIDTH,HEIGHT) / 3, 2));
   for (byte i = 0; i < 2; i++) {
     coordB[i] += vectorB[i];
     if (coordB[i] < 0) {
       coordB[i] = 0;
       vectorB[i] = -vectorB[i];
-      if (RANDOM_COLOR) ballColor = CHSV(random(0, 9) * 28, 255, 255);
-      //vectorB[i] += random(0, 6) - 3;
+      if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+      //vectorB[i] += random8(0, 6) - 3;
     }
   }
   if (coordB[0] > (WIDTH - ballSize) * 10) {
     coordB[0] = (WIDTH - ballSize) * 10;
     vectorB[0] = -vectorB[0];
-    if (RANDOM_COLOR) ballColor = CHSV(random(0, 9) * 28, 255, 255);
-    //vectorB[0] += random(0, 6) - 3;
+    if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+    //vectorB[0] += random8(0, 6) - 3;
   }
   if (coordB[1] > (HEIGHT - ballSize) * 10) {
     coordB[1] = (HEIGHT - ballSize) * 10;
     vectorB[1] = -vectorB[1];
-    if (RANDOM_COLOR) ballColor = CHSV(random(0, 9) * 28, 255, 255);
-    //vectorB[1] += random(0, 6) - 3;
+    if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+    //vectorB[1] += random8(0, 6) - 3;
   }
   FastLED.clear();
   for (byte i = 0; i < ballSize; i++)
@@ -287,7 +305,7 @@ void rainbowVertical() {
   }
   hue += 2;
   for (byte j = 0; j < HEIGHT; j++) {
-    CHSV thisColor = CHSV((byte)(hue + j * map(effectScaleParam[MC_RAINBOW_VERT],0,255,1,WIDTH)), 255, 255);
+    CHSV thisColor = CHSV((byte)(hue + j * map8(effectScaleParam[MC_RAINBOW_VERT],1,WIDTH)), 255, 255);
     for (byte i = 0; i < WIDTH; i++)
       drawPixelXY(i, j, thisColor);
   }
@@ -303,7 +321,7 @@ void rainbowHorizontal() {
   }
   hue += 2;
   for (byte i = 0; i < WIDTH; i++) {
-    CHSV thisColor = CHSV((byte)(hue + i * map(effectScaleParam[MC_RAINBOW_HORIZ],0,255,1,HEIGHT)), 255, 255);
+    CHSV thisColor = CHSV((byte)(hue + i * map8(effectScaleParam[MC_RAINBOW_HORIZ],1,HEIGHT)), 255, 255);
     for (byte j = 0; j < HEIGHT; j++)
       drawPixelXY(i, j, thisColor);
   }
@@ -317,7 +335,7 @@ void colorsRoutine() {
     modeCode = MC_COLORS;
     FastLED.clear();  // очистить
   }
-  hue += map(effectScaleParam[MC_COLORS],0,255,1,10);
+  hue += map8(effectScaleParam[MC_COLORS],1,10);
   CHSV hueColor = CHSV(hue, 255, 255);
   globalColor = getColorInt(hueColor);
   for (int i = 0; i < NUM_LEDS; i++) {
@@ -379,7 +397,7 @@ void fireRoutine() {
 
 void generateLine() {
   for (uint8_t x = 0; x < WIDTH; x++) {
-    line[x] = random(64, 255);
+    line[x] = random8(64, 255);
   }
 }
 
@@ -420,14 +438,14 @@ void drawFrame(int pcnt) {
           - pgm_read_byte(&(valueMask[y][newX]));
 
         CRGB color = CHSV(
-                       map(effectScaleParam[MC_FIRE],0,255,0,230) + pgm_read_byte(&(hueMask[y][newX])), // H
+                       map8(effectScaleParam[MC_FIRE],0,230) + pgm_read_byte(&(hueMask[y][newX])), // H
                        255, // S
                        (uint8_t)max(0, nextv) // V
                      );
 
         leds[getPixelNumber(x, y)] = color;
       } else if (y == 8 && SPARKLES) {
-        if (random(0, 20) == 0 && getPixColorXY(x, y - 1) != 0) drawPixelXY(x, y, getPixColorXY(x, y - 1));
+        if (random8(0, 20) == 0 && getPixColorXY(x, y - 1) != 0) drawPixelXY(x, y, getPixColorXY(x, y - 1));
         else drawPixelXY(x, y, 0);
       } else if (SPARKLES) {
 
@@ -445,7 +463,7 @@ void drawFrame(int pcnt) {
     uint8_t newX = x;
     if (x > 15) newX = x%16;
     CRGB color = CHSV(
-                   map(effectScaleParam[MC_FIRE],0,255,0,230) + pgm_read_byte(&(hueMask[0][newX])), // H
+                   map8(effectScaleParam[MC_FIRE],0,230) + pgm_read_byte(&(hueMask[0][newX])), // H
                    255,           // S
                    (uint8_t)(((100.0 - pcnt) * matrixValue[0][newX] + pcnt * line[newX]) / 100.0) // V
                  );
@@ -469,7 +487,7 @@ void matrixRoutine() {
     // заполняем случайно верхнюю строку
     uint32_t thisColor = getPixColorXY(x, HEIGHT - 1);
     if (thisColor == 0)
-      drawPixelXY(x, HEIGHT - 1, 0x00FF00 * (random(0, map(effectScaleParam[MC_MATRIX],0,255,5,15)) == 0));
+      drawPixelXY(x, HEIGHT - 1, 0x00FF00 * (random8(0, map8(effectScaleParam[MC_MATRIX],5,15)) == 0));
     else if (thisColor < cut_out)
       drawPixelXY(x, HEIGHT - 1, 0);
     else
@@ -504,19 +522,19 @@ void ballsRoutine() {
     FastLED.clear();
     
     // Текущее количество шариков из настроек
-    BALLS_AMOUNT = map(effectScaleParam[MC_BALLS],0,255,3,6); 
+    BALLS_AMOUNT = map8(effectScaleParam[MC_BALLS],3,6); 
     
     for (byte j = 0; j < BALLS_AMOUNT; j++) {
       int sign;
 
       // забиваем случайными данными
       coord[j][0] = WIDTH / 2 * 10;
-      random(0, 2) ? sign = 1 : sign = -1;
-      vector[j][0] = random(4, 15) * sign;
+      random8(0, 2) ? sign = 1 : sign = -1;
+      vector[j][0] = random8(4, 15) * sign;
       coord[j][1] = HEIGHT / 2 * 10;
-      random(0, 2) ? sign = 1 : sign = -1;
-      vector[j][1] = random(4, 15) * sign;
-      ballColors[j] = CHSV(random(0, 9) * 28, 255, 255);
+      random8(0, 2) ? sign = 1 : sign = -1;
+      vector[j][1] = random8(4, 15) * sign;
+      ballColors[j] = CHSV(random8(0, 9) * 28, 255, 255);
     }
   }
 
@@ -586,23 +604,23 @@ void starfallRoutine() {
     FastLED.clear();  // очистить
   }
 
-  STAR_DENSE = map(effectScaleParam[MC_SPARKLES],0,255,30,90);
+  STAR_DENSE = map8(effectScaleParam[MC_SPARKLES],30,90);
   
   // заполняем головами комет левую и верхнюю линию
   for (byte i = 4; i < HEIGHT; i++) {
     if (getPixColorXY(0, i) == 0
-        && (random(0, STAR_DENSE) == 0)
+        && (random8(0, STAR_DENSE) == 0)
         && getPixColorXY(0, i + 1) == 0
         && getPixColorXY(0, i - 1) == 0)
-      leds[getPixelNumber(0, i)] = CHSV(random(0, 200), SATURATION, 255);
+      leds[getPixelNumber(0, i)] = CHSV(random8(0, 200), SATURATION, 255);
   }
   
   for (byte i = 0; i < WIDTH-4; i++) {
     if (getPixColorXY(i, HEIGHT - 1) == 0
-        && (random(0, map(effectScaleParam[MC_STARFALL],0,255,10,120)) == 0)
+        && (random8(0, map8(effectScaleParam[MC_STARFALL],10,120)) == 0)
         && getPixColorXY(i + 1, HEIGHT - 1) == 0
         && getPixColorXY(i - 1, HEIGHT - 1) == 0)
-      leds[getPixelNumber(i, HEIGHT - 1)] = CHSV(random(0, 200), SATURATION, 255);
+      leds[getPixelNumber(i, HEIGHT - 1)] = CHSV(random8(0, 200), SATURATION, 255);
   }
 
   // сдвигаем по диагонали
@@ -631,11 +649,11 @@ void sparklesRoutine() {
     modeCode = MC_SPARKLES;
     FastLED.clear();  // очистить
   }
-  for (byte i = 0; i < map(effectScaleParam[MC_SPARKLES],0,255,1,25); i++) {
-    byte x = random(0, WIDTH);
-    byte y = random(0, HEIGHT);
+  for (byte i = 0; i < map8(effectScaleParam[MC_SPARKLES],1,25); i++) {
+    byte x = random8(0, WIDTH);
+    byte y = random8(0, HEIGHT);
     if (getPixColorXY(x, y) == 0)
-      leds[getPixelNumber(x, y)] = CHSV(random(0, 255), 255, 255);
+      leds[getPixelNumber(x, y)] = CHSV(random8(0, 255), 255, 255);
   }
   fader(BRIGHT_STEP);
 }
@@ -658,16 +676,16 @@ void lightersRoutine() {
     modeCode = MC_LIGHTERS;
     randomSeed(millis());
     for (byte i = 0; i < LIGHTERS_AM; i++) {
-      lightersPos[0][i] = random(0, WIDTH * 10);
-      lightersPos[1][i] = random(0, HEIGHT * 10);
+      lightersPos[0][i] = random8(0, WIDTH * 10);
+      lightersPos[1][i] = random8(0, HEIGHT * 10);
       lightersSpeed[0][i] = random(-10, 10);
       lightersSpeed[1][i] = random(-10, 10);
-      lightersColor[i] = CHSV(random(0, 255), 255, 255);
+      lightersColor[i] = CHSV(random8(0, 255), 255, 255);
     }
   }
   FastLED.clear();
   if (++loopCounter > 20) loopCounter = 0;
-  for (byte i = 0; i < map(effectScaleParam[MC_LIGHTERS],0,255,5,150); i++) {
+  for (byte i = 0; i < map8(effectScaleParam[MC_LIGHTERS],5,150); i++) {
     if (loopCounter == 0) {     // меняем скорость каждые 255 отрисовок
       lightersSpeed[0][i] += random(-3, 4);
       lightersSpeed[1][i] += random(-3, 4);

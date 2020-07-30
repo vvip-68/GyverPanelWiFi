@@ -24,7 +24,7 @@ void madnessNoise() {
     modeCode = MC_NOISE_MADNESS;
     loadingFlag = false;
   }
-  scale = map(effectScaleParam[MC_NOISE_MADNESS],0,255,0,100);
+  scale = map8(effectScaleParam[MC_NOISE_MADNESS],0,100);
   fillnoise8();
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
@@ -45,7 +45,7 @@ void rainbowNoise() {
     currentPalette = RainbowColors_p;
     colorLoop = 1;
   }
-  scale = map(effectScaleParam[MC_NOISE_RAINBOW],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_RAINBOW],0,100); 
   fillNoiseLED();
 }
 
@@ -56,7 +56,7 @@ void rainbowStripeNoise() {
     currentPalette = RainbowStripeColors_p;
     colorLoop = 1;
   }
-  scale = map(effectScaleParam[MC_NOISE_RAINBOW_STRIP],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_RAINBOW_STRIP],0,100); 
   fillNoiseLED();
 }
 
@@ -73,7 +73,7 @@ void zebraNoise() {
     currentPalette[12] = CRGB::White;
     colorLoop = 1;
   }
-  scale = map(effectScaleParam[MC_NOISE_ZEBRA],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_ZEBRA],0,100); 
   fillNoiseLED();
 }
 
@@ -84,7 +84,7 @@ void forestNoise() {
     currentPalette = ForestColors_p;
     colorLoop = 0;
   }
-  scale = map(effectScaleParam[MC_NOISE_FOREST],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_FOREST],0,100); 
   fillNoiseLED();
 }
 
@@ -95,7 +95,7 @@ void oceanNoise() {
     currentPalette = OceanColors_p;
     colorLoop = 0;
   }
-  scale = map(effectScaleParam[MC_NOISE_OCEAN],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_OCEAN],0,100); 
   fillNoiseLED();
 }
 
@@ -106,7 +106,7 @@ void plasmaNoise() {
     currentPalette = PartyColors_p;
     colorLoop = 1;
   }
-  scale = map(effectScaleParam[MC_NOISE_PLASMA],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_PLASMA],0,100); 
   fillNoiseLED();
 }
 
@@ -117,7 +117,7 @@ void cloudNoise() {
     currentPalette = CloudColors_p;
     colorLoop = 0;
   }
-  scale = map(effectScaleParam[MC_NOISE_CLOUD],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_CLOUD],0,100); 
   fillNoiseLED();
 }
 
@@ -128,7 +128,7 @@ void lavaNoise() {
     currentPalette = LavaColors_p;
     colorLoop = 0;
   }
-  scale = map(effectScaleParam[MC_NOISE_LAVA],0,255,0,100); 
+  scale = map8(effectScaleParam[MC_NOISE_LAVA],0,100); 
   fillNoiseLED();
 }
 
