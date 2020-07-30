@@ -211,16 +211,18 @@ void prevModeHandler() {
 
 void setTimersForMode(byte aMode) {
   effectSpeed = getEffectSpeed(aMode);
+  if (effectSpeed == 0) effectSpeed = 2;
   if (aMode == MC_PAINTBALL || aMode == MC_SWIRL )
-    effectTimer.setInterval(2);     // Режимы Пейнтбол / Водоворот смотрятся (работают) только на максимальной скорости
+    effectTimer.setInterval(1);        // Режимы Пейнтбол / Водоворот смотрятся (работают) только на максимальной скорости
   else
     effectTimer.setInterval(effectSpeed);
   clockSpeed = getEffectSpeed(MC_CLOCK);
+  if (clockSpeed < D_CLOCK_SPEED_MIN) clockSpeed = D_CLOCK_SPEED_MIN; // Если clockSpeed == 0 - бегущая строка начинает дергаться.
   if (clockSpeed >= 240) {
     clockTimer.setInterval(4294967295);
     checkClockOrigin();
   } else {
-    clockTimer.setInterval(getEffectSpeed(MC_CLOCK));
+    clockTimer.setInterval(clockSpeed);
   }
 }
 
