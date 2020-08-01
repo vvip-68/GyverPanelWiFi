@@ -204,7 +204,7 @@ byte getClockSizeType() {
   // Большие часы для шрифта 5x7 требуют 4*5 /цифры/ + 4 /двоеточие/ + 2 /пробел между цифрами часов и минут / = 26 колонки
   if ((clock_size == 0 || clock_size == 2) && WIDTH < 26) clock_size = 1;
   if (clock_size == 0) clock_size = 2;
-  return clock_size;  
+  return clock_size;
 }
 
 // Вычисление позиции отрисовки пикселя для часов, сдвигающихся по кругу.
@@ -289,6 +289,33 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   }
 }
 
+// нарисовать дату календаря
+void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, int8_t Y) {
+  
+  // Число месяца
+  drawDigit3x5(aday / 10, X, Y + 6, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+  drawDigit3x5(aday % 10, X + 4, Y + 6, clockLED[0]);
+
+  // разделитель числа/месяца
+  if (dots) {
+    drawPixelXY(getClockX(X + 7), Y + 5, clockLED[2]);
+  } else {
+    if (modeCode == MC_CLOCK) {
+      drawPixelXY(getClockX(X + 7), Y + 5, 0);
+    }
+  }
+  
+  // Месяц
+  drawDigit3x5(amnth / 10, X + 8, Y + 6, clockLED[1]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+  drawDigit3x5(amnth % 10, X + 12, Y + 6, clockLED[1]);
+
+  // Год  
+  drawDigit3x5(ayear / 1000, X, Y, clockLED[3]);
+  drawDigit3x5((ayear / 100) % 10, X + 4, Y, clockLED[3]);
+  drawDigit3x5((ayear / 10) % 10, X + 8, Y, clockLED[4]);
+  drawDigit3x5(ayear % 10, X + 12, Y, clockLED[4]);
+}
+
 void clockRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -304,6 +331,9 @@ void clockTicker() {
 
   hrs = hour();
   mins = minute();
+  aday = day();
+  amnth = month();
+  ayear = year();
 
   if (isTurnedOff && needTurnOffClock && init_time) {
     display.displayByte(_empty, _empty, _empty, _empty);
@@ -372,7 +402,7 @@ void clockTicker() {
 }
 
 void clockOverlayWrapH(int8_t posX, int8_t posY) {
-  
+  // +++
   byte thisLED = 0;
   byte x_size = c_size == 1 ? 15 : 26;
   byte y_size = c_size == 1 ? 5 : 7;
@@ -385,11 +415,22 @@ void clockOverlayWrapH(int8_t posX, int8_t posY) {
   }
 
   clockTicker();
-  if (init_time)
-    drawClock(hrs, mins, dotFlag, posX, posY);
+
+  if (init_time) {
+    if (!showDateInClock) {
+      drawClock(hrs, mins, dotFlag, posX, posY);
+    } else {
+      if (showDateState)
+        drawCalendar(aday, amnth, ayear, dotFlag, posX, posY);
+      else  
+        drawClock(hrs, mins, dotFlag, posX, posY);
+      checkCalendarState();
+    }
+  }
 }
 
 void clockOverlayUnwrapH(int8_t posX, int8_t posY) {
+  // +++
   byte thisLED = 0;
   byte x_size = c_size == 1 ? 15 : 26;
   byte y_size = c_size == 1 ? 5 : 7;
@@ -403,6 +444,7 @@ void clockOverlayUnwrapH(int8_t posX, int8_t posY) {
 }
 
 void clockOverlayWrapV(int8_t posX, int8_t posY) {
+  // +++
   byte thisLED = 0;
   for (int8_t i = posX; i < posX + 7; i++) {
     for (int8_t j = posY; j < posY + 11; j++) {
@@ -410,12 +452,24 @@ void clockOverlayWrapV(int8_t posX, int8_t posY) {
       thisLED++;
     }
   }
+
   clockTicker();
-  if (init_time)
-    drawClock(hrs, mins, dotFlag, posX, posY);
+
+  if (init_time) {
+    if (!showDateInClock) {
+      drawClock(hrs, mins, dotFlag, posX, posY);
+    } else {
+      if (showDateState)
+        drawCalendar(aday, amnth, ayear, dotFlag, posX, posY);
+      else  
+        drawClock(hrs, mins, dotFlag, posX, posY);
+      checkCalendarState();
+    }
+  }
 }
 
 void clockOverlayUnwrapV(int8_t posX, int8_t posY) {
+  // +++
   byte thisLED = 0;
   for (int8_t i = posX; i < posX + 7; i++) {
     for (int8_t j = posY; j < posY + 11; j++) {
@@ -425,8 +479,40 @@ void clockOverlayUnwrapV(int8_t posX, int8_t posY) {
   }
 }
 
+void calendarOverlayWrap(int8_t posX, int8_t posY) {
+  // +++
+  byte thisLED = 0;
+  for (int8_t i = posX; i < posX + 15; i++) {
+    for (int8_t j = posY; j < posY + 11; j++) {
+      overlayLEDs[thisLED] = leds[getPixelNumber(getClockX(i), j)];
+      thisLED++;
+    }
+  }
+  clockTicker();
+  if (init_time)
+    drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+}
+
+void calendarOverlayUnwrap(int8_t posX, int8_t posY) {
+  // +++
+  byte thisLED = 0;
+  for (int8_t i = posX; i < posX + 15; i++) {
+    for (int8_t j = posY; j < posY + 11; j++) {
+      leds[getPixelNumber(getClockX(i), j)] = overlayLEDs[thisLED];
+      thisLED++;
+    }
+  }
+}
+
+void checkCalendarState() {
+  if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
+    showDateStateLastChange = millis();
+    showDateState = !showDateState;
+  }  
+}
+
 boolean needUnwrap() {
-  // Эти режимы используют сдвиг содержимого матрицы без перерисовки всего изображения
+  // Эти режимы используют сдвиг содержимого матрицы или его размытие без перерисовки всего изображения
   // При оверлее часов при следующей перерисовке требуется восстанавливать изображение
   // удаляя нарисованные часы и восстанавливае состояние как оно было до прорисовки часов
   if (modeCode == MC_SNOW ||
@@ -794,22 +880,73 @@ void checkAutoMode2Time() {
   }
 }
 
-// Выполнение включения режима 1 или 2 (amode) по установленному времени
-// -2 - не используется; -1 - выключить матрицу; 0 - включить случайный с автосменой; 1 - номер режима из спписка EFFECT_LIST
-void SetAutoMode(byte amode) {
+// Проверка необходимости включения режима 1 по установленному времени
+// -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из спписка EFFECT_LIST
+void checkAutoMode3Time() {
+  if (AM3_effect_id <= -3 || AM3_effect_id >= MAX_EFFECT || !init_time) return;
   
+  hrs = hour();
+  mins = minute();
+
+  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  if (!AM3_running && AM3_hour == hrs && AM3_minute == mins) {
+    AM3_running = true;
+    SetAutoMode(3);
+  }
+
+  // Режим активирован и время срабатывания режима прошло - сбросить флаг для подготовки к следующему циклу
+  if (AM3_running && (AM3_hour != hrs || AM3_minute != mins)) {
+    AM3_running = false;
+  }
+}
+
+// Проверка необходимости включения режима 1 по установленному времени
+// -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из спписка EFFECT_LIST
+void checkAutoMode4Time() {
+  if (AM4_effect_id <= -3 || AM4_effect_id >= MAX_EFFECT || !init_time) return;
+  
+  hrs = hour();
+  mins = minute();
+
+  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  if (!AM4_running && AM4_hour == hrs && AM4_minute == mins) {
+    AM4_running = true;
+    SetAutoMode(4);
+  }
+
+  // Режим активирован и время срабатывания режима прошло - сбросить флаг для подготовки к следующему циклу
+  if (AM4_running && (AM4_hour != hrs || AM4_minute != mins)) {
+    AM4_running = false;
+  }
+}
+
+
+// Выполнение включения режима 1,2,3,4 (amode) по установленному времени
+// -3 - не используется; -2 - выключить матрицу; -1 - ночные часы, 0 - включить случайный с автосменой; 1 - номер режима из спписка EFFECT_LIST
+void SetAutoMode(byte amode) {
+
+  byte   AM_hour, AM_minute;
+  int8_t AM_effect_id;
+  switch(amode) {
+    case 1:  AM_hour = AM1_hour; AM_minute = AM1_minute; AM_effect_id = AM1_effect_id; break;
+    case 2:  AM_hour = AM2_hour; AM_minute = AM2_minute; AM_effect_id = AM2_effect_id; break;
+    case 3:  AM_hour = AM3_hour; AM_minute = AM3_minute; AM_effect_id = AM3_effect_id; break;
+    case 4:  AM_hour = AM4_hour; AM_minute = AM4_minute; AM_effect_id = AM4_effect_id; break;
+    default: return;
+  }
+
   Serial.print(F("Авторежим "));
   Serial.print(amode);
   Serial.print(F(" ["));
-  Serial.print(amode == 1 ? AM1_hour : AM2_hour);
+  Serial.print(AM_hour);
   Serial.print(":");
-  Serial.print(amode == 1 ? AM1_minute : AM2_minute);
+  Serial.print(AM_minute);
   Serial.print(F("] - "));
 
-  int8_t ef = (amode == 1 ? AM1_effect_id : AM2_effect_id);
+  int8_t ef = AM_effect_id;
 
   //ef: -3 - нет действия; 
-  //    -2 - выключить лампу (черный экран); 
+  //    -2 - выключить панель (черный экран); 
   //    -1 - ночные часы; 
   //     0 - случайный,
   //     1 и далее - эффект из EFFECT_LIST по списку
@@ -820,7 +957,7 @@ void SetAutoMode(byte amode) {
   } else if (ef == -2) {
 
     // Выключить матрицу (черный экран)
-    Serial.print(F("выключение лампы"));
+    Serial.print(F("выключение панели"));
     setSpecialMode(0);
     
   } else if (ef == -1) {
@@ -910,10 +1047,20 @@ void checkClockOrigin() {
                                                      // верт:  2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)  // ширина вертикальных часов
   byte ch = CLOCK_ORIENT == 0 ? 1*5 : 2*5 + 1;       // гориз: Одна строка цифр 5 пикс высотой                             // высота горизонтальных часов
                                                      // верт:  Две строки цифр 5 пикс высотой + 1 пробел между строкми     // высота вертикальных часовв
+
   while (CLOCK_X > 0 && CLOCK_X + cw > WIDTH)  CLOCK_X--;
   while (CLOCK_Y > 0 && CLOCK_Y + ch > HEIGHT) CLOCK_Y--;
 
+  if (c_size == 1) {
+    cw = 4*3 + 1;                                     // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)          // ширина календаря
+    ch = 2*5 + 1;                                     // Две строки цифр 5 пикс высотой + 1 пробел между строкми             // высота календаря
+    
+    while (CALENDAR_X > 0 && CALENDAR_X + cw > WIDTH)  CALENDAR_X--; 
+    while (CALENDAR_Y > 0 && CALENDAR_Y + ch > HEIGHT) CALENDAR_Y--;
+  }
+
   CLOCK_XC = CLOCK_X;
+  CALENDAR_XC = CALENDAR_X;
 }
 
 uint32_t getNightClockColorByIndex(byte idx) {

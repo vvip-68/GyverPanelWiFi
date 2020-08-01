@@ -1,80 +1,95 @@
-#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
-#define EFFECT_EEPROM 200                  // начальная ячейка eeprom с параметрами эффектов
+#define EEPROM_OK 0x55                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 4 байта на эффект
+#define TEXT_EEPROM 800                    // начальная ячейка eeprom с текстом бегущих строк
 
 void loadSettings() {
 
   // Адреса в EEPROM:
-  //    0 - если EEPROM_OK - EEPROM инициализировано, если другое значение - нет 
-  //    1 - максимальная яркость ленты 1-255
-  //    2 - автосмена режима в демо: вкл/выкл
-  //    3 - время автосмены режимов
-  //    4 - время бездействия до переключения в авторежим
-  //    5 - использовать синхронизацию времени через NTP
-  //  6,7 - период синхронизации NTP (int16_t - 2 байта)
-  //    8 - time zone
-  //    9 - выключать индикатор часов при выключении лампы true - выключать / false - не выключать
-  //   10 - IP[0]
-  //   11 - IP[1]
-  //   12 - IP[2]
-  //   13 - IP[3]
-  //   14 - Использовать режим точки доступа
-  //   15 - ориентация часов горизонтально / веритикально
-  //***16 - не используется
-  //   17 - globalColor.r
-  //   18 - globalColor.g
-  //   19 - globalColor.b
-  //   20 - Будильник, дни недели
-  //   21 - Будильник, продолжительность "рассвета"
-  //   22 - Будильник, эффект "рассвета"
-  //   23 - Будильник, использовать звук
-  //   24 - Будильник, играть звук N минут после срабатывания
-  //   25 - Будильник, Номер мелодии будильника (из папки 01 на SD карте)
-  //   26 - Будильник, Номер мелодии рассвета (из папки 02 на SD карте) 
-  //   27 - Будильник, Максимальная громкость будильника
-  //   28 - Номер последнего активного спец-режима или -1, если были включены обычные эффекты
-  //   29 - Номер последнего активированного вручную режима
-  //   30 - Отображать часы в режимах
-  //   31 - Использовать случайную последовательность в демо-режиме
-  //   32 - Формат часов в бегущей строке 0 - только часы; 1 - часы и дата коротко; 2 - часы и дата строкой  
-  //   33 - Режим 1 по времени - часы
-  //   34 - Режим 1 по времени - минуты
-  //   35 - Режим 1 по времени - ID эффекта или -1 - выключено; 0 - случайный;
-  //   36 - Режим 2 по времени - часы
-  //   37 - Режим 2 по тайвременимеру - минуты
-  //   38 - Режим 2 по времени - ID эффекта или -1 - выключено; 0 - случайный;
-  //   39 - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y; 6 - W;
-  //   40 - Будильник, время: понедельник : часы
-  //   41 - Будильник, время: понедельник : минуты
-  //   42 - Будильник, время: вторник : часы
-  //   43 - Будильник, время: вторник : минуты
-  //   44 - Будильник, время: среда : часы
-  //   45 - Будильник, время: среда : минуты
-  //   46 - Будильник, время: четверг : часы
-  //   47 - Будильник, время: четверг : минуты
-  //   48 - Будильник, время: пятница : часы
-  //   49 - Будильник, время: пятница : минуты
-  //   50 - Будильник, время: суббота : часы
-  //   51 - Будильник, время: суббота : минуты
-  //   52 - Будильник, время: воскресенье : часы
-  //   53 - Будильник, время: воскресенье : минуты
-  //  54-63   - имя точки доступа    - 10 байт
-  //  64-79   - пароль точки доступа - 16 байт
-  //  80-103  - имя сети  WiFi       - 24 байта
-  //  104-119 - пароль сети  WiFi    - 16 байт
-  //  120-149 - имя NTP сервера      - 30 байт
-  //  150,151 - лимит по току
-  //  152 - globalClockColor.r
-  //  153 - globalClockColor.g
-  //  154 - globalClockColor.b
-  //  155 - globalTextColor.r
-  //  156 - globalTextColor.g
-  //  157 - globalTextColor.b
-  //**158 - не используется
+  //    0 - если EEPROM_OK - EEPROM инициализировано, если другое значение - нет                             // EEPROMread(0)                 // EEPROMWrite(0, EEPROM_OK)
+  //    1 - максимальная яркость ленты 1-255                                                                 // getMaxBrightness()            // saveMaxBrightness(globalBrightness)
+  //    2 - автосмена режима в демо: вкл/выкл                                                                // getAutoplay();                // saveAutoplay(AUTOPLAY)
+  //    3 - время автосмены режимов в сек                                                                    // getAutoplayTime()             // saveAutoplayTime(autoplayTime / 1000L)     // autoplayTime - мс; в ячейке - в сек
+  //    4 - время бездействия до переключения в авторежим в минутах                                          // getIdleTime()                 // saveIdleTime(idleTime / 60L / 1000L)       // idleTime - мс; в ячейке - в мин
+  //    5 - использовать синхронизацию времени через NTP                                                     // getUseNtp()                   // saveUseNtp(useNtp)
+  //  6,7 - период синхронизации NTP (int16_t - 2 байта) в минутах                                           // getNtpSyncTime()              // saveNtpSyncTime(SYNC_TIME_PERIOD)
+  //    8 - time zone UTC+X                                                                                  // getTimeZone();                // saveTimeZone(timeZoneOffset)
+  //    9 - выключать индикатор часов при выключении лампы true - выключать / false - не выключать           // getTurnOffClockOnLampOff()    // setTurnOffClockOnLampOff(needTurnOffClock)
+  //   10 - IP[0]                                                                                            // loadStaticIP()                // saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3])
+  //   11 - IP[1]                                                                                            // - " -                         // - " -
+  //   12 - IP[2]                                                                                            // - " -                         // - " -
+  //   13 - IP[3]                                                                                            // - " -                         // - " -
+  //   14 - Использовать режим точки доступа                                                                 // getUseSoftAP()                // setUseSoftAP(useSoftAP)
+  //   15 - ориентация часов горизонтально / веритикально                                                    // getClockOrientation()         // saveClockOrientation(CLOCK_ORIENT)
+  //   16 - Отображать с часами текущую дату                                                                 // getShowDateInClock()          // setShowDateInClock(showDateInClock)
+  //   17 - Кол-во секунд отображения даты                                                                   // getShowDateDuration()         // setShowDateDuration(showDateDuration)
+  //   18 - Отображать дату каждые N секунд                                                                  // getShowDateInterval()         // setShowDateInterval(showDateInterval)
+  //   19 - тип часов горизонтальной ориентации 0-авто 1-малые 3х5 2 - большие 5х7                           // getClockSize()                // saveClockSize(CLOCK_SIZE)
+  //   20 - Будильник, дни недели                                                                            // getAlarmWeekDay()             // saveAlarmParams(alarmWeekDay, dawnDuration, alarmEffect, alarmDuration)
+  //   21 - Будильник, продолжительность "рассвета"                                                          // getDawnDuration()             // saveAlarmParams(alarmWeekDay, dawnDuration, alarmEffect, alarmDuration)
+  //   22 - Будильник, эффект "рассвета"                                                                     // getAlarmEffect()              // saveAlarmParams(alarmWeekDay, dawnDuration, alarmEffect, alarmDuration)
+  //   23 - Будильник, использовать звук                                                                     // getUseAlarmSound()            // saveAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound)
+  //   24 - Будильник, играть звук N минут после срабатывания                                                // getAlarmDuration()            // saveAlarmParams(alarmWeekDay, dawnDuration, alarmEffect, alarmDuration)
+  //   25 - Будильник, Номер мелодии будильника (из папки 01 на SD карте)                                    // getAlarmSound()               // saveAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound)
+  //   26 - Будильник, Номер мелодии рассвета (из папки 02 на SD карте)                                      // getDawnSound()                // saveAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound)
+  //   27 - Будильник, Максимальная громкость будильника                                                     // getMaxAlarmVolume()           // saveAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound)
+  //   28 - Номер последнего активного спец-режима или -1, если были включены обычные эффекты                // getCurrentSpecMode()          // setCurrentSpecMode(xxx)                     
+  //   29 - Номер последнего активированного вручную режима                                                  // getCurrentManualMode()        // setCurrentManualMode(xxx)
+  //   30 - Отображать часы в режимах                                                                        // getClockOverlayEnabled()      // saveClockOverlayEnabled(overlayEnabled)
+  //   31 - Использовать случайную последовательность в демо-режиме                                          // getRandomMode()               // saveRandomMode(useRandomSequence)
+  //   32 - Формат часов в бегущей строке 0 - только часы; 1 - часы и дата коротко; 2 - часы и дата строкой  // getFormatClock()              // setFormatClock(formatClock)
+  //   33 - Режим 1 по времени - часы                                                                        // getAM1hour()                  // setAM1hour(AM1_hour)
+  //   34 - Режим 1 по времени - минуты                                                                      // getAM1minute()                // setAM1minute(AM1_minute) 
+  //   35 - Режим 1 по времени - -3 - выкл. (не исп.); -2 - выкл. (черный экран); -1 - ночн.часы, 0 - случ., // getAM1effect()                // setAM1effect(AM1_effect_id)
+  //   36 - Режим 2 по времени - часы >>>                                   ^^^ 1,2..N - эффект EFFECT_LIST  // getAM2hour()                  // setAM2hour(AM2_hour) 
+  //   37 - Режим 2 по времени - минуты                                                                      // getAM2minute()                // setAM2minute(AM2_minute)
+  //   38 - Режим 2 по времени - = " = как для режима 1                                                      // getAM2effect()                // setAM2effect(AM2_effect_id)
+  //   39 - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y; 6 - W;                             // getNightClockColor()          // setNightClockColor(nightClockColor)          
+  //   40 - Будильник, время: понедельник : часы                                                             // getAlarmHour(1)               // setAlarmTime(1, alarmHour[0], alarmMinute[0])  // for (byte i=0; i<7; i++) alarmHour[i] = getAlarmHour(i+1)
+  //   41 - Будильник, время: понедельник : минуты                                                           // getAlarmMinute(1)             // setAlarmTime(1, alarmHour[0], alarmMinute[0])  // for (byte i=0; i<7; i++) alarmMinute[i] = getAlarmMinute(i+1)
+  //   42 - Будильник, время: вторник : часы                                                                 // getAlarmHour(2)               // setAlarmTime(2, alarmHour[1], alarmMinute[1])  // for (byte i=0; i<7; i++) setAlarmTime(i+1, alarmHour[i], alarmMinute[i])
+  //   43 - Будильник, время: вторник : минуты                                                               // getAlarmMinute(2)             // setAlarmTime(2, alarmHour[1], alarmMinute[1])
+  //   44 - Будильник, время: среда : часы                                                                   // getAlarmHour(3)               // setAlarmTime(3, alarmHour[2], alarmMinute[2])
+  //   45 - Будильник, время: среда : минуты                                                                 // getAlarmMinute(3)             // setAlarmTime(3, alarmHour[2], alarmMinute[2])
+  //   46 - Будильник, время: четверг : часы                                                                 // getAlarmHour(4)               // setAlarmTime(4, alarmHour[3], alarmMinute[3])
+  //   47 - Будильник, время: четверг : минуты                                                               // getAlarmMinute(4)             // setAlarmTime(4, alarmHour[3], alarmMinute[3])
+  //   48 - Будильник, время: пятница : часы                                                                 // getAlarmHour(5)               // setAlarmTime(5, alarmHour[4], alarmMinute[4])
+  //   49 - Будильник, время: пятница : минуты                                                               // getAlarmMinute(5)             // setAlarmTime(5, alarmHour[4], alarmMinute[4])
+  //   50 - Будильник, время: суббота : часы                                                                 // getAlarmHour(6)               // setAlarmTime(6, alarmHour[5], alarmMinute[5])
+  //   51 - Будильник, время: суббота : минуты                                                               // getAlarmMinute(6)             // setAlarmTime(6, alarmHour[5], alarmMinute[5])
+  //   52 - Будильник, время: воскресенье : часы                                                             // getAlarmHour(7)               // setAlarmTime(7, alarmHour[6], alarmMinute[6])
+  //   53 - Будильник, время: воскресенье : минуты                                                           // getAlarmMinute(7)             // setAlarmTime(7, alarmHour[6], alarmMinute[6])
+  //  54-63   - имя точки доступа    - 10 байт                                                               // getSoftAPName().toCharArray(apName, 10)       // setSoftAPName(String(apName))       // char apName[11] = ""
+  //  64-79   - пароль точки доступа - 16 байт                                                               // getSoftAPPass().toCharArray(apPass, 17)       // setSoftAPPass(String(apPass))       // char apPass[17] = "" 
+  //  80-103  - имя сети  WiFi       - 24 байта                                                              // getSsid().toCharArray(ssid, 25)               // setSsid(String(ssid))               // char ssid[25]   = ""
+  //  104-119 - пароль сети  WiFi    - 16 байт                                                               // getPass().toCharArray(pass, 17)               // setPass(String(pass))               // char pass[17]   = ""
+  //  120-149 - имя NTP сервера      - 30 байт                                                               // getNtpServer().toCharArray(ntpServerName, 31) // setNtpServer(String(ntpServerName)) // char ntpServerName[31] = ""
+  //  150,151 - лимит по току в миллиамперах                                                                 // getPowerLimit()                // setPowerLimit(CURRENT_LIMIT)
+  //  152 - globalClockColor.r -  цвет часов в режиме MC_COLOR, режим цвета "Монохром"                       // getGlobalClockColor()          // setGlobalClockColor(globalClockColor)              // uint32_t globalClockColor
+  //  153 - globalClockColor.g                                                                               // - " -                          // - " -
+  //  154 - globalClockColor.b                                                                               // - " -                          // - " -
+  //  155 - globalTextColor.r -  цвет текста в режиме MC_TEXT, режим цвета "Монохром"                        //  getGlobalTextColor()          // setGlobalTextColor(globalTextColor)                // uint32_t globalTextColor 
+  //  156 - globalTextColor.g                                                                                // - " -                          // - " -
+  //  157 - globalTextColor.b                                                                                // - " -                          // - " -
+  //  158 - globalColor.r     -  цвет панели в режиме "лампа"                                                // getGlobalColor()               // setGlobalColor(globalColor)                        // uint32_t globalColor
+  //  159 - globalColor.g                                                                                    // - " -                          // - " -
+  //  160 - globalColor.b                                                                                    // - " -                          // - " -
+  //  161 - Режим 3 по времени - часы                                                                        // getAM3hour()                   // setAM3hour(AM3_hour)
+  //  162 - Режим 3 по времени - минуты                                                                      // getAM3minute()                 // setAM3minute(AM3_minute) 
+  //  163 - Режим 3 по времени - так же как для режима 1                                                     // getAM3effect()                 // setAM3effect(AM3_effect_id)
+  //  164 - Режим 4 по времени - часы                                                                        // getAM4hour()                   // setAM4hour(AM4_hour)
+  //  165 - Режим 4 по тайвременимеру - минуты                                                               // getAM4minute()                 // setAM4minute(AM4_minute)
+  //  166 - Режим 4 по времени - так же как для режима 1                                                     // getAM4effect()                 // setAM4effect(AM4_effect_id)
+  //  167 - Яркость свечения эффектов                                                                        // getEffectBrightness();        // saveEffectBrightness(effectBrightness)
+  //**168 - не используется
   //  ...
-  //**199 - не используется
-  //  200 - 200+(Nэфф*3)   - скорость эффекта
-  //  201 - 200+(Nэфф*3)+1 - специальный параметр эффекта
-  //  202 - 200+(Nэфф*3)+2 - эффект в авторежиме: 1 - использовать; 0 - не использовать
+  //**299 - не используется
+  //  300 - 300+(Nэфф*4)   - скорость эффекта
+  //  301 - 300+(Nэфф*4)+1 - эффект в авторежиме: 1 - использовать; 0 - не использовать
+  //  302 - 300+(Nэфф*4)+2 - специальный параметр эффекта #1
+  //  303 - 300+(Nэфф*4)+3 - специальный параметр эффекта #2
+  //********
+  //  800 - текст строк бегущей строки сплошным массивом, строки разделены символом '\r'
+  //********
 
   // Сначала инициализируем имя сети/точки доступа, пароли и имя NTP-сервера значениями по умолчанию.
   // Ниже, если EEPROM уже инициализирован - из него будут загружены актуальные значения
@@ -89,13 +104,14 @@ void loadSettings() {
     
   if (isInitialized) {    
     globalBrightness = getMaxBrightness();
+    effectBrightness = getEffectBrightness();
 
     autoplayTime = getAutoplayTime();
     idleTime = getIdleTime();    
 
     useNtp = getUseNtp();
-    overlayEnabled = getClockOverlayEnabled();
     timeZoneOffset = getTimeZone();
+    overlayEnabled = getClockOverlayEnabled();
 
     SYNC_TIME_PERIOD = getNtpSyncTime();
     AUTOPLAY = getAutoplay();
@@ -106,29 +122,34 @@ void loadSettings() {
     useRandomSequence = getRandomMode();
     formatClock = getFormatClock();
     nightClockColor = getNightClockColor();
-    
+    showDateInClock = getShowDateInClock();  
+    showDateDuration = getShowDateDuration();
+    showDateInterval = getShowDateInterval();
+
     alarmWeekDay = getAlarmWeekDay();
     alarmEffect = getAlarmEffect();
     alarmDuration = getAlarmDuration();
+    dawnDuration = getDawnDuration();
 
     needTurnOffClock = getTurnOffClockOnLampOff();
 
+    // Загрузить недельные будильники / часы, минуты /
     for (byte i=0; i<7; i++) {
       alarmHour[i] = getAlarmHour(i+1);
       alarmMinute[i] = getAlarmMinute(i+1);
     }
  
+    // Загрузить параметры эффектов #1, #2
     for (byte i=0; i<MAX_EFFECT; i++) {
-      effectScaleParam[i] = getScaleForEffect(i);
+      effectScaleParam[i] = getScaleForEffect(i); 
+      effectScaleParam2[i] = getScaleForEffect2(i);
     }
 
-    dawnDuration = getDawnDuration();
-
     #if (USE_MP3 == 1)
-    useAlarmSound = getUseAlarmSound();    
-    alarmSound = getAlarmSound();
-    dawnSound = getDawnSound();
-    maxAlarmVolume = getMaxAlarmVolume();
+      useAlarmSound = getUseAlarmSound();
+      alarmSound = getAlarmSound();
+      dawnSound = getDawnSound();
+      maxAlarmVolume = getMaxAlarmVolume();
     #endif
 
     globalColor = getGlobalColor();           // цвет лампы, задаваемый пользователем
@@ -146,57 +167,89 @@ void loadSettings() {
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
     if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
 
-    AM1_hour = getAM1hour();
-    AM1_minute = getAM1minute();
+    AM1_hour      = getAM1hour();
+    AM1_minute    = getAM1minute();
     AM1_effect_id = getAM1effect();
-    AM2_hour = getAM2hour();
-    AM2_minute = getAM2minute();
+    AM2_hour      = getAM2hour();
+    AM2_minute    = getAM2minute();
     AM2_effect_id = getAM2effect();
+    AM3_hour      = getAM3hour();
+    AM3_minute    = getAM3minute();
+    AM3_effect_id = getAM3effect();
+    AM4_hour      = getAM4hour();
+    AM4_minute    = getAM4minute();
+    AM4_effect_id = getAM4effect();
 
     loadStaticIP();
     
   } else {
+    
     globalBrightness = BRIGHTNESS;
-
+    effectBrightness = BRIGHTNESS;
+    
     autoplayTime = ((long)AUTOPLAY_PERIOD * 1000L);     // секунды -> миллисек
     idleTime = ((long)IDLE_TIME * 60L * 1000L);         // минуты -> миллисек
-    overlayEnabled = true;
 
     useNtp = true;
+    timeZoneOffset = 7;
+    overlayEnabled = true;
+
+    SYNC_TIME_PERIOD = 60;
+    AUTOPLAY = true;
     CLOCK_ORIENT = 0;
     COLOR_MODE = 0;
-
-    AUTOPLAY = true;
-    SYNC_TIME_PERIOD = 60;
-
-    alarmWeekDay = 0;
-    dawnDuration = 20;
-    alarmEffect = MC_DAWN_ALARM;
-    useSoftAP = false;
-    
-    #if (USE_MP3 == 1)
-    useAlarmSound = false;
-    alarmDuration = 1;
-    alarmSound = 1;
-    dawnSound = 1;
-    maxAlarmVolume = 30;
-    #endif
-    
-    needTurnOffClock = false;
-
+    COLOR_TEXT_MODE = 0;
+    CURRENT_LIMIT = 5000;
     useRandomSequence = true;
     formatClock = 0;
+    nightClockColor = 0;
+    showDateInClock = true;  
+    showDateDuration = 3;
+    showDateInterval = 240;
+    needTurnOffClock = false;
 
+    alarmWeekDay = 0;
+    alarmEffect = MC_DAWN_ALARM;
+    alarmDuration = 1;
+    dawnDuration = 20;
+        
+    #if (USE_MP3 == 1)
+      useAlarmSound = false;
+      alarmSound = 1;
+      dawnSound = 1;
+      maxAlarmVolume = 30;
+    #endif
+
+    for (byte i=0; i<7; i++) {
+      alarmHour[i] = 0;
+      alarmMinute[i] = 0;
+    }
+    
     for (byte i=0; i<MAX_EFFECT; i++) {
-      effectScaleParam[i] = 50;
+      effectScaleParam[i]  = 50;  // среднее значение для параметра. Конкретное значение зависит от эффекта
+      effectScaleParam2[i] = 0;   // второй параметр эффекта по умолчанию равен 0. Конкретное значение зависит от эффекта
     }
 
+    globalColor = 0xFF;
+    globalClockColor = 0xFF;
+    globalTextColor = 0xFF;
+
+    useSoftAP = false;
+    
     AM1_hour = 0;
     AM1_minute = 0;
-    AM1_effect_id = -5;
+    AM1_effect_id = -3;
     AM2_hour = 0;
     AM2_minute = 0;
-    AM2_effect_id = -5;    
+    AM2_effect_id = -3;    
+    AM3_hour = 0;
+    AM3_minute = 0;
+    AM3_effect_id = -3;
+    AM4_hour = 0;
+    AM4_minute = 0;
+    AM4_effect_id = -3;    
+
+    IP_STA[0] = 192; IP_STA[1] = 168; IP_STA[2] = 0; IP_STA[3] = 116;    
   }
 
   idleTimer.setInterval(idleTime);  
@@ -211,50 +264,62 @@ void loadSettings() {
 
 void saveDefaults() {
 
-  EEPROMwrite(1, globalBrightness);
+  saveMaxBrightness(globalBrightness);
+  saveEffectBrightness(effectBrightness);
 
-  EEPROMwrite(2, AUTOPLAY ? 1 : 0);
-  EEPROMwrite(3, autoplayTime / 1000L);
-  EEPROMwrite(4, constrain(idleTime / 60L / 1000L, 0, 255));
-  
-  EEPROMwrite(5, useNtp ? 1 : 0);
-  EEPROM_int_write(6, SYNC_TIME_PERIOD);
-  EEPROMwrite(8, (byte)timeZoneOffset);
-  
-  EEPROMwrite(9, false);
+  saveAutoplayTime(autoplayTime / 1000L);
+  saveIdleTime(constrain(idleTime / 60L / 1000L, 0, 255));
 
-  EEPROMwrite(10, IP_STA[0]);
-  EEPROMwrite(11, IP_STA[1]);
-  EEPROMwrite(12, IP_STA[2]);
-  EEPROMwrite(13, IP_STA[3]);
+  saveUseNtp(useNtp);
+  saveTimeZone(timeZoneOffset);
+  saveClockOverlayEnabled(overlayEnabled);
 
-  EEPROMwrite(14, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
-  
+  saveNtpSyncTime(SYNC_TIME_PERIOD);
+  saveAutoplay(AUTOPLAY);
+
+  saveClockOrientation(CLOCK_ORIENT);
+  setPowerLimit(CURRENT_LIMIT);
+  saveRandomMode(useRandomSequence);
+  setFormatClock(formatClock);          // Формат отображения часов в бегущей строке: 0 - только часы: 1 - часы и дата кратко; 2 - часы и полная дата;
+  setNightClockColor(nightClockColor);  // Цвет ночных часов: 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
+  setShowDateInClock(showDateInClock);
+  setShowDateDuration(showDateDuration);
+  setShowDateInterval(showDateInterval);
+  setTurnOffClockOnLampOff(needTurnOffClock);
+
   saveAlarmParams(alarmWeekDay,dawnDuration,alarmEffect,alarmDuration);
+  #if (USE_MP3 == 1)
+    saveAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound);
+  #endif
+
   for (byte i=0; i<7; i++) {
-      setAlarmTime(i+1, alarmHour[i], alarmMinute[i]);
+    setAlarmTime(i+1, alarmHour[i], alarmMinute[i]);
   }
 
-  EEPROMwrite(32, formatClock);         // Формат отображения часов в бегущей строке: 0 - только часы: 1 - часы и дата кратко; 2 - часы и полная дата;
-  EEPROMwrite(39, nightClockColor);     // Цвет ночных часов
-  
-  EEPROMwrite(28, (byte)-1);            // Текущий спец-режим - это не спец-режим
-  EEPROMwrite(33, AM1_hour);            // Режим 1 по времени - часы
-  EEPROMwrite(34, AM1_minute);          // Режим 1 по времени - минуты
-  EEPROMwrite(35, (byte)AM1_effect_id); // Режим 1 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
-  EEPROMwrite(36, AM2_hour);            // Режим 2 по времени - часы
-  EEPROMwrite(37, AM2_minute);          // Режим 2 по времени - минуты
-  EEPROMwrite(38, (byte)AM2_effect_id); // Режим 2 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
-  
   // Настройки по умолчанию для эффектов
   for (int i = 0; i < MAX_EFFECT; i++) {
-    saveEffectParams(i, effectSpeed, 50, true);
+    saveEffectParams(i, effectSpeed, true, 50, 0);
   }
-    
+
+  // Специальные настройки отдельных эффектов
+  setScaleForEffect(MC_FIRE, 0);                 // Огонь красного цвета
+  setScaleForEffect(MC_CLOCK, COLOR_MODE);
+  setScaleForEffect(MC_TEXT, COLOR_TEXT_MODE);
+  setScaleForEffect2(MC_PAINTBALL, 1);           // Использовать сегменты для эффекта Пэйнтбол на широких матрицах
+  setScaleForEffect2(MC_SWIRL, 1);               // Использовать сегменты для эффекта Водоворот на широких матрицах
+  setScaleForEffect2(MC_RAINBOW, 0);             // Использовать рандомный выбор эффекта радуга 0 - random; 1 - диагональная; 2 - горизонтальная; 3 - вертикальная; 4 - вращающаяся
+  
+  setGlobalColor(globalColor);
+  setGlobalClockColor(globalClockColor);
+  setGlobalTextColor(globalTextColor);
+
+  setUseSoftAP(useSoftAP);
+
   strcpy(apName, DEFAULT_AP_NAME);
   strcpy(apPass, DEFAULT_AP_PASS);
   strcpy(ssid, NETWORK_SSID);
   strcpy(pass, NETWORK_PASS);
+
   setSoftAPName(String(apName));
   setSoftAPPass(String(apPass));
   setSsid(String(ssid));
@@ -263,10 +328,24 @@ void saveDefaults() {
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   setNtpServer(String(ntpServerName));
 
-  EEPROMwrite(31, useRandomSequence ? 1 : 0);
-
-  setPowerLimit(CURRENT_LIMIT);
+  setAM1hour(AM1_hour);                 // Режим 1 по времени - часы
+  setAM1minute(AM1_minute);             // Режим 1 по времени - минуты
+  setAM1effect(AM1_effect_id);          // Режим 1 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
+  setAM2hour(AM2_hour);                 // Режим 2 по времени - часы
+  setAM2minute(AM2_minute);             // Режим 2 по времени - минуты
+  setAM2effect(AM2_effect_id);          // Режим 2 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
+  setAM3hour(AM3_hour);                 // Режим 3 по времени - часы
+  setAM3minute(AM3_minute);             // Режим 3 по времени - минуты
+  setAM3effect(AM3_effect_id);          // Режим 3 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
+  setAM4hour(AM4_hour);                 // Режим 4 по времени - часы
+  setAM4minute(AM4_minute);             // Режим 4 по времени - минуты
+  setAM4effect(AM4_effect_id);          // Режим 4 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
   
+  saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
+
+  setCurrentSpecMode(-1);               // Текущий спец-режим - это не спец-режим
+  setCurrentManualMode(-1);             // Текущий вручную включенный спец-режим
+
   eepromModified = true;
 }
 
@@ -283,50 +362,67 @@ void saveSettings() {
   eepromModified = false;
 }
 
-void saveEffectParams(byte effect, int speed, byte value, boolean use) {
+void saveEffectParams(byte effect, int speed, boolean use, byte value1, byte value2) {
   const int addr = EFFECT_EEPROM;  
-  EEPROMwrite(addr + effect*3, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта
-  EEPROMwrite(addr + effect*3 + 1, value);                       // Параметр эффекта  
-  EEPROMwrite(addr + effect*3 + 2, use ? 1 : 0);                 // По умолчанию эффект доступен в демо-режиме
-  effectScaleParam[effect] = value;
+  EEPROMwrite(addr + effect*4, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта
+  EEPROMwrite(addr + effect*4 + 1, use ? 1 : 0);                                                                      // Вкл/Выкл эффект в демо-режиме
+  EEPROMwrite(addr + effect*4 + 2, value1);                                                                           // Параметр эффекта #1 
+  EEPROMwrite(addr + effect*4 + 3, value2);                                                                           // Параметр эффекта #2 
+  effectScaleParam[effect] = value1;
+  effectScaleParam2[effect] = value2;
 }
 
 void saveEffectSpeed(byte effect, int speed) {
   if (speed != getEffectSpeed(effect)) {
     const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*3, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта
+    EEPROMwrite(addr + effect*4, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта
   }
 }
 
 byte getEffectSpeed(byte effect) {
   const int addr = EFFECT_EEPROM;
-  return map8(EEPROMread(addr + effect*3),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
+  return map8(EEPROMread(addr + effect*4),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
 }
 
 void saveEffectUsage(byte effect, boolean use) {
   if (use != getEffectUsage(effect)) {
     const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*3 + 2, use ? 1 : 0);             // По умолчанию оверлей часов для эффекта отключен  
+    EEPROMwrite(addr + effect*4 + 1, use ? 1 : 0);             // По умолчанию оверлей часов для эффекта отключен  
   }
 }
 
 boolean getEffectUsage(byte effect) {
   const int addr = EFFECT_EEPROM;
-  return EEPROMread(addr + effect*3 + 2) == 1;
+  return EEPROMread(addr + effect*4 + 1) == 1;
 }
 
 void setScaleForEffect(byte effect, byte value) {
   if (value != getScaleForEffect(effect)) {
     const int addr = EFFECT_EEPROM;
-    EEPROMwrite(addr + effect*3 + 1, value);
+    EEPROMwrite(addr + effect*4 + 2, value);
     effectScaleParam[effect] = value;
   }  
 }
 
 byte getScaleForEffect(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*3 + 1);
+  byte value = EEPROMread(addr + effect*4 + 2);
   effectScaleParam[effect] = value;
+  return value;
+}
+
+void setScaleForEffect2(byte effect, byte value) {
+  if (value != getScaleForEffect2(effect)) {
+    const int addr = EFFECT_EEPROM;
+    EEPROMwrite(addr + effect*4 + 3, value);
+    effectScaleParam2[effect] = value;
+  }  
+}
+
+byte getScaleForEffect2(byte effect) {
+  const int addr = EFFECT_EEPROM;
+  byte value = EEPROMread(addr + effect*4 + 3);
+  effectScaleParam2[effect] = value;
   return value;
 }
 
@@ -337,6 +433,16 @@ byte getMaxBrightness() {
 void saveMaxBrightness(byte brightness) {
   if (brightness != getMaxBrightness()) {
     EEPROMwrite(1, brightness);
+  }
+}
+
+byte getEffectBrightness() {
+  return EEPROMread(167);
+}
+
+void saveEffectBrightness(byte brightness) {
+  if (brightness != getEffectBrightness()) {
+    EEPROMwrite(167, brightness);
   }
 }
 
@@ -358,7 +464,7 @@ void saveAutoplayTime(long value) {
 
 long getAutoplayTime() {
   long time = EEPROMread(3) * 1000L;  
-  if (time == 0) time = ((long)AUTOPLAY_PERIOD * 1000);
+  if (time == 0) time = ((long)AUTOPLAY_PERIOD * 1000L);
   return time;
 }
 
@@ -414,6 +520,16 @@ int8_t getTimeZone() {
   return (int8_t)EEPROMread(8);
 }
 
+bool getTurnOffClockOnLampOff() {
+  return EEPROMread(9) == 1;
+}
+
+void setTurnOffClockOnLampOff(bool flag) {
+  if (flag != getTurnOffClockOnLampOff()) {
+    EEPROMwrite(9, flag ? 1 : 0);
+  }  
+}
+
 byte getClockOrientation() {
   
   byte val = EEPROMread(15) == 1 ? 1 : 0;
@@ -427,6 +543,51 @@ byte getClockOrientation() {
 void saveClockOrientation(byte orientation) {
   if (orientation != getClockOrientation()) {
     EEPROMwrite(15, orientation == 1 ? 1 : 0);
+  }
+}
+
+bool getShowDateInClock() {
+  bool val = EEPROMread(16) == 1;
+  if (val && HEIGHT < 11) val = 0;
+  return val;
+}
+
+void setShowDateInClock(boolean use) {  
+  if (use != getShowDateInClock()) {
+    EEPROMwrite(16, use ? 1 : 0);
+    eepromModified = true;
+  }
+}
+
+byte getShowDateDuration() {
+  return EEPROMread(17);
+}
+
+void setShowDateDuration(byte Duration) {
+  if (Duration != getShowDateDuration()) {
+    EEPROMwrite(17, Duration);
+    eepromModified = true;
+  }
+}
+
+byte getShowDateInterval() {
+  return EEPROMread(18);
+}
+
+void setShowDateInterval(byte Interval) {
+  if (Interval != getShowDateInterval()) {
+    EEPROMwrite(18, Interval);
+    eepromModified = true;
+  }
+}
+
+byte getClockSize() {
+  return EEPROMread(19);
+}
+
+void saveClockSize(byte c_size) {
+  if (c_size != getClockSize()) {
+    EEPROMwrite(19, c_size);
   }
 }
 
@@ -657,6 +818,86 @@ void setAM2effect(int8_t effect) {
   }
 }
 
+void setAM3params(byte hour, byte minute, int8_t effect) { 
+  setAM3hour(hour);
+  setAM3minute(minute);
+  setAM3effect(effect);
+}
+
+byte getAM3hour() { 
+  byte hour = EEPROMread(161);
+  if (hour>23) hour = 0;
+  return hour;
+}
+
+void setAM3hour(byte hour) {
+  if (hour != getAM3hour()) {
+    EEPROMwrite(161, hour);
+  }
+}
+
+byte getAM3minute() {
+  byte minute = EEPROMread(162);
+  if (minute > 59) minute = 0;
+  return minute;
+}
+
+void setAM3minute(byte minute) {
+  if (minute != getAM3minute()) {
+    EEPROMwrite(162, minute);
+  }
+}
+
+int8_t getAM3effect() {
+  return (int8_t)EEPROMread(163);
+}
+
+void setAM3effect(int8_t effect) {
+  if (effect != getAM3effect()) {
+    EEPROMwrite(163, (byte)effect);
+  }
+}
+
+void setAM4params(byte hour, byte minute, int8_t effect) { 
+  setAM4hour(hour);
+  setAM4minute(minute);
+  setAM4effect(effect);
+}
+
+byte getAM4hour() { 
+  byte hour = EEPROMread(164);
+  if (hour>23) hour = 0;
+  return hour;
+}
+
+void setAM4hour(byte hour) {
+  if (hour != getAM4hour()) {
+    EEPROMwrite(164, hour);
+  }
+}
+
+byte getAM4minute() {
+  byte minute = EEPROMread(165);
+  if (minute > 59) minute = 0;
+  return minute;
+}
+
+void setAM4minute(byte minute) {
+  if (minute != getAM4minute()) {
+    EEPROMwrite(165, minute);
+  }
+}
+
+int8_t getAM4effect() {
+  return (int8_t)EEPROMread(166);
+}
+
+void setAM4effect(int8_t effect) {
+  if (effect != getAM4effect()) {
+    EEPROMwrite(166, (byte)effect);
+  }
+}
+
 int8_t getCurrentManualMode() {
   return (int8_t)EEPROMread(29);
 }
@@ -688,9 +929,9 @@ void saveStaticIP(byte p1, byte p2, byte p3, byte p4) {
 
 uint32_t getGlobalColor() {
   byte r,g,b;
-  r = EEPROMread(17);
-  g = EEPROMread(18);
-  b = EEPROMread(19);
+  r = EEPROMread(158);
+  g = EEPROMread(159);
+  b = EEPROMread(160);
   return (uint32_t)r<<16 | (uint32_t)g<<8 | (uint32_t)b;
 }
 
@@ -698,9 +939,9 @@ void setGlobalColor(uint32_t color) {
   globalColor = color;
   if (color != getGlobalColor()) {
     CRGB cl = CRGB(color);
-    EEPROMwrite(17, cl.r); // R
-    EEPROMwrite(18, cl.g); // G
-    EEPROMwrite(19, cl.b); // B
+    EEPROMwrite(158, cl.r); // R
+    EEPROMwrite(159, cl.g); // G
+    EEPROMwrite(160, cl.b); // B
   }
 }
 
@@ -738,16 +979,6 @@ void setGlobalTextColor(uint32_t color) {
     EEPROMwrite(156, cl.g); // G
     EEPROMwrite(157, cl.b); // B
   }
-}
-
-bool getTurnOffClockOnLampOff() {
-  return EEPROMread(9) == 1;
-}
-
-void setTurnOffClockOnLampOff(bool flag) {
-  if (flag != getTurnOffClockOnLampOff()) {
-    EEPROMwrite(9, flag ? 1 : 0);
-  }  
 }
 
 int8_t getCurrentSpecMode() {

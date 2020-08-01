@@ -49,33 +49,50 @@ void doEffectWithOverlay(byte aMode) {
 
   if (needOverlay && lastOverlayMode == thisMode) {
     if (!loadingFlag) {
-      if (CLOCK_ORIENT == 0)
-        clockOverlayUnwrapH(CLOCK_XC, CLOCK_Y);
-      else
-        clockOverlayUnwrapV(CLOCK_XC, CLOCK_Y);
+      if (c_size == 1 && showDateInClock && showDateState) {
+          calendarOverlayUnwrap(CALENDAR_XC, CALENDAR_Y);
+      } else {
+        if (CLOCK_ORIENT == 0)
+          clockOverlayUnwrapH(CLOCK_XC, CLOCK_Y);
+        else
+          clockOverlayUnwrapV(CLOCK_XC, CLOCK_Y);
+      }
     }
   }  
 
   if (effectReady) processEffect(aMode);
 
   if (clockReady) {
-    byte clock_width = CLOCK_ORIENT == 0 ? (c_size == 1 ? 15 : 26) : 7;  // Горизонтальные часы занимают 15/26 колонок (малые/большие), вертикальные - 7
+    byte clock_width = CLOCK_ORIENT == 0 ? (c_size == 1 ? 15 : 26) : 7;     // Горизонтальные часы занимают 15/26 колонок (малые/большие), вертикальные - 7
+    byte calendar_width = 15;                                               // Календарь занимает 15 колонок (4 цифры 3x5 b  пробела между ними)
     CLOCK_MOVE_CNT--;
     if (CLOCK_MOVE_CNT <= 0) {
        CLOCK_MOVE_CNT = CLOCK_MOVE_DIVIDER;
        CLOCK_XC--;
+       CALENDAR_XC--;
        if (CLOCK_XC < -clock_width) {
           CLOCK_XC = WIDTH - clock_width - 1;
        }     
+       if (CALENDAR_XC < -calendar_width) {
+          CALENDAR_XC = WIDTH - calendar_width - 1;
+       }     
     }
+  }
+
+  if (c_size == 1) {
+    checkCalendarState();
   }
   
   if (needOverlay) {
     setOverlayColors();
-    if (CLOCK_ORIENT == 0)
-      clockOverlayWrapH(CLOCK_XC, CLOCK_Y);
-    else  
-      clockOverlayWrapV(CLOCK_XC, CLOCK_Y);       
+    if (c_size == 1 && showDateInClock && showDateState) {
+      calendarOverlayWrap(CALENDAR_XC, CALENDAR_Y);
+    } else {
+      if (CLOCK_ORIENT == 0)
+        clockOverlayWrapH(CLOCK_XC, CLOCK_Y);
+      else  
+        clockOverlayWrapV(CLOCK_XC, CLOCK_Y);
+    }
     lastOverlayMode = thisMode;
   }  
 

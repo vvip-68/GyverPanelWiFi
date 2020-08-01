@@ -19,7 +19,7 @@ void runningText() {
         break;
     }
   else
-    text = String(F("Лампа с 3D эффектами"));  
+    text = String(FIRMWARE_VER);
 
   uint32_t color = COLOR_TEXT_MODE;
   if (color == 0 || color > 2) color = globalTextColor;

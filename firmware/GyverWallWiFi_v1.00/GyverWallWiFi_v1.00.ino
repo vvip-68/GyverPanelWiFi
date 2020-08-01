@@ -11,7 +11,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("\n\nGyverWall-WiFi v.1.00.2020.0728")
+#define FIRMWARE_VER F("GyverPanel-WiFi v.1.00.2020.0801")
 
 #include "a_def_hard.h"     // Определение параметров мвтрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -22,7 +22,9 @@ void setup() {
 #endif
   Serial.begin(115200);
   delay(10);
-  
+
+  Serial.println();
+  Serial.println();
   Serial.println(FIRMWARE_VER);
 
   // Инициализация EEPROM и загрузка начальных значений переменных и параметров
