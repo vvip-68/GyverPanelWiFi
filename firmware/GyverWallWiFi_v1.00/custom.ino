@@ -1,29 +1,5 @@
 // ************************ НАСТРОЙКИ ************************
 
-/*
-   Эффекты:
-    sparklesRoutine();    // случайные цветные гаснущие вспышки
-    snowRoutine();        // снег
-    matrixRoutine();      // "матрица"
-    starfallRoutine();    // звездопад (кометы)
-    ballRoutine();        // квадратик
-    ballsRoutine();       // шарики
-    rainbowRoutine();     // радуга во всю матрицу горизонтальная
-    rainbowDiagonalRoutine();   // радуга во всю матрицу диагональная
-    fireRoutine();        // огонь
-
-  Крутые эффекты "шума":
-    madnessNoise();       // цветной шум во всю матрицу
-    cloudNoise();         // облака
-    lavaNoise();          // лава
-    plasmaNoise();        // плазма
-    rainbowNoise();       // радужные переливы
-    rainbowStripeNoise(); // полосатые радужные переливы
-    zebraNoise();         // зебра
-    forestNoise();        // шумящий лес
-    oceanNoise();         // морская вода
-*/
-
 byte lastOverlayMode, lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
 
 // ************************* СВОЙ СПИСОК РЕЖИМОВ ************************
@@ -118,9 +94,7 @@ void processEffect(byte aMode) {
     case MC_STARFALL:            starfallRoutine(); break;
     case MC_BALL:                ballRoutine(); break;
     case MC_BALLS:               ballsRoutine(); break;
-    case MC_RAINBOW_HORIZ:       rainbowHorizontal(); break;
-    case MC_RAINBOW_VERT:        rainbowVertical(); break;
-    case MC_RAINBOW_DIAG:        rainbowDiagonalRoutine(); break;
+    case MC_RAINBOW:             rainbowRoutine(); break;      // rainbowHorizontal(); // rainbowVertical(); // rainbowDiagonal(); // rainbowRotate();
     case MC_FIRE:                fireRoutine(); break;
     case MC_FILL_COLOR:          fillColorProcedure(); break;
     case MC_COLORS:              colorsRoutine(); break;

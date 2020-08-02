@@ -32,7 +32,7 @@ void snowRoutine() {
 
 // ------------- ПЕЙНТБОЛ -------------
 
-uint8_t USE_SEGMENTS_PAINTBALL = 1;
+uint8_t USE_SEGMENTS_PAINTBALL = 0;
 uint8_t BorderWidth = 0;
 uint8_t dir_mx, seg_num, seg_size, seg_offset;
 
@@ -46,6 +46,7 @@ void lightBallsRoutine() {
     seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
     seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
     BorderWidth = 0;
+    USE_SEGMENTS_PAINTBALL = effectScaleParam2[MC_PAINTBALL];
   }
   
   // Apply some blurring to whatever's already on the matrix
@@ -130,7 +131,7 @@ void lightBallsRoutine() {
 
 // ------------- ВОДОВОРОТ -------------
 
-uint8_t USE_SEGMENTS_SWIRL = 1;
+uint8_t USE_SEGMENTS_SWIRL = 0;
 
 void swirlRoutine() {
   if (loadingFlag) {
@@ -142,6 +143,7 @@ void swirlRoutine() {
     seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
     seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
     BorderWidth = seg_num == 1 ? 0 : 1;
+    USE_SEGMENTS_SWIRL = effectScaleParam2[MC_SWIRL];
   }
 
   // Apply some blurring to whatever's already on the matrix
@@ -292,14 +294,31 @@ void ballRoutine() {
       leds[getPixelNumber(coordB[0] / 10 + i, coordB[1] / 10 + j)] = ballColor;
 }
 
-// *********** радуга дигональная ***********
-
-void rainbowDiagonalRoutine() {
+// ***************************** РАДУГА *****************************
+byte rainbow_type = 0;
+void rainbowRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_RAINBOW_DIAG;
+    modeCode = MC_RAINBOW;
+    rainbow_type = effectScaleParam2[MC_RAINBOW];
+    // Если авто - генерировать один из типов - 1-Вертикальная радуга, 2-Горизонтальная радуга, 3-Диагональная радуга, 4-Вращающаяся радуга
+    if (rainbow_type == 0) {
+      rainbow_type = random8(1,4);
+    }     
     FastLED.clear();  // очистить
   }
+
+  switch (rainbow_type) {
+    case 1:  rainbowVertical(); break;
+    case 2:  rainbowHorizontal(); break;
+    case 3:  rainbowDiagonal(); break;
+    default: rainbowRotate(); break;
+  }
+}
+
+// *********** радуга дигональная ***********
+
+void rainbowDiagonal() {
   hue += 2;
   for (byte x = 0; x < WIDTH; x++) {
     for (byte y = 0; y < HEIGHT; y++) {
@@ -309,35 +328,46 @@ void rainbowDiagonalRoutine() {
   }
 }
 
-// *********** радуга вертикальная ***********
+// *********** радуга горизонтальная ***********
 
-void rainbowVertical() {
-  if (loadingFlag) {
-    loadingFlag = false;
-    modeCode = MC_RAINBOW_VERT;
-    FastLED.clear();  // очистить
-  }
+void rainbowHorizontal() {
   hue += 2;
   for (byte j = 0; j < HEIGHT; j++) {
-    CHSV thisColor = CHSV((byte)(hue + j * map8(effectScaleParam[MC_RAINBOW_VERT],1,WIDTH)), 255, effectBrightness);
+    CHSV thisColor = CHSV((byte)(hue + j * map8(effectScaleParam[MC_RAINBOW],1,WIDTH)), 255, effectBrightness);
     for (byte i = 0; i < WIDTH; i++)
       drawPixelXY(i, j, thisColor);
   }
 }
 
-// *********** радуга горизонтальная ***********
+// *********** радуга вертикальная ***********
 
-void rainbowHorizontal() {
-  if (loadingFlag) {
-    loadingFlag = false;
-    modeCode = MC_RAINBOW_HORIZ;
-    FastLED.clear();  // очистить
-  }
+void rainbowVertical() {
   hue += 2;
   for (byte i = 0; i < WIDTH; i++) {
-    CHSV thisColor = CHSV((byte)(hue + i * map8(effectScaleParam[MC_RAINBOW_HORIZ],1,HEIGHT)), 255, effectBrightness);
+    CHSV thisColor = CHSV((byte)(hue + i * map8(effectScaleParam[MC_RAINBOW],1,HEIGHT)), 255, effectBrightness);
     for (byte j = 0; j < HEIGHT; j++)
       drawPixelXY(i, j, thisColor);
+  }
+}
+
+// *********** радуга вращающаяся ***********
+
+void rainbowRotate() {
+  uint32_t ms = millis();
+  int32_t yHueDelta32 = ((int32_t)cos16( ms * (27/1) ) * (350 / WIDTH));
+  int32_t xHueDelta32 = ((int32_t)cos16( ms * (39/1) ) * (310 / HEIGHT));
+
+  byte   lineStartHue = ms / 65536;
+  int8_t yHueDelta8   = yHueDelta32 / 32768;
+  int8_t xHueDelta8   = xHueDelta32 / 32768;
+  
+  for( byte y = 0; y < HEIGHT; y++) {
+    lineStartHue += yHueDelta8;
+    byte pixelHue = lineStartHue;      
+    for( byte x = 0; x < WIDTH; x++) {
+      pixelHue += xHueDelta8;
+      leds[ XY(x, y)]  = CHSV( pixelHue, 255, effectBrightness);
+    }
   }
 }
 

@@ -538,9 +538,7 @@ void setOverlayColors() {
       case MC_BALLS: 
       case MC_NOISE_RAINBOW:
       case MC_NOISE_RAINBOW_STRIP: 
-      case MC_RAINBOW_HORIZ:
-      case MC_RAINBOW_VERT:
-      case MC_RAINBOW_DIAG: 
+      case MC_RAINBOW: 
       case MC_LIGHTERS:
       case MC_PAINTBALL:
       case MC_SWIRL:
