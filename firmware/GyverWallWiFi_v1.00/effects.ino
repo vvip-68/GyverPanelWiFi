@@ -438,7 +438,7 @@ void shiftUp() {
 // @param pcnt percentage of interpolation
 
 void drawFrame(int pcnt) {
-  int nextv, nextv21;
+  int nextv;
 
   //each row interpolates with the one before it
   for (unsigned char y = HEIGHT - 1; y > 0; y--) {

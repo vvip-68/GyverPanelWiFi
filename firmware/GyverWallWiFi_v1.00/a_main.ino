@@ -176,7 +176,7 @@ void process() {
             
       // Пятикратное нажатие - показать текущий IP WiFi-соединения
       else if (clicks == 5) {
-        showCurrentIP();
+        showCurrentIP(false);
       }      
       
       // ... и т.д.
@@ -982,8 +982,7 @@ void parsing() {
             FastLED.clear();
             FastLED.show();
             startWiFi();
-            wifi_print_ip = true;
-            wifi_print_idx = 0;       
+            showCurrentIP(true);
             break;
         }
         if (intData[1] == 0 || intData[1] == 1) {
@@ -1530,14 +1529,24 @@ void setEffect(byte eff) {
     FastLED.setBrightness(globalBrightness);      
 }
 
-void showCurrentIP() {
+void showCurrentIP(boolean autoplay) {
   setEffect(MC_TEXT);
-  BTcontrol = false;
-  AUTOPLAY = true;
   wifi_print_ip = true;
   wifi_print_ip_text = true;
   wifi_print_idx = 0; 
   wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : String(F("Нет подключения к сети WiFi"));
+  // Если параметр autoplay == true - включить режим автосмены режимов так,
+  // что строка IP адреса будет показана несколько раз, затем автоматически включится другой режим.
+  // autoplay == true - при установке IP адреса из программы
+  // autoplay == false - при вызове отображения текущеко IP адреса по пятикратному нажатию кнопки.
+  if (autoplay) {
+    BTcontrol = false;
+    AUTOPLAY = true;
+    autoplayTimer = millis();
+    idleTimer.setInterval(idleTime);
+    idleTimer.reset();
+    idleState = true;  
+  }
 }
 
 void setRandomMode() {
