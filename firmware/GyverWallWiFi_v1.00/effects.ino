@@ -438,7 +438,7 @@ void shiftUp() {
 // @param pcnt percentage of interpolation
 
 void drawFrame(int pcnt) {
-  int nextv;
+  int nextv, nextv21;
 
   //each row interpolates with the one before it
   for (unsigned char y = HEIGHT - 1; y > 0; y--) {
@@ -451,16 +451,21 @@ void drawFrame(int pcnt) {
             + pcnt * matrixValue[y - 1][newX]) / 100.0)
             - pgm_read_byte(&(valueMask[y][newX]));
 
+        
         CRGB color = CHSV(
                        map8(effectScaleParam[MC_FIRE],0,230) + pgm_read_byte(&(hueMask[y][newX])), // H
                        255, // S
                        (uint8_t)max(0, nextv) // V
                      );
+                     
+        CRGB color2 = color.nscale8_video(effectBrightness);
 
-        leds[getPixelNumber(x, y)] = color;
+        leds[getPixelNumber(x, y)] = color2;
       } else if (y == 8 && SPARKLES) {
-        if (random8(0, 20) == 0 && getPixColorXY(x, y - 1) != 0) drawPixelXY(x, y, getPixColorXY(x, y - 1));
-        else drawPixelXY(x, y, 0);
+        if (random8(0, 20) == 0 && getPixColorXY(x, y - 1) != 0) 
+          drawPixelXY(x, y, getPixColorXY(x, y - 1));
+        else 
+          drawPixelXY(x, y, 0);
       } else if (SPARKLES) {
 
         // старая версия для яркости
@@ -481,8 +486,10 @@ void drawFrame(int pcnt) {
                    255,           // S
                    (uint8_t)(((100.0 - pcnt) * matrixValue[0][newX] + pcnt * line[newX]) / 100.0) // V
                  );
-    //leds[getPixelNumber(newX, 0)] = color; // На форуме пишут что это ошибка - вместо newX должно быть x, иначе
-    leds[getPixelNumber(x, 0)] = color;      // на матрицах шире 16 столбцов нижний правый угол неработает
+    CRGB color2 = color.nscale8_video(effectBrightness);
+                 
+    //leds[getPixelNumber(newX, 0)] = color2; // На форуме пишут что это ошибка - вместо newX должно быть x, иначе
+    leds[getPixelNumber(x, 0)] = color2;      // на матрицах шире 16 столбцов нижний правый угол неработает
   }
 }
 
