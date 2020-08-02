@@ -416,17 +416,8 @@ void clockOverlayWrapH(int8_t posX, int8_t posY) {
 
   clockTicker();
 
-  if (init_time) {
-    if (!showDateInClock) {
-      drawClock(hrs, mins, dotFlag, posX, posY);
-    } else {
-      if (showDateState)
-        drawCalendar(aday, amnth, ayear, dotFlag, posX, posY);
-      else  
-        drawClock(hrs, mins, dotFlag, posX, posY);
-      checkCalendarState();
-    }
-  }
+  if (init_time) 
+    drawClock(hrs, mins, dotFlag, posX, posY);
 }
 
 void clockOverlayUnwrapH(int8_t posX, int8_t posY) {
@@ -455,17 +446,8 @@ void clockOverlayWrapV(int8_t posX, int8_t posY) {
 
   clockTicker();
 
-  if (init_time) {
-    if (!showDateInClock) {
-      drawClock(hrs, mins, dotFlag, posX, posY);
-    } else {
-      if (showDateState)
-        drawCalendar(aday, amnth, ayear, dotFlag, posX, posY);
-      else  
-        drawClock(hrs, mins, dotFlag, posX, posY);
-      checkCalendarState();
-    }
-  }
+  if (init_time) 
+    drawClock(hrs, mins, dotFlag, posX, posY);
 }
 
 void clockOverlayUnwrapV(int8_t posX, int8_t posY) {

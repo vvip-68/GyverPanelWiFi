@@ -79,7 +79,7 @@ void loadSettings() {
   //  164 - Режим 4 по времени - часы                                                                        // getAM4hour()                   // setAM4hour(AM4_hour)
   //  165 - Режим 4 по тайвременимеру - минуты                                                               // getAM4minute()                 // setAM4minute(AM4_minute)
   //  166 - Режим 4 по времени - так же как для режима 1                                                     // getAM4effect()                 // setAM4effect(AM4_effect_id)
-  //  167 - Яркость свечения эффектов                                                                        // getEffectBrightness();        // saveEffectBrightness(effectBrightness)
+  //  167 - Яркость свечения эффектов                                                                        // getContrast();                 // saveContrast(contrast)
   //**168 - не используется
   //  ...
   //**299 - не используется
@@ -104,7 +104,8 @@ void loadSettings() {
     
   if (isInitialized) {    
     globalBrightness = getMaxBrightness();
-    effectBrightness = getEffectBrightness();
+    contrast = getContrast();
+    effectBrightness = getBrightnessCalculated(globalBrightness, contrast);
 
     autoplayTime = getAutoplayTime();
     idleTime = getIdleTime();    
@@ -185,7 +186,8 @@ void loadSettings() {
   } else {
     
     globalBrightness = BRIGHTNESS;
-    effectBrightness = BRIGHTNESS;
+    contrast = 255;
+    effectBrightness = getBrightnessCalculated(globalBrightness, contrast);
     
     autoplayTime = ((long)AUTOPLAY_PERIOD * 1000L);     // секунды -> миллисек
     idleTime = ((long)IDLE_TIME * 60L * 1000L);         // минуты -> миллисек
@@ -265,7 +267,7 @@ void loadSettings() {
 void saveDefaults() {
 
   saveMaxBrightness(globalBrightness);
-  saveEffectBrightness(effectBrightness);
+  saveContrast(contrast);
 
   saveAutoplayTime(autoplayTime / 1000L);
   saveIdleTime(constrain(idleTime / 60L / 1000L, 0, 255));
@@ -436,12 +438,12 @@ void saveMaxBrightness(byte brightness) {
   }
 }
 
-byte getEffectBrightness() {
+byte getContrast() {
   return EEPROMread(167);
 }
 
-void saveEffectBrightness(byte brightness) {
-  if (brightness != getEffectBrightness()) {
+void saveContrast(byte brightness) {
+  if (brightness != getContrast()) {
     EEPROMwrite(167, brightness);
   }
 }

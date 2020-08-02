@@ -85,7 +85,7 @@ void doEffectWithOverlay(byte aMode) {
   
   if (needOverlay) {
     setOverlayColors();
-    if (c_size == 1 && showDateInClock && showDateState) {
+    if (c_size == 1 && showDateInClock && showDateState) {      
       calendarOverlayWrap(CALENDAR_XC, CALENDAR_Y);
     } else {
       if (CLOCK_ORIENT == 0)

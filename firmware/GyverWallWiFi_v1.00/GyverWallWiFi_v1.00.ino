@@ -2,9 +2,10 @@
 // Гайд по постройке матрицы: https://alexgyver.ru/matrix_guide/
 // Страница проекта на GitHub: https://github.com/vvip-68/GyverLampWiFi
 // Автор: AlexGyver Technologies, 2019
-// Дальнейшее развитие: vvip, 2019
+// Дальнейшее развитие: vvip, 2019,2020
 // https://AlexGyver.ru/
-
+//
+// Дополнительные ссылки для Менеджера плат ESP8266 и ESP32 в Файл -> Настройки
 // http://arduino.esp8266.com/stable/pspackage_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
@@ -13,7 +14,7 @@
 
 #define FIRMWARE_VER F("GyverPanel-WiFi v.1.00.2020.0801")
 
-#include "a_def_hard.h"     // Определение параметров мвтрицы, пинов подключения и т.п
+#include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
 
 void setup() {

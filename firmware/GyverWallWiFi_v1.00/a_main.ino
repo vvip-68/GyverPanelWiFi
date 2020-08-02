@@ -397,15 +397,17 @@ void parsing() {
         if (intData[1] == 0 || intData[1] == 1) {
           if (intData[1] == 0) {
             globalBrightness = intData[2];
+            effectBrightness = getBrightnessCalculated(globalBrightness, contrast);            
             saveMaxBrightness(globalBrightness);
           } else {
-            effectBrightness = intData[2];
-            saveEffectBrightness(effectBrightness);
+            contrast = intData[2];
+            effectBrightness = getBrightnessCalculated(globalBrightness, contrast);
+            saveContrast(contrast);
           }
+
           if (!isNightClock) {
             if (specialMode) specialBrightness = globalBrightness;
             FastLED.setBrightness(globalBrightness);
-            FastLED.show();
           }
         }
         sendAcknowledge();
@@ -608,14 +610,18 @@ void parsing() {
       
       case 16:
         BTcontrol = intData[1] == 1;
-        if (intData[1] == 0) AUTOPLAY = true;
+        if      (intData[1] == 0) AUTOPLAY = true;
         else if (intData[1] == 1) AUTOPLAY = false;
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
         else if (intData[1] == 4) AUTOPLAY = intData[2] == 1;
         else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
 
-        idleState = !BTcontrol && AUTOPLAY; 
+        idleState = !BTcontrol && AUTOPLAY;
+        if (BTcontrol || idleTime == 0) {
+          idleTimer.setInterval(4294967295);
+          idleTimer.reset();
+        }
         if (AUTOPLAY) {
           autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
         }
@@ -649,12 +655,12 @@ void parsing() {
           autoplayTimer = millis();
           BTcontrol = false;
         }
-        if (idleTime == 0) // тамймер отключен
+        if (idleTime == 0 || BTcontrol) // тамймер отключен
           idleTimer.setInterval(4294967295);
         else
           idleTimer.setInterval(idleTime);
         idleTimer.reset();
-        idleState = !BTcontrol && AUTOPLAY; 
+        idleState = !BTcontrol && AUTOPLAY;
         sendAcknowledge();
         break;
 
@@ -1265,7 +1271,7 @@ void sendPageParams(int page) {
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
       if (BTcontrol)  str+="0|AP:"; else str+="1|AP:";
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|BE"+=String(effectBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
+      str+=String(globalBrightness) + "|BE:"+=String(contrast) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
       str+="|RM:" + String(useRandomSequence);
       str+="|PW:" + String(CURRENT_LIMIT);

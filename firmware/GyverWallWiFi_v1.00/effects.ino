@@ -20,10 +20,13 @@ void snowRoutine() {
   for (byte x = 0; x < WIDTH; x++) {
     // заполняем случайно верхнюю строку
     // а также не даём двум блокам по вертикали вместе быть
-    if (getPixColorXY(x, HEIGHT - 2) == 0 && (random8(0, map8(effectScaleParam[MC_SNOW],5,15)) == 0))
-      drawPixelXY(x, HEIGHT - 1, 0xE0FFFF - 0x101010 * random8(0, 4));
-    else
+    if (getPixColorXY(x, HEIGHT - 2) == 0 && (random8(0, map8(255 - effectScaleParam[MC_SNOW],5,15)) == 0)) {
+      CRGB color = CRGB(effectBrightness,effectBrightness,effectBrightness); /*0xE0FFFF*/
+      if (color.r > 0x20 && random8(0, 4) == 0) color = color - CRGB(0x10, 0x10, 0x10);
+      drawPixelXY(x, HEIGHT - 1, color);
+    } else {
       drawPixelXY(x, HEIGHT - 1, 0x000000);
+    }
   }
 }
 
@@ -49,7 +52,9 @@ void lightBallsRoutine() {
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
   // an automatic trend toward black -- by design.
-  blur2d(leds, WIDTH, HEIGHT, 25);
+  uint8_t blurAmount = map(effectBrightness, 32,255, 65,91);
+  uint8_t actualBrightness = map(effectBrightness, 32,255, 125,250);
+  blur2d(leds, WIDTH, HEIGHT, blurAmount);
 
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();
@@ -83,17 +88,18 @@ void lightBallsRoutine() {
       uint8_t cx = dir_mx == 0 ? (seg_offset * (ii + 1) + seg_size * ii) : 0;
       uint8_t cy = dir_mx == 0 ? 0 : (seg_offset * (ii + 1) + seg_size * ii);
       uint8_t color_shift = ii * 50;
-      if (cnt <= 1) { idx = XY(i+cx, j+cy); leds[idx] += CHSV( color_shift + d1, 200U, 255U); }
-      if (cnt <= 2) { idx = XY(j+cx, k+cy); leds[idx] += CHSV( color_shift + d2, 200U, 255U); }
-      if (cnt <= 3) { idx = XY(k+cx, m+cy); leds[idx] += CHSV( color_shift + d3, 200U, 255U); }
-      if (cnt <= 4) { idx = XY(m+cx, i+cy); leds[idx] += CHSV( color_shift + d4, 200U, 255U); }
+      if (cnt <= 1) { idx = XY(i+cx, j+cy); leds[idx] += CHSV( color_shift + d1, 200, actualBrightness); }
+      if (cnt <= 2) { idx = XY(j+cx, k+cy); leds[idx] += CHSV( color_shift + d2, 200, actualBrightness); }
+      if (cnt <= 3) { idx = XY(k+cx, m+cy); leds[idx] += CHSV( color_shift + d3, 200, actualBrightness); }
+      if (cnt <= 4) { idx = XY(m+cx, i+cy); leds[idx] += CHSV( color_shift + d4, 200, actualBrightness); }
       
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      byte fade_step = map8(effectBrightness, 1, 15);
       for (byte i2 = cy; i2 < cy + seg_size; i2++) { 
-        fadePixel(cx + BorderWidth, i2, 15);
-        fadePixel(cx + seg_size - BorderWidth - 1, i2, 15);
+        fadePixel(cx + BorderWidth, i2, fade_step);
+        fadePixel(cx + seg_size - BorderWidth - 1, i2, fade_step);
       }
     }
   }
@@ -104,18 +110,19 @@ void lightBallsRoutine() {
     uint8_t  k = beatsin8(m3, BorderWidth, WIDTH - BorderWidth - 1);
     uint8_t  m = beatsin8(m4, BorderWidth, HEIGHT - BorderWidth - 1);
     
-    if (cnt <= 1) { idx = XY(i, j); leds[idx] += CHSV( ms / 29, 200U, 255U); }
-    if (cnt <= 2) { idx = XY(k, j); leds[idx] += CHSV( ms / 41, 200U, 255U); }
-    if (cnt <= 3) { idx = XY(k, m); leds[idx] += CHSV( ms / 73, 200U, 255U); }
-    if (cnt <= 4) { idx = XY(i, m); leds[idx] += CHSV( ms / 97, 200U, 255U); }
+    if (cnt <= 1) { idx = XY(i, j); leds[idx] += CHSV( ms / 29, 200, actualBrightness); }
+    if (cnt <= 2) { idx = XY(k, j); leds[idx] += CHSV( ms / 41, 200, actualBrightness); }
+    if (cnt <= 3) { idx = XY(k, m); leds[idx] += CHSV( ms / 73, 200, actualBrightness); }
+    if (cnt <= 4) { idx = XY(i, m); leds[idx] += CHSV( ms / 97, 200, actualBrightness); }
   
     if (WIDTH == HEIGHT) {
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      byte fade_step = map8(effectBrightness, 1, 15);
       for (byte i = 0; i < HEIGHT; i++) { 
-        fadePixel(0, i, 15);
-        fadePixel(WIDTH-1, i, 15);
+        fadePixel(0, i, fade_step);
+        fadePixel(WIDTH-1, i, fade_step);
       }
     } 
   }
@@ -141,7 +148,9 @@ void swirlRoutine() {
   // Note that we never actually clear the matrix, we just constantly
   // blur it repeatedly.  Since the blurring is 'lossy', there's
   // an automatic trend toward black -- by design.
-  uint8_t blurAmount = beatsin8(2,64,100);
+
+  uint8_t blurAmount = map(effectBrightness, 32,255, 65,91);
+  uint8_t actualBrightness = map(effectBrightness, 32,255, 125,250);
   blur2d( leds, WIDTH, HEIGHT, blurAmount);
 
   uint32_t ms = millis();  
@@ -177,21 +186,22 @@ void swirlRoutine() {
       uint8_t color_shift = ii * 50;
     
       // The color of each point shifts over time, each at a different speed.
-      idx = XY( i+cx, j+cy); leds[idx] += CHSV( color_shift + d1, 200, 192);
-      idx = XY(ni+cx,nj+cy); leds[idx] += CHSV( color_shift + d2, 200, 192);
-      idx = XY( i+cx,nj+cy); leds[idx] += CHSV( color_shift + d3, 200, 192);
-      idx = XY(ni+cx, j+cy); leds[idx] += CHSV( color_shift + d4, 200, 192);
-      idx = XY( j+cx, i+cy); leds[idx] += CHSV( color_shift + d5, 200, 192);
-      idx = XY(nj+cx,ni+cy); leds[idx] += CHSV( color_shift + d6, 200, 192);
+      idx = XY( i+cx, j+cy); leds[idx] += CHSV( color_shift + d1, 200, actualBrightness);
+      idx = XY(ni+cx,nj+cy); leds[idx] += CHSV( color_shift + d2, 200, actualBrightness);
+      idx = XY( i+cx,nj+cy); leds[idx] += CHSV( color_shift + d3, 200, actualBrightness);
+      idx = XY(ni+cx, j+cy); leds[idx] += CHSV( color_shift + d4, 200, actualBrightness);
+      idx = XY( j+cx, i+cy); leds[idx] += CHSV( color_shift + d5, 200, actualBrightness);
+      idx = XY(nj+cx,ni+cy); leds[idx] += CHSV( color_shift + d6, 200, actualBrightness);
       
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      byte fade_step = map8(effectBrightness, 1, 15);
       for (byte i2 = cy; i2 < cy + seg_size; i2++) { 
-        fadePixel(cx, i2, 15);
-        fadePixel(cx + BorderWidth, i2, 15);
-        fadePixel(cx + seg_size - 1, i2, 15);
-        fadePixel(cx + seg_size - BorderWidth - 1, i2, 15);
+        fadePixel(cx, i2, fade_step);
+        fadePixel(cx + BorderWidth, i2, fade_step);
+        fadePixel(cx + seg_size - 1, i2, fade_step);
+        fadePixel(cx + seg_size - BorderWidth - 1, i2, fade_step);
       }
     }
   } 
@@ -206,29 +216,33 @@ void swirlRoutine() {
     uint8_t nj = (HEIGHT-1)-j;
 
     // The color of each point shifts over time, each at a different speed.
-    idx = XY( i, j); leds[idx] += CHSV( ms / 11, 200, 192);
-    idx = XY(ni,nj); leds[idx] += CHSV( ms / 13, 200, 192);
-    idx = XY( i,nj); leds[idx] += CHSV( ms / 17, 200, 192);
-    idx = XY(ni, j); leds[idx] += CHSV( ms / 29, 200, 192);
+    idx = XY( i, j); leds[idx] += CHSV( ms / 11, 200, actualBrightness);
+    idx = XY(ni,nj); leds[idx] += CHSV( ms / 13, 200, actualBrightness);
+    idx = XY( i,nj); leds[idx] += CHSV( ms / 17, 200, actualBrightness);
+    idx = XY(ni, j); leds[idx] += CHSV( ms / 29, 200, actualBrightness);
     
     if (HEIGHT == WIDTH) {
       // для квадратных матриц - 6 точек создают более красивую картину
-      idx = XY( j, i); leds[idx] += CHSV( ms / 37, 200, 192);
-      idx = XY(nj,ni); leds[idx] += CHSV( ms / 41, 200, 192);
+      idx = XY( j, i); leds[idx] += CHSV( ms / 37, 200, actualBrightness);
+      idx = XY(nj,ni); leds[idx] += CHSV( ms / 41, 200, actualBrightness);
       
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
+      byte fade_step = map8(effectBrightness, 1, 15);
       for (byte i = 0; i < HEIGHT; i++) { 
-        fadePixel(0, i, 15);
-        fadePixel(WIDTH-1, i, 15);
+        fadePixel(0, i, fade_step);
+        fadePixel(WIDTH-1, i, fade_step);
       }
     }  
   }
 }
 
+// Эта функция в FastLED объявлена как forward;
+// линкуется с библиотекой FastLed, которая использует её для определения индекса светодиода в массиве leds[]
+// ври вызове функций типа blur2d() и т.п.
 uint16_t XY(uint8_t x, uint8_t y) { 
-  return getPixelNumber(x, y); 
+  return getPixelNumber(x, y);
 }
 
 // ***************************** БЛУДНЫЙ КУБИК *****************************
@@ -245,7 +259,7 @@ void ballRoutine() {
     for (byte i = 0; i < 2; i++) {
       coordB[i] = WIDTH / 2 * 10;
       vectorB[i] = random8(8, 20);
-      ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+      ballColor = CHSV(random8(0, 9) * 28, 255, effectBrightness);
     }
     modeCode = MC_BALL;
     loadingFlag = false;
@@ -256,20 +270,20 @@ void ballRoutine() {
     if (coordB[i] < 0) {
       coordB[i] = 0;
       vectorB[i] = -vectorB[i];
-      if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+      if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, effectBrightness);
       //vectorB[i] += random8(0, 6) - 3;
     }
   }
   if (coordB[0] > (WIDTH - ballSize) * 10) {
     coordB[0] = (WIDTH - ballSize) * 10;
     vectorB[0] = -vectorB[0];
-    if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+    if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, effectBrightness);
     //vectorB[0] += random8(0, 6) - 3;
   }
   if (coordB[1] > (HEIGHT - ballSize) * 10) {
     coordB[1] = (HEIGHT - ballSize) * 10;
     vectorB[1] = -vectorB[1];
-    if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, 255);
+    if (RANDOM_COLOR) ballColor = CHSV(random8(0, 9) * 28, 255, effectBrightness);
     //vectorB[1] += random8(0, 6) - 3;
   }
   FastLED.clear();
@@ -289,7 +303,7 @@ void rainbowDiagonalRoutine() {
   hue += 2;
   for (byte x = 0; x < WIDTH; x++) {
     for (byte y = 0; y < HEIGHT; y++) {
-      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / maxDim)), 255, 255);
+      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / maxDim)), 255, effectBrightness);
       drawPixelXY(x, y, thisColor); 
     }
   }
@@ -305,7 +319,7 @@ void rainbowVertical() {
   }
   hue += 2;
   for (byte j = 0; j < HEIGHT; j++) {
-    CHSV thisColor = CHSV((byte)(hue + j * map8(effectScaleParam[MC_RAINBOW_VERT],1,WIDTH)), 255, 255);
+    CHSV thisColor = CHSV((byte)(hue + j * map8(effectScaleParam[MC_RAINBOW_VERT],1,WIDTH)), 255, effectBrightness);
     for (byte i = 0; i < WIDTH; i++)
       drawPixelXY(i, j, thisColor);
   }
@@ -321,7 +335,7 @@ void rainbowHorizontal() {
   }
   hue += 2;
   for (byte i = 0; i < WIDTH; i++) {
-    CHSV thisColor = CHSV((byte)(hue + i * map8(effectScaleParam[MC_RAINBOW_HORIZ],1,HEIGHT)), 255, 255);
+    CHSV thisColor = CHSV((byte)(hue + i * map8(effectScaleParam[MC_RAINBOW_HORIZ],1,HEIGHT)), 255, effectBrightness);
     for (byte j = 0; j < HEIGHT; j++)
       drawPixelXY(i, j, thisColor);
   }
@@ -336,7 +350,7 @@ void colorsRoutine() {
     FastLED.clear();  // очистить
   }
   hue += map8(effectScaleParam[MC_COLORS],1,10);
-  CHSV hueColor = CHSV(hue, 255, 255);
+  CHSV hueColor = CHSV(hue, 255, effectBrightness);
   globalColor = getColorInt(hueColor);
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = hueColor;
@@ -435,7 +449,7 @@ void drawFrame(int pcnt) {
         nextv =
           (((100.0 - pcnt) * matrixValue[y][newX]
             + pcnt * matrixValue[y - 1][newX]) / 100.0)
-          - pgm_read_byte(&(valueMask[y][newX]));
+            - pgm_read_byte(&(valueMask[y][newX]));
 
         CRGB color = CHSV(
                        map8(effectScaleParam[MC_FIRE],0,230) + pgm_read_byte(&(hueMask[y][newX])), // H
@@ -452,8 +466,8 @@ void drawFrame(int pcnt) {
         // старая версия для яркости
         if (getPixColorXY(x, y - 1) > 0)
           drawPixelXY(x, y, getPixColorXY(x, y - 1));
-        else drawPixelXY(x, y, 0);
-
+        else 
+          drawPixelXY(x, y, 0);
       }
     }
   }
@@ -481,17 +495,17 @@ void matrixRoutine() {
     FastLED.clear();
   }
   
-  uint32_t cut_out = HEIGHT < 10 ? 0x004000 : 0x002000; // на 0x004000 хвосты мматрицы короткие (4 точки), на 0x002000 - длиннее (8 точек)
+  uint32_t cut_out = HEIGHT < 10 ? 0x40 : 0x20; // на 0x004000 хвосты мматрицы короткие (4 точки), на 0x002000 - длиннее (8 точек)
 
   for (byte x = 0; x < WIDTH; x++) {
     // заполняем случайно верхнюю строку
-    uint32_t thisColor = getPixColorXY(x, HEIGHT - 1);
-    if (thisColor == 0)
-      drawPixelXY(x, HEIGHT - 1, 0x00FF00 * (random8(0, map8(effectScaleParam[MC_MATRIX],5,15)) == 0));
-    else if (thisColor < cut_out)
+    CRGB thisColor = getPixColorXY(x, HEIGHT - 1);
+    if (thisColor.g == 0) {
+      leds[getPixelNumber(x, HEIGHT - 1)] = random8(0, map8(255 - effectScaleParam[MC_MATRIX],5,15)) == 0 ? CRGB(0, effectBrightness, 0) : CRGB(0,0,0);
+    } else if (thisColor.g < cut_out)
       drawPixelXY(x, HEIGHT - 1, 0);
     else
-      drawPixelXY(x, HEIGHT - 1, thisColor - cut_out);
+      drawPixelXY(x, HEIGHT - 1, thisColor - CRGB(cut_out, cut_out, cut_out));
   }
 
   // сдвигаем всё вниз
@@ -513,7 +527,7 @@ void matrixRoutine() {
 int8_t BALLS_AMOUNT;
 int coord[BALLS_AMOUNT_MAX][2];
 int8_t vector[BALLS_AMOUNT_MAX][2];
-CRGB ballColors[BALLS_AMOUNT_MAX];
+byte ballColors[BALLS_AMOUNT_MAX];
 
 void ballsRoutine() {
   if (loadingFlag) {
@@ -534,14 +548,14 @@ void ballsRoutine() {
       coord[j][1] = HEIGHT / 2 * 10;
       random8(0, 2) ? sign = 1 : sign = -1;
       vector[j][1] = random8(4, 15) * sign;
-      ballColors[j] = CHSV(random8(0, 9) * 28, 255, 255);
+      ballColors[j] = random8(0, 255);
     }
   }
 
   if (!BALL_TRACK)    // если режим БЕЗ следов шариков
     FastLED.clear();  // очистить
   else {              // режим со следами
-    fader(TRACK_STEP);
+    fader(map8(effectBrightness, 4, TRACK_STEP));
   }
 
   // движение шариков
@@ -564,29 +578,7 @@ void ballsRoutine() {
       coord[j][1] = (HEIGHT - 1) * 10;
       vector[j][1] = -vector[j][1];
     }
-    leds[getPixelNumber(coord[j][0] / 10, coord[j][1] / 10)] =  ballColors[j];
-  }
-}
-
-// функция плавного угасания цвета для всех пикселей
-void fader(byte step) {
-  for (byte i = 0; i < WIDTH; i++) {
-    for (byte j = 0; j < HEIGHT; j++) {
-      fadePixel(i, j, step);
-    }
-  }
-}
-
-void fadePixel(byte i, byte j, byte step) {     // новый фейдер
-  int pixelNum = getPixelNumber(i, j);
-  if (getPixColor(pixelNum) == 0) return;
-
-  if (leds[pixelNum].r >= 30 ||
-      leds[pixelNum].g >= 30 ||
-      leds[pixelNum].b >= 30) {
-    leds[pixelNum].fadeToBlackBy(step);
-  } else {
-    leds[pixelNum] = 0;
+    leds[getPixelNumber(coord[j][0] / 10, coord[j][1] / 10)] =  CHSV(ballColors[j], 255, effectBrightness);
   }
 }
 
@@ -604,6 +596,12 @@ void starfallRoutine() {
     FastLED.clear();  // очистить
   }
 
+  /*
+  uint8_t blurAmount = map(effectBrightness, 32,255, 65,91);
+  uint8_t actualBrightness = map(effectBrightness, 32,255, 125,250);
+  blur2d(leds, WIDTH, HEIGHT, blurAmount);
+  */
+
   STAR_DENSE = map8(effectScaleParam[MC_SPARKLES],30,90);
   
   // заполняем головами комет левую и верхнюю линию
@@ -612,7 +610,7 @@ void starfallRoutine() {
         && (random8(0, STAR_DENSE) == 0)
         && getPixColorXY(0, i + 1) == 0
         && getPixColorXY(0, i - 1) == 0)
-      leds[getPixelNumber(0, i)] = CHSV(random8(0, 200), SATURATION, 255);
+      leds[getPixelNumber(0, i)] = CHSV(random8(0, 200), SATURATION, effectBrightness);
   }
   
   for (byte i = 0; i < WIDTH-4; i++) {
@@ -620,7 +618,7 @@ void starfallRoutine() {
         && (random8(0, map8(effectScaleParam[MC_STARFALL],10,120)) == 0)
         && getPixColorXY(i + 1, HEIGHT - 1) == 0
         && getPixColorXY(i - 1, HEIGHT - 1) == 0)
-      leds[getPixelNumber(i, HEIGHT - 1)] = CHSV(random8(0, 200), SATURATION, 255);
+      leds[getPixelNumber(i, HEIGHT - 1)] = CHSV(random8(0, 200), SATURATION, effectBrightness);
   }
 
   // сдвигаем по диагонали
@@ -637,6 +635,7 @@ void starfallRoutine() {
   for (byte i = 0; i < WIDTH-4; i++) {
     fadePixel(i, HEIGHT - 1, TAIL_STEP);
   }
+
 }
 
 // *********************  КОНФЕТТИ ******************
@@ -653,9 +652,9 @@ void sparklesRoutine() {
     byte x = random8(0, WIDTH);
     byte y = random8(0, HEIGHT);
     if (getPixColorXY(x, y) == 0)
-      leds[getPixelNumber(x, y)] = CHSV(random8(0, 255), 255, 255);
+      leds[getPixelNumber(x, y)] = CHSV(random8(0, 255), 255, effectBrightness);
   }
-  fader(BRIGHT_STEP);
+  fader(map8(effectBrightness, 4, BRIGHT_STEP));
 }
 
 // ----------------------------- СВЕТЛЯКИ ------------------------------
@@ -663,7 +662,7 @@ void sparklesRoutine() {
 #define LIGHTERS_AM 100
 int lightersPos[2][LIGHTERS_AM];
 int8_t lightersSpeed[2][LIGHTERS_AM];
-CHSV lightersColor[LIGHTERS_AM];
+byte lightersColor[LIGHTERS_AM];
 byte loopCounter;
 
 int angle[LIGHTERS_AM];
@@ -676,17 +675,17 @@ void lightersRoutine() {
     modeCode = MC_LIGHTERS;
     randomSeed(millis());
     for (byte i = 0; i < LIGHTERS_AM; i++) {
-      lightersPos[0][i] = random8(0, WIDTH * 10);
-      lightersPos[1][i] = random8(0, HEIGHT * 10);
+      lightersPos[0][i] = random(0, WIDTH * 10);
+      lightersPos[1][i] = random(0, HEIGHT * 10);
       lightersSpeed[0][i] = random(-10, 10);
       lightersSpeed[1][i] = random(-10, 10);
-      lightersColor[i] = CHSV(random8(0, 255), 255, 255);
+      lightersColor[i] = random(0, 255);
     }
   }
   FastLED.clear();
   if (++loopCounter > 20) loopCounter = 0;
   for (byte i = 0; i < map8(effectScaleParam[MC_LIGHTERS],5,150); i++) {
-    if (loopCounter == 0) {     // меняем скорость каждые 255 отрисовок
+    if (loopCounter == 0) {     // меняем скорость каждые 20 отрисовок
       lightersSpeed[0][i] += random(-3, 4);
       lightersSpeed[1][i] += random(-3, 4);
       lightersSpeed[0][i] = constrain(lightersSpeed[0][i], -20, 20);
@@ -707,7 +706,7 @@ void lightersRoutine() {
       lightersPos[1][i] = (HEIGHT - 1) * 10;
       lightersSpeed[1][i] = -lightersSpeed[1][i];
     }
-    drawPixelXY(lightersPos[0][i] / 10, lightersPos[1][i] / 10, lightersColor[i]);
+    drawPixelXY(lightersPos[0][i] / 10, lightersPos[1][i] / 10, CHSV(lightersColor[i], 255, effectBrightness));
   }
 }
 
@@ -1003,9 +1002,10 @@ void fillColorProcedure() {
   byte bright =
     isAlarming && !isAlarmStopped 
     ? dawnBrightness
-    : (specialMode ? specialBrightness : globalBrightness);
+    : (specialMode ? specialBrightness : effectBrightness);
 
-  FastLED.setBrightness(bright);  
+  CHSV color = rgb2hsv_approximate(globalColor);
+  CHSV color2 = CHSV(color.h, color.s, bright);
 
-  fillAll(globalColor);    
+  fillAll(color2);    
 }

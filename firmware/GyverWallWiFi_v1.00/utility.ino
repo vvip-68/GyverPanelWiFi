@@ -164,6 +164,28 @@ uint16_t getPixelNumber(int8_t x, int8_t y) {
   }
 }
 
+// функция плавного угасания цвета для всех пикселей
+void fader(byte step) {
+  for (byte i = 0; i < WIDTH; i++) {
+    for (byte j = 0; j < HEIGHT; j++) {
+      fadePixel(i, j, step);
+    }
+  }
+}
+
+void fadePixel(byte i, byte j, byte step) {     // новый фейдер
+  int pixelNum = getPixelNumber(i, j);
+  if (getPixColor(pixelNum) == 0) return;
+
+  if (leds[pixelNum].r >= 5 ||
+      leds[pixelNum].g >= 5 ||
+      leds[pixelNum].b >= 5) {
+    leds[pixelNum].fadeToBlackBy(step);
+  } else {
+    leds[pixelNum] = 0;
+  }
+}
+
 // hex string to uint32_t
 uint32_t HEXtoInt(String hexValue) {
   byte tens, ones, number1, number2, number3;
@@ -224,4 +246,16 @@ String GetToken(String str, uint32_t index, char separator) {
 
 uint32_t getColorInt(CRGB color) {
   return color.r << 16 | color.g << 8 | color.b;
+}
+
+// Вычисление значения яркости эффектов по отношению к общей яркости
+// Общая яркость регулируется через FastLED.setBrightness(); 
+// Вычисленная яркость эффекта влияет на комонент яркости V в модели HCSV
+byte getBrightnessCalculated(byte brightness, byte contrast) {
+  byte value = map8(contrast, 16, 255);
+  Serial.print(F("Общая яркость: "));
+  Serial.println(brightness);
+  Serial.print(F("Яркость эффекта: "));
+  Serial.println(value);
+  return value;
 }
