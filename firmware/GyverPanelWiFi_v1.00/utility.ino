@@ -252,10 +252,6 @@ uint32_t getColorInt(CRGB color) {
 // Общая яркость регулируется через FastLED.setBrightness(); 
 // Вычисленная яркость эффекта влияет на комонент яркости V в модели HCSV
 byte getBrightnessCalculated(byte brightness, byte contrast) {
-  byte value = map8(contrast, 16, 255);
-  Serial.print(F("Общая яркость: "));
-  Serial.println(brightness);
-  Serial.print(F("Яркость эффекта: "));
-  Serial.println(value);
-  return value;
+  // В данном варианте общая яркость не учитывается в расчете
+  return map8(contrast, 16, 255);
 }

@@ -1,5 +1,5 @@
-#define EEPROM_OK 0x55                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
-#define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 4 байта на эффект
+#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 5 байт на эффект
 #define TEXT_EEPROM 800                    // начальная ячейка eeprom с текстом бегущих строк
 
 void loadSettings() {
@@ -79,14 +79,14 @@ void loadSettings() {
   //  164 - Режим 4 по времени - часы                                                                        // getAM4hour()                   // setAM4hour(AM4_hour)
   //  165 - Режим 4 по тайвременимеру - минуты                                                               // getAM4minute()                 // setAM4minute(AM4_minute)
   //  166 - Режим 4 по времени - так же как для режима 1                                                     // getAM4effect()                 // setAM4effect(AM4_effect_id)
-  //  167 - Яркость свечения эффектов                                                                        // getContrast();                 // saveContrast(contrast)
-  //**168 - не используется
+  //**167 - не используется
   //  ...
   //**299 - не используется
-  //  300 - 300+(Nэфф*4)   - скорость эффекта
-  //  301 - 300+(Nэфф*4)+1 - эффект в авторежиме: 1 - использовать; 0 - не использовать
-  //  302 - 300+(Nэфф*4)+2 - специальный параметр эффекта #1
-  //  303 - 300+(Nэфф*4)+3 - специальный параметр эффекта #2
+  //  300 - 300+(Nэфф*5)   - скорость эффекта
+  //  301 - 300+(Nэфф*5)+1 - эффект в авторежиме: 1 - использовать; 0 - не использовать
+  //  302 - 300+(Nэфф*5)+2 - специальный параметр эффекта #1
+  //  303 - 300+(Nэфф*5)+3 - специальный параметр эффекта #2
+  //  304 - 300+(Nэфф*5)+4 - контраст эффекта
   //********
   //  800 - текст строк бегущей строки сплошным массивом, строки разделены символом '\r'
   //********
@@ -104,8 +104,6 @@ void loadSettings() {
     
   if (isInitialized) {    
     globalBrightness = getMaxBrightness();
-    contrast = getContrast();
-    effectBrightness = getBrightnessCalculated(globalBrightness, contrast);
 
     autoplayTime = getAutoplayTime();
     idleTime = getIdleTime();    
@@ -186,8 +184,6 @@ void loadSettings() {
   } else {
     
     globalBrightness = BRIGHTNESS;
-    contrast = 255;
-    effectBrightness = getBrightnessCalculated(globalBrightness, contrast);
     
     autoplayTime = ((long)AUTOPLAY_PERIOD * 1000L);     // секунды -> миллисек
     idleTime = ((long)IDLE_TIME * 60L * 1000L);         // минуты -> миллисек
@@ -230,6 +226,7 @@ void loadSettings() {
     for (byte i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i]  = 50;  // среднее значение для параметра. Конкретное значение зависит от эффекта
       effectScaleParam2[i] = 0;   // второй параметр эффекта по умолчанию равен 0. Конкретное значение зависит от эффекта
+      effectContrast[i]    = 255; // контраст эффекта - полная яркость
     }
 
     globalColor = 0xFF;
@@ -267,7 +264,6 @@ void loadSettings() {
 void saveDefaults() {
 
   saveMaxBrightness(globalBrightness);
-  saveContrast(contrast);
 
   saveAutoplayTime(autoplayTime / 1000L);
   saveIdleTime(constrain(idleTime / 60L / 1000L, 0, 255));
@@ -300,7 +296,7 @@ void saveDefaults() {
 
   // Настройки по умолчанию для эффектов
   for (int i = 0; i < MAX_EFFECT; i++) {
-    saveEffectParams(i, effectSpeed, true, true, true, 50, 0);
+    saveEffectParams(i, effectSpeed, true, true, true, 50, 0, 255);
   }
 
   // Специальные настройки отдельных эффектов
@@ -364,7 +360,7 @@ void saveSettings() {
   eepromModified = false;
 }
 
-void saveEffectParams(byte effect, int speed, boolean use, boolean use_text_overlay, boolean use_clock_overlay, byte value1, byte value2) {
+void saveEffectParams(byte effect, int speed, boolean use, boolean use_text_overlay, boolean use_clock_overlay, byte value1, byte value2, byte contrast) {
   const int addr = EFFECT_EEPROM;  
   byte value = 0;
 
@@ -372,10 +368,11 @@ void saveEffectParams(byte effect, int speed, boolean use, boolean use_text_over
   if (use_text_overlay)  value |= 0x02;
   if (use_clock_overlay) value |= 0x04;
   
-  EEPROMwrite(addr + effect*4, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта  
-  EEPROMwrite(addr + effect*4 + 1, value);                                                                      // b0 - Вкл/Выкл эффект в демо-режиме; b1 - Вкл/выкл оверлей текста; ; b1 - Вкл/выкл оверлей часов   
-  EEPROMwrite(addr + effect*4 + 2, value1);                                                                           // Параметр эффекта #1 
-  EEPROMwrite(addr + effect*4 + 3, value2);                                                                           // Параметр эффекта #2 
+  EEPROMwrite(addr + effect*5, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта  
+  EEPROMwrite(addr + effect*5 + 1, value);                                                                      // b0 - Вкл/Выкл эффект в демо-режиме; b1 - Вкл/выкл оверлей текста; ; b1 - Вкл/выкл оверлей часов   
+  EEPROMwrite(addr + effect*5 + 2, value1);                                                                           // Параметр эффекта #1 
+  EEPROMwrite(addr + effect*5 + 3, value2);                                                                           // Параметр эффекта #2 
+  EEPROMwrite(addr + effect*5 + 4, contrast);                                                                         // Контраст эффекта 
   effectScaleParam[effect] = value1;
   effectScaleParam2[effect] = value2;
 }
@@ -383,60 +380,60 @@ void saveEffectParams(byte effect, int speed, boolean use, boolean use_text_over
 void saveEffectSpeed(byte effect, int speed) {
   if (speed != getEffectSpeed(effect)) {
     const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*4, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта
+    EEPROMwrite(addr + effect*5, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта
   }
 }
 
 byte getEffectSpeed(byte effect) {
   const int addr = EFFECT_EEPROM;
-  return map8(EEPROMread(addr + effect*4),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
+  return map8(EEPROMread(addr + effect*5),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
 }
 
 boolean getEffectUsage(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 1);
+  byte value = EEPROMread(addr + effect*5 + 1);
   return (value & 0x01) != 0;                                  // b0 - использовать эффект в демо-режиме
 }
 
 void saveEffectUsage(byte effect, boolean use) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 1);
+  byte value = EEPROMread(addr + effect*5 + 1);
   byte new_value = use ? (value | 0x01) : (value & ~0x01);
   if (value != new_value) {
     const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*4 + 1, new_value);               // b0 - использовать эффект в демо-режиме
+    EEPROMwrite(addr + effect*5 + 1, new_value);               // b0 - использовать эффект в демо-режиме
   }
 }
 
 boolean getEffectTextOverlayUsage(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 1);
+  byte value = EEPROMread(addr + effect*5 + 1);
   return (value & 0x02) != 0;                                  // b1 - использовать в эффекте бегущую строку поверх эффекта
 }
 
 void saveEffectTextOverlayUsage(byte effect, boolean use) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 1);
+  byte value = EEPROMread(addr + effect*5 + 1);
   byte new_value = use ? (value | 0x02) : (value & ~0x02);
   if (value != new_value) {
     const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*4 + 1, new_value);               // b1 - использовать в эффекте бегущую строку поверх эффекта
+    EEPROMwrite(addr + effect*5 + 1, new_value);               // b1 - использовать в эффекте бегущую строку поверх эффекта
   }
 }
 
 boolean getEffectClockOverlayUsage(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 1);
+  byte value = EEPROMread(addr + effect*5 + 1);
   return (value & 0x04) != 0;                                  // b2 - использовать в эффекте часы поверх эффекта
 }
 
 void saveEffectClockOverlayUsage(byte effect, boolean use) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 1);
+  byte value = EEPROMread(addr + effect*5 + 1);
   byte new_value = use ? (value | 0x04) : (value & ~0x04);
   if (value != new_value) {
     const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*4 + 1, new_value);               // b2 - использовать в эффекте часы поверх эффекта
+    EEPROMwrite(addr + effect*5 + 1, new_value);               // b2 - использовать в эффекте часы поверх эффекта
   }
 }
 
@@ -444,14 +441,14 @@ void setScaleForEffect(byte effect, byte value) {
   if (value != getScaleForEffect(effect)) {
 
     const int addr = EFFECT_EEPROM;
-    EEPROMwrite(addr + effect*4 + 2, value);
+    EEPROMwrite(addr + effect*5 + 2, value);
     effectScaleParam[effect] = value;
   }  
 }
 
 byte getScaleForEffect(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 2);
+  byte value = EEPROMread(addr + effect*5 + 2);
   effectScaleParam[effect] = value;
   return value;
 }
@@ -459,16 +456,31 @@ byte getScaleForEffect(byte effect) {
 void setScaleForEffect2(byte effect, byte value) {
   if (value != getScaleForEffect2(effect)) {
     const int addr = EFFECT_EEPROM;
-    EEPROMwrite(addr + effect*4 + 3, value);
+    EEPROMwrite(addr + effect*5 + 3, value);
     effectScaleParam2[effect] = value;
   }  
 }
 
 byte getScaleForEffect2(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*4 + 3);
+  byte value = EEPROMread(addr + effect*5 + 3);
   effectScaleParam2[effect] = value;
   return value;
+}
+
+byte getEffectContrast(byte effect) {
+  const int addr = EFFECT_EEPROM;
+  byte contrast = EEPROMread(addr + effect*5 + 4);
+  effectContrast[effect] = contrast;
+  return contrast;
+}
+
+void setEffectContrast(byte effect, byte contrast) {
+  if (contrast != getEffectContrast(effect)) {
+    const int addr = EFFECT_EEPROM;
+    EEPROMwrite(addr + effect*5 + 4, contrast);
+    effectContrast[effect] = contrast;
+  }  
 }
 
 byte getMaxBrightness() {
@@ -478,16 +490,6 @@ byte getMaxBrightness() {
 void saveMaxBrightness(byte brightness) {
   if (brightness != getMaxBrightness()) {
     EEPROMwrite(1, brightness);
-  }
-}
-
-byte getContrast() {
-  return EEPROMread(167);
-}
-
-void saveContrast(byte brightness) {
-  if (brightness != getContrast()) {
-    EEPROMwrite(167, brightness);
   }
 }
 

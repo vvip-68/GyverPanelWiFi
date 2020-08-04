@@ -151,7 +151,7 @@ void process() {
         resetModes();  
         idleTimer.setInterval(4294967295);
         idleTimer.reset();        
-        BTcontrol = true;
+        manualMode = true;
         AUTOPLAY = false;
         saveAutoplay(AUTOPLAY);        
         if (tmpSaveSpecial) setRandomMode();
@@ -165,7 +165,7 @@ void process() {
         idleTimer.reset();        
         resetModes();  
 
-        BTcontrol = false;
+        manualMode = false;
         AUTOPLAY = true;
         saveAutoplay(AUTOPLAY);
         
@@ -277,7 +277,6 @@ void parsing() {
     Протокол связи, посылка начинается с режима. Режимы:
     4 - яркость - 
       $4 0 value   установить текущий уровень общей яркости
-      $4 1 value   установить текущий уровень яркости эффектов; Использование: % от общей яркости => 0..255 -> 10..100% от общей 
     6 - текст $6 N|some text, где N - назначение текста;
         0 - текст бегущей строки
         1 - имя сервера NTP
@@ -293,6 +292,7 @@ void parsing() {
       - $8 3 N D; D -> параметр #2 для эффекта N;
       - $8 4 N X; вкл/выкл оверлей текста поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 5 N X; вкл/выкл оверлей часов поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
+      - $8 6 N D; D -> контрастность эффекта N;
     14 - быстрая установка ручных режимов с пред-настройками
        - $14 0;  Черный экран (выкл);  
        - $14 1;  Белый экран (освещение);  
@@ -393,19 +393,13 @@ void parsing() {
       // ----------------------------------------------------
       // 4 - яркость - 
       //  $4 0 value   установить текущий уровень общей яркости
-      //  $4 1 value   установить текущий уровень яркости эффектов; Использование: % от общей яркости => 0..255 -> 10..100% от общей 
       // ----------------------------------------------------
       
       case 4:
-        if (intData[1] == 0 || intData[1] == 1) {
+        if (intData[1] == 0) {
           if (intData[1] == 0) {
             globalBrightness = intData[2];
-            effectBrightness = getBrightnessCalculated(globalBrightness, contrast);            
             saveMaxBrightness(globalBrightness);
-          } else {
-            contrast = intData[2];
-            effectBrightness = getBrightnessCalculated(globalBrightness, contrast);
-            saveContrast(contrast);
           }
 
           if (!isNightClock) {
@@ -521,6 +515,7 @@ void parsing() {
       //  - $8 3 N D; D -> параметр #2 для эффекта N;
       //  - $8 4 N X; вкл/выкл оверлей текста поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       //  - $8 5 N X; вкл/выкл оверлей часов поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
+      //  - $8 6 N D; D -> контрастность эффекта N;
       // ----------------------------------------------------
 
       case 8:      
@@ -536,7 +531,8 @@ void parsing() {
              if (!(allowHorizontal || allowVertical)) tmp_eff++;
           }          
           setEffect(tmp_eff);
-          BTcontrol = true;
+          manualMode = true;
+          AUTOPLAY = false;
           loadingFlag = intData[1] == 0;
           if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
         } else 
@@ -591,10 +587,15 @@ void parsing() {
         if (intData[1] == 5) {
           // Вкл/выкл оверлей часов поверх эффекта
           saveEffectClockOverlayUsage(tmp_eff, intData[3] == 1);           
-        }
+        } else
 
-        // Для "0","2","4","5" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
-        if (intData[1] == 0 || intData[1] == 2 || intData[1] == 4 || intData[1] == 5) {
+        if (intData[1] == 6) {
+          // Контрастность эффекта
+          setEffectContrast(tmp_eff, intData[3]);
+        } 
+
+        // Для "0","2","4","5","6" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
+        if (intData[1] != 1) {
           sendPageParams(2);
         } else { 
           sendAcknowledge();
@@ -651,7 +652,7 @@ void parsing() {
       // ----------------------------------------------------
       
       case 16:
-        BTcontrol = intData[1] == 1;
+        manualMode = intData[1] == 1;
         if      (intData[1] == 0) AUTOPLAY = true;
         else if (intData[1] == 1) AUTOPLAY = false;
         else if (intData[1] == 2) prevMode();
@@ -659,8 +660,8 @@ void parsing() {
         else if (intData[1] == 4) AUTOPLAY = intData[2] == 1;
         else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
 
-        idleState = !BTcontrol && AUTOPLAY;
-        if (BTcontrol || idleTime == 0) {
+        idleState = !manualMode && AUTOPLAY;
+        if (manualMode || idleTime == 0) {
           idleTimer.setInterval(4294967295);
           idleTimer.reset();
         }
@@ -677,7 +678,7 @@ void parsing() {
 
         loadingFlag = true;
 
-        if (!BTcontrol && AUTOPLAY) {
+        if (!manualMode && AUTOPLAY) {
           sendPageParams(1);
         } else {        
           sendAcknowledge();
@@ -695,14 +696,14 @@ void parsing() {
         saveIdleTime(idleTime);
         if (AUTOPLAY) {
           autoplayTimer = millis();
-          BTcontrol = false;
+          manualMode = false;
         }
-        if (idleTime == 0 || BTcontrol) // тамймер отключен
+        if (idleTime == 0 || manualMode) // тамймер отключен
           idleTimer.setInterval(4294967295);
         else
           idleTimer.setInterval(idleTime);
         idleTimer.reset();
-        idleState = !BTcontrol && AUTOPLAY;
+        idleState = !manualMode && AUTOPLAY;
         sendAcknowledge();
         break;
 
@@ -1201,7 +1202,8 @@ void parsing() {
             if (intData[0] == 0) {
               incomingByte = ending;
               parseStarted = false;
-              BTcontrol = true;
+              manualMode = true;
+              AUTOPLAY = false;
             } else {
               parseMode = NORMAL;
             }
@@ -1243,7 +1245,7 @@ void sendPageParams(int page) {
   // PD:число    продолжительность режима в секундах
   // IT:число    время бездействия в секундах
   // BR:число    яркость
-  // BE:число    яркость эффектов
+  // BE:число    контрастность эффекта
   // EF:число    текущий эффект
   // SE:число    скорость эффектов
   // SS:число    параметр #1 эффекта
@@ -1312,9 +1314,9 @@ void sendPageParams(int page) {
   switch (page) { 
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
-      if (BTcontrol)  str+="0|AP:"; else str+="1|AP:";
+      if (manualMode)  str+="0|AP:"; else str+="1|AP:";
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|BE:"+=String(contrast) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
+      str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
       str+="|RM:" + String(useRandomSequence);
       str+="|PW:" + String(CURRENT_LIMIT);
@@ -1324,21 +1326,25 @@ void sendPageParams(int page) {
       str="$18 EF:"+String(thisMode+1);
       str+="|BR:"+String(globalBrightness);
       str+="|UE:"+String((getEffectUsage(thisMode) ? "1" : "0"));
-      str+="|UT:"+(thisMode == MC_CLOCK 
+      // Оверлей бегущей строки
+      str+="|UT:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT 
          ? "X":
          (String(getEffectTextOverlayUsage(thisMode) ? "1" : "0")));
-      str+="|UC:"+(thisMode == MC_CLOCK 
+      // Оверлей часов   
+      str+="|UC:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT 
          ? "X" 
          : (String(getEffectClockOverlayUsage(thisMode) ? "1" : "0")));
-      // Эффекты не имеющие настройки скорости отправляют значение "Х" - программа делает ползунок настройки недоступным
-      str+="|SE:"+(thisMode == MC_CLOCK
+      // Настройка скорости
+      str+="|SE:"+(thisMode == MC_CLOCK || thisMode == MC_PACIFICA  || thisMode == MC_SHADOWS
          ? "X" 
          : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
-      str+="|SS:"+(thisMode == MC_DAWN_ALARM || thisMode == MC_COLORS || thisMode == MC_SWIRL || thisMode == MC_FLICKER
-         ? "X" 
-         : String(effectScaleParam[thisMode]));
+      str+="|SS:"+getParamForMode(thisMode);
       str+="|SQ:"+getParam2ForMode(thisMode);
+      // Контраст
+      str+="|BE:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_PACIFICA || thisMode == MC_DAWN_ALARM 
+         ? "X" 
+         : String(effectContrast[thisMode]));
       str+=";";
       break;
     case 3:  // Настройки часов.
@@ -1449,21 +1455,24 @@ void sendPageParams(int page) {
   }
 }
 
-void sendAcknowledge() {
-  // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
-  String reply = "";
-  bool isCmd = false; 
-  if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
-  if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
-  reply += "ack" + String(ackCounter++) + ";";  
-  reply.toCharArray(replyBuffer, reply.length()+1);
-  udp.beginPacket(udp.remoteIP(), udp.remotePort());
-  udp.write((const uint8_t*) replyBuffer, reply.length()+1);
-  udp.endPacket();
-  delay(0);
-  if (isCmd) {
-    Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
-  }
+// Второй параметр эффекта thisMode для отправки на телефон параметра "SQ:"
+String getParamForMode(byte mode) {
+ // Эффекты не имеющие настройки "Вариант" (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным 
+ String str; 
+ switch (mode) {
+   case MC_DAWN_ALARM:
+   case MC_COLORS:
+   case MC_SWIRL:
+   case MC_FLICKER:
+   case MC_PACIFICA:
+   case MC_SHADOWS:
+     str = "X";
+     break;
+   default:
+     str = String(effectScaleParam[thisMode]);
+     break;
+ }
+ return str;   
 }
 
 // Второй параметр эффекта thisMode для отправки на телефон параметра "SQ:"
@@ -1495,10 +1504,27 @@ String getParam2ForMode(byte mode) {
  return str;   
 }
 
+void sendAcknowledge() {
+  // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
+  String reply = "";
+  bool isCmd = false; 
+  if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
+  if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
+  reply += "ack" + String(ackCounter++) + ";";  
+  reply.toCharArray(replyBuffer, reply.length()+1);
+  udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  udp.write((const uint8_t*) replyBuffer, reply.length()+1);
+  udp.endPacket();
+  delay(0);
+  if (isCmd) {
+    Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+  }
+}
+
 void setSpecialMode(int spc_mode) {
         
   AUTOPLAY = false;
-  BTcontrol = true;
+  manualMode = true;
   loadingFlag = true;
   isTurnedOff = false;
   isNightClock = false;
@@ -1613,7 +1639,7 @@ void showCurrentIP(boolean autoplay) {
   // autoplay == true - при установке IP адреса из программы
   // autoplay == false - при вызове отображения текущеко IP адреса по пятикратному нажатию кнопки.
   if (autoplay) {
-    BTcontrol = false;
+    manualMode = false;
     AUTOPLAY = true;
     autoplayTimer = millis();
     idleTimer.setInterval(idleTime);

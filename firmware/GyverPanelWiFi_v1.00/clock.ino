@@ -490,6 +490,8 @@ void setOverlayColors() {
       case MC_NOISE_PLASMA:
       case MC_CYCLON:
       case MC_FLICKER:
+      case MC_PACIFICA:
+      case MC_SHADOWS:
         contrastClock();
         break;
       case MC_SNOW:
@@ -686,7 +688,7 @@ void checkAlarmTime() {
 
     resetModes();  
     
-    BTcontrol = false;
+    manualMode = false;
     AUTOPLAY = true;
 
     if (saveSpecialMode){
@@ -747,7 +749,7 @@ void stopAlarm() {
 
     resetModes();  
 
-    BTcontrol = false;
+    manualMode = false;
     AUTOPLAY = false;
 
     if (saveSpecialMode){

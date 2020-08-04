@@ -24,6 +24,7 @@ void madnessNoise() {
     modeCode = MC_NOISE_MADNESS;
     loadingFlag = false;
   }
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[modeCode]);
   scale = map8(effectScaleParam[MC_NOISE_MADNESS],0,100);
   fillnoise8();
   for (int i = 0; i < WIDTH; i++) {
@@ -138,6 +139,7 @@ void fillNoiseLED() {
   if ( speed < 50) {
     dataSmoothing = 200 - (speed * 4);
   }
+
   for (int i = 0; i < MAX_DIMENSION; i++) {
     int ioffset = scale * i;
     for (int j = 0; j < MAX_DIMENSION; j++) {
@@ -162,6 +164,8 @@ void fillNoiseLED() {
   // apply slow drift to X and Y, just for visual variation.
   x += speed / 8;
   y -= speed / 16;
+
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[modeCode]);
 
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {

@@ -85,6 +85,8 @@ void processEffect(byte aMode) {
     case MC_SPARKLES:            sparklesRoutine(); break;
     case MC_CYCLON:              cyclonRoutine(); break;
     case MC_FLICKER:             flickerRoutine(); break;
+    case MC_PACIFICA:            pacificaRoutine(); break;
+    case MC_SHADOWS:             shadowsRoutine(); break;
     case MC_MATRIX:              matrixRoutine(); break;
     case MC_STARFALL:            starfallRoutine(); break;
     case MC_BALL:                ballRoutine(); break;
@@ -198,7 +200,7 @@ void prevModeHandler() {
 void setTimersForMode(byte aMode) {
   effectSpeed = getEffectSpeed(aMode);
   if (effectSpeed == 0) effectSpeed = 2;
-  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER)
+  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
     effectTimer.setInterval(1);        // Режимы Пейнтбол / Водоворот / Мерцание смотрятся (работают) только на максимальной скорости
   else
     effectTimer.setInterval(effectSpeed);

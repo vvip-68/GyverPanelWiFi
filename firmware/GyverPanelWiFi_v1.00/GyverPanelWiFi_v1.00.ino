@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("GyverPanel-WiFi v.1.00.2020.0801")
+#define FIRMWARE_VER F("GyverPanel-WiFi v.1.00.2020.0805")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -89,8 +89,6 @@ void setup() {
 
   y_overlay_low  = min(getTextY(), min(CLOCK_Y, CALENDAR_Y));
   y_overlay_high = max(getTextY() + LET_HEIGHT - 1, y_overlay_low + 10);
-
-  Serial.println("y_low=" + String(y_overlay_low) + "; y_high=" + String(y_overlay_high) );
   
   // Если был задан спец.режим во время предыдущего сеанса работы матрицы - включить его
   // Номер спец-режима запоминается при его включении и сбрасывается при включении обычного режима или игры
