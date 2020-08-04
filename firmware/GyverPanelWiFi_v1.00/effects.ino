@@ -62,7 +62,7 @@ void lightBallsRoutine() {
   uint32_t ms = millis();
 
   byte  cnt = map8(255-effectScaleParam[MC_PAINTBALL],1,4);  // 1..4 шариков
-  float spd = map8(255-effectSpeed,10,100) / 100.0;          // 10-100% от номинальной скорости
+  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? (float)(seg_num * 2) : (float)seg_num);
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
@@ -158,7 +158,7 @@ void swirlRoutine() {
   uint32_t ms = millis();  
   int16_t idx;
 
-  float spd = map8(255-effectSpeed,10,100) / 100.0;                 // 10-100% от номинальной скорости
+  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
@@ -1146,4 +1146,58 @@ void fillColorProcedure() {
   CHSV color2 = CHSV(color.h, color.s, bright);
 
   fillAll(color2);    
+}
+
+// ******************* МЕРЦАНИЕ ********************
+
+uint32_t xf,yf,v_time,hue_time,hxy;
+
+// Play with the values of the variables below and see what kinds of effects they
+// have!  More octaves will make things slower.
+
+// how many octaves to use for the brightness and hue functions
+uint8_t octaves=1;
+uint8_t hue_octaves=3;
+
+// the 'distance' between points on the x and y axis
+int xscale=57771;
+int yscale=57771;
+
+// the 'distance' between x/y points for the hue noise
+int hue_scale=1;
+
+// how fast we move through time & hue noise
+int time_speed=1111;
+int hue_speed=1;
+
+// adjust these values to move along the x or y axis between frames
+int x_speed = (WIDTH > HEIGHT ? 1111 : 331);
+int y_speed = (WIDTH > HEIGHT ? 331 : 1111);
+
+void flickerRoutine() {
+  if (loadingFlag) {
+    modeCode = MC_FLICKER;
+    loadingFlag = false;
+
+    hxy = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    xf = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    yf = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    v_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    hue_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();    
+  }
+
+  // fill the led array 2/16-bit noise values
+  fill_2dnoise16(leds, WIDTH, HEIGHT, (MATRIX_TYPE == 0),
+                octaves, xf, xscale, yf, yscale, v_time,
+                hue_octaves, hxy, hue_scale, hxy, hue_scale, hue_time, 
+                false);
+
+  // adjust the intra-frame time values
+  hue_speed  = map8(255-effectSpeed, 1, 10);
+
+  xf += x_speed;
+  yf += y_speed;
+
+  v_time += time_speed;
+  hue_time += hue_speed;
 }

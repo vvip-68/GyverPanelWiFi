@@ -489,6 +489,7 @@ void setOverlayColors() {
       case MC_SWIRL:
       case MC_NOISE_PLASMA:
       case MC_CYCLON:
+      case MC_FLICKER:
         contrastClock();
         break;
       case MC_SNOW:

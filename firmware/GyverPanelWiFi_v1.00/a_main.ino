@@ -50,9 +50,9 @@ void process() {
       }
       bool timeToSync = ntpSyncTimer.isReady();
       if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
-      if (timeToSync || (refresh_time && ntp_t == 0 && (ntp_cnt < 10 || !init_time))) {
+      if (timeToSync || (refresh_time && ntp_t == 0 && (ntp_cnt < 100 || !init_time))) {
         getNTP();
-        if (ntp_cnt >= 10) {
+        if (ntp_cnt >= 100) {
           if (init_time) {
             udp.flush();
           } else {
@@ -1335,7 +1335,7 @@ void sendPageParams(int page) {
          ? "X" 
          : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
-      str+="|SS:"+(thisMode == MC_DAWN_ALARM || thisMode == MC_COLORS || thisMode == MC_SWIRL
+      str+="|SS:"+(thisMode == MC_DAWN_ALARM || thisMode == MC_COLORS || thisMode == MC_SWIRL || thisMode == MC_FLICKER
          ? "X" 
          : String(effectScaleParam[thisMode]));
       str+="|SQ:"+getParam2ForMode(thisMode);
