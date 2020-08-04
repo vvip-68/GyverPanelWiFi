@@ -401,90 +401,34 @@ void clockTicker() {
   }
 }
 
-void clockOverlayWrapH(int8_t posX, int8_t posY) {
-  // +++
-  byte thisLED = 0;
-  byte x_size = c_size == 1 ? 15 : 26;
-  byte y_size = c_size == 1 ? 5 : 7;
-
-  for (int8_t i = posX; i < posX + x_size; i++) {
-    for (int8_t j = posY; j < posY + y_size; j++) {
-      overlayLEDs[thisLED] = leds[getPixelNumber(getClockX(i),j)];
-      thisLED++;
-    }
-  }
-
-  clockTicker();
-
-  if (init_time) 
-    drawClock(hrs, mins, dotFlag, posX, posY);
-}
-
-void clockOverlayUnwrapH(int8_t posX, int8_t posY) {
-  // +++
-  byte thisLED = 0;
-  byte x_size = c_size == 1 ? 15 : 26;
-  byte y_size = c_size == 1 ? 5 : 7;
-
-  for (int8_t i = posX; i < posX + x_size; i++) {
-    for (int8_t j = posY; j < posY + y_size; j++) {
-      leds[getPixelNumber(getClockX(i), j)] = overlayLEDs[thisLED];
+void overlayWrap() {
+  // Текст выводится в позиции y = getTextY() и занимает высоту LET_HEIGHT
+  // Часы верт / горизонт выводятся в позиции y = CLOCK_Y и занимают 5 для горизонтальных или 11 для вертикальных
+  // Кадлендарь выводится выводятся в позиции y = CALENDAR_Y и занимает 11 строк для вертикальных
+  // В оверлей отправляется полоса от y_low до y_high во всю штрину матрицы
+  
+  int16_t thisLED = 0;
+  
+  for (uint8_t i = 0; i < WIDTH; i++) {
+    for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
+      overlayLEDs[thisLED] = leds[getPixelNumber(i,j)];
       thisLED++;
     }
   }
 }
 
-void clockOverlayWrapV(int8_t posX, int8_t posY) {
-  // +++
-  byte thisLED = 0;
-  for (int8_t i = posX; i < posX + 7; i++) {
-    for (int8_t j = posY; j < posY + 11; j++) {
-      overlayLEDs[thisLED] = leds[getPixelNumber(getClockX(i), j)];
-      thisLED++;
-    }
-  }
+void overlayUnwrap() {
 
-  clockTicker();
-
-  if (init_time) 
-    drawClock(hrs, mins, dotFlag, posX, posY);
-}
-
-void clockOverlayUnwrapV(int8_t posX, int8_t posY) {
-  // +++
-  byte thisLED = 0;
-  for (int8_t i = posX; i < posX + 7; i++) {
-    for (int8_t j = posY; j < posY + 11; j++) {
-      leds[getPixelNumber(getClockX(i), j)] = overlayLEDs[thisLED];
-      thisLED++;
+  int16_t thisLED = 0;
+  
+  for (uint8_t i = 0; i < WIDTH; i++) {
+    for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
+      leds[getPixelNumber(i, j)] = overlayLEDs[thisLED];
+      thisLED++; 
     }
   }
 }
 
-void calendarOverlayWrap(int8_t posX, int8_t posY) {
-  // +++
-  byte thisLED = 0;
-  for (int8_t i = posX; i < posX + 15; i++) {
-    for (int8_t j = posY; j < posY + 11; j++) {
-      overlayLEDs[thisLED] = leds[getPixelNumber(getClockX(i), j)];
-      thisLED++;
-    }
-  }
-  clockTicker();
-  if (init_time)
-    drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
-}
-
-void calendarOverlayUnwrap(int8_t posX, int8_t posY) {
-  // +++
-  byte thisLED = 0;
-  for (int8_t i = posX; i < posX + 15; i++) {
-    for (int8_t j = posY; j < posY + 11; j++) {
-      leds[getPixelNumber(getClockX(i), j)] = overlayLEDs[thisLED];
-      thisLED++;
-    }
-  }
-}
 
 void checkCalendarState() {
   if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
@@ -499,6 +443,7 @@ boolean needUnwrap() {
   // удаляя нарисованные часы и восстанавливае состояние как оно было до прорисовки часов
   if (modeCode == MC_SNOW ||
       modeCode == MC_SPARKLES ||
+      modeCode == MC_CYCLON ||
       modeCode == MC_MATRIX ||
       modeCode == MC_STARFALL ||
       modeCode == MC_BALLS ||
@@ -543,6 +488,7 @@ void setOverlayColors() {
       case MC_PAINTBALL:
       case MC_SWIRL:
       case MC_NOISE_PLASMA:
+      case MC_CYCLON:
         contrastClock();
         break;
       case MC_SNOW:

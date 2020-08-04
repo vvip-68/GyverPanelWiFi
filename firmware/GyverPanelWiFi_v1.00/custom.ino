@@ -1,6 +1,6 @@
 // ************************ НАСТРОЙКИ ************************
 
-byte lastOverlayMode, lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
+byte lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
 
 // ************************* СВОЙ СПИСОК РЕЖИМОВ ************************
 // список можно менять, соблюдая его структуру. Можно удалять и добавлять эффекты, ставить их в
@@ -21,26 +21,18 @@ void doEffectWithOverlay(byte aMode) {
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта
   // цифры "смазываются"
-  bool needOverlay = (aMode == MC_CLOCK) || (aMode != MC_TEXT && overlayEnabled);
+  bool needOverlay = (aMode == MC_CLOCK) || (aMode != MC_TEXT && overlayEnabled && getEffectClockOverlayUsage(aMode)); // +++ - когда будет бегущая строка - getEffectTextOverlayUsage(aMode)
 
-  if (needOverlay && lastOverlayMode == thisMode) {
-    if (!loadingFlag) {
-      if (c_size == 1 && showDateInClock && showDateState) {
-          calendarOverlayUnwrap(CALENDAR_XC, CALENDAR_Y);
-      } else {
-        if (CLOCK_ORIENT == 0)
-          clockOverlayUnwrapH(CLOCK_XC, CLOCK_Y);
-        else
-          clockOverlayUnwrapV(CLOCK_XC, CLOCK_Y);
-      }
-    }
+  if (overlayDelayed && !loadingFlag) {
+    overlayUnwrap();
   }  
 
   if (effectReady) processEffect(aMode);
 
+  // Смещение движущихся часов 
   if (clockReady) {
     byte clock_width = CLOCK_ORIENT == 0 ? (c_size == 1 ? 15 : 26) : 7;     // Горизонтальные часы занимают 15/26 колонок (малые/большие), вертикальные - 7
-    byte calendar_width = 15;                                               // Календарь занимает 15 колонок (4 цифры 3x5 b  пробела между ними)
+    byte calendar_width = 15;                                               // Календарь занимает 15 колонок (4 цифры 3x5 и 3 пробела между ними)
     CLOCK_MOVE_CNT--;
     if (CLOCK_MOVE_CNT <= 0) {
        CLOCK_MOVE_CNT = CLOCK_MOVE_DIVIDER;
@@ -58,18 +50,19 @@ void doEffectWithOverlay(byte aMode) {
   if (c_size == 1) {
     checkCalendarState();
   }
+
+  overlayDelayed = needOverlay;
   
   if (needOverlay) {
-    setOverlayColors();
-    if (c_size == 1 && showDateInClock && showDateState) {      
-      calendarOverlayWrap(CALENDAR_XC, CALENDAR_Y);
-    } else {
-      if (CLOCK_ORIENT == 0)
-        clockOverlayWrapH(CLOCK_XC, CLOCK_Y);
-      else  
-        clockOverlayWrapV(CLOCK_XC, CLOCK_Y);
+    overlayWrap();
+    if (init_time) {
+      setOverlayColors();
+      if (c_size == 1 && showDateInClock && showDateState) {      
+        drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+      } else {
+        drawClock(hrs, mins, dotFlag, CLOCK_XC, CLOCK_Y);
+      }
     }
-    lastOverlayMode = thisMode;
   }  
 
   if (effectReady) loadingFlag = false;
@@ -90,6 +83,7 @@ void processEffect(byte aMode) {
     case MC_NOISE_OCEAN:         oceanNoise(); break;
     case MC_SNOW:                snowRoutine(); break;
     case MC_SPARKLES:            sparklesRoutine(); break;
+    case MC_CYCLON:              cyclonRoutine(); break;
     case MC_MATRIX:              matrixRoutine(); break;
     case MC_STARFALL:            starfallRoutine(); break;
     case MC_BALL:                ballRoutine(); break;

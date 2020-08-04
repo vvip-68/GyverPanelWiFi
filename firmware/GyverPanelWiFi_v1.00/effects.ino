@@ -35,6 +35,7 @@ void snowRoutine() {
 uint8_t USE_SEGMENTS_PAINTBALL = 0;
 uint8_t BorderWidth = 0;
 uint8_t dir_mx, seg_num, seg_size, seg_offset;
+int16_t idx;
 
 void lightBallsRoutine() {
   if (loadingFlag) {
@@ -59,7 +60,6 @@ void lightBallsRoutine() {
 
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();
-  int16_t idx;
 
   byte  cnt = map8(255-effectScaleParam[MC_PAINTBALL],1,4);  // 1..4 шариков
   float spd = map8(255-effectSpeed,10,100) / 100.0;          // 10-100% от номинальной скорости
@@ -295,6 +295,7 @@ void ballRoutine() {
 }
 
 // ***************************** РАДУГА *****************************
+
 byte rainbow_type = 0;
 void rainbowRoutine() {
   if (loadingFlag) {
@@ -385,6 +386,106 @@ void colorsRoutine() {
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = hueColor;
   }
+}
+
+// ---------------------------------------- ЦИКЛОН ------------------------------------------
+
+int16_t cycle_x, cycle_y; // могут уходить в минус при смене направления
+uint8_t move_dir, fade_divider, USE_SEGMENTS_CYCLON;
+
+void cyclonRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    modeCode = MC_CYCLON;
+    USE_SEGMENTS_CYCLON = effectScaleParam2[MC_CYCLON];
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                                                       // 0 - сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);                                           // вычисляем количество сегментов, умещающихся на матрице, в режиме без сигментов ширина одной полоски будет равна кол-ву сегментов
+    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                                                               // Размер квадратного сегмента (высота и ширина равны)
+    seg_offset = USE_SEGMENTS_CYCLON == 1 ? ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / 2 : 0; // смещение от низа/верха матрицы
+    hue = 0;
+    cycle_x = USE_SEGMENTS_CYCLON == 1 ? (dir_mx == 0 ? seg_offset + seg_size - 1 : seg_size - 1) : WIDTH - 1; 
+    cycle_y = USE_SEGMENTS_CYCLON == 1 ? (dir_mx == 0 ? 0 : seg_offset) : 0;
+    move_dir = 1;
+    fade_divider = 0;
+    FastLED.clear();  // очистить
+  }
+
+  uint8_t actualBrightness = map(effectBrightness, 32,255, 125,250);
+  
+  // Использовать отрисовку по сегментам
+  // Если сегменты не используется - ширина одной полоски - кол-во сегментов
+  for (byte i=0; i < seg_num; i++) {
+    
+    if (USE_SEGMENTS_CYCLON == 1) {
+      idx = dir_mx == 0
+         ? getPixelNumber(cycle_x + i * seg_size , cycle_y)
+         : getPixelNumber(cycle_x, cycle_y + i * seg_size);
+    } else {
+      idx = getPixelNumber(cycle_x + i, cycle_y);
+    }
+    
+    if (idx < NUM_LEDS) 
+        leds[idx] = CHSV(hue + (USE_SEGMENTS_CYCLON == 1 ? i * 85 : 0), 255, actualBrightness);              
+  }  
+
+  hue++;
+
+  // Затухание - не на каждый цикл, а регулируется параметром эффекта
+  byte fader_param = map8(255 - effectScaleParam[MC_CYCLON],1,3);
+  fade_divider++;
+  if (fade_divider > fader_param) {
+    fade_divider = 0;
+    fader(1);
+  }
+
+  cycle_y++;
+
+  if (USE_SEGMENTS_CYCLON) {
+    
+    if (cycle_y >= seg_size) {
+      cycle_y = (dir_mx == 0 ? 0 : seg_offset);
+  
+      if (move_dir == 0) {
+        // Слева направо
+        cycle_x++;     
+        if (cycle_x >= seg_size - seg_offset) {
+            move_dir = 1;
+            cycle_x = seg_size - 1 - seg_offset;
+        }
+      } else {
+        // Справа налево
+        cycle_x--;     
+        if (cycle_x < seg_offset) {
+            move_dir = 0;
+            cycle_x = seg_offset;
+        }
+      }    
+    }
+    
+  } else {
+    
+    if (cycle_y >= HEIGHT) {
+      cycle_y = 0;
+  
+      if (move_dir == 0) {
+        // Слева направо
+        cycle_x += seg_num;     
+        if (cycle_x >= WIDTH) {
+            move_dir = 1;
+            cycle_x = WIDTH - 1;
+        }
+      } else {
+        // Справа налева
+        cycle_x -= seg_num;     
+        if (cycle_x < 0) {
+            move_dir = 0;
+            cycle_x = 0;
+        }
+      }    
+    }
+    
+  }
+  
 }
 
 // ********************** огонь **********************

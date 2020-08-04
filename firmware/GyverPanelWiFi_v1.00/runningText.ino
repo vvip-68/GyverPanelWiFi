@@ -60,11 +60,19 @@ void fillString(String text, uint32_t color) {
   }      
 }
 
-void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
-  int8_t start_pos = 0, finish_pos = LET_WIDTH;
+byte getTextY() {
   int8_t LH = LET_HEIGHT;
   if (LH > HEIGHT) LH = HEIGHT;
   int8_t offset_y = (HEIGHT - LH) / 2;     // по центру матрицы по высоте
+  return offset_y; 
+}
+
+void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
+  int8_t LH = LET_HEIGHT;
+  if (LH > HEIGHT) LH = HEIGHT;
+
+  int8_t start_pos = 0, finish_pos = LET_WIDTH;
+  int8_t offset_y = getTextY();
   
   CRGB letterColor;
   if (color == 1) letterColor = CHSV(byte(offset * 10), 255, 255);
