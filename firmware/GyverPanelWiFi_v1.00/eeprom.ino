@@ -1133,24 +1133,24 @@ String EEPROM_string_read(uint16_t addr, int16_t len) {
      byte c = EEPROMread(addr+i);
      if (c == 0) break;
      buffer[i++] = c;
-     // if (c != 0 && (isAlphaNumeric(c) || isPunct(c) || isSpace(c)))
    }
    return String(buffer);
 }
 
-void EEPROM_string_write(uint16_t addr, String buffer, int16_t max_len) {
+void EEPROM_string_write(uint16_t addr, String buffer, uint16_t max_len) {
   uint16_t len = buffer.length();
-  int16_t i = 0;
+  uint16_t i = 0;
 
   // Принудительно очистить "хвосты от прежнего значения"
   while (i < max_len) {
-    EEPROMwrite(addr+i, 0);
+    EEPROMwrite(addr+i, 0x00);
+    i++;
   }
-
+  
   // Обрезать строку, если ее длина больше доступного места
   if (len > max_len) len = max_len;
   i=0;
-  
+
   // Сохранить новое значение
   while (i < len) {
     EEPROMwrite(addr+i, buffer[i++]);
