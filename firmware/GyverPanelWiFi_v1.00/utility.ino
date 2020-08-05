@@ -42,6 +42,17 @@ const uint8_t font3x5_s[][3] PROGMEM = {
   {0b11101, 0b10101, 0b11110},    // 9
 };
 
+// отображаем счёт для игр
+void displayScore(byte score) {
+  if (SCORE_SIZE == 0) {
+    if (score > 9) drawDigit3x5(score / 10, WIDTH / 2 - 4, HEIGHT / 2 - 3, GLOBAL_COLOR_1);
+    drawDigit3x5(score % 10, WIDTH / 2, HEIGHT / 2 - 3, GLOBAL_COLOR_2);
+  } else {
+    if (score > 9) drawDigit5x7(score / 10, WIDTH / 2 - 6, HEIGHT / 2 - 4, GLOBAL_COLOR_1);
+    drawDigit5x7(score % 10, WIDTH / 2, HEIGHT / 2 - 4, GLOBAL_COLOR_2);
+  }
+}
+
 // нарисовать цифру шрифт 3х5 квадратный
 void drawDigit3x5(byte digit, int8_t X, int8_t Y, CRGB color) {
   if (digit > 9) return;
@@ -76,6 +87,12 @@ void drawDigit5x7(byte digit, byte X, byte Y, CRGB color) {
       if (thisByte & (1 << 6 - y)) drawPixelXY(getClockX(x + X), y + Y, color);
     }
   }
+}
+
+// Заглушка чтения кнопок управления игрой
+boolean checkButtons() {
+  if (buttons != 4) return true;
+  return false;
 }
 
 // залить все

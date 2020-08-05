@@ -530,10 +530,10 @@ void parsing() {
           if (tmp_eff == MC_CLOCK){
              if (!(allowHorizontal || allowVertical)) tmp_eff++;
           }          
-          setEffect(tmp_eff);
           manualMode = true;
           AUTOPLAY = false;
           loadingFlag = intData[1] == 0;
+          setEffect(tmp_eff);
           if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
         } else 
         
@@ -820,7 +820,7 @@ void parsing() {
              break;
            case 13:               // $19 13 X; - скорость прокрутки часов бегущей строкой
              saveEffectSpeed(MC_TEXT, 255 - intData[2]);
-             if (modeCode == MC_TEXT)
+             if (thisMode == MC_TEXT)
                setTimersForMode(MC_TEXT);
              break;
            case 14:               // $19 14 00FFAA;
@@ -1022,8 +1022,9 @@ void parsing() {
             break;
           case 2:  
             // $21 2; Выполнить переподключение к сети WiFi
+            saveSettings();
+            delay(10);
             FastLED.clear();
-            FastLED.show();
             startWiFi();
             showCurrentIP(true);
             break;
@@ -1327,11 +1328,11 @@ void sendPageParams(int page) {
       str+="|BR:"+String(globalBrightness);
       str+="|UE:"+String((getEffectUsage(thisMode) ? "1" : "0"));
       // Оверлей бегущей строки
-      str+="|UT:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT 
+      str+="|UT:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
          ? "X":
          (String(getEffectTextOverlayUsage(thisMode) ? "1" : "0")));
       // Оверлей часов   
-      str+="|UC:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT 
+      str+="|UC:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
          ? "X" 
          : (String(getEffectClockOverlayUsage(thisMode) ? "1" : "0")));
       // Настройка скорости
@@ -1342,7 +1343,8 @@ void sendPageParams(int page) {
       str+="|SS:"+getParamForMode(thisMode);
       str+="|SQ:"+getParam2ForMode(thisMode);
       // Контраст
-      str+="|BE:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_PACIFICA || thisMode == MC_DAWN_ALARM 
+      str+="|BE:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_PACIFICA || thisMode == MC_DAWN_ALARM ||
+                   thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS  
          ? "X" 
          : String(effectContrast[thisMode]));
       str+=";";
@@ -1466,6 +1468,10 @@ String getParamForMode(byte mode) {
    case MC_FLICKER:
    case MC_PACIFICA:
    case MC_SHADOWS:
+   case MC_MAZE:
+   case MC_SNAKE:
+   case MC_TETRIS:
+   case MC_IMAGE:
      str = "X";
      break;
    default:

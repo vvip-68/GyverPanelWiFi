@@ -1,4 +1,4 @@
-#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EEPROM_OK 0xAF                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 5 байт на эффект
 #define TEXT_EEPROM 800                    // начальная ячейка eeprom с текстом бегущих строк
 
@@ -142,6 +142,7 @@ void loadSettings() {
     for (byte i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i] = getScaleForEffect(i); 
       effectScaleParam2[i] = getScaleForEffect2(i);
+      effectContrast[i] = getEffectContrast(i);
     }
 
     #if (USE_MP3 == 1)
@@ -296,17 +297,26 @@ void saveDefaults() {
 
   // Настройки по умолчанию для эффектов
   for (int i = 0; i < MAX_EFFECT; i++) {
-    saveEffectParams(i, effectSpeed, true, true, true, 50, 0, 255);
+    saveEffectParams(i, effectSpeed, true, true, true, effectScaleParam[i], effectScaleParam2[i], effectContrast[i]);
   }
 
   // Специальные настройки отдельных эффектов
+  saveEffectTextOverlayUsage(MC_MAZE, false);
+  saveEffectTextOverlayUsage(MC_SNAKE, false);
+  saveEffectTextOverlayUsage(MC_TETRIS, false);
+  saveEffectTextOverlayUsage(MC_IMAGE, false);
+  saveEffectClockOverlayUsage(MC_MAZE, false);
+  saveEffectClockOverlayUsage(MC_SNAKE, false);
+  saveEffectClockOverlayUsage(MC_TETRIS, false);
+  saveEffectClockOverlayUsage(MC_IMAGE, false);
+
   setScaleForEffect(MC_FIRE, 0);                 // Огонь красного цвета
   setScaleForEffect(MC_CLOCK, COLOR_MODE);
   setScaleForEffect(MC_TEXT, COLOR_TEXT_MODE);
   setScaleForEffect2(MC_PAINTBALL, 1);           // Использовать сегменты для эффекта Пэйнтбол на широких матрицах
   setScaleForEffect2(MC_SWIRL, 1);               // Использовать сегменты для эффекта Водоворот на широких матрицах
   setScaleForEffect2(MC_RAINBOW, 0);             // Использовать рандомный выбор эффекта радуга 0 - random; 1 - диагональная; 2 - горизонтальная; 3 - вертикальная; 4 - вращающаяся
-  
+
   setGlobalColor(globalColor);
   setGlobalClockColor(globalClockColor);
   setGlobalTextColor(globalTextColor);
@@ -375,6 +385,7 @@ void saveEffectParams(byte effect, int speed, boolean use, boolean use_text_over
   EEPROMwrite(addr + effect*5 + 4, contrast);                                                                         // Контраст эффекта 
   effectScaleParam[effect] = value1;
   effectScaleParam2[effect] = value2;
+  effectContrast[effect] = contrast;
 }
 
 void saveEffectSpeed(byte effect, int speed) {
@@ -470,7 +481,7 @@ byte getScaleForEffect2(byte effect) {
 
 byte getEffectContrast(byte effect) {
   const int addr = EFFECT_EEPROM;
-  byte contrast = EEPROMread(addr + effect*5 + 4);
+  byte contrast = constrain(EEPROMread(addr + effect*5 + 4),10,255);
   effectContrast[effect] = contrast;
   return contrast;
 }
@@ -479,7 +490,7 @@ void setEffectContrast(byte effect, byte contrast) {
   if (contrast != getEffectContrast(effect)) {
     const int addr = EFFECT_EEPROM;
     EEPROMwrite(addr + effect*5 + 4, contrast);
-    effectContrast[effect] = contrast;
+    effectContrast[effect] = constrain(contrast,10,255);
   }  
 }
 
@@ -1130,11 +1141,21 @@ String EEPROM_string_read(uint16_t addr, int16_t len) {
 void EEPROM_string_write(uint16_t addr, String buffer, int16_t max_len) {
   uint16_t len = buffer.length();
   int16_t i = 0;
+
+  // Принудительно очистить "хвосты от прежнего значения"
+  while (i < max_len) {
+    EEPROMwrite(addr+i, 0);
+  }
+
+  // Обрезать строку, если ее длина больше доступного места
   if (len > max_len) len = max_len;
+  i=0;
+  
+  // Сохранить новое значение
   while (i < len) {
     EEPROMwrite(addr+i, buffer[i++]);
   }
-  if (i < max_len) EEPROMwrite(addr+i,0);
+
   eepromModified = true;
   saveSettingsTimer.reset();
 }

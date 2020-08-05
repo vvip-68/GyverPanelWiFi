@@ -30,13 +30,13 @@ void runningText() {
 void fillString(String text, uint32_t color) {
   if (loadingFlag) {
     offset = WIDTH;   // перемотка в правый край
+    // modeCode = MC_TEXT;
     loadingFlag = false;    
 #if (SMOOTH_CHANGE == 1)
-    loadingFlag = modeCode == MC_TEXT && fadeMode < 2 ;
+    loadingFlag = thisMode == MC_TEXT && fadeMode < 2 ;
 #else
     loadingFlag = false;        
 #endif
-    modeCode = MC_TEXT;
     fullTextFlag = false;
   }
   

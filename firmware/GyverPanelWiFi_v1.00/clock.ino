@@ -87,7 +87,7 @@ boolean overlayAllowed() {
   if (!(allowHorizontal || allowVertical)) return false;
 
   // В режиме часов бегущей строкой и в режиме "Часы" оверлей недоступен
-  if (modeCode == MC_TEXT || modeCode == MC_CLOCK) return false;
+  if (thisMode == MC_TEXT || thisMode == MC_CLOCK) return false;
 
   // Отображение часов в спец.режиме
   if (specialMode) return specialClock;
@@ -154,7 +154,7 @@ String dateCurrentTextLong() {
 void clockColor() {
   
   int8_t color_idx = 0;
-  switch (modeCode) {
+  switch (thisMode) {
     case MC_CLOCK:
       color_idx = isNightClock ? -2 : COLOR_MODE;
       break;
@@ -300,7 +300,7 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
   if (dots) {
     drawPixelXY(getClockX(X + 7), Y + 5, clockLED[2]);
   } else {
-    if (modeCode == MC_CLOCK) {
+    if (thisMode == MC_CLOCK) {
       drawPixelXY(getClockX(X + 7), Y + 5, 0);
     }
   }
@@ -319,7 +319,7 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
 void clockRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_CLOCK;
+    // modeCode = MC_CLOCK;
   }
 
   // Очистка экрана. Сама отрисовка часов производится как
@@ -441,15 +441,15 @@ boolean needUnwrap() {
   // Эти режимы используют сдвиг содержимого матрицы или его размытие без перерисовки всего изображения
   // При оверлее часов при следующей перерисовке требуется восстанавливать изображение
   // удаляя нарисованные часы и восстанавливае состояние как оно было до прорисовки часов
-  if (modeCode == MC_SNOW ||
-      modeCode == MC_SPARKLES ||
-      modeCode == MC_CYCLON ||
-      modeCode == MC_MATRIX ||
-      modeCode == MC_STARFALL ||
-      modeCode == MC_BALLS ||
-      modeCode == MC_FIRE ||
-      modeCode == MC_PAINTBALL ||
-      modeCode == MC_SWIRL) return true;
+  if (thisMode == MC_SNOW ||
+      thisMode == MC_SPARKLES ||
+      thisMode == MC_CYCLON ||
+      thisMode == MC_MATRIX ||
+      thisMode == MC_STARFALL ||
+      thisMode == MC_BALLS ||
+      thisMode == MC_FIRE ||
+      thisMode == MC_PAINTBALL ||
+      thisMode == MC_SWIRL) return true;
   else return false;
 }
 
@@ -473,8 +473,8 @@ void contrastClockC(){
 }
 
 void setOverlayColors() {
-  if (COLOR_MODE == 0 && !(modeCode == MC_CLOCK || modeCode == MC_FILL_COLOR  || modeCode == MC_COLORS)) {
-    switch (modeCode) {
+  if (COLOR_MODE == 0 && !(thisMode == MC_CLOCK || thisMode == MC_FILL_COLOR || thisMode == MC_COLORS)) {
+    switch (thisMode) {
       case MC_SPARKLES:
       case MC_MATRIX:
       case MC_STARFALL:
@@ -492,6 +492,10 @@ void setOverlayColors() {
       case MC_FLICKER:
       case MC_PACIFICA:
       case MC_SHADOWS:
+      case MC_MAZE:
+      case MC_SNAKE:
+      case MC_TETRIS:
+      case MC_IMAGE:
         contrastClock();
         break;
       case MC_SNOW:

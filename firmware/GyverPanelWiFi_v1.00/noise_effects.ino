@@ -21,10 +21,10 @@ uint8_t ihue = 0;
 
 void madnessNoise() {
   if (loadingFlag) {
-    modeCode = MC_NOISE_MADNESS;
+    // modeCode = MC_NOISE_MADNESS;
     loadingFlag = false;
   }
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[modeCode]);
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
   scale = map8(effectScaleParam[MC_NOISE_MADNESS],0,100);
   fillnoise8();
   for (int i = 0; i < WIDTH; i++) {
@@ -42,7 +42,7 @@ void madnessNoise() {
 void rainbowNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_RAINBOW;
+    // modeCode = MC_NOISE_RAINBOW;
     currentPalette = RainbowColors_p;
     colorLoop = 1;
   }
@@ -53,7 +53,7 @@ void rainbowNoise() {
 void rainbowStripeNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_RAINBOW_STRIP;
+    // modeCode = MC_NOISE_RAINBOW_STRIP;
     currentPalette = RainbowStripeColors_p;
     colorLoop = 1;
   }
@@ -64,7 +64,7 @@ void rainbowStripeNoise() {
 void zebraNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_ZEBRA;
+    // modeCode = MC_NOISE_ZEBRA;
     // 'black out' all 16 palette entries...
     fill_solid( currentPalette, 16, CRGB::Black);
     // and set every fourth one to white.
@@ -81,7 +81,7 @@ void zebraNoise() {
 void forestNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_FOREST;
+    // modeCode = MC_NOISE_FOREST;
     currentPalette = ForestColors_p;
     colorLoop = 0;
   }
@@ -92,7 +92,7 @@ void forestNoise() {
 void oceanNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_OCEAN;
+    // modeCode = MC_NOISE_OCEAN;
     currentPalette = OceanColors_p;
     colorLoop = 0;
   }
@@ -103,7 +103,7 @@ void oceanNoise() {
 void plasmaNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_PLASMA;
+    // modeCode = MC_NOISE_PLASMA;
     currentPalette = PartyColors_p;
     colorLoop = 1;
   }
@@ -114,7 +114,7 @@ void plasmaNoise() {
 void cloudNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_CLOUD;
+    // modeCode = MC_NOISE_CLOUD;
     currentPalette = CloudColors_p;
     colorLoop = 0;
   }
@@ -125,7 +125,7 @@ void cloudNoise() {
 void lavaNoise() {
   if (loadingFlag) {
     loadingFlag = false;
-    modeCode = MC_NOISE_LAVA;
+    // modeCode = MC_NOISE_LAVA;
     currentPalette = LavaColors_p;
     colorLoop = 0;
   }
@@ -165,7 +165,7 @@ void fillNoiseLED() {
   x += speed / 8;
   y -= speed / 16;
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[modeCode]);
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {

@@ -65,7 +65,6 @@ void doEffectWithOverlay(byte aMode) {
     }
   }  
 
-  if (effectReady) loadingFlag = false;
   FastLED.show();
 }
 
@@ -97,6 +96,10 @@ void processEffect(byte aMode) {
     case MC_COLORS:              colorsRoutine(); break;
     case MC_LIGHTERS:            lightersRoutine(); break;
     case MC_SWIRL:               swirlRoutine(); break;
+    case MC_MAZE:                mazeRoutine(); break;
+    case MC_SNAKE:               snakeRoutine(); break;
+    case MC_TETRIS:              tetrisRoutine(); break;
+    case MC_IMAGE:               animationRoutine(); break;
     case MC_TEXT:                runningText(); break;
     case MC_CLOCK:               clockRoutine(); break;
     case MC_DAWN_ALARM:          dawnProcedure(); break;
@@ -200,8 +203,9 @@ void prevModeHandler() {
 void setTimersForMode(byte aMode) {
   effectSpeed = getEffectSpeed(aMode);
   if (effectSpeed == 0) effectSpeed = 2;
+  // Эти режимы смотрятся (работают) только на максимальной скорости;
   if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
-    effectTimer.setInterval(1);        // Режимы Пейнтбол / Водоворот / Мерцание смотрятся (работают) только на максимальной скорости
+    effectTimer.setInterval(1);        
   else
     effectTimer.setInterval(effectSpeed);
   clockSpeed = getEffectSpeed(MC_CLOCK);
