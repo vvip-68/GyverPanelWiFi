@@ -1627,7 +1627,7 @@ void setEffect(byte eff) {
   setTimersForMode(thisMode);  
 
   setCurrentSpecMode(-1);
-  if (!AUTOPLAY)
+  if (manualMode)
     setCurrentManualMode(thisMode);
 
   if (thisMode != MC_DAWN_ALARM)

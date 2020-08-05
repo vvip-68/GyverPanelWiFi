@@ -95,17 +95,19 @@ void setup() {
   // Это позволяет в случае внезапной перезагрузки матрицы (например по wdt), когда был включен спец-режим (например ночные часы или выкл. лампы)
   // снова включить его, а не отображать случайный обычный после включения матрицы
   int8_t spc_mode = getCurrentSpecMode();
+  int8_t mnl_mode = getCurrentManualMode();
+
   if (spc_mode >= 0 && spc_mode < MAX_SPEC_EFFECT) {
     setSpecialMode(spc_mode);
     isTurnedOff = spc_mode == 0;
     isNightClock = spc_mode == 8;
   } else {
     thisMode = getCurrentManualMode();
-    if (thisMode < 0 || AUTOPLAY) {
+    if (thisMode < 0) {
       setRandomMode2();
     } else {
       while (1) {
-        // Если режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
+        // Если режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)        
         if (getEffectUsage(thisMode)) break;
         thisMode++;
         if (thisMode >= MAX_EFFECT) {

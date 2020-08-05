@@ -16,6 +16,7 @@ byte color_index;
 byte linesToClear;
 boolean down_flag = true;
 byte lineCleanCounter;
+byte left_offset, right_offset;
 
 // самая важная часть программы! Координаты пикселей фигур
 //  0 - палка
@@ -75,13 +76,15 @@ void tetrisRoutine() {
   if (loadingFlag) {
     FastLED.clear();
     loadingFlag = false;
+    left_offset = WIDTH > HEIGHT ? ((WIDTH-HEIGHT) / 2) : 0;
+    right_offset = WIDTH > HEIGHT ? WIDTH - ((WIDTH-HEIGHT) / 2) - (WIDTH % 2 == 0 ? 1 : 0) : WIDTH - 1;
     newGameTetris();
     // modeCode = MC_TETRIS;
   }
 
-  if (checkButtons()) {
+  if (checkTetrisButtons()) {
 
-    if (buttons == 3) {   // кнопка нажата
+    if (buttons == 3) {        // кнопка нажата
       buttons = 4;
       stepLeft();
     }
@@ -100,7 +103,7 @@ void tetrisRoutine() {
       }
     }
 
-    if (buttons == 2) {             // кнопка вниз удерживается
+    if (buttons == 2) {         // кнопка вниз удерживается
       buttons = 4;
       // gameTimer.setInterval(FAST_SPEED);  // увеличить скорость
     }
@@ -136,16 +139,40 @@ void tetrisRoutine() {
   }
 }
 
+// Заглушка чтения кнопок управления игрой
+boolean checkTetrisButtons() {
+  byte value = random(7);
+  switch (value) {
+    case 1: 
+      buttons = 1; 
+      break;
+    case 5: 
+      buttons = 3; 
+      break;
+    case 0: 
+    case 7: 
+      buttons = 0; 
+      break;
+  }
+  
+  if (buttons != 4) return true;
+  return false;
+}
+
 // поиск и очистка заполненных уровней
 void checkAndClear() {
   linesToClear = 1;                 // счётчик заполненных строк по вертикали. Искусственно принимаем 1 для работы цикла
   boolean full_flag = true;         // флаг заполненности
+  byte y_st = 1;
+  byte x_st = left_offset + 1;
+  byte x_en = right_offset - 1;
+  
   while (linesToClear != 0) {       // чисти чисти пока не будет чисто!
     linesToClear = 0;
     byte lineNum = 255;             // высота, с которой начинаются заполненные строки (искусственно увеличена)
-    for (byte Y = 0; Y < HEIGHT; Y++) {   // сканируем по высоте
+    for (byte Y = y_st; Y < HEIGHT; Y++) {   // сканируем по высоте
       full_flag = true;                   // поднимаем флаг. Будет сброшен, если найдём чёрный пиксель
-      for (byte X = 0; X < WIDTH; X++) {  // проходимся по строкам
+      for (byte X = x_st; X <= x_en; X++) {  // проходимся по строкам
         if ((long)getPixColorXY(X, Y) == (long)0x000000) {  // если хоть один пиксель чёрный
           full_flag = false;                                 // считаем строку неполной
         }
@@ -163,7 +190,7 @@ void checkAndClear() {
       lineCleanCounter += linesToClear;   // суммируем количество очищенных линий (игровой "счёт")
 
       // заполняем весь блок найденных строк белым цветом слева направо
-      for (byte X = 0; X < WIDTH; X++) {
+      for (byte X = x_st; X <= x_en; X++) {
         for (byte i = 0; i < linesToClear; i++) {
           leds[getPixelNumber(X, lineNum + i)] = CHSV(0, 0, 255);         // закрашиваем его белым
         }
@@ -174,7 +201,7 @@ void checkAndClear() {
 
       // теперь плавно уменьшаем яркость всего белого блока до нуля
       for (byte val = 0; val <= 30; val++) {
-        for (byte X = 0; X < WIDTH; X++) {
+        for (byte X = x_st; X <= x_en; X++) {
           for (byte i = 0; i < linesToClear; i++) {
             leds[getPixelNumber(X, lineNum + i)] = CHSV(0, 0, 240 - 8 * val);  // гасим белый цвет
           }
@@ -187,7 +214,7 @@ void checkAndClear() {
       // и теперь смещаем вниз все пиксели выше уровня с первой найденной строкой
       for (byte i = 0; i < linesToClear; i++) {
         for (byte Y = lineNum; Y < HEIGHT - 1; Y++) {
-          for (byte X = 0; X < WIDTH; X++) {
+          for (byte X = x_st; X <= x_en; X++) {
             drawPixelXY(X, Y, getPixColorXY(X, Y + 1));      // сдвигаем вниз
           }
           FastLED.show();
@@ -232,25 +259,49 @@ void newGameTetris() {
   color_index = ++color_index % 6;  // все цвета по очереди
   color = colors[color_index];
 
-  // если включен демо-режим, позицию по горизонтали выбираем случайно
-  if (gameDemo) pos = random(1, WIDTH - 1);
+  // Ширина стакана равна его высоте
+  byte center = WIDTH / 2;
+  int8_t xl = center;
+  int8_t xr = center;
 
+  CRGB color = 0x1E1E1E;
+  while (xl >= left_offset || xr <= right_offset) {
+    if (xl >= left_offset) drawPixelXY(xl, 0, color);
+    if (xr <= right_offset) drawPixelXY(xr, 0, color);
+    delay(25);
+    FastLED.show();
+    xl--; xr++;
+  }
+  for (byte i = 0; i < HEIGHT; i++) {
+    drawPixelXY(left_offset, i, color);
+    drawPixelXY(right_offset, i, color);
+    delay(25);
+    FastLED.show();
+  }
+
+  // если включен демо-режим, позицию по горизонтали выбираем случайно
+  if (gameDemo) {
+    pos = random(left_offset+2, right_offset - 1);
+  }
+      
   down_flag = false;  // разрешаем ускорять кнопкой "вниз"
   delay(10);
 }
 
 // управление фигурами вправо и влево
 void stepRight() {
+  byte x_en = right_offset - 1;
   if (checkArea(1)) {
     prev_pos = pos;
-    if (++pos > WIDTH) pos = WIDTH;
+    if (++pos >= x_en) pos = x_en;
     redrawFigure(ang, prev_pos, height);
   }
 }
+
 void stepLeft() {
   if (checkArea(2)) {
     prev_pos = pos;
-    if (--pos < 0) pos = 0;
+    if (--pos < left_offset + 1) pos = left_offset + 1;
     redrawFigure(ang, prev_pos, height);
   }
 }
@@ -275,6 +326,10 @@ boolean checkArea(int8_t check_type) {
     offset = 0;   // разрешаем оказаться вплотную к стенке
   }
 
+  byte y_st = 1;
+  byte x_st = left_offset + 1;
+  byte x_en = right_offset - 1;
+
   for (byte i = 0; i < 4; i++) {
     // проверяем точки фигуры
     // pos, height - координаты главной точки фигуры в ГЛОБАЛЬНОЙ системе координат
@@ -296,7 +351,7 @@ boolean checkArea(int8_t check_type) {
 
     // границы поля
     if (check_type == 1 || check_type == 3) {
-      if (X + 1 > WIDTH - 1) flag = false;    // смотрим следующий справа
+      if (X + 1 >= x_en) flag = false;    // смотрим следующий справа
       uint32_t getColor = 0;
       if (Y < HEIGHT)
         getColor = getPixColorXY(X + offset, Y);
@@ -306,7 +361,7 @@ boolean checkArea(int8_t check_type) {
     }
     
     if (check_type == 2 || check_type == 3) {
-      if (X - 1 < 0) flag = false;    // смотрим следующий слева
+      if (X - 1 <= x_st) flag = false;    // смотрим следующий слева
       uint32_t getColor = 0;
       if (Y < HEIGHT)
         getColor = getPixColorXY(X - offset, Y);
@@ -333,7 +388,6 @@ boolean checkArea(int8_t check_type) {
 void redrawFigure(int8_t clr_ang, int8_t clr_pos, int8_t clr_height) {
   drawFigure(fig, clr_ang, clr_pos, clr_height, 0x000000);            // стереть фигуру
   drawFigure(fig, ang, pos, height, color);                           // отрисовать
-  // +++FastLED.show();
 }
 
 // функция, отрисовывающая фигуру заданным цветом и под нужным углом
