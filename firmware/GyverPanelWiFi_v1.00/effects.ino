@@ -1289,8 +1289,6 @@ void pacificaRoutine()
   uint32_t deltams = ms - sLastms;
   
   sLastms = ms;
-
-  // uint32_t deltams = map8(255-effectSpeed, , 50);
   
   uint16_t speedfactor1 = beatsin16(3, 179, 269);
   uint16_t speedfactor2 = beatsin16(4, 179, 269);
@@ -1416,4 +1414,131 @@ void shadowsRoutine() {
     
     nblend( leds[pixelnumber], newcolor, 64);
   }
+}
+
+// ***************************** ПАЛИТРА *****************************
+
+#define BLOCK_SIZE 4       // Размер квадратика палитры
+#define FADE_IN_STEPS 32   // За сколько шагов плашка появляется на экране    
+#define FADE_OUT_STEPS 64  // За сколько шагов плашка убирается с экрана    
+#define BLOCK_ON_START 5   // Сколько блоков сразу появлять в начале эффекта
+
+byte num_x = WIDTH / BLOCK_SIZE;
+byte num_y = HEIGHT / BLOCK_SIZE;
+byte off_x = (WIDTH - BLOCK_SIZE * num_x) / 2;
+byte off_y = (HEIGHT - BLOCK_SIZE * num_y) / 2;
+
+byte palette_h[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // Н in CHSV
+byte palette_s[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // S in CHSV
+byte block_sta[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // Block state: // 0 - появление; 1 - исчезновение; 2 - пауза перед появлением 3 - пауза перед удалением
+byte block_dur[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // время паузы блока
+
+void paletteRoutine() {
+
+  if (loadingFlag) {
+    // modeCode = MC_ANALYZER;
+    loadingFlag = false;
+
+    // Для всех блоков определить состояние - "ожидание появления
+    for (byte c=0; c < num_y; c++) {
+      for (byte r=0; r < num_x; r++) {
+        block_sta[c][r] = 2;                // Состояние - пауза перед появлением
+        block_dur[c][r] = random8(90,240);  // Длительность паузы
+      }
+    }
+
+    // Для некоторого количества начальных - установить "За шаг до появления"
+    // При первом же проходе состояние переключится на "появление"
+    for (byte i = 0; i<BLOCK_ON_START; i++) {
+      byte idx = random8(0, num_x*num_y-1);
+      byte r = idx / BLOCK_SIZE;
+      byte c = idx % BLOCK_SIZE;
+      block_dur[c][r] = 1;                  // Счетчик до начала появления
+    }
+    FastLED.clear();
+  }
+  
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+
+  for (byte c=0; c < num_y; c++) {
+    byte block_y = off_y + c * BLOCK_SIZE;
+    for (byte r=0; r < num_x; r++) {    
+      
+      byte block_x = off_x + r * BLOCK_SIZE;
+      byte h = palette_h[c][r];      
+      byte s = palette_s[c][r];
+
+      // Проверить состояние блока
+      if (block_sta[c][r] > 1) {
+        
+        // Одна из пауз - перед появлением или перед исчезновением
+        // Уменьшить время паузы. Если стало 0 - переключить с паузы на появление / исчезновение
+         block_dur[c][r] -= 1;
+         if (block_dur[c][r] == 0) {
+           block_sta[c][r] -= 2;     // 3->1 - исчезать; 2->0 появлять за указанное количество шагов
+           if (block_sta[c][r] == 0) {
+            block_dur[c][r] = FADE_IN_STEPS;    // Количество шагов появления блока
+            palette_h[c][r] = random8(0,255);   // Цвет нового блока
+            palette_s[c][r] = random8(32,255);  // Насыщенность цвета нового блока
+           } else { 
+             block_dur[c][r] = FADE_OUT_STEPS;  // Кол-во шагов убирания блока
+           }  
+         }
+
+      }
+      
+      if (block_sta[c][r] < 2) {
+
+        // В процессе появления или исчезновения
+        // Выполнить один шаг появления / исчезновения блока
+        byte fade_dir = block_sta[c][r];
+        byte fade_step = block_dur[c][r];
+
+        // Яркость блока
+        byte bri = fade_dir == 0
+           ? map(fade_step, 0,FADE_IN_STEPS,  0,effectBrightness)
+           : map(fade_step, 0,FADE_OUT_STEPS, effectBrightness,0);
+
+        // Нарисовать блок   
+        for (byte i=0; i<BLOCK_SIZE; i++) {        
+          for (byte j=0; j<BLOCK_SIZE; j++) {
+            
+            byte k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
+            byte bri2 = (bri > k ? bri - k : 0);
+            CHSV color = CHSV(h, s, bri2);
+
+            uint16_t idx = getPixelNumber(block_x + j, block_y + BLOCK_SIZE - i - 1);
+            leds[idx] = color;
+          }
+        }
+
+        // Шаг появления - обработан
+        block_dur[c][r] -= 1;
+
+        // Весь процесс появления / исчезновения выполнен?
+        // Сменить статус блока
+        if (block_dur[c][r] == 0) {
+           // Появление / исчезновение закончено
+           block_sta[c][r] = block_sta[c][r] == 0 ? 3 : 2; // вкл паузу перед исчезновением после появления или паузу перед появлением после исчезновения
+           block_dur[c][r] = random8(90,240);              // Длительность паузы
+        }
+        
+      }      
+    }
+  }
+}
+
+// ****************************** ANALYZER *****************************
+
+
+void analyzerRoutine() {
+
+  if (loadingFlag) {
+    // modeCode = MC_ANALYZER;
+    loadingFlag = false;
+    FastLED.clear();
+  }
+  
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  
 }

@@ -1316,7 +1316,7 @@ void sendPageParams(int page) {
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
       if (manualMode)  str+="0|AP:"; else str+="1|AP:";
-      if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
+      if (AUTOPLAY && !manualMode)   str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
       str+="|RM:" + String(useRandomSequence);

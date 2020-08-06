@@ -475,29 +475,6 @@ void contrastClockC(){
 void setOverlayColors() {
   if (COLOR_MODE == 0 && !(thisMode == MC_CLOCK || thisMode == MC_FILL_COLOR || thisMode == MC_COLORS)) {
     switch (thisMode) {
-      case MC_SPARKLES:
-      case MC_MATRIX:
-      case MC_STARFALL:
-      case MC_FIRE: 
-      case MC_BALL:
-      case MC_BALLS: 
-      case MC_NOISE_RAINBOW:
-      case MC_NOISE_RAINBOW_STRIP: 
-      case MC_RAINBOW: 
-      case MC_LIGHTERS:
-      case MC_PAINTBALL:
-      case MC_SWIRL:
-      case MC_NOISE_PLASMA:
-      case MC_CYCLON:
-      case MC_FLICKER:
-      case MC_PACIFICA:
-      case MC_SHADOWS:
-      case MC_MAZE:
-      case MC_SNAKE:
-      case MC_TETRIS:
-      case MC_IMAGE:
-        contrastClock();
-        break;
       case MC_SNOW:
       case MC_NOISE_ZEBRA: 
       case MC_NOISE_MADNESS:
@@ -511,6 +488,9 @@ void setOverlayColors() {
         break;
       case MC_DAWN_ALARM:
         contrastClockC();
+        break;      
+      default:
+        contrastClock();
         break;
     }
   }

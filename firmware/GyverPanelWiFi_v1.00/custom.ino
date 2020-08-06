@@ -99,6 +99,8 @@ void processEffect(byte aMode) {
     case MC_MAZE:                mazeRoutine(); break;
     case MC_SNAKE:               snakeRoutine(); break;
     case MC_TETRIS:              tetrisRoutine(); break;
+    case MC_PALETTE:             paletteRoutine(); break;
+    case MC_ANALYZER:            analyzerRoutine(); break;
     case MC_IMAGE:               animationRoutine(); break;
     case MC_TEXT:                runningText(); break;
     case MC_CLOCK:               clockRoutine(); break;
@@ -204,7 +206,8 @@ void setTimersForMode(byte aMode) {
   effectSpeed = getEffectSpeed(aMode);
   if (effectSpeed == 0) effectSpeed = 2;
   // Эти режимы смотрятся (работают) только на максимальной скорости;
-  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
+  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
+      aMode == MC_SHADOWS || aMode == MC_ANALYZER)
     effectTimer.setInterval(1);        
   else
     effectTimer.setInterval(effectSpeed);
@@ -261,7 +264,7 @@ void checkIdleState() {
 #endif
   
   if (idleState) {
-    if (millis() - autoplayTimer > autoplayTime && AUTOPLAY) {    // таймер смены режима
+    if ((millis() - autoplayTimer > autoplayTime) && !manualMode && AUTOPLAY) {    // таймер смены режима
       autoplayTimer = millis();
       nextMode();
     }
@@ -270,7 +273,8 @@ void checkIdleState() {
       idleState = true;                                     
       autoplayTimer = millis();
       loadingFlag = true;
-      AUTOPLAY = true;      
+      AUTOPLAY = true;
+      manualMode = false;
       FastLED.clear();
       FastLED.show();
     }
