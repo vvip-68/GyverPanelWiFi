@@ -1443,7 +1443,7 @@ void paletteRoutine() {
     for (byte c=0; c < num_y; c++) {
       for (byte r=0; r < num_x; r++) {
         block_sta[c][r] = 2;                // Состояние - пауза перед появлением
-        block_dur[c][r] = random8(90,240);  // Длительность паузы
+        block_dur[c][r] = random8(24,96);   // Длительность паузы
       }
     }
 
@@ -1530,6 +1530,34 @@ void paletteRoutine() {
 
 // ****************************** ANALYZER *****************************
 
+// цвета высоты полос спектра.
+#define COLOR1    HUE_GREEN
+#define COLOR2    HUE_YELLOW
+#define COLOR3    HUE_ORANGE
+#define COLOR4    HUE_RED
+#define MAX_COLOR HUE_RED // цвет точек максимума
+
+// анимация
+#define SMOOTH 0.3        // плавность движения столбиков (0 - 1)
+
+// громкость
+#define DEF_GAIN 50       // максимальный порог по умолчанию (при AUTO_GAIN игнорируется)
+
+// точки максимума
+#define MAX_DOTS 1        // включить/выключить отрисовку точек максимума (1 вкл, 0 выкл)
+#define FALL_DELAY 50     // скорость падения точек максимума (задержка, миллисекунды)
+#define FALL_PAUSE 700    // пауза перед падением точек максимума, миллисекунды
+
+unsigned long gainTimer, fallTimer;
+unsigned long timeLevel[WIDTH];
+byte  maxValue;
+byte  posOffset[WIDTH];   // Массив данных для отображения на матрице
+int   maxLevel[WIDTH];
+byte  posLevel_old[WIDTH];
+boolean fallFlag;
+
+
+// -------------------------------------------------------------------------------------
 
 void analyzerRoutine() {
 
@@ -1539,6 +1567,63 @@ void analyzerRoutine() {
     FastLED.clear();
   }
   
+  // забиваетм массив fht_log_out[] величинами по спектру
+  for (int i = 0 ; i < WIDTH; i++) {
+    posOffset[i] = random8(1,HEIGHT + HEIGHT / 4);    
+  }
+
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  
+  maxValue = 0;
+  FastLED.clear();  // очистить матрицу
+  
+  for (byte pos = 0; pos < WIDTH; pos++) {    // для кажого столбца матрицы
+    int posLevel = posOffset[pos];
+
+    // найти максимум из пачки тонов
+    if (posLevel > maxValue) maxValue = posLevel;
+
+    // фильтрация длины столбиков, для их плавного движения
+    posLevel = posLevel * SMOOTH + posLevel_old[pos] * (1 - SMOOTH);
+    posLevel_old[pos] = posLevel;
+
+    // преобразовать значение величины спектра в диапазон 0..HEIGHT с учётом настроек
+    posLevel = constrain(posLevel, 1, HEIGHT - 1);
+
+    if (posLevel > 0) {
+      for (int j = 0; j < posLevel; j++) {
+        CHSV color;
+        if      (j < map( 5, 0,16, 0,HEIGHT)) color = CHSV(COLOR1, 255, effectBrightness);
+        else if (j < map(10, 0,16, 0,HEIGHT)) color = CHSV(COLOR2, 255, effectBrightness);
+        else if (j < map(13, 0,16, 0,HEIGHT)) color = CHSV(COLOR3, 255, effectBrightness);
+        else if (j < map(15, 0,16, 0,HEIGHT)) color = CHSV(COLOR4, 255, effectBrightness);
+
+        drawPixelXY(pos, j, color);
+      }
+    }
+
+    if (posLevel > 0 && posLevel > maxLevel[pos]) {    // если для этой полосы есть максимум, который больше предыдущего
+      maxLevel[pos] = posLevel;                        // запомнить его
+      timeLevel[pos] = millis();                       // запомнить время
+    }
+
+    // если точка максимума выше нуля (или равна ему) - включить пиксель
+    if (maxLevel[pos] >= 0 && MAX_DOTS) {
+      drawPixelXY(pos, maxLevel[pos], CHSV(MAX_COLOR, 255, effectBrightness));
+    }
+
+    if (fallFlag) {                                           // если падаем на шаг
+      if ((long)millis() - timeLevel[pos] > FALL_PAUSE) {     // если максимум держался на своей высоте дольше FALL_PAUSE
+        if (maxLevel[pos] >= 0) maxLevel[pos]--;              // уменьшить высоту точки на 1
+        // внимание! Принимает минимальное значение -1 !
+      }
+    }
+  }
+
+  fallFlag = 0;                                 // сбросить флаг падения
+  if (millis() - fallTimer > FALL_DELAY) {      // если настало время следующего падения
+    fallFlag = 1;                               // поднять флаг
+    fallTimer = millis();
+  }
   
 }

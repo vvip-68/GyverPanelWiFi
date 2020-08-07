@@ -206,8 +206,7 @@ void setTimersForMode(byte aMode) {
   effectSpeed = getEffectSpeed(aMode);
   if (effectSpeed == 0) effectSpeed = 2;
   // Эти режимы смотрятся (работают) только на максимальной скорости;
-  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
-      aMode == MC_SHADOWS || aMode == MC_ANALYZER)
+  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
     effectTimer.setInterval(1);        
   else
     effectTimer.setInterval(effectSpeed);

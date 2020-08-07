@@ -74,7 +74,7 @@
  * В менеджере плат выбрано "ESP32 Dev Module"
  */ 
 #if defined(ESP32)
-#define WIDTH 48              // ширина матрицы
+#define WIDTH 16              // ширина матрицы
 #define HEIGHT 16             // высота матрицы
 #define SEGMENTS 1            // диодов в одном "пикселе" (для создания матрицы из кусков ленты)
 #define DEVICE_TYPE 0         // Использование матрицы: 0 - свернута в трубу для лампы; 1 - плоская матрица в рамке   
@@ -102,7 +102,7 @@
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include <EEPROM.h>
-#include "FastLED.h"             // Установите в менеджере библиотек стандартную библиотеку FastLED
+#include <FastLED.h>             // Установите в менеджере библиотек стандартную библиотеку FastLED
 #include "TM1637Display.h"       // Внимание!!! Библиотека в папке проекта libraries изменена - константы букв и цифр переименованы с вида _1, _A на _1_, _A_ из за ошибок компиляции для ESP32
 #include "timerMinim.h"
 #include "GyverButton.h"

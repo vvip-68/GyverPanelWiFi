@@ -1457,7 +1457,7 @@ void sendPageParams(int page) {
   }
 }
 
-// Второй параметр эффекта thisMode для отправки на телефон параметра "SQ:"
+// Первый параметр эффекта thisMode для отправки на телефон параметра "SS:"
 String getParamForMode(byte mode) {
  // Эффекты не имеющие настройки "Вариант" (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным 
  String str; 
@@ -1471,6 +1471,8 @@ String getParamForMode(byte mode) {
    case MC_MAZE:
    case MC_SNAKE:
    case MC_TETRIS:
+   case MC_PALETTE:
+   case MC_ANALYZER:
    case MC_IMAGE:
      str = "X";
      break;
