@@ -1540,13 +1540,13 @@ void paletteRoutine() {
 // анимация
 #define SMOOTH 0.3        // плавность движения столбиков (0 - 1)
 
-// громкость
-#define DEF_GAIN 50       // максимальный порог по умолчанию (при AUTO_GAIN игнорируется)
-
 // точки максимума
 #define MAX_DOTS 1        // включить/выключить отрисовку точек максимума (1 вкл, 0 выкл)
 #define FALL_DELAY 50     // скорость падения точек максимума (задержка, миллисекунды)
 #define FALL_PAUSE 700    // пауза перед падением точек максимума, миллисекунды
+
+#define MAX_LEVEL (HEIGHT + HEIGHT / 4)
+#define SIN_WIDTH (WIDTH / 8)
 
 unsigned long gainTimer, fallTimer;
 unsigned long timeLevel[WIDTH];
@@ -1556,22 +1556,64 @@ int   maxLevel[WIDTH];
 byte  posLevel_old[WIDTH];
 boolean fallFlag;
 
-
+byte st = 0;
+byte phase = 0;          // фаза эффекта
+    
 // -------------------------------------------------------------------------------------
+
 
 void analyzerRoutine() {
 
   if (loadingFlag) {
     // modeCode = MC_ANALYZER;
     loadingFlag = false;
+    for (int i = 0; i < WIDTH; i++) {
+      maxLevel[i] = 0;
+      posLevel_old[i] = 0;
+    }
+    st = 0;
+    phase = 0;
     FastLED.clear();
   }
   
-  // забиваетм массив fht_log_out[] величинами по спектру
-  for (int i = 0 ; i < WIDTH; i++) {
-    posOffset[i] = random8(1,HEIGHT + HEIGHT / 4);    
+  if (phase == 0) {
+    // Движение волны слева направо
+    for (int i = 0; i < WIDTH; i++) {
+      posOffset[i] = (i < st || i >= st + SIN_WIDTH - (SIN_WIDTH / 4))
+        ? 0
+        : map8(sin8(map(i, st,st + SIN_WIDTH, 0,255)), 1, HEIGHT + HEIGHT / 2);
+    }
+  } else 
+
+  if (phase == 2) {
+    // Движение волны справа налево
+    for (int i = 0; i < WIDTH; i++) {
+        posOffset[i] = (i < WIDTH - st || i > WIDTH - st + SIN_WIDTH)
+          ? 0
+          : posOffset[i] = map8(sin8(map(i, WIDTH-st, WIDTH - st + SIN_WIDTH, 0, 255)), 1, HEIGHT + HEIGHT / 2);
+    }
+  } else
+
+  if (phase == 1 || phase == 3) {
+    // Пауза, даем "отстояться" пикам
+    for (int i = 0; i < WIDTH; i++) {
+      posOffset[i] = 0;
+    }    
+  } else
+  
+  if (phase >= 4) {
+    // Случайные двиижения - "музыка"
+    for (int i = 0; i < WIDTH; i++) {
+      posOffset[i] = random8(1,MAX_LEVEL);    
+    }
   }
 
+  st++;
+  if (st>=WIDTH && phase < 4) {    
+    phase++;
+    st = phase % 2 == 1 ? WIDTH / 2 : 0;
+  }
+  
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
   
   maxValue = 0;
