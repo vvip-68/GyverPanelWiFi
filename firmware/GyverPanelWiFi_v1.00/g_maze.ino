@@ -31,6 +31,7 @@ void newGameMaze() {
   playerPos[0] = !SHIFT;
   playerPos[1] = !SHIFT;
 
+  gameOverFlag = false;
   buttons = 4;
   FastLED.clear();
 
@@ -81,7 +82,7 @@ void newGameMaze() {
 }
 
 void mazeRoutine() {
-  if (loadingFlag) {
+  if (loadingFlag || gameOverFlag) {  
     FastLED.clear();
     loadingFlag = false;
     newGameMaze();
@@ -136,8 +137,10 @@ void buttonsTickMaze() {
 void movePlayer(int8_t nowX, int8_t nowY, int8_t prevX, int8_t prevY) {
   drawPixelXY(prevX, prevY, 0x000000);
   drawPixelXY(nowX, nowY, GLOBAL_COLOR_2);
+
   if ((nowX == (MAZE_WIDTH - 2) - SHIFT) && (nowY == (MAZE_HEIGHT - 1) - SHIFT)) {
-    loadingFlag = true;
+    gameOverFlag = true;
+
     FastLED.show();
     delay(250);
     FastLED.clear();
@@ -147,6 +150,7 @@ void movePlayer(int8_t nowX, int8_t nowY, int8_t prevX, int8_t prevY) {
     }
     return;
   }
+
   if (GAMEMODE || mazeMode) {
     for (int8_t y = nowY - FOV; y < nowY + FOV; y++) {
       for (int8_t x = nowX - FOV; x < nowX + FOV; x++) {

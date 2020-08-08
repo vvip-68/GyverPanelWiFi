@@ -264,8 +264,17 @@ void checkIdleState() {
   
   if (idleState) {
     if ((millis() - autoplayTimer > autoplayTime) && !manualMode && AUTOPLAY) {    // таймер смены режима
-      autoplayTimer = millis();
-      nextMode();
+      if (thisMode == MC_TEXT   && !fullTextFlag || 
+          thisMode == MC_MAZE   && !gameOverFlag ||
+      //  thisMode == MC_SNAKE  && !gameOverFlag ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
+          thisMode == MC_TETRIS && !gameOverFlag) {        
+        // Если бегущая строка или игра не завершены - смены режима не делать
+      } else {
+        // Если режим не игра и не бегущая строка или один из этих режимов и есть флаг завершения режима -
+        // перейти к следующему режиму
+        autoplayTimer = millis();
+        nextMode();
+      }
     }
   } else {
     if (idleTimer.isReady()) {      // таймер холостого режима. Если время наступило - включить автосмену режимов 

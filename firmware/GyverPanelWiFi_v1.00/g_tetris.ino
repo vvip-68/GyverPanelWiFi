@@ -73,7 +73,7 @@ const int8_t figures[7][12][2] PROGMEM = {
 };
 
 void tetrisRoutine() {
-  if (loadingFlag) {
+  if (loadingFlag || gameOverFlag) {
     FastLED.clear();
     loadingFlag = false;
     left_offset = WIDTH > HEIGHT ? ((WIDTH-HEIGHT) / 2) : 0;
@@ -109,30 +109,21 @@ void tetrisRoutine() {
     }
   }
 
-  /*
-    if (bt_left.isStep()) {    // кнопка нажата и удерживается
-    stepLeft();
-    }
-    if (bt_right.isStep()) {
-    stepRight();
-    }
-  */
-
   prev_height = height;
 
   if (!checkArea(0)) {            // проверяем столкновение с другими фигурами
     if (height >= HEIGHT - 2) {   // проиграл по высоте
-      gameOverTetris();                 // игра окончена, очистить всё
-      newGameTetris();                 // новый раунд
+      gameOverTetris();           // игра окончена, очистить всё
+      gameOverFlag = true;
     } else {                      // если не достигли верха
       fixFigure();                // зафиксировать
       checkAndClear();            // проверить ряды и очистить если надо
-      newGameTetris();                 // новый раунд
+      newGameTetris();            // Запустить новую фигуру
     }
   } else if (height == 0) {       // если достигли дна
     fixFigure();                  // зафиксировать
     checkAndClear();              // проверить ряды и очистить если надо
-    newGameTetris();                   // новый раунд
+    newGameTetris();              // Запустить новую фигуру
   } else {                        // если путь свободен
     height--;                             // идём вниз
     redrawFigure(ang, pos, prev_height);  // перерисовка
@@ -243,12 +234,17 @@ void gameOverTetris() {
   lineCleanCounter = 0;   // сброс счёта
   FastLED.clear();
 
+  gameOverFlag = true;
+
   delay(20);
 }
 
 // новый раунд
 void newGameTetris() {
   delay(10);
+  
+  gameOverFlag = false;
+
   buttons = 4;
   height = HEIGHT;    // высота = высоте матрицы
   pos = WIDTH / 2;    // фигура появляется в середине

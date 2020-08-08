@@ -15,7 +15,7 @@ int snakeLength;
 boolean butt_flag, pizdetc;
 
 void snakeRoutine() {
-  if (loadingFlag) {
+  if (loadingFlag || gameOverFlag) {
     FastLED.clear();
     loadingFlag = false;
     newGameSnake();
@@ -88,6 +88,7 @@ void snakeRoutine() {
 
   // если он настал
   if (pizdetc) {
+    gameOverFlag = true;
     pizdetc = false;
 
     // ну в общем плавно моргнуть, типо змейке "больно"
@@ -105,11 +106,7 @@ void snakeRoutine() {
     FastLED.setBrightness(globalBrightness);
 
     displayScore(snakeLength - START_LENGTH);
-    delay(1000);
-    
-    FastLED.clear();
-
-    newGameSnake();
+    delay(1000);    
   }
 }
 
@@ -199,6 +196,8 @@ void newGameSnake() {
   // свежее зерно для генератора случайных чисел
   randomSeed(millis());
 
+  gameOverFlag = false;
+  
   // длина из настроек, начинаем в середине экрана, бла-бла-бла
   snakeLength = START_LENGTH;
   headX = WIDTH / 2;
