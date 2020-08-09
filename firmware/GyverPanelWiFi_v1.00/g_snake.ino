@@ -105,7 +105,7 @@ void snakeRoutine() {
     FastLED.clear();
     FastLED.setBrightness(globalBrightness);
 
-    displayScore(snakeLength - START_LENGTH);
+    if (!gameDemo) displayScore(snakeLength - START_LENGTH);
     delay(1000);    
   }
 }

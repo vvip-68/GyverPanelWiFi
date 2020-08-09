@@ -263,13 +263,19 @@ void checkIdleState() {
 #endif
   
   if (idleState) {
-    if ((millis() - autoplayTimer > autoplayTime) && !manualMode && AUTOPLAY) {    // таймер смены режима
+    unsigned long ms = millis();
+    if ((ms - autoplayTimer > autoplayTime) && !manualMode && AUTOPLAY) {    // таймер смены режима
+      bool ok = true;
       if (thisMode == MC_TEXT   && !fullTextFlag || 
           thisMode == MC_MAZE   && !gameOverFlag ||
       //  thisMode == MC_SNAKE  && !gameOverFlag ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
           thisMode == MC_TETRIS && !gameOverFlag) {        
         // Если бегущая строка или игра не завершены - смены режима не делать
-      } else {
+        ok = false;
+      } 
+
+      // Смена режима разрешена
+      if (ok) {
         // Если режим не игра и не бегущая строка или один из этих режимов и есть флаг завершения режима -
         // перейти к следующему режиму
         autoplayTimer = millis();

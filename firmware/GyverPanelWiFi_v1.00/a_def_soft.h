@@ -12,10 +12,13 @@
 // Список и порядок эффектов, передаваймый в приложение на смартфоне. Данный список попадает в комбобокс выбора, 
 // чей индекс передается из приложения в контроллер матрицы для выбора, поэтому порядок должен соответствовать 
 // списку эффектов, определенному выше
-#define EFFECT_LIST F("Лампа,Снегопад,Кубик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Звездопад,Конфетти,Часы с датой," \
+#define EFFECT_LIST F("Лампа,Снегопад,Кубик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Звездопад,Конфетти," \
                       "Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Смена цвета," \
-                      "Светлячки,Водоворот,Часы,Циклон,Мерцание,Северное сияние,Тени,Лабиринт,Змейка,Тетрис," \
+                      "Светлячки,Водоворот,Циклон,Мерцание,Северное сияние,Тени,Лабиринт,Змейка,Тетрис," \
                       "Палитра,Спектрум,Анимация,Рассвет")
+
+#define MC_TEXT                 10  // после удалить (заменить на другой эффект)
+#define MC_CLOCK                23  // после удалить (заменить на другой эффект)
 
 // ID эффектов
 #define MC_FILL_COLOR            0
@@ -28,33 +31,31 @@
 #define MC_BALLS                 7
 #define MC_STARFALL              8
 #define MC_SPARKLES              9
-#define MC_TEXT                 10  // после удалить (заменить на другой эффект)
-#define MC_NOISE_MADNESS        11
-#define MC_NOISE_CLOUD          12
-#define MC_NOISE_LAVA           13
-#define MC_NOISE_PLASMA         14
-#define MC_NOISE_RAINBOW        15
-#define MC_NOISE_RAINBOW_STRIP  16
-#define MC_NOISE_ZEBRA          17
-#define MC_NOISE_FOREST         18
-#define MC_NOISE_OCEAN          19
-#define MC_COLORS               20
-#define MC_LIGHTERS             21
-#define MC_SWIRL                22
-#define MC_CLOCK                23  // после удалить (заменить на другой эффект)
-#define MC_CYCLON               24
-#define MC_FLICKER              25
-#define MC_PACIFICA             26
-#define MC_SHADOWS              27
-#define MC_MAZE                 28
-#define MC_SNAKE                29
-#define MC_TETRIS               30
-#define MC_PALETTE              31
-#define MC_ANALYZER             32
-#define MC_IMAGE                33
-#define MC_DAWN_ALARM           34
+#define MC_NOISE_MADNESS        10
+#define MC_NOISE_CLOUD          11
+#define MC_NOISE_LAVA           12
+#define MC_NOISE_PLASMA         13
+#define MC_NOISE_RAINBOW        14
+#define MC_NOISE_RAINBOW_STRIP  15
+#define MC_NOISE_ZEBRA          16
+#define MC_NOISE_FOREST         17
+#define MC_NOISE_OCEAN          18
+#define MC_COLORS               19
+#define MC_LIGHTERS             20
+#define MC_SWIRL                21
+#define MC_CYCLON               22
+#define MC_FLICKER              23
+#define MC_PACIFICA             24
+#define MC_SHADOWS              25
+#define MC_MAZE                 26
+#define MC_SNAKE                27
+#define MC_TETRIS               28
+#define MC_PALETTE              29
+#define MC_ANALYZER             30
+#define MC_IMAGE                31
+#define MC_DAWN_ALARM           32
 
-#define MAX_EFFECT              35         // количество эффектов, определенных в прошивке
+#define MAX_EFFECT              33         // количество эффектов, определенных в прошивке
 #define MAX_SPEC_EFFECT         11         // количество эффектов быстрого доступа определенных в прошивке -> 0..10
 
 // ---------------------------------

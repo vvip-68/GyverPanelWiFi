@@ -120,10 +120,10 @@ void process() {
       clicks = 0;
     }
 
-    // Одинарный клик - включить . выключить лампу
+    // Одинарный клик - включить . выключить панель
     if (clicks == 1) {
       if (isTurnedOff) {
-        // Если выключен - включить лампу, восстановив эффект на котором лампа была выключена
+        // Если выключен - включить панель, восстановив эффект на котором панель была выключена
         if (saveSpecialMode && saveSpecialModeId != 0) 
           setSpecialMode(saveSpecialModeId);
         else {
@@ -132,11 +132,11 @@ void process() {
           setEffect(saveMode);
         }
       } else {
-        // Сохранить текущий эффект
+        // Выключить панель, запомнив текущий режим
         saveSpecialMode = specialMode;
         saveSpecialModeId = specialModeId;
         saveMode = thisMode;
-        // Выключить лампу - черный экран
+        // Выключить панель - черный экран
         setCurrentManualMode(saveMode);
         setSpecialMode(0);
       }
@@ -172,18 +172,24 @@ void process() {
         setRandomMode();
       }
 
-      // Четырехкратное нажатие включает режим "Лампа" из любого режима, в т.ч. из сна (обработка - ниже)
-            
-      // Пятикратное нажатие - показать текущий IP WiFi-соединения
+#if (LAMP_MODE == 1)
+      // Четырехкратное нажатие включает режим "Лампа" из любого режима, в т.ч. из сна (обработка - ниже)            
+      // Пятикратное нажатие - показать текущий IP WiFi-соединения            
       else if (clicks == 5) {
         showCurrentIP(false);
       }      
-      
+#else      
+      // Четырехкратное нажатие - показать текущий IP WiFi-соединения            
+      else if (clicks == 4) {
+        showCurrentIP(false);
+      }      
+#endif
       // ... и т.д.
       
       // Обработка нажатой и удерживаемой кнопки
       else {
-      
+
+        // Удержание кнопки повышает / понижает яркость панели (лампы)
         if (butt.isStep() && thisMode != MC_DAWN_ALARM) {
           if (brightDirection) {
             if (globalBrightness < 10) globalBrightness += 1;
@@ -208,8 +214,10 @@ void process() {
       }            
     }
 
+#if (LAMP_MODE == 1)
+    // Если устройство - ламна - длительное нажатие кнопки включает яркий белый свет
     else if (isButtonHold) {
-        // Включить лампу - белый цвет
+        // Включить панель - белый цвет
         specialBrightness = 255;
         globalBrightness = 255;
         globalColor = 0xFFFFFF;
@@ -227,6 +235,7 @@ void process() {
       setSpecialMode(1);
       FastLED.setBrightness(globalBrightness);
     }      
+#endif
 
     #if (USE_MP3 == 1)
     // Есть ли изменение статуса MP3-плеера?

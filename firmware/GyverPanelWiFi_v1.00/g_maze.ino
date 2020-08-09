@@ -49,7 +49,7 @@ void newGameMaze() {
           default: drawPixelXY(x, y, 0x000000); break;
         }
       }
-      // Отобраэаем сгенерированный лабиринт строка за строкой
+      // Отображаем сгенерированный лабиринт строка за строкой
       FastLED.show();
       delay(25);
     }
@@ -186,9 +186,9 @@ boolean checkPath(int8_t x, int8_t y) {
 void smartMaze() {
   byte sum = 0, line;
   int attempt;
-  while (sum < MIN_PATH) {                  // пока длина пути меньше заданной
+  while (sum < MIN_PATH) {                          // пока длина пути меньше заданной
     attempt++;
-    //randomSeed(millis());                 // зерно для генератора псевдослучайных чисел
+    //randomSeed(millis());                         // зерно для генератора псевдослучайных чисел
     GenerateMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);    // генерировать лабиринт
     SolveMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);       // найти путь
 
@@ -316,6 +316,7 @@ void SolveMaze(char *maze, int width, int height) {
   unsigned int attempts = 0;
   while (x != width - 2 || y != height - 2) {
     if (attempts++ > maxSolves) {   // если решатель не может найти решение (maxSolves в 5 раз больше числа клеток лабиринта)
+      gameOverFlag = true;          // перегенерировать лабиринт
       break;                        // прервать решение
     }
     dx = 0; dy = 0;
@@ -342,6 +343,7 @@ void SolveMaze(char *maze, int width, int height) {
       }
     }
   }
+  
   /* Replace the entry and exit. */
   maze[(height - 2) * width + (width - 2)] = 2;
   maze[(height - 1) * width + (width - 2)] = 2;
