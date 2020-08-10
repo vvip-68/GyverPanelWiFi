@@ -18,22 +18,40 @@ void process() {
   
   parsing();                                    // принимаем данные
 
-  if (thisMode >= MAX_EFFECT) {
-      setRandomMode2(); 
+  // Если включен эффект с кодом большим кол-ва эффектов (но меньшим кода специальных эффектов) - 
+  // выбрать случайный эффект, иначе будет отображаться черный экран или застывший предыдущий эффект
+  if (thisMode >= MAX_EFFECT && thisMode < SPECIAL_EFFECTS_START) {
+    setRandomMode2(); 
   }
 
-  if (tmpSaveMode != thisMode) {    
-    String s_tmp = String(EFFECT_LIST);    
-    uint16_t len1 = s_tmp.length();
-    s_tmp = GetToken(s_tmp, thisMode+1, ',');
-    uint16_t len2 = s_tmp.length();
-    if (len1 > len2) { 
-      tmpSaveMode = thisMode;
-      Serial.print(F("Включен эффект "));
-      Serial.println("'" + s_tmp + "'");
-    } else {
-      setRandomMode2(); 
-    }    
+  if (tmpSaveMode != thisMode) {
+    switch (thisMode) {
+      case MC_CLOCK:
+        tmpSaveMode = thisMode;
+        Serial.print(F("Включен эффект "));
+        Serial.println(F("'Часы'"));
+        break;
+      case MC_TEXT:
+        tmpSaveMode = thisMode;
+        Serial.print(F("Включен эффект "));
+        Serial.println(F("'Бегущая строка'"));
+        break;
+      default:
+        // Определить какой эффект включился
+        String s_tmp = String(EFFECT_LIST);    
+        uint16_t len1 = s_tmp.length();
+        s_tmp = GetToken(s_tmp, thisMode+1, ',');
+        uint16_t len2 = s_tmp.length();
+        if (len1 > len2) { 
+          tmpSaveMode = thisMode;
+          Serial.print(F("Включен эффект "));
+          Serial.println("'" + s_tmp + "'");
+        } else {
+          // Если режим отсутствует в списке эффектов - включить члучайный
+          setRandomMode2(); 
+        }    
+        break;
+    }
   }
 
   // на время принятия данных матрицу не обновляем!
@@ -327,7 +345,7 @@ void parsing() {
       - $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
       - $19 7 X; - Размер часов X: 0 - авто, 1 - малые 3х5, 2 - большие 5x7
       - $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
-      - $19 9 X; - Формат часов бегущей строки: 0 - только часы; 1 - часы и дата кратко; 2 - часы и дата полностью
+      - $19 1 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       - $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
       - $19 11 X; - Режим цвета часов бегущей строкой X: 0,1,2,           
       - $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
@@ -336,6 +354,7 @@ void parsing() {
       - $19 15 00FFAA; - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
       - $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
       - $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
+      - $19 18 X; - сохранить настройку X "Бегущая строка в эффектах" (общий, для всех эффектов)
     20 - настройки и управление будильников
       - $20 0;       - отключение будильника (сброс состояния isAlarming)
       - $20 2 X VV MA MB;
@@ -535,9 +554,11 @@ void parsing() {
         //              действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0) {    
           // Включить эффект      
-          // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать следующий эффект
+          // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать другой случайный эффект
           if (tmp_eff == MC_CLOCK){
-             if (!(allowHorizontal || allowVertical)) tmp_eff++;
+             if (!(allowHorizontal || allowVertical)) {
+               setRandomMode2();
+             }
           }          
           manualMode = true;
           AUTOPLAY = false;
@@ -730,7 +751,7 @@ void parsing() {
 
       // ----------------------------------------------------
       // 19 - работа с настройками часов
-      //   $19 1 X; - сохранить настройку X "Часы в эффектах"
+      //   $19 1 X; - сохранить настройку X "Часы в эффектах" (общий, для всех эффектов)
       //   $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
       //   $19 3 N Z; - Период синхронизации часов NTP и Часовой пояс
       //   $19 4 X; - Выключать индикатор TM1637 при выключении экрана X: 0 - нет, 1 - да
@@ -738,7 +759,7 @@ void parsing() {
       //   $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
       //   $19 7 X; - Размер часов X: 0 - авто, 1 - малые 3х5, 2 - большие 5x7
       //   $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
-      //   $19 9 X; - Формат часов бегущей строки: 0 - только часы; 1 - часы и дата кратко; 2 - часы и дата полностью
+      //   $19 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       //   $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
       //   $19 11 X; - Режим цвета часов бегущей строкой X: 0,1,2,           
       //   $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
@@ -747,14 +768,15 @@ void parsing() {
       //   $19 15 00FFAA; - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
       //   $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
       //   $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
+      //   $19 18 X; - сохранить настройку X "Бегущая строка в эффектах" (общий, для всех эффектов)
       // ----------------------------------------------------
       
       case 19: 
          switch (intData[1]) {
            case 1:               // $19 1 X; - сохранить настройку X "Часы в эффектах"
-             overlayEnabled = ((CLOCK_ORIENT == 0 && allowHorizontal) || (CLOCK_ORIENT == 1 && allowVertical)) ? intData[2] == 1 : false;
-             saveClockOverlayEnabled(overlayEnabled);
-             if (specialMode) specialClock = overlayEnabled;
+             clockOverlayEnabled = ((CLOCK_ORIENT == 0 && allowHorizontal) || (CLOCK_ORIENT == 1 && allowVertical)) ? intData[2] == 1 : false;
+             saveClockOverlayEnabled(clockOverlayEnabled);
+             if (specialMode) specialClock = clockOverlayEnabled;
              break;
            case 2:               // $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
              useNtp = intData[2] == 1;
@@ -781,7 +803,7 @@ void parsing() {
            case 5:               // $19 5 X; - Режим цвета часов оверлея X: 0,1,2,3
              COLOR_MODE = intData[2];
              if (COLOR_MODE > 3) COLOR_MODE = 0;
-             setScaleForEffect(MC_CLOCK, COLOR_MODE);
+             setClockColor(COLOR_MODE);
              break;
            case 6:               // $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
              CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;             
@@ -789,8 +811,8 @@ void parsing() {
                if (CLOCK_ORIENT == 0 && !allowHorizontal) CLOCK_ORIENT = 1;
                if (CLOCK_ORIENT == 1 && !allowVertical) CLOCK_ORIENT = 0;              
              } else {
-               overlayEnabled = false;
-               saveClockOverlayEnabled(overlayEnabled);
+               clockOverlayEnabled = false;
+               saveClockOverlayEnabled(clockOverlayEnabled);
              }
              // Центрируем часы по горизонтали/вертикали по ширине / высоте матрицы
              checkClockOrigin();
@@ -805,10 +827,9 @@ void parsing() {
              setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
              init_time = true; refresh_time = false; ntp_cnt = 0;
              break;
-           case 9:               // $19 9 X; - Формат часов бегущей строки: 0 - только часы; 1 - часы и дата кратко; 2 - часы и дата полностью
-             formatClock = intData[2];
-             if (formatClock > 2) formatClock = 0;
-             setFormatClock(formatClock);
+           case 9:               // $19 9 I; - Периодичность отображения бегущей строки (в секундах)
+             TEXT_INTERVAL = intData[2];
+             setTextInterval(TEXT_INTERVAL);
              break;
            case 10:               // $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
              setNightClockColor(intData[2]);
@@ -818,19 +839,18 @@ void parsing() {
                 FastLED.setBrightness(specialBrightness);
              }             
              break;
-           case 11:               // $19 11 X; - Режим цвета часов бегущей строкой X: 0,1,2,           
+           case 11:               // $19 11 X; - Режим цвета бегущей строкой X: 0,1,2,           
              COLOR_TEXT_MODE = intData[2];
              if (COLOR_TEXT_MODE > 2) COLOR_TEXT_MODE = 0;
-             setScaleForEffect(MC_TEXT, COLOR_TEXT_MODE);
+             setTextColor(COLOR_TEXT_MODE);
              break;
            case 12:               // $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
-             saveEffectSpeed(MC_CLOCK, 255 - intData[2]);
+             setClockScrollSpeed(255 - intData[2]);
              setTimersForMode(thisMode);
              break;
-           case 13:               // $19 13 X; - скорость прокрутки часов бегущей строкой
-             saveEffectSpeed(MC_TEXT, 255 - intData[2]);
-             if (thisMode == MC_TEXT)
-               setTimersForMode(MC_TEXT);
+           case 13:               // $19 13 X; - скорость прокрутки бегущей строки
+             setTextScrollSpeed(255 - intData[2]);
+             setTimersForMode(thisMode);
              break;
            case 14:               // $19 14 00FFAA;
              // В строке цвет - "$19 14 00FFAA;" - цвет часов оверлея, сохраняемый в globalClockColor
@@ -848,9 +868,9 @@ void parsing() {
              if (allowHorizontal || allowVertical) {
                showDateInClock = intData[2] == 1;
              } else {
-               overlayEnabled = false;
+               clockOverlayEnabled = false;
                showDateInClock = false;
-               saveClockOverlayEnabled(overlayEnabled);
+               saveClockOverlayEnabled(clockOverlayEnabled);
              }
              setShowDateInClock(showDateInClock);
              break;
@@ -859,6 +879,10 @@ void parsing() {
              showDateInterval = intData[3];
              setShowDateDuration(showDateDuration);
              setShowDateInterval(showDateInterval);
+             break;
+           case 18:               // $19 18 X; - сохранить настройку X "Бегущая строка в эффектах"
+             textOverlayEnabled = intData[2] == 1;
+             saveTextOverlayEnabled(textOverlayEnabled);
              break;
         }
         if (intData[1] != 8) {
@@ -1129,7 +1153,7 @@ void parsing() {
   
     if (haveIncomeData) {                
       // read the packet into packetBufffer
-      int len = udp.read(incomeBuffer, UDP_PACKET_MAX_SIZE);
+      int len = udp.read(incomeBuffer, BUF_MAX_SIZE);
       if (len > 0) {          
         incomeBuffer[len] = 0;
       }
@@ -1310,11 +1334,12 @@ void sendPageParams(int page) {
   // CС:X        режим цвета часов оверлея: 0,1,2
   // CT:X        режим цвета текстовой строки: 0,1,2
   // CO:X        ориентация часов: 0 - горизонтально, 1 - вертикально
-  // CF:X        формат часов бегущей строкой: 0 - только часы, 1 - часы и дата кратко; 2 - часы и дата полностью
+  // TE:X        оверлей текста бегущей строки вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать бегущую строку в эффектах)
+  // TI:число    интервал отображения текста бегущей строки
   // SC:число    скорость смещения часов оверлея
   // ST:число    скорость смещения текстовых часов / бегущей строки
   // C1:цвет     цвет режима "монохром" часов оверлея; цвет: 192,96,96 - R,G,B
-  // C2:цвет     цвет режима "монохром" текстовых часов; цвет: 192,96,96 - R,G,B
+  // C2:цвет     цвет режима "монохром" бегущей строки; цвет: 192,96,96 - R,G,B
   // S1:[список] список звуков будильника, разделенный запятыми, ограничители [] обязательны        
   // S2:[список] список звуков рассвета, разделенный запятыми, ограничители [] обязательны        
 
@@ -1337,42 +1362,55 @@ void sendPageParams(int page) {
       str+="|BR:"+String(globalBrightness);
       str+="|UE:"+String((getEffectUsage(thisMode) ? "1" : "0"));
       // Оверлей бегущей строки
-      str+="|UT:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
+      str+="|UT:"+(thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
          ? "X":
          (String(getEffectTextOverlayUsage(thisMode) ? "1" : "0")));
       // Оверлей часов   
-      str+="|UC:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
+      str+="|UC:"+(thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
          ? "X" 
          : (String(getEffectClockOverlayUsage(thisMode) ? "1" : "0")));
       // Настройка скорости
-      str+="|SE:"+(thisMode == MC_CLOCK || thisMode == MC_PACIFICA  || thisMode == MC_SHADOWS
+      str+="|SE:"+(thisMode == MC_PACIFICA  || thisMode == MC_SHADOWS
          ? "X" 
          : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
       str+="|SS:"+getParamForMode(thisMode);
       str+="|SQ:"+getParam2ForMode(thisMode);
       // Контраст
-      str+="|BE:"+(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_PACIFICA || thisMode == MC_DAWN_ALARM ||
+      str+="|BE:"+(thisMode == MC_PACIFICA || thisMode == MC_DAWN_ALARM ||
                    thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS  
          ? "X" 
          : String(effectContrast[thisMode]));
       str+=";";
       break;
-    case 3:  // Настройки часов.
-      c1 = CRGB(globalClockColor);
+    case 3:  // Настройки бегущей строки
       c2 = CRGB(globalTextColor);
       // Часы могут отображаться: 
       // - вертикальные при высоте матрицы >= 11 и ширине >= 7; 
       // - горизонтальные при ширене матрицы >= 15 и высоте >= 5
       // Настройки часов можно отображать только если часы доступны по размерам: - или вертикальные или горизонтальные часы влазят на матрицу
       // Настройки ориентации имеют смыcл только когда И горизонтальные И вертикальные часы могут быть отображены на матрице; В противном случае - смысла нет, так как выбор очевиден (только один вариант)
-      str="$18 CE:"+(allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X") + "|CC:" + String(COLOR_MODE) + 
+      str="$18 TE:" + String(getTextOverlayEnabled()) + 
+             "|TI:" + String(getTextInterval()) + 
+             "|CT:" + String(COLOR_TEXT_MODE) +
+             "|ST:" + String(255 - getTextScrollSpeed()) +
+             "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b);
+      str+=";";
+      break;
+    case 4:  // Настройки часов.
+      c1 = CRGB(globalClockColor);
+      // Часы могут отображаться: 
+      // - вертикальные при высоте матрицы >= 11 и ширине >= 7; 
+      // - горизонтальные при ширене матрицы >= 15 и высоте >= 5
+      // Настройки часов можно отображать только если часы доступны по размерам: - или вертикальные или горизонтальные часы влазят на матрицу
+      // Настройки ориентации имеют смыcл только когда И горизонтальные И вертикальные часы могут быть отображены на матрице; В противном случае - смысла нет, так как выбор очевиден (только один вариант)
+      str="$18 CE:"+(allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X") +
+             "|CC:" + String(COLOR_MODE) + 
              "|CO:" + (allowVertical && allowHorizontal ? String(CLOCK_ORIENT) : "X") + 
              "|CK:" + String(CLOCK_SIZE) + 
-             "|NC:" + String(nightClockColor) + "|CF:" + String(formatClock) + "|CT:" + String(COLOR_TEXT_MODE) +
-             "|SC:" + String(255 - getEffectSpeed(MC_CLOCK)) + "|ST:" + String(255 - getEffectSpeed(MC_TEXT)) +
+             "|NC:" + String(nightClockColor) + 
+             "|SC:" + String(255 - getClockScrollSpeed()) + 
              "|C1:" + String(c1.r) + "," + String(c1.g) + "," + String(c1.b) +
-             "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b) +     
              "|DC:" + (showDateInClock ? "1" : "0") +
              "|DD:" + String(showDateDuration) +
              "|DI:" + String(showDateInterval) +
@@ -1382,7 +1420,7 @@ void sendPageParams(int page) {
              "|OF:" + (needTurnOffClock ? "1" : "0"); 
       str+=";";
       break;
-    case 4:  // Настройки будильника
+    case 5:  // Настройки будильника
       str="$18 AL:"; 
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1|AD:"; else str+="0|AD:";
       str+=String(dawnDuration)+"|AW:";
@@ -1411,7 +1449,7 @@ void sendPageParams(int page) {
       #endif
       str+=";";
       break;
-    case 5:  // Настройки подключения
+    case 6:  // Настройки подключения
       str="$18 AU:"; 
       if (useSoftAP) str+="1|AN:["; else str+="0|AN:[";
       str+=String(apName) + "]|AA:[";
@@ -1422,7 +1460,7 @@ void sendPageParams(int page) {
       else                str += String(F("нет подключения"));
       str+=";";
       break;
-    case 6:  // Настройки режимов автовключения по времени
+    case 7:  // Настройки режимов автовключения по времени
       str="$18 AM1T:"+String(AM1_hour)+" "+String(AM1_minute)+"|AM1A:"+String(AM1_effect_id)+
              "|AM2T:"+String(AM2_hour)+" "+String(AM2_minute)+"|AM2A:"+String(AM2_effect_id)+ 
              "|AM3T:"+String(AM3_hour)+" "+String(AM3_minute)+"|AM3A:"+String(AM3_effect_id)+ 
@@ -1431,7 +1469,7 @@ void sendPageParams(int page) {
       break;
 #if (USE_MP3 == 1)
     case 93:  // Запрос списка звуков будильника
-      str="$18 S1:[" + String(ALARM_SOUND_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
+      str="$18 S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
       break;
     case 94:  // Запрос списка звуков рассвета
       str="$18 S2:[" + String(DAWN_SOUND_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
@@ -1449,7 +1487,7 @@ void sendPageParams(int page) {
       #endif
       break;
     case 99:  // Запрос списка эффектов
-      str="$18 LE:[" + String(EFFECT_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
+      str="$18 LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
       break;
   }
   
@@ -1588,20 +1626,20 @@ void setSpecialMode(int spc_mode) {
       tmp_eff = MC_CLOCK;
       specialClock = false;
       isNightClock = true;
-      specialBrightness = nightClockColor == 0 ? 1 :255;   // красные часы?
+      specialBrightness = nightClockColor == 0 ? 1 : 255;   // красные часы?
       break;
-    case 9:  // Часы бегущей строкой;
-      tmp_eff = MC_TEXT;
-      specialClock = false;
-      setGlobalColor(getGlobalTextColor());
+    case 9:  // Палитра;
+      tmp_eff = MC_PALETTE;
       break;
-    case 10:  // Часы;  
+    case 10:  // Часы (отдельным эффектом, а не оверлеем);  
       tmp_eff = MC_CLOCK;
-      setGlobalColor(getGlobalClockColor());
+      setGlobalColor(getGlobalClockColor());                // цвет часов в режиме "Монохром"
       specialClock = true;
       break;
   }
 
+  Serial.println("tmp_eff=" + String(tmp_eff));
+  
   if (tmp_eff >= 0) {    
     // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutine()
     thisMode = tmp_eff;
@@ -1613,7 +1651,7 @@ void setSpecialMode(int spc_mode) {
     FastLED.setBrightness(specialBrightness);
     specialModeId = spc_mode;
   }  
-  
+
   setCurrentSpecMode(spc_mode);
   setCurrentManualMode(-1);
 }

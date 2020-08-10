@@ -16,17 +16,23 @@ void doEffectWithOverlay(byte aMode) {
 
   bool effectReady = effectTimer.isReady();
   bool clockReady = clockTimer.isReady();
+  bool textReady = textTimer.isReady();
 
-  if (!(effectReady || clockReady)) return;
+  if (!(effectReady || (clockReady && !showTextNow) || (textReady && showTextNow))) return;
 
-  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта
-  // цифры "смазываются"
-  bool needOverlay = (aMode == MC_CLOCK) || (aMode != MC_TEXT && overlayEnabled && getEffectClockOverlayUsage(aMode)); // +++ - когда будет бегущая строка - getEffectTextOverlayUsage(aMode)
+  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
+  bool needOverlay = 
+       (aMode == MC_CLOCK) ||                                                         // Если включен режим "Часы" (ночные часы)
+       (aMode == MC_TEXT) ||                                                          // Если включен режим "Бегущая строка" (show IP address)       
+      (!showTextNow && clockOverlayEnabled && getEffectClockOverlayUsage(aMode)) ||   // Другой эффект и сейчас долен показываться оверлей часов и это разрешено для эффекта
+       (showTextNow && textOverlayEnabled && getEffectTextOverlayUsage(aMode));       // Другой эффект и сейчас долен показываться оверлей бегущей строки и это разрешено для эффекта
 
+  // В прошлой итерации часы / текст были наложены с оверлеем?
+  // Если да - восстановить пиксели эффекта сохраненные перед наложением часов / текста
   if (overlayDelayed && !loadingFlag) {
     overlayUnwrap();
   }  
-
+  
   if (effectReady) processEffect(aMode);
 
   // Смещение движущихся часов 
@@ -55,13 +61,17 @@ void doEffectWithOverlay(byte aMode) {
   
   if (needOverlay) {
     overlayWrap();
-    if (init_time) {
+    // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
+    if (init_time && !showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
       setOverlayColors();
       if (c_size == 1 && showDateInClock && showDateState) {      
         drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
       } else {
         drawClock(hrs, mins, dotFlag, CLOCK_XC, CLOCK_Y);
       }
+    } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
+      // Нарисовать оверлеем текст бегущей строки
+      runningText();
     }
   }  
 
@@ -203,6 +213,7 @@ void prevModeHandler() {
 }
 
 void setTimersForMode(byte aMode) {
+
   effectSpeed = getEffectSpeed(aMode);
   if (effectSpeed == 0) effectSpeed = 2;
   // Эти режимы смотрятся (работают) только на максимальной скорости;
@@ -210,14 +221,21 @@ void setTimersForMode(byte aMode) {
     effectTimer.setInterval(1);        
   else
     effectTimer.setInterval(effectSpeed);
-  clockSpeed = getEffectSpeed(MC_CLOCK);
+    
+  clockSpeed = getClockScrollSpeed();
   if (clockSpeed < D_CLOCK_SPEED_MIN) clockSpeed = D_CLOCK_SPEED_MIN; // Если clockSpeed == 0 - бегущая строка начинает дергаться.
+  if (clockSpeed > D_CLOCK_SPEED_MAX) clockSpeed = D_CLOCK_SPEED_MAX;
   if (clockSpeed >= 240) {
     clockTimer.setInterval(4294967295);
     checkClockOrigin();
   } else {
     clockTimer.setInterval(clockSpeed);
   }
+
+  textSpeed = getTextScrollSpeed();
+  if (textSpeed < D_TEXT_SPEED_MIN) textSpeed = D_TEXT_SPEED_MIN; // Если textSpeed == 0 - бегущая строка начинает дергаться.
+  if (textSpeed > D_TEXT_SPEED_MAX) textSpeed = D_TEXT_SPEED_MAX;
+  textTimer.setInterval(textSpeed);
 }
 
 int fadeBrightness;

@@ -72,6 +72,9 @@ void setup() {
   else  
     idleTimer.setInterval(idleTime);
 
+  // Таймер синхронизации часов
+  ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
+
   // Таймер рассвета
   dawnTimer.setInterval(4294967295);
   

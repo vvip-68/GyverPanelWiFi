@@ -1,4 +1,4 @@
-#define EEPROM_OK 0xAF                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EEPROM_OK 0x55                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 5 байт на эффект
 #define TEXT_EEPROM 800                    // начальная ячейка eeprom с текстом бегущих строк
 
@@ -34,9 +34,9 @@ void loadSettings() {
   //   27 - Будильник, Максимальная громкость будильника                                                     // getMaxAlarmVolume()           // saveAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound)
   //   28 - Номер последнего активного спец-режима или -1, если были включены обычные эффекты                // getCurrentSpecMode()          // setCurrentSpecMode(xxx)                     
   //   29 - Номер последнего активированного вручную режима                                                  // getCurrentManualMode()        // setCurrentManualMode(xxx)
-  //   30 - Отображать часы в режимах                                                                        // getClockOverlayEnabled()      // saveClockOverlayEnabled(overlayEnabled)
+  //   30 - Отображать часы оверлеем в режимах                                                               // getClockOverlayEnabled()      // saveClockOverlayEnabled(clockOverlayEnabled)
   //   31 - Использовать случайную последовательность в демо-режиме                                          // getRandomMode()               // saveRandomMode(useRandomSequence)
-  //   32 - Формат часов в бегущей строке 0 - только часы; 1 - часы и дата коротко; 2 - часы и дата строкой  // getFormatClock()              // setFormatClock(formatClock)
+  //***32 -  не используется
   //   33 - Режим 1 по времени - часы                                                                        // getAM1hour()                  // setAM1hour(AM1_hour)
   //   34 - Режим 1 по времени - минуты                                                                      // getAM1minute()                // setAM1minute(AM1_minute) 
   //   35 - Режим 1 по времени - -3 - выкл. (не исп.); -2 - выкл. (черный экран); -1 - ночн.часы, 0 - случ., // getAM1effect()                // setAM1effect(AM1_effect_id)
@@ -79,7 +79,13 @@ void loadSettings() {
   //  164 - Режим 4 по времени - часы                                                                        // getAM4hour()                   // setAM4hour(AM4_hour)
   //  165 - Режим 4 по тайвременимеру - минуты                                                               // getAM4minute()                 // setAM4minute(AM4_minute)
   //  166 - Режим 4 по времени - так же как для режима 1                                                     // getAM4effect()                 // setAM4effect(AM4_effect_id)
-  //**167 - не используется
+  //  167,168 - интервал отображения текста бегущей строки                                                   // getTextInterval()              // setTextInterval(TEXT_INTERVAL)
+  //  169 - Режим цвета оверлея часов X: 0,1,2,3                                                             // getClockColor()                // setClockColor(COLOR_MODE)
+  //  170 - Скорость прокрутки оверлея часов                                                                 // getClockScrollSpeed()          // setClockScrollSpeed(speed_value)  
+  //  171 - Режим цвета оверлея текста X: 0,1,2,3                                                            // getTextColor()                 // setTextColor(COLOR_TEXT_MODE)  
+  //  172 - Скорость прокрутки оверлея текста                                                                // getTextScrollSpeed()           // setTextScrollSpeed(speed_value)  
+  //  173 - Отображать бегущую строку оверлеем в режимах                                                     // getTextOverlayEnabled()        // saveTextOverlayEnabled(textOverlayEnabled)
+  //**174 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -88,7 +94,7 @@ void loadSettings() {
   //  303 - 300+(Nэфф*5)+3 - специальный параметр эффекта #2
   //  304 - 300+(Nэфф*5)+4 - контраст эффекта
   //********
-  //  800 - текст строк бегущей строки сплошным массивом, строки разделены символом '\r'
+  //  800 - текст строк бегущей строки сплошным массивом, строки разделены символом '\r'                     // loadTexts()                    // saveTexts()
   //********
 
   // Сначала инициализируем имя сети/точки доступа, пароли и имя NTP-сервера значениями по умолчанию.
@@ -110,16 +116,18 @@ void loadSettings() {
 
     useNtp = getUseNtp();
     timeZoneOffset = getTimeZone();
-    overlayEnabled = getClockOverlayEnabled();
+    clockOverlayEnabled = getClockOverlayEnabled();
+    textOverlayEnabled = getTextOverlayEnabled();
 
     SYNC_TIME_PERIOD = getNtpSyncTime();
     AUTOPLAY = getAutoplay();
     CLOCK_ORIENT = getClockOrientation();
-    COLOR_MODE = getScaleForEffect(MC_CLOCK);
-    COLOR_TEXT_MODE = getScaleForEffect(MC_TEXT);
+    COLOR_MODE = getClockColor();
+    COLOR_TEXT_MODE = getTextColor();
     CURRENT_LIMIT = getPowerLimit();
+    TEXT_INTERVAL = getTextInterval();
+    
     useRandomSequence = getRandomMode();
-    formatClock = getFormatClock();
     nightClockColor = getNightClockColor();
     showDateInClock = getShowDateInClock();  
     showDateDuration = getShowDateDuration();
@@ -181,79 +189,59 @@ void loadSettings() {
     AM4_effect_id = getAM4effect();
 
     loadStaticIP();
+    loadTexts();
     
   } else {
-    
-    globalBrightness = BRIGHTNESS;
-    
-    autoplayTime = ((long)AUTOPLAY_PERIOD * 1000L);     // секунды -> миллисек
-    idleTime = ((long)IDLE_TIME * 60L * 1000L);         // минуты -> миллисек
 
-    useNtp = true;
-    timeZoneOffset = 7;
-    overlayEnabled = true;
+    // Значения переменных по умолчанию определяются в месте их объявления - в файле a_def_soft.h
+    // Здесь выполняются только инициализация массивов и некоторых специальных параметров
 
-    SYNC_TIME_PERIOD = 60;
-    AUTOPLAY = true;
-    CLOCK_ORIENT = 0;
-    COLOR_MODE = 0;
-    COLOR_TEXT_MODE = 0;
-    CURRENT_LIMIT = 5000;
-    useRandomSequence = true;
-    formatClock = 0;
-    nightClockColor = 0;
-    showDateInClock = true;  
-    showDateDuration = 3;
-    showDateInterval = 240;
-    needTurnOffClock = false;
-
-    alarmWeekDay = 0;
-    alarmEffect = MC_DAWN_ALARM;
-    alarmDuration = 1;
-    dawnDuration = 20;
-        
-    #if (USE_MP3 == 1)
-      useAlarmSound = false;
-      alarmSound = 1;
-      dawnSound = 1;
-      maxAlarmVolume = 30;
-    #endif
-
-    for (byte i=0; i<7; i++) {
-      alarmHour[i] = 0;
-      alarmMinute[i] = 0;
-    }
-    
     for (byte i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i]  = 50;  // среднее значение для параметра. Конкретное значение зависит от эффекта
       effectScaleParam2[i] = 0;   // второй параметр эффекта по умолчанию равен 0. Конкретное значение зависит от эффекта
       effectContrast[i]    = 255; // контраст эффекта - полная яркость
     }
 
-    globalColor = 0xFF;
-    globalClockColor = 0xFF;
-    globalTextColor = 0xFF;
+    // Значения текстовых строк по умолчанию
+    // Строки толжны быть разными при компиляции, иначе умный компилятор присвоит им один и тот же адрес в памяти
+    textLines[ 0] = "-0";                    
+    textLines[ 1] = "-1";
+    textLines[ 2] = "-2";
+    textLines[ 3] = "-3";
+    textLines[ 4] = "-4";
+    textLines[ 5] = "-5";
+    textLines[ 6] = "-6";
+    textLines[ 7] = "-7";
+    textLines[ 8] = "-8";
+    textLines[ 9] = "-9";
+    textLines[10] = "-A";
+    textLines[11] = "-B";
+    textLines[12] = "-C";
+    textLines[13] = "-D";
+    textLines[14] = "-E";
+    textLines[15] = "-F";
+    textLines[16] = "-G";
+    textLines[17] = "-H";
+    textLines[18] = "-I";
+    textLines[19] = "-J";
+    textLines[20] = "-K";
+    textLines[21] = "-L";
+    textLines[22] = "-M";
+    textLines[23] = "-N";
+    textLines[24] = "-O";
+    textLines[25] = "-P";
+    textLines[26] = "-Q";
+    textLines[27] = "-R";
+    textLines[28] = "-S";
+    textLines[29] = "-T";
+    textLines[30] = "-U";
+    textLines[31] = "-V";
+    textLines[32] = "-W";
+    textLines[33] = "-X";
+    textLines[34] = "-Y";
+    textLines[35] = "-Z";
 
-    useSoftAP = false;
-    
-    AM1_hour = 0;
-    AM1_minute = 0;
-    AM1_effect_id = -3;
-    AM2_hour = 0;
-    AM2_minute = 0;
-    AM2_effect_id = -3;    
-    AM3_hour = 0;
-    AM3_minute = 0;
-    AM3_effect_id = -3;
-    AM4_hour = 0;
-    AM4_minute = 0;
-    AM4_effect_id = -3;    
-
-    IP_STA[0] = 192; IP_STA[1] = 168; IP_STA[2] = 0; IP_STA[3] = 116;    
   }
-
-  idleTimer.setInterval(idleTime);  
-  ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
   
   // После первой инициализации значений - сохранить их принудительно
   if (!isInitialized) {
@@ -271,15 +259,17 @@ void saveDefaults() {
 
   saveUseNtp(useNtp);
   saveTimeZone(timeZoneOffset);
-  saveClockOverlayEnabled(overlayEnabled);
+  saveClockOverlayEnabled(clockOverlayEnabled);
+  saveTextOverlayEnabled(textOverlayEnabled);
 
   saveNtpSyncTime(SYNC_TIME_PERIOD);
   saveAutoplay(AUTOPLAY);
 
   saveClockOrientation(CLOCK_ORIENT);
   setPowerLimit(CURRENT_LIMIT);
+  setTextInterval(TEXT_INTERVAL);
+  
   saveRandomMode(useRandomSequence);
-  setFormatClock(formatClock);          // Формат отображения часов в бегущей строке: 0 - только часы: 1 - часы и дата кратко; 2 - часы и полная дата;
   setNightClockColor(nightClockColor);  // Цвет ночных часов: 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
   setShowDateInClock(showDateInClock);
   setShowDateDuration(showDateDuration);
@@ -311,15 +301,13 @@ void saveDefaults() {
   saveEffectClockOverlayUsage(MC_IMAGE, false);
 
   setScaleForEffect(MC_FIRE, 0);                 // Огонь красного цвета
-  setScaleForEffect(MC_CLOCK, COLOR_MODE);
-  setScaleForEffect(MC_TEXT, COLOR_TEXT_MODE);
   setScaleForEffect2(MC_PAINTBALL, 1);           // Использовать сегменты для эффекта Пэйнтбол на широких матрицах
   setScaleForEffect2(MC_SWIRL, 1);               // Использовать сегменты для эффекта Водоворот на широких матрицах
   setScaleForEffect2(MC_RAINBOW, 0);             // Использовать рандомный выбор эффекта радуга 0 - random; 1 - диагональная; 2 - горизонтальная; 3 - вертикальная; 4 - вращающаяся
 
-  setGlobalColor(globalColor);
-  setGlobalClockColor(globalClockColor);
-  setGlobalTextColor(globalTextColor);
+  setGlobalColor(globalColor);                   // Цвет панели в режиме "Лампа"
+  setGlobalClockColor(globalClockColor);         // Цвет часов в режиме "Монохром" 
+  setGlobalTextColor(globalTextColor);           // Цвет текста в режиме "Монохром"
 
   setUseSoftAP(useSoftAP);
 
@@ -350,11 +338,10 @@ void saveDefaults() {
   setAM4effect(AM4_effect_id);          // Режим 4 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
   
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
+  saveTexts();
 
   setCurrentSpecMode(-1);               // Текущий спец-режим - это не спец-режим
   setCurrentManualMode(-1);             // Текущий вручную включенный спец-режим
-
-  eepromModified = true;
 }
 
 void saveSettings() {
@@ -546,6 +533,17 @@ void saveClockOverlayEnabled(boolean enabled) {
     EEPROMwrite(30, enabled ? 1 : 0);
   }
 }
+
+boolean getTextOverlayEnabled() {
+  return (EEPROMread(173) == 1);
+}
+
+void saveTextOverlayEnabled(boolean enabled) {
+  if (enabled != getTextOverlayEnabled()) {
+    EEPROMwrite(173, enabled ? 1 : 0);
+  }
+}
+
 void saveUseNtp(boolean value) {
   if (value != getUseNtp()) {
     EEPROMwrite(5, value);
@@ -613,7 +611,6 @@ bool getShowDateInClock() {
 void setShowDateInClock(boolean use) {  
   if (use != getShowDateInClock()) {
     EEPROMwrite(16, use ? 1 : 0);
-    eepromModified = true;
   }
 }
 
@@ -624,7 +621,6 @@ byte getShowDateDuration() {
 void setShowDateDuration(byte Duration) {
   if (Duration != getShowDateDuration()) {
     EEPROMwrite(17, Duration);
-    eepromModified = true;
   }
 }
 
@@ -635,7 +631,6 @@ byte getShowDateInterval() {
 void setShowDateInterval(byte Interval) {
   if (Interval != getShowDateInterval()) {
     EEPROMwrite(18, Interval);
-    eepromModified = true;
   }
 }
 
@@ -1059,22 +1054,9 @@ bool getRandomMode() {
  return EEPROMread(31) != 0;
 }
 
-void setFormatClock(byte fmt) {
-  if (fmt != getFormatClock()) {
-    EEPROMwrite(32, fmt);
-  }  
-}
-
-byte getFormatClock() {
-  byte fmt = EEPROMread(32);
-  if (fmt > 2) fmt=0;
-  return fmt;
-}
-
 void setPowerLimit(uint16_t limit) {
   if (limit != getPowerLimit()) {
     EEPROM_int_write(150, limit);
-    eepromModified = true;
   }
 }
 
@@ -1093,6 +1075,139 @@ void setNightClockColor(byte clr) {
 byte getNightClockColor() {
   byte clr = EEPROMread(39);
   if (clr > 6) clr=0;
+  return clr;
+}
+
+// Интервал включения режима бегущей строки
+uint16_t getTextInterval() {
+  uint16_t val = (uint16_t)EEPROM_int_read(167);
+  return val;
+}
+
+void setTextInterval(uint16_t interval) {
+  if (interval != getTextInterval()) {
+    EEPROM_int_write(167, interval);
+  }  
+}
+
+// Загрузка массива строк "Бегущей строки"
+void loadTexts() {
+  int addr = EFFECT_EEPROM;  
+  int size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  int max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой из EEPROM строки
+  int idx = 0;                           
+  bool finished = false;
+
+  while (addr < 4096 && idx < size && !finished) {
+   
+   memset(incomeBuffer, '\0', max_text_size);
+   int16_t i = 0;
+   
+   while (i < max_text_size) {
+     byte c = EEPROMread(addr++);
+     finished = c == '\0' || addr == 4095;
+     if (finished || c == '\r') break;
+     incomeBuffer[i++] = c;
+   }
+
+   // Сформировать строку из загруженного буфера
+   textLines[idx] = String(incomeBuffer);
+
+   // Если строка пустая 
+   if (textLines[idx].length() == 0) {
+     textLines[idx] = (idx < 10)
+       ? "-" + String(idx)
+       : "-" + String(char('A' - 10 + i));
+   }
+   
+   idx++;
+  }
+
+  for (byte i=idx; i<size; i++) {
+    textLines[i] = "-" + String(char('A'+i));
+  }
+
+}
+
+// Сохранения массива строк "Бегущей строки"
+bool saveTexts() {
+  int addr = EFFECT_EEPROM;  
+  int size = sizeof(textLines) / sizeof(String);
+
+  for (byte i=0; i<size; i++) {
+        
+    uint16_t len = textLines[i].length();
+    uint16_t j = 0;
+  
+    // Сохранить новое значение
+    while (j < len) {
+      EEPROMwrite(addr++, textLines[i][j++]);
+      if (addr == 4095) break;
+    }
+    if (addr == 4095) break;
+    
+    EEPROMwrite(addr++, '\r');
+    if (addr == 4095) break;
+  }
+
+  // Символ завершение данных после того, как все строки записаны
+  if (addr < 4096) {  
+    EEPROMwrite(addr, '\0');
+  }
+
+  eepromModified = true;
+  saveSettingsTimer.reset();
+  
+  return addr < 4096;
+}
+
+// Режим цвета часов оверлея X: 0,1,2,3
+void setClockColor(byte clr) {
+  if (clr != getClockColor()) {
+    EEPROMwrite(169, clr);
+  }  
+}
+
+byte getClockColor() {
+  byte clr = EEPROMread(169);
+  if (clr > 3) clr=0;
+  return clr;
+}
+
+// Скорость прокрутки часов
+void setClockScrollSpeed(byte clr) {
+  if (clr != getClockScrollSpeed()) {
+    EEPROMwrite(170, clr);
+  }  
+}
+
+byte getClockScrollSpeed() {
+  byte clr = EEPROMread(170);
+  return clr;
+}
+
+// Режим цвета оверлея бегущей строки X: 0,1,2,3
+void setTextColor(byte clr) {
+  if (clr != getTextColor()) {
+    EEPROMwrite(171, clr);
+  }  
+}
+
+byte getTextColor() {
+  byte clr = EEPROMread(171);
+  if (clr > 3) clr=0;
+  return clr;
+}
+
+// Скорость прокрутки бегущей строки
+void setTextScrollSpeed(byte clr) {
+  if (clr != getTextScrollSpeed()) {
+    EEPROMwrite(172, clr);
+  }  
+}
+
+byte getTextScrollSpeed() {
+  byte clr = EEPROMread(172);
   return clr;
 }
 

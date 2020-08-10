@@ -86,14 +86,16 @@ boolean overlayAllowed() {
   // Часы влазят на матрицу?
   if (!(allowHorizontal || allowVertical)) return false;
 
-  // В режиме часов бегущей строкой и в режиме "Часы" оверлей недоступен
+  // В режиме Бегущая строк (show IP) как отднльный эффект и в режиме "Часы" как отдельный эффект оверлей недоступен.
+  // Отображение часов или бегущей строки оверлеем поверх эффекта имеют другой режим (не MC_TEXT или MC_CLOCK)
   if (thisMode == MC_TEXT || thisMode == MC_CLOCK) return false;
 
   // Отображение часов в спец.режиме
   if (specialMode) return specialClock;
   
   // Оверлей разрешен общими настройками часов? 
-  bool allowed = getClockOverlayEnabled();
+  bool allowed = (!showTextNow && getClockOverlayEnabled()) || 
+                  (showTextNow && getTextOverlayEnabled());
   
   return allowed;
 }
@@ -156,6 +158,8 @@ void clockColor() {
   int8_t color_idx = 0;
   switch (thisMode) {
     case MC_CLOCK:
+      // Если режим часов включен как "Ночные часы" - цвет определять по настроенному цвету ночных часов
+      // Иначе - цвет часов зависит от режима (Монохром, Каждая цифра свой цвет, Цвет часов-точек-минут" и т.д)
       color_idx = isNightClock ? -2 : COLOR_MODE;
       break;
     case MC_COLORS:
@@ -299,10 +303,6 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
   // разделитель числа/месяца
   if (dots) {
     drawPixelXY(getClockX(X + 7), Y + 5, clockLED[2]);
-  } else {
-    if (thisMode == MC_CLOCK) {
-      drawPixelXY(getClockX(X + 7), Y + 5, 0);
-    }
   }
   
   // Месяц
@@ -473,7 +473,7 @@ void contrastClockC(){
 }
 
 void setOverlayColors() {
-  if (COLOR_MODE == 0 && !(thisMode == MC_CLOCK || thisMode == MC_FILL_COLOR || thisMode == MC_COLORS)) {
+  if (COLOR_MODE == 0 && !(thisMode == MC_CLOCK || thisMode == MC_TEXT || thisMode == MC_FILL_COLOR || thisMode == MC_COLORS)) {
     switch (thisMode) {
       case MC_SNOW:
       case MC_NOISE_ZEBRA: 
@@ -493,9 +493,9 @@ void setOverlayColors() {
         contrastClock();
         break;
     }
-  }
-  else
+  } else {
     clockColor();
+  }
 }
 
 void calculateDawnTime() {
@@ -947,8 +947,8 @@ void checkClockOrigin() {
       saveClockOrientation(CLOCK_ORIENT);
     }
   } else {
-    overlayEnabled = false;
-    saveClockOverlayEnabled(overlayEnabled);
+    clockOverlayEnabled = false;
+    saveClockOverlayEnabled(clockOverlayEnabled);
     return;
   }
 

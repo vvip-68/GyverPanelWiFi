@@ -66,7 +66,7 @@ void lightBallsRoutine() {
   uint32_t ms = millis();
 
   byte  cnt = map8(255-effectScaleParam[MC_PAINTBALL],1,4);  // 1..4 шариков
-  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? (float)(seg_num * 2) : (float)seg_num);
+  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1/*(float)(seg_num * 2)*/ : (float)seg_num);
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.

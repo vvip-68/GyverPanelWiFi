@@ -4,23 +4,20 @@ int offset = WIDTH;
 
 void runningText() {
   String text = "";
-  if (wifi_print_ip_text) 
-    text = wifi_current_ip;
-  else if (init_time)
-    switch (formatClock){
-      case 0:
-        text = clockCurrentText();
-        break;
-      case 1:
-        text = clockCurrentText() + " " + dateCurrentTextShort();
-        break;
-      default:  
-        text = clockCurrentText() + " " + dateCurrentTextLong();
-        break;
-    }
-  else
-    text = String(FIRMWARE_VER);
-
+  if (thisMode == MC_TEXT) {
+    // Включен режим (не оверлей!) бегущей строки
+    if (wifi_print_ip_text) 
+      text = wifi_current_ip;
+    else if (init_time)
+      text = clockCurrentText();
+    else
+      text = String(FIRMWARE_VER);
+  } else {
+    // Вывод текста оверлея бегущей строки
+    text = String(F("Пример текста бегущей строки"));
+    // +++
+  }
+    
   uint32_t color = COLOR_TEXT_MODE;
   if (color == 0 || color > 2) color = globalTextColor;
 
