@@ -320,6 +320,12 @@ void parsing() {
       - $8 4 N X; вкл/выкл оверлей текста поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 5 N X; вкл/выкл оверлей часов поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 6 N D; D -> контрастность эффекта N;
+    13 - Настройки бкгущей cтроки  
+      - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
+      - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
+      - $13 13 X; - скорость прокрутки бегущей строки
+      - $13 15 00FFAA; - цвет текстовой строки для режима "монохромный", сохраняемый в globalTextColor
+      - $13 18 X; - сохранить настройку X "Бегущая строка в эффектах" (общий, для всех эффектов)
     14 - быстрая установка ручных режимов с пред-настройками
        - $14 0;  Черный экран (выкл);  
        - $14 1;  Белый экран (освещение);  
@@ -345,16 +351,11 @@ void parsing() {
       - $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
       - $19 7 X; - Размер часов X: 0 - авто, 1 - малые 3х5, 2 - большие 5x7
       - $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
-      - $19 1 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       - $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
-      - $19 11 X; - Режим цвета часов бегущей строкой X: 0,1,2,           
       - $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
-      - $19 13 X; - скорость прокрутки часов бегущей строкой
       - $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
-      - $19 15 00FFAA; - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
       - $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
       - $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
-      - $19 18 X; - сохранить настройку X "Бегущая строка в эффектах" (общий, для всех эффектов)
     20 - настройки и управление будильников
       - $20 0;       - отключение будильника (сброс состояния isAlarming)
       - $20 2 X VV MA MB;
@@ -633,6 +634,44 @@ void parsing() {
         break;
 
       // ----------------------------------------------------
+      // 13 - Настройки бкгущей cтроки  
+      // - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
+      // - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
+      // - $13 13 X; - скорость прокрутки бегущей строки
+      // - $13 15 00FFAA; - цвет текстовой строки для режима "монохромный", сохраняемый в globalTextColor
+      // - $13 18 X; - сохранить настройку X "Бегущая строка в эффектах" (общий, для всех эффектов)
+      // ----------------------------------------------------
+
+      case 13:
+         switch (intData[1]) {
+           case 9:               // $19 9 I; - Периодичность отображения бегущей строки (в секундах)
+             TEXT_INTERVAL = intData[2];
+             setTextInterval(TEXT_INTERVAL);
+             break;
+           case 11:               // $13 11 X; - Режим цвета бегущей строкой X: 0,1,2,           
+             COLOR_TEXT_MODE = intData[2];
+             if (COLOR_TEXT_MODE > 2) COLOR_TEXT_MODE = 0;
+             setTextColor(COLOR_TEXT_MODE);
+             break;
+           case 13:               // $13 13 X; - скорость прокрутки бегущей строки
+             setTextScrollSpeed(255 - intData[2]);
+             setTimersForMode(thisMode);
+             break;
+           case 15:               // $13 15 00FFAA;
+             // В строке цвет - "$13 15 00FFAA;" - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
+             str = String(incomeBuffer).substring(7,13);
+             globalTextColor = (uint32_t)HEXtoInt(str);
+             setGlobalTextColor(globalTextColor);
+             break;
+           case 18:               // $13 18 X; - сохранить настройку X "Бегущая строка в эффектах"
+             textOverlayEnabled = intData[2] == 1;
+             saveTextOverlayEnabled(textOverlayEnabled);
+             break;
+        }
+        sendPageParams(3);
+        break;
+        
+      // ----------------------------------------------------
       //  14 - быстрая установка ручных режимов с пред-настройками
       // - $14 0;  Черный экран (выкл);  
       // - $14 1;  Белый экран (освещение);  
@@ -759,16 +798,11 @@ void parsing() {
       //   $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
       //   $19 7 X; - Размер часов X: 0 - авто, 1 - малые 3х5, 2 - большие 5x7
       //   $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
-      //   $19 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       //   $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
-      //   $19 11 X; - Режим цвета часов бегущей строкой X: 0,1,2,           
       //   $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
-      //   $19 13 X; - скорость прокрутки часов бегущей строкой
       //   $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
-      //   $19 15 00FFAA; - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
       //   $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
       //   $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
-      //   $19 18 X; - сохранить настройку X "Бегущая строка в эффектах" (общий, для всех эффектов)
       // ----------------------------------------------------
       
       case 19: 
@@ -827,10 +861,6 @@ void parsing() {
              setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
              init_time = true; refresh_time = false; ntp_cnt = 0;
              break;
-           case 9:               // $19 9 I; - Периодичность отображения бегущей строки (в секундах)
-             TEXT_INTERVAL = intData[2];
-             setTextInterval(TEXT_INTERVAL);
-             break;
            case 10:               // $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
              setNightClockColor(intData[2]);
              nightClockColor = getNightClockColor();
@@ -839,17 +869,8 @@ void parsing() {
                 FastLED.setBrightness(specialBrightness);
              }             
              break;
-           case 11:               // $19 11 X; - Режим цвета бегущей строкой X: 0,1,2,           
-             COLOR_TEXT_MODE = intData[2];
-             if (COLOR_TEXT_MODE > 2) COLOR_TEXT_MODE = 0;
-             setTextColor(COLOR_TEXT_MODE);
-             break;
            case 12:               // $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
              setClockScrollSpeed(255 - intData[2]);
-             setTimersForMode(thisMode);
-             break;
-           case 13:               // $19 13 X; - скорость прокрутки бегущей строки
-             setTextScrollSpeed(255 - intData[2]);
              setTimersForMode(thisMode);
              break;
            case 14:               // $19 14 00FFAA;
@@ -857,12 +878,6 @@ void parsing() {
              str = String(incomeBuffer).substring(7,13);
              globalClockColor = (uint32_t)HEXtoInt(str);
              setGlobalClockColor(globalClockColor);
-             break;
-           case 15:               // $19 15 00FFAA;
-             // В строке цвет - "$19 15 00FFAA;" - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
-             str = String(incomeBuffer).substring(7,13);
-             globalTextColor = (uint32_t)HEXtoInt(str);
-             setGlobalTextColor(globalTextColor);
              break;
            case 16:               // $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
              if (allowHorizontal || allowVertical) {
@@ -880,13 +895,28 @@ void parsing() {
              setShowDateDuration(showDateDuration);
              setShowDateInterval(showDateInterval);
              break;
+           case 11:               // $19 11 X; - Режим цвета бегущей строкой X: 0,1,2,           
+             COLOR_TEXT_MODE = intData[2];
+             if (COLOR_TEXT_MODE > 2) COLOR_TEXT_MODE = 0;
+             setTextColor(COLOR_TEXT_MODE);
+             break;
+           case 13:               // $19 13 X; - скорость прокрутки бегущей строки
+             setTextScrollSpeed(255 - intData[2]);
+             setTimersForMode(thisMode);
+             break;
+           case 15:               // $19 15 00FFAA;
+             // В строке цвет - "$19 15 00FFAA;" - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
+             str = String(incomeBuffer).substring(7,13);
+             globalTextColor = (uint32_t)HEXtoInt(str);
+             setGlobalTextColor(globalTextColor);
+             break;
            case 18:               // $19 18 X; - сохранить настройку X "Бегущая строка в эффектах"
              textOverlayEnabled = intData[2] == 1;
              saveTextOverlayEnabled(textOverlayEnabled);
              break;
         }
         if (intData[1] != 8) {
-          sendPageParams(3);
+          sendPageParams(4);
         } else {
           sendAcknowledge();
         }
@@ -1637,8 +1667,6 @@ void setSpecialMode(int spc_mode) {
       specialClock = true;
       break;
   }
-
-  Serial.println("tmp_eff=" + String(tmp_eff));
   
   if (tmp_eff >= 0) {    
     // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutine()

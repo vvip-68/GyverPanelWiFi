@@ -62,7 +62,7 @@ void doEffectWithOverlay(byte aMode) {
   if (needOverlay) {
     overlayWrap();
     // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
-    if (init_time && !showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
+    if (init_time && !showTextNow && aMode != MC_TEXT) {
       setOverlayColors();
       if (c_size == 1 && showDateInClock && showDateState) {      
         drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
