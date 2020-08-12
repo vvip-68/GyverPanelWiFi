@@ -1375,12 +1375,13 @@ void sendPageParams(int page) {
 
   String str = "", color, text;
   CRGB c1, c2;
+  int8_t tmp_eff = -1;
   
   switch (page) { 
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
       if (manualMode)  str+="0|AP:"; else str+="1|AP:";
-      if (AUTOPLAY && !manualMode)   str+="1|BR:"; else str+="0|BR:";
+      if (AUTOPLAY && !manualMode) str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
       str+="|RM:" + String(useRandomSequence);
@@ -1388,29 +1389,35 @@ void sendPageParams(int page) {
       str+=";";
       break;
     case 2:  // Эффекты. Вернуть: Номер эффекта, Скорость эффекта; Использовать в демо, оверлей текста и часов 
-      str="$18 EF:"+String(thisMode+1);
-      str+="|BR:"+String(globalBrightness);
-      str+="|UE:"+String((getEffectUsage(thisMode) ? "1" : "0"));
+      tmp_eff = thisMode;
+      // Текущим эффектом может быть эффект, отсутствующий в списке эффектов и включенный как служебный эффект - 
+      // например "Ночные часы" или "ID адрес". В этом случаее в приложении эффект не будет найден - индекс в списке комбобокса
+      // будет 0 и приложение на телефоне крашится. В этом случае отправляем параметры случайного эффекта, точно из списка.
+      if (tmp_eff >= SPECIAL_EFFECTS_START) {
+        tmp_eff = random8(0, MAX_EFFECT - 1);
+      }
+      str="$18 EF:"+String(tmp_eff+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
+      str+="|UE:"+String((getEffectUsage(tmp_eff) ? "1" : "0"));
       // Оверлей бегущей строки
-      str+="|UT:"+(thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
+      str+="|UT:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS
          ? "X":
-         (String(getEffectTextOverlayUsage(thisMode) ? "1" : "0")));
+         (String(getEffectTextOverlayUsage(tmp_eff) ? "1" : "0")));
       // Оверлей часов   
-      str+="|UC:"+(thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS
+      str+="|UC:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS
          ? "X" 
-         : (String(getEffectClockOverlayUsage(thisMode) ? "1" : "0")));
+         : (String(getEffectClockOverlayUsage(tmp_eff) ? "1" : "0")));
       // Настройка скорости
-      str+="|SE:"+(thisMode == MC_PACIFICA  || thisMode == MC_SHADOWS
+      str+="|SE:"+(tmp_eff == MC_PACIFICA  || tmp_eff == MC_SHADOWS
          ? "X" 
-         : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
+         : String(255 - constrain(map(getEffectSpeed(tmp_eff), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
-      str+="|SS:"+getParamForMode(thisMode);
-      str+="|SQ:"+getParam2ForMode(thisMode);
+      str+="|SS:"+getParamForMode(tmp_eff);
+      str+="|SQ:"+getParam2ForMode(tmp_eff);
       // Контраст
-      str+="|BE:"+(thisMode == MC_PACIFICA || thisMode == MC_DAWN_ALARM ||
-                   thisMode == MC_MAZE || thisMode == MC_SNAKE || thisMode == MC_TETRIS  
+      str+="|BE:"+(tmp_eff == MC_PACIFICA || tmp_eff == MC_DAWN_ALARM ||
+                   tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS  
          ? "X" 
-         : String(effectContrast[thisMode]));
+         : String(effectContrast[tmp_eff]));
       str+=";";
       break;
     case 3:  // Настройки бегущей строки
