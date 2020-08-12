@@ -336,8 +336,10 @@ void clockTicker() {
   ayear = year();
 
   if (isTurnedOff && needTurnOffClock && init_time) {
+    #if (USE_TM1637 == 1)
     display.displayByte(_empty, _empty, _empty, _empty);
     display.point(false);
+    #endif
     return;
   }
 
@@ -347,6 +349,8 @@ void clockTicker() {
     setOverlayColors();
     dotFlag = !dotFlag;
   }
+
+#if (USE_TM1637 == 1)
 
   if (isButtonHold || bCounter > 0) {
     // Удержание кнопки - изменение яркости + 2 сек после того как кнопка отпущена - 
@@ -399,6 +403,7 @@ void clockTicker() {
       }
     }
   }
+#endif  
 }
 
 void overlayWrap() {
@@ -663,7 +668,9 @@ void checkAlarmTime() {
 
     // Во время работы будильника индикатор плавно мерцает.
     // После завершения работы - восстановить яркость индикатора
+    #if (USE_TM1637 == 1)
     display.setBrightness(7);
+    #endif
     Serial.println(String(F("Будильник Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
     
     alarmSoundTimer.setInterval(4294967295);

@@ -63,9 +63,11 @@ void setup() {
   butt.setClickTimeout(500);
 
   // Настройка внешнего дисплея TM1637
+  #if (USE_TM1637 == 1)
   display.setBrightness(7);
   display.displayByte(_empty, _empty, _empty, _empty);
-  
+  #endif
+    
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
     idleTimer.setInterval(4294967295);

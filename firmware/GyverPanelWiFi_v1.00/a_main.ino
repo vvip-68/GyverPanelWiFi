@@ -93,6 +93,7 @@ void process() {
     }
     
     clockTicker();
+    
     checkAlarmTime();
     checkAutoMode1Time();
     checkAutoMode2Time();

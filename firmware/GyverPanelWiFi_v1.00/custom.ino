@@ -1,6 +1,7 @@
 // ************************ НАСТРОЙКИ ************************
 
 byte lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
+unsigned long xxx;
 
 // ************************* СВОЙ СПИСОК РЕЖИМОВ ************************
 // список можно менять, соблюдая его структуру. Можно удалять и добавлять эффекты, ставить их в
@@ -137,6 +138,11 @@ void doEffectWithOverlay(byte aMode) {
       }
     } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
       // Нарисоватьоверлеем текст бегущей строки
+      if (textReady) {
+        // Сдвинуть позицию отображения бегущей строки
+        shiftTextPosition();
+      }
+      // Нарисовать текст в текущей позиции
       runningText();
     }
   }  
