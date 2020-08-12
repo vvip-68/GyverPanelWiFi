@@ -453,11 +453,11 @@ void cyclonRoutine() {
   hue++;
 
   // Затухание - не на каждый цикл, а регулируется параметром эффекта
-  byte fader_param = map8(255 - effectScaleParam[MC_CYCLON],1,5);
+  byte fader_param = map8(255 - effectScaleParam[MC_CYCLON],0,5);
   fade_divider++;
   if (fade_divider > fader_param) {
     fade_divider = 0;
-    fader(3);
+    fader(5);
   }
 
   cycle_y++;

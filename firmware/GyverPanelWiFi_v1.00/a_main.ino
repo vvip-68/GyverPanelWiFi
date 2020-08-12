@@ -759,8 +759,8 @@ void parsing() {
       // ----------------------------------------------------
 
       case 17: 
-        autoplayTime = ((long)intData[1] * 1000);   // секунды -> миллисек 
-        idleTime = ((long)intData[2] * 60 * 1000);  // минуты -> миллисек
+        autoplayTime = ((long)intData[1] * 1000L);   // секунды -> миллисек 
+        idleTime = ((long)intData[2] * 60 * 1000L);  // минуты -> миллисек
         saveAutoplayTime(autoplayTime);
         saveIdleTime(idleTime);
         if (AUTOPLAY) {
@@ -1705,7 +1705,11 @@ void resetModes() {
 void setEffect(byte eff) {
 
   resetModes();
-  loadingFlag = true;
+  if (eff == MC_TEXT)
+    loadingTextFlag = true;
+  else
+    loadingFlag = true;
+
   thisMode = eff;
 
   setTimersForMode(thisMode);  

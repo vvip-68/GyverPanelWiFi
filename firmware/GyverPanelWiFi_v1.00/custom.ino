@@ -14,18 +14,76 @@ void customRoutine(byte aMode) {
 
 void doEffectWithOverlay(byte aMode) {
 
+  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
+  bool textOvEn  = textOverlayEnabled && getEffectTextOverlayUsage(aMode);
+  bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
+  bool needStopText = false;
+  
+  // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
+  if (!showTextNow && textOvEn && ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L))) {
+    prepareNextText();                   // Обработать следующую строку для отображения, установить параметры
+    fullTextFlag = false;
+    loadingTextFlag = false;
+    showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
+    textCurrentCount = 0;                // Сбросить счетчик количества раз, сколько строка показана на матрице;
+    textStartTime = millis();            // Запомнить время начала отображения бегущей строки
+
+    // Если указано, что строка должна отображаться на фоне конкретного эффекта - его надо инициализировать    
+    if (specialTextEffect >= 0) {
+      saveEffectBeforeText = thisMode;   // сохранить текущий эффект
+      loadingFlag = specialTextEffect != saveEffectBeforeText;
+    }
+  } else
+
+  // Если строка отображается, но флаг разрешения сняли - прекратить отображение
+  if (showTextNow && !textOvEn) {
+    needStopText = true;
+  } else 
+  
+  // Если находимся в режиме бегущей строки и строка полностью "прокручена" или сняли разрешение на отображение бегущей строки - переключиться в режим отображения часов оверлеем
+  // С учетом того, показана ли строка нужное количество раз или указанную продолжительность по времени
+  if (showTextNow && fullTextFlag) {  
+    if (textShowTime > 0) {
+      // Показ строки ограничен по времени
+      if ((millis() - textStartTime) > (textShowTime * 1000L)) {
+        needStopText = true;
+      }
+    } else {
+      // Ограничение по количеству раз отображения строки
+      // Увеличить счетчик показа бегущей строки; Сколько раз нужно показать - инициализируется в textShowCount во время получения и обработки очередной бегущей строки
+      textCurrentCount++;                  
+      // Если текст уже показан нужное количество раз - переключиться в режим отображения часов поверх эффектов
+      if (textCurrentCount >= textShowCount) {
+        needStopText = true;
+      } else {
+        fullTextFlag = false;
+      }
+    }
+  }
+
+  // Нужно прекратить показ текста бегущей строки
+  if (needStopText) {
+    showTextNow = false; 
+    textLastTime = millis();
+    if (saveEffectBeforeText >= 0) {
+      loadingFlag = specialTextEffect != saveEffectBeforeText;  // Восстановленный эффект надо будет перезагрузить
+      saveEffectBeforeText = -1;                                // Сбросить сохраненный / спецэффект
+      specialTextEffect = -1;      
+    }
+  }
+
   bool effectReady = effectTimer.isReady();
   bool clockReady = clockTimer.isReady();
   bool textReady = textTimer.isReady();
 
   if (!(effectReady || (clockReady && !showTextNow) || (textReady && showTextNow))) return;
 
-  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
-  bool needOverlay = 
+  // Нужно сохранять оверлей эффекта до отрисовки часов или бегущей строки поверх эффекта?
+  bool needOverlay  = 
        (aMode == MC_CLOCK) ||                                                         // Если включен режим "Часы" (ночные часы)
        (aMode == MC_TEXT) ||                                                          // Если включен режим "Бегущая строка" (show IP address)       
-      (!showTextNow && clockOverlayEnabled && getEffectClockOverlayUsage(aMode)) ||   // Другой эффект и сейчас долен показываться оверлей часов и это разрешено для эффекта
-       (showTextNow && textOverlayEnabled && getEffectTextOverlayUsage(aMode));       // Другой эффект и сейчас долен показываться оверлей бегущей строки и это разрешено для эффекта
+      (!showTextNow && clockOvEn) || 
+       (showTextNow && textOvEn);
 
   // В прошлой итерации часы / текст были наложены с оверлеем?
   // Если да - восстановить пиксели эффекта сохраненные перед наложением часов / текста
@@ -33,7 +91,15 @@ void doEffectWithOverlay(byte aMode) {
     overlayUnwrap();
   }  
   
-  if (effectReady) processEffect(aMode);
+  if (effectReady) {
+    if (showTextNow && specialTextEffect >= 0) {
+      // Если указан спец-эффект поверх которого бежит строка - отобразить его
+      processEffect(specialTextEffect);
+    } else {
+      // Иначе отрисовать текущий эффект
+      processEffect(aMode);
+    }
+  }
 
   // Смещение движущихся часов 
   if (clockReady) {
@@ -70,7 +136,7 @@ void doEffectWithOverlay(byte aMode) {
         drawClock(hrs, mins, dotFlag, CLOCK_XC, CLOCK_Y);
       }
     } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
-      // Нарисовать оверлеем текст бегущей строки
+      // Нарисоватьоверлеем текст бегущей строки
       runningText();
     }
   }  
@@ -214,13 +280,15 @@ void prevModeHandler() {
 
 void setTimersForMode(byte aMode) {
 
-  effectSpeed = getEffectSpeed(aMode);
-  if (effectSpeed == 0) effectSpeed = 2;
-  // Эти режимы смотрятся (работают) только на максимальной скорости;
-  if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
-    effectTimer.setInterval(1);        
-  else
-    effectTimer.setInterval(effectSpeed);
+  if (!(aMode == MC_TEXT || aMode == MC_CLOCK)) {
+    effectSpeed = getEffectSpeed(aMode);
+    if (effectSpeed == 0) effectSpeed = 2;
+    // Эти режимы смотрятся (работают) только на максимальной скорости;
+    if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
+      effectTimer.setInterval(1);        
+    else
+      effectTimer.setInterval(effectSpeed);
+  }
     
   clockSpeed = getClockScrollSpeed();
   if (clockSpeed < D_CLOCK_SPEED_MIN) clockSpeed = D_CLOCK_SPEED_MIN; // Если clockSpeed == 0 - бегущая строка начинает дергаться.
@@ -295,7 +363,7 @@ void checkIdleState() {
       // Смена режима разрешена
       if (ok) {
         // Если режим не игра и не бегущая строка или один из этих режимов и есть флаг завершения режима -
-        // перейти к следующему режиму
+        // перейти к следующему режимуж если режим был - бегущая строка - зафиксировать время окончания отображения последней бегущей строки        
         autoplayTimer = millis();
         nextMode();
       }
