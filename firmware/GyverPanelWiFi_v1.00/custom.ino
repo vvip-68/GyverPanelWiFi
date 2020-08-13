@@ -16,18 +16,21 @@ void customRoutine(byte aMode) {
 void doEffectWithOverlay(byte aMode) {
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
-  bool textOvEn  = textOverlayEnabled && getEffectTextOverlayUsage(aMode);
+  bool textOvEn  = textOverlayEnabled && (getEffectTextOverlayUsage(aMode) || ignoreTextOverlaySettingforEffect);
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
   bool needStopText = false;
   
   // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
   if (!showTextNow && textOvEn && ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L))) {
-    prepareNextText();                   // Обработать следующую строку для отображения, установить параметры
-    fullTextFlag = false;
-    loadingTextFlag = false;
-    showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
-    textCurrentCount = 0;                // Сбросить счетчик количества раз, сколько строка показана на матрице;
-    textStartTime = millis();            // Запомнить время начала отображения бегущей строки
+    // Обработать следующую строку для отображения, установить параметры; 
+    // Если нет строк к отображению - продолжать отображать оверлей часов
+    if (prepareNextText()) {               
+      fullTextFlag = false;
+      loadingTextFlag = false;
+      showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
+      textCurrentCount = 0;                // Сбросить счетчик количества раз, сколько строка показана на матрице;
+      textStartTime = millis();            // Запомнить время начала отображения бегущей строки
+    }
 
     // Если указано, что строка должна отображаться на фоне конкретного эффекта - его надо инициализировать    
     if (specialTextEffect >= 0) {
@@ -65,12 +68,18 @@ void doEffectWithOverlay(byte aMode) {
   // Нужно прекратить показ текста бегущей строки
   if (needStopText) {
     showTextNow = false; 
-    textLastTime = millis();
+
+    // Если строка показывалась на фоне специального эффекта для строки - восстановить эффект, который был до отображения строки
     if (saveEffectBeforeText >= 0) {
       loadingFlag = specialTextEffect != saveEffectBeforeText;  // Восстановленный эффект надо будет перезагрузить
       saveEffectBeforeText = -1;                                // Сбросить сохраненный / спецэффект
       specialTextEffect = -1;      
     }
+
+    // Если к показы задана следующая строка - установить время показа предыдущей в 0, чтобы
+    // следующая строка начала показываться немедленно, иначе - запомнить время окончания показа строки,
+    // от которого отсчитывается когда начинать следующий показ
+    textLastTime = nextTextLineIdx >= 0 ? 0 : millis();
   }
 
   bool effectReady = effectTimer.isReady();
@@ -358,10 +367,13 @@ void checkIdleState() {
     unsigned long ms = millis();
     if ((ms - autoplayTimer > autoplayTime) && !manualMode && AUTOPLAY) {    // таймер смены режима
       bool ok = true;
-      if (thisMode == MC_TEXT   && !fullTextFlag || 
-          thisMode == MC_MAZE   && !gameOverFlag ||
+      if (
+          thisMode == MC_TEXT   && !fullTextFlag ||   // Эффект "Бегущая строка" (показать IP адрес) не сменится на другой, пока вся строка не будет показана полностью
+      //  showTextNow && !gameOverFlag           ||   // Если нужно чтобы эффект не менялся, пока не пробежит вся строка оверлеем - раскомментарить эту строку
+          thisMode == MC_MAZE   && !gameOverFlag ||   // Лабиринт не меняем на другой эффект, пока игра не закончится (не выйдем из лабиринта)
       //  thisMode == MC_SNAKE  && !gameOverFlag ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
-          thisMode == MC_TETRIS && !gameOverFlag) {        
+          thisMode == MC_TETRIS && !gameOverFlag)     // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)
+      {        
         // Если бегущая строка или игра не завершены - смены режима не делать
         ok = false;
       } 

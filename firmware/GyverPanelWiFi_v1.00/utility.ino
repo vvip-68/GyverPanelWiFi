@@ -205,6 +205,15 @@ void fadePixel(byte i, byte j, byte step) {     // новый фейдер
 
 // hex string to uint32_t
 uint32_t HEXtoInt(String hexValue) {
+
+  if (hexValue.charAt(0) == '#') {
+    hexValue = hexValue.substring(1);
+  }
+
+  if (hexValue.startsWith("0x") || hexValue.startsWith("0X")) {
+    hexValue = hexValue.substring(2);
+  }
+
   byte tens, ones, number1, number2, number3;
   tens = (hexValue[0] < '9') ? hexValue[0] - '0' : hexValue[0] - '7';
   ones = (hexValue[1] < '9') ? hexValue[1] - '0' : hexValue[1] - '7';

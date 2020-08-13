@@ -21,15 +21,16 @@ void setup() {
 #if defined(ESP8266)
   ESP.wdtEnable(WDTO_8S);
 #endif
+  // Инициализация EEPROM и загрузка начальных значений переменных и параметров
+  EEPROM.begin(4096);
+
   Serial.begin(115200);
-  delay(10);
+  delay(300);
 
   Serial.println();
   Serial.println();
   Serial.println(FIRMWARE_VER);
 
-  // Инициализация EEPROM и загрузка начальных значений переменных и параметров
-  EEPROM.begin(4096);
   loadSettings();
 
   // Настройки ленты

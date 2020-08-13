@@ -107,7 +107,7 @@ void loadSettings() {
 
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
-    
+  
   if (isInitialized) {    
     globalBrightness = getMaxBrightness();
 
@@ -1092,7 +1092,8 @@ void setTextInterval(uint16_t interval) {
 
 // Загрузка массива строк "Бегущей строки"
 void loadTexts() {
-  int addr = EFFECT_EEPROM;  
+
+  int addr = TEXT_EEPROM;  
   int size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   int max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой из EEPROM строки
   int idx = 0;                           
@@ -1119,19 +1120,45 @@ void loadTexts() {
        ? "-" + String(idx)
        : "-" + String(char('A' - 10 + i));
    }
-   
+
    idx++;
   }
 
   for (byte i=idx; i<size; i++) {
-    textLines[i] = "-" + String(char('A'+i));
+    textLines[idx] = (idx < 10)
+       ? "-" + String(idx)
+       : "-" + String(char('A' - 10 + i));
   }
 
+  textLines[0]  = "#123456789ABDCEFGHI";
+  textLines[1]  = "Это просто строка";
+  textLines[2]  = "-Эту строку не отображать";
+  textLines[3]  = "";
+  textLines[4]  = "Эту строку не {-} отображать";
+  textLines[5]  = "Эта строка {C#000001} радужная";
+  textLines[6]  = "Эта строка разнобуквица{C#000002}";
+  textLines[7]  = "-Эта строка на фоне эффекта {E5}'Огонь'";
+  textLines[8]  = "-Эта строка на фоне эффекта 'Палитра'{E29}";
+  textLines[9]  = "-Эта строка на фоне эффекта {E28}'Тетрис'";
+  textLines[10] = "-Эта строка на 40 секунд {T40}";  
+  textLines[11] = "-Эта строка на 4 раза {N4}";
+  textLines[12] = "После этой строки (1) - строка 19 на фоне Analyzer{#19}";
+  textLines[13] = "После этой строки (2) - строка 19 на фоне Analyzer{#J}";
+  textLines[14] = "-Это строка содержит время: {D}";
+  textLines[15] = "-Форматированное время: {D:HH:mm:ss}";
+  textLines[16] = "-Форматированная дата: {D:D MMM YYYY года}";
+  textLines[17] = "-Форматированные дата и время: {D:DD.MM.YY HH:mm}";
+  textLines[18] = "-До учебного шода осталось {R01.09.2020#20}";
+  textLines[19] = "Это строка 19 на фоне {E30}Analyzer";
+  textLines[20] = "Учеба началась!";
+
+  // Если строка 0 - управляющая - установить индекс последовательности отображения на 1-й символ (т.к. нулевой - этто '#'
+  sequenceIdx = isFirstLineControl() ? 1 : -1;
 }
 
 // Сохранения массива строк "Бегущей строки"
 bool saveTexts() {
-  int addr = EFFECT_EEPROM;  
+  int addr = TEXT_EEPROM;  
   int size = sizeof(textLines) / sizeof(String);
 
   for (byte i=0; i<size; i++) {
@@ -1159,6 +1186,47 @@ bool saveTexts() {
   saveSettingsTimer.reset();
   
   return addr < 4096;
+}
+
+bool isFirstLineControl() {
+
+  // По умолчанию - строка 0 - обычная строка для отображения, а не управляющая
+  // Если textLines[0] начинается с '#'  - это строка содержит последовательность индексов строк в каком порядке их отображать. Индексы - 0..9,A..Z
+  // Если textLines[0] начинается с '##' - это управляющая строка, показывающая, что строки отображать в случайном порядке
+  
+  bool isControlLine = false;
+
+  // Однако если строка не пуста и начинается с '#' - это управляющая строка
+  if (textLines[0].length() > 0 && textLines[0][0] == '#') {
+    isControlLine = true;
+    sequenceIdx = 1;
+    // Строка из одного символа, и это '#' - считаем что строка - "##" - управляющая - случайное отображение строк
+    if (textLines[0].length() < 2) {
+      textLines[0] = "##";
+    }
+    // Если второй символ в строке тоже '#' - остальная часть строки нам не нужна - отбрасываем
+    if (textLines[0][1] == '#') {
+      textLines[0] = "##";
+    }
+  }
+
+  if (isControlLine) {
+    // Допускаются только 1..9,A-Z в верхнем регистре, остальные удалить; 
+    // textLines[0][1] == '#' - допускается - значит брать случайную последовательность
+    // '0' - НЕ допускается - т.к строка массива с индексом 0 - и есть управляющаая
+    textLines[0].toUpperCase();
+    for (int i = 1; i < textLines[0].length(); i++) {
+      char c = textLines[0].charAt(i);
+      if ((i == 1 && c == '#') || (c >= '1' && c <= '9') || (c >= 'A' && c <= 'Z')) continue;
+      textLines[0][i] = ' ';
+    }
+    textLines[0].replace(" ", "");
+    if (textLines[0].length() < 2) {
+      textLines[0] = "##";
+    }
+  }
+  
+  return isControlLine;  
 }
 
 // Режим цвета часов оверлея X: 0,1,2,3
