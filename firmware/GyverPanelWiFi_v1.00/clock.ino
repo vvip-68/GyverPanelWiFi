@@ -133,24 +133,11 @@ String dateCurrentTextLong() {
   ayear = year();
 
   String sDay = "0" + String(aday);  
-  String sMnth = "";
+  String sMnth = getMonthString(amnth);
   String sYear = String(ayear);
-  switch (amnth) {
-    case  1: sMnth = F(" января ");   break;
-    case  2: sMnth = F(" февраля ");  break;
-    case  3: sMnth = F(" марта ");    break;
-    case  4: sMnth = F(" апреля ");   break;
-    case  5: sMnth = F(" мая ");      break;
-    case  6: sMnth = F(" июня ");     break;
-    case  7: sMnth = F(" июля ");     break;
-    case  8: sMnth = F(" августа ");  break;
-    case  9: sMnth = F(" сентября "); break;
-    case 10: sMnth = F(" октября ");  break;
-    case 11: sMnth = F(" ноября ");   break;
-    case 12: sMnth = F(" декабря ");  break;
-  }  
+    
   if (sDay.length() > 2) sDay = sDay.substring(1);
-  return sDay + sMnth + sYear + " года";
+  return sDay + " " + sMnth + " " + sYear + " года";
 }
 
 void clockColor() {

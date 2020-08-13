@@ -281,3 +281,88 @@ byte getBrightnessCalculated(byte brightness, byte contrast) {
   // В данном варианте общая яркость не учитывается в расчете
   return map8(contrast, 16, 255);
 }
+
+String getMonthString(byte month) {
+  String sMnth = "";
+  switch (month) {
+    case  1: sMnth = F("января");   break;
+    case  2: sMnth = F("февраля");  break;
+    case  3: sMnth = F("марта");    break;
+    case  4: sMnth = F("апреля");   break;
+    case  5: sMnth = F("мая");      break;
+    case  6: sMnth = F("июня");     break;
+    case  7: sMnth = F("июля");     break;
+    case  8: sMnth = F("августа");  break;
+    case  9: sMnth = F("сентября"); break;
+    case 10: sMnth = F("октября");  break;
+    case 11: sMnth = F("ноября");   break;
+    case 12: sMnth = F("декабря");  break;
+  }  
+  return sMnth;
+}
+
+String getMonthShortString(byte month) {
+  String sMnth = "";
+  switch (month) {
+    case  1: sMnth = F("янв"); break;
+    case  2: sMnth = F("фев"); break;
+    case  3: sMnth = F("мар"); break;
+    case  4: sMnth = F("апр"); break;
+    case  5: sMnth = F("май"); break;
+    case  6: sMnth = F("июн"); break;
+    case  7: sMnth = F("июл"); break;
+    case  8: sMnth = F("авг"); break;
+    case  9: sMnth = F("сен"); break;
+    case 10: sMnth = F("окт"); break;
+    case 11: sMnth = F("ноя"); break;
+    case 12: sMnth = F("дек"); break;
+  }  
+  return sMnth;
+}
+
+String getWeekdayString(byte wd) {
+  String str = "";
+  switch (wd) {
+    case  1: str = F("понедельник"); break;
+    case  2: str = F("вторник");     break;
+    case  3: str = F("среда");       break;
+    case  4: str = F("четверг");     break;
+    case  5: str = F("пятница");     break;
+    case  6: str = F("суббота");     break;
+    case  7: str = F("воскресенье"); break;
+  }  
+  return str;
+}
+
+String getWeekdayShortString(byte wd) {
+  String str = "";
+  switch (wd) {
+    case  1: str = F("пон"); break;
+    case  2: str = F("втр"); break;
+    case  3: str = F("срд"); break;
+    case  4: str = F("чтв"); break;
+    case  5: str = F("птн"); break;
+    case  6: str = F("сбт"); break;
+    case  7: str = F("вск"); break;
+  }  
+  return str;
+}
+
+String getWeekdayShortShortString(byte wd) {
+  String str = "";
+  switch (wd) {
+    case  1: str = F("пн"); break;
+    case  2: str = F("вт"); break;
+    case  3: str = F("ср"); break;
+    case  4: str = F("чт"); break;
+    case  5: str = F("пт"); break;
+    case  6: str = F("сб"); break;
+    case  7: str = F("вс"); break;
+  }  
+  return str;
+}
+
+String getRestDaysString(String rest) {
+  // Обработать дату
+  return rest;
+}

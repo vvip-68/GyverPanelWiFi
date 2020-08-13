@@ -16,7 +16,7 @@ void runningText() {
   } else {
     // Вывод текста оверлея бегущей строки
     if (textHasDateTime) 
-      text = prepareTextContent(currentText);   // Обработать строку, превратив макросы даты в отображаемые значения
+      text = processDateMacrosInText(currentText);   // Обработать строку, превратив макросы даты в отображаемые значения
     else 
       text = currentText;                       // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
   }
@@ -33,19 +33,212 @@ void runningText() {
   fillString(text, color);
 }
 
-String prepareTextContent(String pattern) {
-  // Обработать макросы, зависимые от даты.
-  // Если присутствует макрос окончания отображения ("До нового года осталось...") - обработать не наступило ли событие и, если наступило -
-  // переинициализировать контент и параметры отображения новой строки вместо той, с истекшей датой
-  return String(F("Текст содержит дату!"));
+String processDateMacrosInText(String textLine) {
+  /* -------------------------------------------------------------
+   Эти форматы содержат строку, зависящую от текущего времени.
+   Оставить эти форматы как есть в строке - они будут обрабатываться на каждом проходе, подставляя текцщее время
+   Сейчас просто выставить флаг, что строка содержит макросы, зависимые от даты
+      "{DF}" - где F - один из форматов даты / времени если формата даты нет - аналогично {D}
+      "{D}"  - просто часы вида "21:00" в виде беугщей строки
+       Формат даты поддерживает следующие спецификаторы       
+          d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
+          dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
+          ddd  - сокращенное название дня недели       (допускается DDD)
+          dddd - полное название дня недели            (допускается DDDD)
+          M    - месяц от 1 до 12
+          MM   - месяц от 01 до 12
+          MMM  - месяц прописью (янв..дек)
+          MMMМ - месяц прописью (января..декабря)
+          Y    - год в диапазоне от 0 до 99
+          YY   - год в диапазоне от 00 до 99
+          YYYY - год в виде четырехзначного числа
+          h    - час в 12-часовом формате от 1 до 12
+          hh   - час в 12-часовом формате от 01 до 12
+          H    - час в 23-часовом формате от 0 до 23
+          HH   - час в 23-часовом формате от 00 до 23
+          m    - минуты в диапазоне от 0 до 59
+          mm   - минуты в диапазоне от 00 до 59
+          s    - секунды в диапазоне от 0 до 59
+          ss   - секунды в диапазоне от 00 до 59
+          t    - Первый символ указателя AM/PM
+          tt   - Указатель AM/PM
+  
+      "{R01.01.2021#N}" 
+         - где после R указана дата до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
+             X дней X часов X минут; 
+           Если дней не осталось - выводится только X часов X минут; 
+           Если минут тоже уже не осталось - выводится X минут
+       
+         - где после даты может быть указан
+           - #N - если осталось указанная дата уже наступила - вместо этой строки выводится строка с номером N
+                  если строка замены не указана или отключена (символ "-" вначале строки) - просроченная строка не выводится
+                  берется следующая строка
+     ------------------------------------------------------------- 
+  */
+
+  uint8_t  idx, idx2;
+  uint8_t  aday = day();
+  uint8_t  amnth = month();
+  uint16_t ayear = year();
+  uint8_t  wd = weekday();  // day of the week, Sunday is day 0 
+  uint8_t  hrs = hour();
+  uint8_t  mins = minute();
+  uint8_t  secs = second();
+  bool     am = isAM();
+  bool     pm = isPM();
+
+  if (wd == 0) wd = 7;      // Sunday is day 7
+
+  // {D} - отображать текущее время в формате 'HH:mm'
+  idx = textLine.indexOf("{D}");
+  if (idx >= 0) {
+    // Подготовить строку текущего времени HH:mm и заменить все вхождения {D} на эту строку
+    String s_hour = String(hrs);
+    String s_mins = String(mins);
+    if (s_hour.length() < 2) s_hour = "0" + s_hour;
+    if (s_mins.length() < 2) s_mins = "0" + s_mins;
+    String s_time = s_hour + ":" + s_mins;
+    textLine.replace("{D}", s_time);
+  }
+
+  // {D:F} (где F - форматная строка
+  idx = textLine.indexOf("{D:");
+  while (idx >= 0) {
+
+    // Закрывающая скобка
+    // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+    idx2 = textLine.indexOf("}", idx);        
+    if (idx2 < 0) break;
+
+    // Извлечь форматную строку
+    String sFormat = "$", sFmtProcess = "#", str;
+
+    if (idx2 - idx > 1) {
+      sFormat = textLine.substring(idx+3, idx2);
+    }
+    sFmtProcess = sFormat;
+
+    //  dddd - полное название дня недели            (допускается DDDD)
+    str = getWeekdayString(wd);  // DDDD  
+    sFmtProcess.replace("DDDD", str);
+    sFmtProcess.replace("dddd", str);
+    
+    //  ddd  - сокращенное название дня недели       (допускается DDD)
+    str = getWeekdayShortString(wd);  // DDD
+    sFmtProcess.replace("DDD", str);
+    sFmtProcess.replace("ddd", str);
+
+    //  dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
+    str = String(aday);  // DD
+    if (str.length() < 2) str = "0" + str;    
+    sFmtProcess.replace("DD", str);
+    sFmtProcess.replace("dd", str);
+
+    //  d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
+    str = String(aday);  // D
+    sFmtProcess.replace("D", str);
+    sFmtProcess.replace("d", str);
+    
+
+    //  MMMМ - месяц прописью (января..декабря)
+    str = getMonthString(amnth);
+    sFmtProcess.replace("MMMM", str);
+    
+    //  MMM  - месяц прописью (янв..дек)
+    str = getMonthShortString(amnth);
+    sFmtProcess.replace("MMM", str);
+
+    //  MM   - месяц от 01 до 12
+    str = String(amnth);
+    if (str.length() < 2) str = "0" + str;    
+    sFmtProcess.replace("MM", str);
+
+    //  M    - месяц от 1 до 12
+    str = String(amnth);
+    sFmtProcess.replace("M", str);
+
+
+    //  YYYY - год в виде четырехзначного числа
+    str = String(ayear);
+    sFmtProcess.replace("YYYY", str);
+
+    //  YY   - год в диапазоне от 00 до 99
+    str = str.substring(2);
+    sFmtProcess.replace("YY", str);
+
+    //  Y    - год в диапазоне от 0 до 99
+    if (str[0] == '0') str = str.substring(1);
+    sFmtProcess.replace("Y", str);
+
+    
+    //  HH   - час в 23-часовом формате от 00 до 23
+    str = String(hrs);
+    if (str.length() < 2) str = "0" + str;    
+    sFmtProcess.replace("HH", str);
+
+    //  H    - час в 23-часовом формате от 0 до 23
+    str = String(hrs);
+    sFmtProcess.replace("H", str);
+
+    //  hh   - час в 12-часовом формате от 01 до 12
+    if (hrs > 12) hrs = hrs - 12;
+    if (hrs == 0) hrs = 12;
+    str = String(hrs);
+    if (str.length() < 2) str = "0" + str;    
+    sFmtProcess.replace("hh", str);
+
+    //  h    - час в 12-часовом формате от 1 до 12
+    str = String(hrs);
+    sFmtProcess.replace("h", str);
+    
+    //  mm   - минуты в диапазоне от 00 до 59
+    str = String(mins);
+    if (str.length() < 2) str = "0" + str;    
+    sFmtProcess.replace("mm", str);
+
+    //  m    - минуты в диапазоне от 0 до 59
+    str = String(mins);
+    sFmtProcess.replace("m", str);
+
+    //  ss   - секунды в диапазоне от 00 до 59
+    str = String(secs);
+    if (str.length() < 2) str = "0" + str;    
+    sFmtProcess.replace("ss", str);
+
+    //  s    - секунды в диапазоне от 0 до 59
+    str = String(secs);
+    sFmtProcess.replace("s", str);
+
+    //  tt   - Указатель AM/PM
+    str = am ? "AM" : (pm ? "PM" : "");
+    sFmtProcess.replace("tt", str);
+
+    //  t    - Первый символ указателя AM/PM
+    str = am ? "A" : (pm ? "P" : "");
+    sFmtProcess.replace("t", str);
+
+    // Заменяем в строке макрос с исходной форматной строкой на обработанную строку с готовой текущей датой
+    textLine.replace("{D:" + sFormat + "}", sFmtProcess);
+    
+    // Есть еще вхождения макроса?
+    idx = textLine.indexOf("{D:");
+
+    break;
+  }
+
+  // "{R01.01.2021#N}" 
+  idx = textLine.indexOf("{R");
+  if (idx >= 0) {
+    textLine = getRestDaysString(textLine);
+  }
+
+  return textLine;
 }
 
 // Получить / установить настройки отображения очередного текста бегущей строки
 // Если нет строк, готовых к ротображению (например все строки отключены) - вернуть false - энет готовых строк'
 boolean prepareNextText() {
-
   int8_t nextIdx = nextTextLineIdx;
-  
   textShowTime = -1;              // Если больше нуля - сколько времени отображать бегущую строку в секундах; Если 0 - используется textShowCount; В самой строке спец-макросом может быть указано кол-во секунд
   textShowCount = 1;              // Сколько раз прокручивать текст бегущей строки поверх эффектов; По умолчанию - 1; В самой строке спец-макросом может быть указано число 
   useSpecialTextColor = false;    // В текущей бегущей строке был задан цвет, которым она должна отображаться
@@ -76,6 +269,14 @@ boolean prepareNextText() {
   if (currentTextLineIdx < 0 || currentTextLineIdx >= sizeOfTextsArray) {
     currentTextLineIdx = textLines[0].charAt(0) == '#' ? 1 : 0;
   }
+
+  currentText = processMacrosInText(textLines[currentTextLineIdx]);
+
+  return currentText.length() > 0;
+}
+
+// Выполнить разбор строки на наличие макросов, применить указанные настройки
+String processMacrosInText(String textLine) {  
 
   /*   
      Общие правила:
@@ -144,18 +345,19 @@ boolean prepareNextText() {
   char c;
   String tmp;
 
+  // Размер массива строк
+  byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+
   while (!found && (attempt < sizeOfTextsArray)) {
     
-    // Выполнить разбор строки на наличие макросов, применить указанные настройки
-    currentText = textLines[currentTextLineIdx];
-
     // -------------------------------------------------------------    
     // Строка начинается с '-' или пустая или содержит "{-}" - эта строка отключена, брать следующую
     // -------------------------------------------------------------    
 
-    if (currentText.length() == 0 || currentText.charAt(0) == '-' || currentText.indexOf("{-}") >= 0) {
+    if (textLine.length() == 0 || textLine.charAt(0) == '-' || textLine.indexOf("{-}") >= 0) {
       attempt++;  
       currentTextLineIdx = getNextLine(currentTextLineIdx);
+      textLine = textLines[currentTextLineIdx];
       continue;
     }
 
@@ -166,22 +368,22 @@ boolean prepareNextText() {
     // -------------------------------------------------------------    
     
     nextTextLineIdx = -1;
-    idx = currentText.indexOf("{#");
+    idx = textLine.indexOf("{#");
     while (idx >= 0) {
 
       // Закрывающая скобка
       // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
-      idx2 = currentText.indexOf("}", idx);        
+      idx2 = textLine.indexOf("}", idx);        
       if (idx2 < 0) break;
 
       // Извлечь номер эффекта, он должен быть 0..MAX_EFFECT-1, может быть двузначным
       tmp = "";
       if (idx2 - idx > 1) {
-        tmp = currentText.substring(idx+2, idx2);
+        tmp = textLine.substring(idx+2, idx2);
       }
       
       // удаляем макрос
-      currentText.remove(idx, idx2 - idx + 1);
+      textLine.remove(idx, idx2 - idx + 1);
 
       int16_t len = tmp.length();
       if (len == 0 || len > 2) break;
@@ -202,10 +404,10 @@ boolean prepareNextText() {
       }
       
       // удаляем макрос
-      currentText.remove(idx, idx2 - idx + 1);
+      textLine.remove(idx, idx2 - idx + 1);
       
       // Есть еще вхождения макроса?
-      idx = currentText.indexOf("{#");  
+      idx = textLine.indexOf("{#");  
     }
 
     // -------------------------------------------------------------
@@ -213,29 +415,29 @@ boolean prepareNextText() {
     // -------------------------------------------------------------
 
     specialTextEffect = -1;
-    idx = currentText.indexOf("{E");
+    idx = textLine.indexOf("{E");
     while (idx >= 0) {
 
       // Закрывающая скобка
       // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
-      idx2 = currentText.indexOf("}", idx);        
+      idx2 = textLine.indexOf("}", idx);        
       if (idx2 < 0) break;
 
       // Извлечь номер эффекта, он должен быть 0..MAX_EFFECT-1, может быть двузначным
       tmp = "";
       if (idx2 - idx > 1) {
-        tmp = currentText.substring(idx+2, idx2);
+        tmp = textLine.substring(idx+2, idx2);
       }
       
       // удаляем макрос
-      currentText.remove(idx, idx2 - idx + 1);
+      textLine.remove(idx, idx2 - idx + 1);
 
       // Преобразовать строку в число
       idx = tmp.length() > 0 ? tmp.toInt() : -1;
-      specialTextEffect = idx >= 0 && idx<MAX_EFFECT ? idx : -1;
+      specialTextEffect = idx >= 0 && idx < MAX_EFFECT ? idx : -1;
       
       // Есть еще вхождения макроса?
-      idx = currentText.indexOf("{E");  
+      idx = textLine.indexOf("{E");  
     }
 
     // -------------------------------------------------------------
@@ -243,29 +445,29 @@ boolean prepareNextText() {
     // -------------------------------------------------------------
 
     textShowTime = -1;
-    idx = currentText.indexOf("{T");
+    idx = textLine.indexOf("{T");
     while (idx >= 0) {
 
       // Закрывающая скобка
       // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
-      idx2 = currentText.indexOf("}", idx);        
+      idx2 = textLine.indexOf("}", idx);        
       if (idx2 < 0) break;
 
       // Извлечь количество секунд отображения этой бегущей строки
       tmp = "";
       if (idx2 - idx > 1) {
-        tmp = currentText.substring(idx+2, idx2);
+        tmp = textLine.substring(idx+2, idx2);
       }
       
       // удаляем макрос
-      currentText.remove(idx, idx2 - idx + 1);
+      textLine.remove(idx, idx2 - idx + 1);
 
       // Преобразовать строку в число
       idx = tmp.length() > 0 ? tmp.toInt() : -1;
       textShowTime = idx > 0 ? idx : -1;
       
       // Есть еще вхождения макроса?
-      idx = currentText.indexOf("{T");
+      idx = textLine.indexOf("{T");
     }
 
     // -------------------------------------------------------------
@@ -273,29 +475,29 @@ boolean prepareNextText() {
     // -------------------------------------------------------------
 
     textShowCount = 1;
-    idx = currentText.indexOf("{N");
+    idx = textLine.indexOf("{N");
     while (idx >= 0) {
 
       // Закрывающая скобка
       // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
-      idx2 = currentText.indexOf("}", idx);        
+      idx2 = textLine.indexOf("}", idx);        
       if (idx2 < 0) break;
 
       // Извлечь количество раз отображения этой бегущей строки
       tmp = "";
       if (idx2 - idx > 1) {
-        tmp = currentText.substring(idx+2, idx2);
+        tmp = textLine.substring(idx+2, idx2);
       }
       
       // удаляем макрос
-      currentText.remove(idx, idx2 - idx + 1);
+      textLine.remove(idx, idx2 - idx + 1);
 
       // Преобразовать строку в число
       idx = tmp.length() > 0 ? tmp.toInt() : -1;
       textShowCount = idx > 0 ? idx : 1;
       
       // Есть еще вхождения макроса?
-      idx = currentText.indexOf("{N");  
+      idx = textLine.indexOf("{N");  
     }
 
     // -------------------------------------------------------------
@@ -303,29 +505,29 @@ boolean prepareNextText() {
     // -------------------------------------------------------------
 
     useSpecialTextColor = false;
-    idx = currentText.indexOf("{C");
+    idx = textLine.indexOf("{C");
     while (idx >= 0) {
 
       // Закрывающая скобка
       // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
-      idx2 = currentText.indexOf("}", idx);        
+      idx2 = textLine.indexOf("}", idx);        
       if (idx2 < 0) break;
 
       // Извлечь количество раз отображения этой бегущей строки
       tmp = "";
       if (idx2 - idx > 1) {
-        tmp = currentText.substring(idx+2, idx2);
+        tmp = textLine.substring(idx+2, idx2);
       }
       
       // удаляем макрос
-      currentText.remove(idx, idx2 - idx + 1);
+      textLine.remove(idx, idx2 - idx + 1);
            
       // Преобразовать строку в число
       useSpecialTextColor = true;
       specialTextColor = (uint32_t)HEXtoInt(tmp);
       
       // Есть еще вхождения макроса?
-      idx = currentText.indexOf("{C");  
+      idx = textLine.indexOf("{C");  
     }
       
     // -------------------------------------------------------------
@@ -337,12 +539,12 @@ boolean prepareNextText() {
     //    "{R01.01.2021#N}" 
     // -------------------------------------------------------------
 
-    textHasDateTime = currentText.indexOf("{D") >= 0 || currentText.indexOf("{R") >= 0;  
+    textHasDateTime = textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0;  
 
     attempt++;
   }
 
-  return found;
+  return found ? textLine : "";
 }
 
 // Получить индекс строки для отображения
