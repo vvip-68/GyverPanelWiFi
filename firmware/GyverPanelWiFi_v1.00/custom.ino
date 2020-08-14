@@ -92,7 +92,7 @@ void doEffectWithOverlay(byte aMode) {
   bool needOverlay  = 
        (aMode == MC_CLOCK) ||                                                         // Если включен режим "Часы" (ночные часы)
        (aMode == MC_TEXT) ||                                                          // Если включен режим "Бегущая строка" (show IP address)       
-      (!showTextNow && clockOvEn) || 
+      (!showTextNow && clockOvEn && !useSpecialBackColor) || 
        (showTextNow && textOvEn);
 
   // В прошлой итерации часы / текст были наложены с оверлеем?
@@ -102,10 +102,18 @@ void doEffectWithOverlay(byte aMode) {
   }  
   
   if (effectReady) {
-    if (showTextNow && specialTextEffect >= 0) {
+    if (showTextNow) {
       // Если указан спец-эффект поверх которого бежит строка - отобразить его
-      processEffect(specialTextEffect);
-    } else {
+      if (specialTextEffect >= 0) {
+        processEffect(specialTextEffect);
+      } if (useSpecialBackColor) {
+        // Задана отрисовка строки поверх однотонной заливки указанным цветом
+        fillAll(specialBackColor);
+      } else {
+        // Отобразить текущий эффект, поверх которого будет нарисована строка
+        processEffect(aMode);
+      }
+    } else     {
       // Иначе отрисовать текущий эффект
       processEffect(aMode);
     }

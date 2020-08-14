@@ -15,12 +15,18 @@ void runningText() {
       text = String(FIRMWARE_VER);
   } else {
     // Вывод текста оверлея бегущей строки
-    if (textHasDateTime) 
-      text = processDateMacrosInText(currentText);   // Обработать строку, превратив макросы даты в отображаемые значения
-    else 
-      text = currentText;                       // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
+    if (textHasDateTime) {
+      currentText = processDateMacrosInText(currentText);   // Обработать строку, превратив макросы даты в отображаемые значения
+      text = currentText;
+      if (text.length() == 0) {                      // Если дата еще не инициализирована - вернет другую строку, не требующую даты
+         fullTextFlag = true;                        // Если нет строк, не зависящих от даты - вернется пустая строка - отображать нечего
+         return;
+      }
+    } else {
+      text = currentText;                            // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
+    }
   }
-
+    
   // 0 - монохром: 1 - радуга; 2 -  каждая буква свой цвет
   uint32_t color = COLOR_TEXT_MODE;
 
@@ -60,8 +66,10 @@ String processDateMacrosInText(String textLine) {
           mm   - минуты в диапазоне от 00 до 59
           s    - секунды в диапазоне от 0 до 59
           ss   - секунды в диапазоне от 00 до 59
-          t    - Первый символ указателя AM/PM
-          tt   - Указатель AM/PM
+          T    - Первый символ указателя AM/PM
+          TT   - Указатель AM/PM
+          t    - Первый символ указателя am/pm
+          tt   - Указатель am/pm
   
       "{R01.01.2021#N}" 
          - где после R указана дата до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
@@ -76,7 +84,9 @@ String processDateMacrosInText(String textLine) {
      ------------------------------------------------------------- 
   */
 
-  uint8_t  idx, idx2;
+  String   str, tmp;
+  uint8_t  idx, idx2, iDay, iMonth;
+  uint16_t iYear;
   uint8_t  aday = day();
   uint8_t  amnth = month();
   uint16_t ayear = year();
@@ -89,155 +99,285 @@ String processDateMacrosInText(String textLine) {
 
   if (wd == 0) wd = 7;      // Sunday is day 7
 
-  // {D} - отображать текущее время в формате 'HH:mm'
-  idx = textLine.indexOf("{D}");
-  if (idx >= 0) {
-    // Подготовить строку текущего времени HH:mm и заменить все вхождения {D} на эту строку
-    String s_hour = String(hrs);
-    String s_mins = String(mins);
-    if (s_hour.length() < 2) s_hour = "0" + s_hour;
-    if (s_mins.length() < 2) s_mins = "0" + s_mins;
-    String s_time = s_hour + ":" + s_mins;
-    textLine.replace("{D}", s_time);
-  }
-
-  // {D:F} (где F - форматная строка
-  idx = textLine.indexOf("{D:");
-  while (idx >= 0) {
-
-    // Закрывающая скобка
-    // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
-    idx2 = textLine.indexOf("}", idx);        
-    if (idx2 < 0) break;
-
-    // Извлечь форматную строку
-    String sFormat = "$", sFmtProcess = "#", str;
-
-    if (idx2 - idx > 1) {
-      sFormat = textLine.substring(idx+3, idx2);
+  while (true) {
+    // {D} - отображать текущее время в формате 'HH:mm'
+    idx = textLine.indexOf("{D}");
+    if (idx >= 0) {
+      // Подготовить строку текущего времени HH:mm и заменить все вхождения {D} на эту строку
+      String s_hour = String(hrs);
+      String s_mins = String(mins);
+      if (s_hour.length() < 2) s_hour = "0" + s_hour;
+      if (s_mins.length() < 2) s_mins = "0" + s_mins;
+      String s_time = s_hour + ":" + s_mins;
+      textLine.replace("{D}", s_time);
     }
-    sFmtProcess = sFormat;
-
-    //  dddd - полное название дня недели            (допускается DDDD)
-    str = getWeekdayString(wd);  // DDDD  
-    sFmtProcess.replace("DDDD", str);
-    sFmtProcess.replace("dddd", str);
-    
-    //  ddd  - сокращенное название дня недели       (допускается DDD)
-    str = getWeekdayShortString(wd);  // DDD
-    sFmtProcess.replace("DDD", str);
-    sFmtProcess.replace("ddd", str);
-
-    //  dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
-    str = String(aday);  // DD
-    if (str.length() < 2) str = "0" + str;    
-    sFmtProcess.replace("DD", str);
-    sFmtProcess.replace("dd", str);
-
-    //  d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
-    str = String(aday);  // D
-    sFmtProcess.replace("D", str);
-    sFmtProcess.replace("d", str);
-    
-
-    //  MMMМ - месяц прописью (января..декабря)
-    str = getMonthString(amnth);
-    sFmtProcess.replace("MMMM", str);
-    
-    //  MMM  - месяц прописью (янв..дек)
-    str = getMonthShortString(amnth);
-    sFmtProcess.replace("MMM", str);
-
-    //  MM   - месяц от 01 до 12
-    str = String(amnth);
-    if (str.length() < 2) str = "0" + str;    
-    sFmtProcess.replace("MM", str);
-
-    //  M    - месяц от 1 до 12
-    str = String(amnth);
-    sFmtProcess.replace("M", str);
-
-
-    //  YYYY - год в виде четырехзначного числа
-    str = String(ayear);
-    sFmtProcess.replace("YYYY", str);
-
-    //  YY   - год в диапазоне от 00 до 99
-    str = str.substring(2);
-    sFmtProcess.replace("YY", str);
-
-    //  Y    - год в диапазоне от 0 до 99
-    if (str[0] == '0') str = str.substring(1);
-    sFmtProcess.replace("Y", str);
-
-    
-    //  HH   - час в 23-часовом формате от 00 до 23
-    str = String(hrs);
-    if (str.length() < 2) str = "0" + str;    
-    sFmtProcess.replace("HH", str);
-
-    //  H    - час в 23-часовом формате от 0 до 23
-    str = String(hrs);
-    sFmtProcess.replace("H", str);
-
-    //  hh   - час в 12-часовом формате от 01 до 12
-    if (hrs > 12) hrs = hrs - 12;
-    if (hrs == 0) hrs = 12;
-    str = String(hrs);
-    if (str.length() < 2) str = "0" + str;    
-    sFmtProcess.replace("hh", str);
-
-    //  h    - час в 12-часовом формате от 1 до 12
-    str = String(hrs);
-    sFmtProcess.replace("h", str);
-    
-    //  mm   - минуты в диапазоне от 00 до 59
-    str = String(mins);
-    if (str.length() < 2) str = "0" + str;    
-    sFmtProcess.replace("mm", str);
-
-    //  m    - минуты в диапазоне от 0 до 59
-    str = String(mins);
-    sFmtProcess.replace("m", str);
-
-    //  ss   - секунды в диапазоне от 00 до 59
-    str = String(secs);
-    if (str.length() < 2) str = "0" + str;    
-    sFmtProcess.replace("ss", str);
-
-    //  s    - секунды в диапазоне от 0 до 59
-    str = String(secs);
-    sFmtProcess.replace("s", str);
-
-    //  tt   - Указатель AM/PM
-    str = am ? "AM" : (pm ? "PM" : "");
-    sFmtProcess.replace("tt", str);
-
-    //  t    - Первый символ указателя AM/PM
-    str = am ? "A" : (pm ? "P" : "");
-    sFmtProcess.replace("t", str);
-
-    // Заменяем в строке макрос с исходной форматной строкой на обработанную строку с готовой текущей датой
-    textLine.replace("{D:" + sFormat + "}", sFmtProcess);
-    
-    // Есть еще вхождения макроса?
+  
+    // {D:F} (где F - форматная строка
     idx = textLine.indexOf("{D:");
+    while (idx >= 0) {
+  
+      // Закрывающая скобка
+      // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+      idx2 = textLine.indexOf("}", idx);        
+      if (idx2 < 0) break;
+  
+      // Извлечь форматную строку
+      String sFormat = "$", sFmtProcess = "#";
+  
+      if (idx2 - idx > 1) {
+        sFormat = textLine.substring(idx+3, idx2);
+      }
+      sFmtProcess = sFormat;
+  
+      //  dddd - полное название дня недели            (допускается DDDD)
+      str = getWeekdayString(wd);  // DDDD  
+      sFmtProcess.replace("DDDD", str);
+      sFmtProcess.replace("dddd", str);
+      
+      //  ddd  - сокращенное название дня недели       (допускается DDD)
+      str = getWeekdayShortString(wd);  // DDD
+      sFmtProcess.replace("DDD", str);
+      sFmtProcess.replace("ddd", str);
+  
+      //  dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
+      str = String(aday);  // DD
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("DD", str);
+      sFmtProcess.replace("dd", str);
+  
+      //  d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
+      str = String(aday);  // D
+      sFmtProcess.replace("D", str);
+      sFmtProcess.replace("d", str);
+      
+  
+      //  MMMМ - месяц прописью (января..декабря)
+      str = getMonthString(amnth);
+      sFmtProcess.replace("MMMM", str);
+      
+      //  MMM  - месяц прописью (янв..дек)
+      str = getMonthShortString(amnth);
+      sFmtProcess.replace("MMM", str);
+  
+      //  MM   - месяц от 01 до 12
+      str = String(amnth);
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("MM", str);
+  
+      //  M    - месяц от 1 до 12
+      str = String(amnth);
+      sFmtProcess.replace("M", str);
+  
+  
+      //  YYYY - год в виде четырехзначного числа
+      str = String(ayear);
+      sFmtProcess.replace("YYYY", str);
+  
+      //  YY   - год в диапазоне от 00 до 99
+      str = str.substring(2);
+      sFmtProcess.replace("YY", str);
+  
+      //  Y    - год в диапазоне от 0 до 99
+      if (str[0] == '0') str = str.substring(1);
+      sFmtProcess.replace("Y", str);
+  
+      
+      //  HH   - час в 23-часовом формате от 00 до 23
+      str = String(hrs);
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("HH", str);
+  
+      //  H    - час в 23-часовом формате от 0 до 23
+      str = String(hrs);
+      sFmtProcess.replace("H", str);
+  
+      //  hh   - час в 12-часовом формате от 01 до 12
+      if (hrs > 12) hrs = hrs - 12;
+      if (hrs == 0) hrs = 12;
+      str = String(hrs);
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("hh", str);
+  
+      //  h    - час в 12-часовом формате от 1 до 12
+      str = String(hrs);
+      sFmtProcess.replace("h", str);
+      
+      //  mm   - минуты в диапазоне от 00 до 59
+      str = String(mins);
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("mm", str);
+  
+      //  m    - минуты в диапазоне от 0 до 59
+      str = String(mins);
+      sFmtProcess.replace("m", str);
+  
+      //  ss   - секунды в диапазоне от 00 до 59
+      str = String(secs);
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("ss", str);
+  
+      //  s    - секунды в диапазоне от 0 до 59
+      str = String(secs);
+      sFmtProcess.replace("s", str);
+  
+      //  tt   - Указатель AM/PM
+      str = am ? "AM" : (pm ? "PM" : "");
+      sFmtProcess.replace("TT", str);
+      str.toLowerCase();
+      sFmtProcess.replace("tt", str);
+  
+      //  t    - Первый символ указателя AM/PM
+      str = am ? "A" : (pm ? "P" : "");
+      sFmtProcess.replace("T", str);
+      str.toLowerCase();
+      sFmtProcess.replace("t", str);
+  
+      // Заменяем в строке макрос с исходной форматной строкой на обработанную строку с готовой текущей датой
+      textLine.replace("{D:" + sFormat + "}", sFmtProcess);
+      
+      // Есть еще вхождения макроса?
+      idx = textLine.indexOf("{D:");
+  
+      break;
+    }
+  
+    // "{R01.01.2021#N}" 
+    idx = textLine.indexOf("{R");
+    if (idx >= 0) {
+      // Если время  соббытия уже наступило и в строке указана строка для отображения ПОСЛЕ наступления события - показывать эту строку
+      // Если замены строки после наступления события нет - textLine будет пустой - отображать нечего
+      // Строка замены снова может содержать метки времени - поэтому отправить проверку / замену на второй круг
+
+      // Закрывающая скобка
+      // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+      idx2 = textLine.indexOf("}", idx);        
+      if (idx2 < 0) break;
+
+      // Извлечь дату события и строку замены ПОСЛЕ события (если есть)
+      str = "";
+      if (idx2 - idx > 1) {
+        str = textLine.substring(idx+2, idx2);
+      }
+
+      // удаляем макрос; точка вставки строки остатка будет будет в позицию idx
+      textLine.remove(idx, idx2 - idx + 1);
+
+      // Здесь str имеет вид '01.01.2020', если строки замены ПОСЛЕ события нет или '01.01.2020#J' или '01.01.2020#19' если строка замены указана (J=19 - индекс в массиве)
+      if (str.length() > 0) {
+
+        // Точка вставки строки остатка
+        uint16_t insertPoint = idx;
+        uint8_t  afterEventIdx = -1;
+
+        // Есть индекс строки замены? Если есть - отделить ее от даты события
+        idx = str.indexOf("#");
+        String s_nn = "";
+        if (idx>=0) {
+          s_nn = idx>=0 ? str.substring(idx+1) : "";
+          str = str.substring(0,idx);
+        }
+
+
+        // Здесь - str - дата события, s_nn - номер строки замены или пустая строка, если строки замены нет
+        // Получить дату наступления события из строки 'ДД.ММ.ГГГГ'
+        time_t t_now = now();
+        time_t t_event = now();
+        time_t t_diff = 0;
+        
+        // Корректная дата - 10 символов, точки в позициях 2 и 5
+        if (str.length() == 10 && str.charAt(2) == '.' && str.charAt(5) == '.') {
+           int8_t iDay   = (str[0] - '0') * 10 + (str[1] - '0');
+           int8_t iMonth = (str[3] - '0') * 10 + (str[4] - '0');
+           str = str.substring(6);
+           int16_t iYear = str.toInt();
+
+           tmElements_t tm = {0, 0, 0, 0, iDay, iMonth, CalendarYrToTm(iYear)};
+           t_event = makeTime(tm);
+        }
+
+        // Если t_now >= t_event - событие уже прошло, нужно заменять обрабатываемую строку на строку подстановки, указанную (или нет) в s_nn 
+        if (t_now >= t_event) {
+
+          uint8_t len = s_nn.length();
+          if (len > 0) {
+            // Преобразовать строку в индекс
+            char c = s_nn.charAt(0);
+            if (len == 1 || (c >= 'A' && c <= 'Z')) {        
+              // Номер следующей к показу строки, извлеченный из макроса в формате 1..9,A..Z
+              if (c >= '1' && c <= '9') 
+                afterEventIdx = (int8_t)(c - '0');
+              else if (c >= 'A' && c <= 'Z') 
+                afterEventIdx = 10 + (int8_t)(c - 'A');        
+            } else {
+              // Номер следующей к показу строки, извлеченный из макроса в формате десятичного числа
+              afterEventIdx = s_nn.toInt();
+            }
+      
+            byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+            if (afterEventIdx >= sizeOfTextsArray) {
+              afterEventIdx = -1;
+            }
+          } else {
+            // s_nn не содержит индекса строки замены
+            afterEventIdx = -1; 
+          }
+
+          // Строка замены не указана - завершить показ строки
+          if (afterEventIdx < 0) {
+            return "";    
+          }
+
+          // Получить текст строки замены. Он может содержать макросы, в т.ч и макросы даты. Их нужно обработать.
+          textLine = processMacrosInText(textLines[afterEventIdx]);
+          
+          // Строка замены содержит в себе макросы даты? Если да - вычислить всё снова для новой строки                   
+          if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0) continue;
+
+          // Вернуть текст строки замены, отображаемой после того, как событие прошло
+          return textLine;
+        }
+
+        // Событие еще не наступило - вычислить сколько до его наступления осталось времени
+        t_diff = t_event - t_now; // кол-во секунд до события
+
+        // Пересчет секунд в дней до события / часов до события / минут до события
+        uint16_t restDays = t_diff / SECS_PER_DAY;
+        uint8_t restHours = (t_diff - (restDays * SECS_PER_DAY)) / SECS_PER_HOUR;
+        uint8_t restMinutes = (t_diff - (restDays * SECS_PER_DAY) - (restHours * SECS_PER_HOUR)) / SECS_PER_MIN;
+        uint8_t restSeconds = (t_diff - (restDays * SECS_PER_DAY) - (restHours * SECS_PER_HOUR) - (restMinutes * SECS_PER_MIN));
+
+        // Если осталось меньше минуты - отображать секунды
+        // Если осталось меньше часа - отображать только минуты
+        // Если осталось несколько часов - отображать часы и минуты
+        // Если осталось меньше-равно 7 дней - отображать дни и часы
+        // Если осталось больше 7 дней - отображать дни
+
+        if (restDays == 0 && restHours == 0 && restMinutes == 0)
+          tmp = String(restSeconds) + WriteSeconds(restSeconds);
+        else if (restDays == 0 && restHours == 0 && restMinutes > 0)
+          tmp = String(restMinutes) + WriteMinutes(restMinutes);
+        else if (restDays == 0 && restHours > 0 && restMinutes > 0)
+          tmp = String(restHours) + WriteHours(restHours) + String(restMinutes) + WriteMinutes(restMinutes);
+        else if (restDays > 0 && restDays <= 7 && restHours > 0)
+          tmp = String(restDays) + WriteDays(restDays) + String(restHours) + WriteHours(restHours);
+        else  
+          tmp = String(restDays) + WriteDays(restDays);
+        
+        textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
+                
+        if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0) continue;
+      }
+    }
 
     break;
   }
-
-  // "{R01.01.2021#N}" 
-  idx = textLine.indexOf("{R");
-  if (idx >= 0) {
-    textLine = getRestDaysString(textLine);
-  }
-
   return textLine;
 }
 
 // Получить / установить настройки отображения очередного текста бегущей строки
 // Если нет строк, готовых к ротображению (например все строки отключены) - вернуть false - энет готовых строк'
 boolean prepareNextText() {
+  
   int8_t nextIdx = nextTextLineIdx;
   textShowTime = -1;              // Если больше нуля - сколько времени отображать бегущую строку в секундах; Если 0 - используется textShowCount; В самой строке спец-макросом может быть указано кол-во секунд
   textShowCount = 1;              // Сколько раз прокручивать текст бегущей строки поверх эффектов; По умолчанию - 1; В самой строке спец-макросом может быть указано число 
@@ -297,6 +437,7 @@ String processMacrosInText(String textLine) {
                если S или N не указаны - строка прокручивается 1 раз;
                Если указаны оба - работает модификатор показа по времени
       "{CC} "- отображать строку указанным цветом С; Цвет - в виде #AA77FE; Специальные значения - #000001 - радуга;  - #000002 - каждая буква свой цвет;
+      "{BC} "- отображать строку на однотонном фоне указанного цвета С; Цвет - в виде #337700;
       "{D:F}" - где F - один из форматов даты / времени
         d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
         dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
@@ -317,8 +458,10 @@ String processMacrosInText(String textLine) {
         mm   - минуты в диапазоне от 00 до 59
         s    - секунды в диапазоне от 0 до 59
         ss   - секунды в диапазоне от 00 до 59
-        t    - Первый символ указателя AM/PM
-        tt   - Указатель AM/PM
+        T    - Первый символ указателя AM/PM
+        TT   - Указатель AM/PM
+        t    - Первый символ указателя am/pm
+        tt   - Указатель am/pm
         
         Если формат не указан - используется формат H:mm        
         пример: "Красноярское время {DHH:mm}" - бегущая строка "Красноярское время 07:15"  
@@ -441,7 +584,7 @@ String processMacrosInText(String textLine) {
     }
 
     // -------------------------------------------------------------
-    //  "{СS}" - отображать строку указанное количество секунд S
+    //  "{TS}" - отображать строку указанное количество секунд S
     // -------------------------------------------------------------
 
     textShowTime = -1;
@@ -471,7 +614,7 @@ String processMacrosInText(String textLine) {
     }
 
     // -------------------------------------------------------------
-    //  "{NN}" - отображать строку указанное количество раз N
+    //  "{NX}" - отображать строку указанное количество раз X
     // -------------------------------------------------------------
 
     textShowCount = 1;
@@ -501,7 +644,7 @@ String processMacrosInText(String textLine) {
     }
 
     // -------------------------------------------------------------
-    // "{LC}"- отображать строку указанным цветом С; Цвет - в виде #AA77FE
+    // "{CC}"- отображать строку указанным цветом С; Цвет - в виде #AA77FE
     // -------------------------------------------------------------
 
     useSpecialTextColor = false;
@@ -513,7 +656,7 @@ String processMacrosInText(String textLine) {
       idx2 = textLine.indexOf("}", idx);        
       if (idx2 < 0) break;
 
-      // Извлечь количество раз отображения этой бегущей строки
+      // Извлечь цвет текста отображения этой бегущей строки
       tmp = "";
       if (idx2 - idx > 1) {
         tmp = textLine.substring(idx+2, idx2);
@@ -531,6 +674,36 @@ String processMacrosInText(String textLine) {
     }
       
     // -------------------------------------------------------------
+    // "{BC}"- отображать строку  на однотонном фоне указанного цвета С; Цвет - в виде #007700
+    // -------------------------------------------------------------
+
+    useSpecialBackColor = false;
+    idx = textLine.indexOf("{B");
+    while (idx >= 0) {
+
+      // Закрывающая скобка
+      // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+      idx2 = textLine.indexOf("}", idx);        
+      if (idx2 < 0) break;
+
+      // Извлечь цвет фона отображения этой бегущей строки
+      tmp = "";
+      if (idx2 - idx > 1) {
+        tmp = textLine.substring(idx+2, idx2);
+      }
+      
+      // удаляем макрос
+      textLine.remove(idx, idx2 - idx + 1);
+           
+      // Преобразовать строку в число
+      useSpecialBackColor = true;
+      specialBackColor = (uint32_t)HEXtoInt(tmp);
+      
+      // Есть еще вхождения макроса?
+      idx = textLine.indexOf("{B");  
+    }
+      
+    // -------------------------------------------------------------
     // Эти форматы содержат строку, зависящую от текущего времени.
     // Оставить эти форматы как есть в строке - они будут обрабатываться на каждом проходе, подставляя текцщее время
     // Сейчас просто выставить флаг, что строка содержит макросы, зависимые от даты
@@ -540,6 +713,13 @@ String processMacrosInText(String textLine) {
     // -------------------------------------------------------------
 
     textHasDateTime = textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0;  
+
+    // Если время еще не инициализировано и строка содержит макросы, зависимые от времени -
+    // строку отображать нельзя - пропускаем, переходим к поиску следующей строки
+    if (!init_time && textHasDateTime) {
+      textHasDateTime = false;
+      found = false;
+    }
 
     attempt++;
   }

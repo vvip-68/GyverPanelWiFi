@@ -285,18 +285,18 @@ byte getBrightnessCalculated(byte brightness, byte contrast) {
 String getMonthString(byte month) {
   String sMnth = "";
   switch (month) {
-    case  1: sMnth = F("января");   break;
-    case  2: sMnth = F("февраля");  break;
-    case  3: sMnth = F("марта");    break;
-    case  4: sMnth = F("апреля");   break;
-    case  5: sMnth = F("мая");      break;
-    case  6: sMnth = F("июня");     break;
-    case  7: sMnth = F("июля");     break;
-    case  8: sMnth = F("августа");  break;
-    case  9: sMnth = F("сентября"); break;
-    case 10: sMnth = F("октября");  break;
-    case 11: sMnth = F("ноября");   break;
-    case 12: sMnth = F("декабря");  break;
+    case  1: sMnth = String(F("января"));   break;
+    case  2: sMnth = String(F("февраля"));  break;
+    case  3: sMnth = String(F("марта"));    break;
+    case  4: sMnth = String(F("апреля"));   break;
+    case  5: sMnth = String(F("мая"));      break;
+    case  6: sMnth = String(F("июня"));     break;
+    case  7: sMnth = String(F("июля"));     break;
+    case  8: sMnth = String(F("августа"));  break;
+    case  9: sMnth = String(F("сентября")); break;
+    case 10: sMnth = String(F("октября"));  break;
+    case 11: sMnth = String(F("ноября"));   break;
+    case 12: sMnth = String(F("декабря"));  break;
   }  
   return sMnth;
 }
@@ -304,18 +304,18 @@ String getMonthString(byte month) {
 String getMonthShortString(byte month) {
   String sMnth = "";
   switch (month) {
-    case  1: sMnth = F("янв"); break;
-    case  2: sMnth = F("фев"); break;
-    case  3: sMnth = F("мар"); break;
-    case  4: sMnth = F("апр"); break;
-    case  5: sMnth = F("май"); break;
-    case  6: sMnth = F("июн"); break;
-    case  7: sMnth = F("июл"); break;
-    case  8: sMnth = F("авг"); break;
-    case  9: sMnth = F("сен"); break;
-    case 10: sMnth = F("окт"); break;
-    case 11: sMnth = F("ноя"); break;
-    case 12: sMnth = F("дек"); break;
+    case  1: sMnth = String(F("янв")); break;
+    case  2: sMnth = String(F("фев")); break;
+    case  3: sMnth = String(F("мар")); break;
+    case  4: sMnth = String(F("апр")); break;
+    case  5: sMnth = String(F("май")); break;
+    case  6: sMnth = String(F("июн")); break;
+    case  7: sMnth = String(F("июл")); break;
+    case  8: sMnth = String(F("авг")); break;
+    case  9: sMnth = String(F("сен")); break;
+    case 10: sMnth = String(F("окт")); break;
+    case 11: sMnth = String(F("ноя")); break;
+    case 12: sMnth = String(F("дек")); break;
   }  
   return sMnth;
 }
@@ -323,13 +323,13 @@ String getMonthShortString(byte month) {
 String getWeekdayString(byte wd) {
   String str = "";
   switch (wd) {
-    case  1: str = F("понедельник"); break;
-    case  2: str = F("вторник");     break;
-    case  3: str = F("среда");       break;
-    case  4: str = F("четверг");     break;
-    case  5: str = F("пятница");     break;
-    case  6: str = F("суббота");     break;
-    case  7: str = F("воскресенье"); break;
+    case  1: str = String(F("понедельник")); break;
+    case  2: str = String(F("вторник"));     break;
+    case  3: str = String(F("среда"));       break;
+    case  4: str = String(F("четверг"));     break;
+    case  5: str = String(F("пятница"));     break;
+    case  6: str = String(F("суббота"));     break;
+    case  7: str = String(F("воскресенье")); break;
   }  
   return str;
 }
@@ -337,13 +337,13 @@ String getWeekdayString(byte wd) {
 String getWeekdayShortString(byte wd) {
   String str = "";
   switch (wd) {
-    case  1: str = F("пон"); break;
-    case  2: str = F("втр"); break;
-    case  3: str = F("срд"); break;
-    case  4: str = F("чтв"); break;
-    case  5: str = F("птн"); break;
-    case  6: str = F("сбт"); break;
-    case  7: str = F("вск"); break;
+    case  1: str = String(F("пон")); break;
+    case  2: str = String(F("втр")); break;
+    case  3: str = String(F("срд")); break;
+    case  4: str = String(F("чтв")); break;
+    case  5: str = String(F("птн")); break;
+    case  6: str = String(F("сбт")); break;
+    case  7: str = String(F("вск")); break;
   }  
   return str;
 }
@@ -351,18 +351,49 @@ String getWeekdayShortString(byte wd) {
 String getWeekdayShortShortString(byte wd) {
   String str = "";
   switch (wd) {
-    case  1: str = F("пн"); break;
-    case  2: str = F("вт"); break;
-    case  3: str = F("ср"); break;
-    case  4: str = F("чт"); break;
-    case  5: str = F("пт"); break;
-    case  6: str = F("сб"); break;
-    case  7: str = F("вс"); break;
+    case  1: str = String(F("пн")); break;
+    case  2: str = String(F("вт")); break;
+    case  3: str = String(F("ср")); break;
+    case  4: str = String(F("чт")); break;
+    case  5: str = String(F("пт")); break;
+    case  6: str = String(F("сб")); break;
+    case  7: str = String(F("вс")); break;
   }  
   return str;
 }
 
-String getRestDaysString(String rest) {
-  // Обработать дату
-  return rest;
+
+// ---------- Склонение числительных остатка времени -----------
+
+String WriteDays(int iDays) {
+  int iDays2 = (iDays / 10) % 10;
+  iDays = iDays %10;
+  if (iDays2 == 1) return String(F(" дней"));  
+  if (iDays  == 1) return String(F(" день"));
+  if (iDays  == 2 || iDays == 3 || iDays== 4) return String(F(" дня"));
+  return String(F(" дней"));
 }
+
+String WriteHours(int iHours) {
+  if (iHours == 1 || iHours == 21) return String(F(" час"));
+  if ((iHours >= 2 && iHours <= 4) || (iHours >= 22 && iHours <= 24))return String(F(" часа"));
+  return String(F(" часов"));
+}
+
+String WriteMinutes(int iMinutes){
+  if (iMinutes >= 5 || iMinutes <= 20) return String(F(" минут"));
+  iMinutes = iMinutes %10;
+  if (iMinutes == 1) return String(F(" минута"));
+  if (iMinutes >= 2 || iMinutes <= 4) return String(F(" минуты"));
+  return String(F(" минут"));
+}
+
+String WriteSeconds(int iSeconds){
+  if (iSeconds >= 5 || iSeconds <= 20) return String(F(" секунд"));
+  iSeconds = iSeconds %10;
+  if (iSeconds == 1) return String(F(" секунда"));
+  if (iSeconds >= 2 || iSeconds <= 4) return String(F(" секунды"));
+  return String(F(" секунд"));
+}
+
+// -----------------------------------------------------------
