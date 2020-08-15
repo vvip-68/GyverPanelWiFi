@@ -1478,8 +1478,8 @@ void sendPageParams(int page) {
              "|CT:" + String(COLOR_TEXT_MODE) +
              "|ST:" + String(255 - getTextScrollSpeed()) +
              "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b) +
-             "|TA:" + String(editIdx) +
-             "|TS:" + getTextStates() +
+             "|TS:" + getTextStates() +                 // Строка состояния заполненности строк теккста
+             "|TA:" + String(editIdx) +                 // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
              "|TX:[" + getTextByAZIndex(editIdx) + ']';
       str+=";";
       break;
