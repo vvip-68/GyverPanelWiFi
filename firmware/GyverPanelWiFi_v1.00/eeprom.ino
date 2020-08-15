@@ -1116,20 +1116,27 @@ void loadTexts() {
 
    // Если строка пустая 
    if (textLines[idx].length() == 0) {
-     textLines[idx] = (idx < 10)
-       ? "-" + String(idx)
-       : "-" + String(char('A' - 10 + i));
+     textLines[idx] = "-" + getAZIndex(idx);
    }
 
    idx++;
   }
 
   for (byte i=idx; i<size; i++) {
-    textLines[idx] = (idx < 10)
-       ? "-" + String(idx)
-       : "-" + String(char('A' - 10 + i));
+     textLines[idx] = "-" + getAZIndex(idx);
   }
 
+  // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
+  // если флаг eepromModified == true
+  crc = 0;
+  for (byte i=0; i<size; i++) {
+    String text = textLines[i];
+    uint16_t len = text.length();
+    if (len > BUF_MAX_SIZE) len = BUF_MAX_SIZE;
+    text.toCharArray(incomeBuffer, len);
+    crc ^= getCrc16((uint8_t*)incomeBuffer, len);
+  }
+   
   /*
   // Это пример макросов в строках, использовались для отладки режимов замены макросов в тексте бегущей строки
   //
@@ -1156,15 +1163,32 @@ void loadTexts() {
   textLines[20] = "С Новым годом!";
   */
   
-  // Если строка 0 - управляющая - установить индекс последовательности отображения на 1-й символ (т.к. нулевой - этто '#'
+  // Если строка 0 - управляющая - установить индекс последовательности отображения на 1-й символ (т.к. нулевой - это '#')
   sequenceIdx = isFirstLineControl() ? 1 : -1;
 }
 
 // Сохранения массива строк "Бегущей строки"
+// Весть текст (все строки массива) сохраняются сплошным потоком, начиная с адреса TEXT_EEPROM до 4095? то есть примерно доступно 3K байта под строки.
+// UTF8 для кириллицы имеет преимущественно два байта на символ - можно всего сохранить порядка 1500 букв
+// Строки массива разделяются символом '\r'; Последний символ сохранения данных - '\0'
+
 bool saveTexts() {
   int addr = TEXT_EEPROM;  
   int size = sizeof(textLines) / sizeof(String);
 
+  // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
+  uint16_t new_crc = 0; 
+  for (byte i=0; i<size; i++) {
+    String text = textLines[i];
+    uint16_t len = text.length();
+    if (len > BUF_MAX_SIZE) len = BUF_MAX_SIZE;
+    text.toCharArray(incomeBuffer, len);
+    new_crc ^= getCrc16((uint8_t*)incomeBuffer, len);
+  }
+
+  // CRC совпадает - массив строк не изменен - сохранять нечего
+  if (crc == new_crc) return true;
+  
   for (byte i=0; i<size; i++) {
         
     uint16_t len = textLines[i].length();
@@ -1186,9 +1210,6 @@ bool saveTexts() {
     EEPROMwrite(addr, '\0');
   }
 
-  eepromModified = true;
-  saveSettingsTimer.reset();
-  
   return addr < 4096;
 }
 

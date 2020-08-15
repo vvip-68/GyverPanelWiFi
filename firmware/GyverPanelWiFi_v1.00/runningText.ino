@@ -44,8 +44,8 @@ String processDateMacrosInText(String textLine) {
    Эти форматы содержат строку, зависящую от текущего времени.
    Оставить эти форматы как есть в строке - они будут обрабатываться на каждом проходе, подставляя текцщее время
    Сейчас просто выставить флаг, что строка содержит макросы, зависимые от даты
-      "{DF}" - где F - один из форматов даты / времени если формата даты нет - аналогично {D}
       "{D}"  - просто часы вида "21:00" в виде беугщей строки
+      "{D:F}" - где F - один из форматов даты / времени если формата даты нет - аналогично {D}
        Формат даты поддерживает следующие спецификаторы       
           d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
           dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
@@ -55,17 +55,17 @@ String processDateMacrosInText(String textLine) {
           MM   - месяц от 01 до 12
           MMM  - месяц прописью (янв..дек)
           MMMМ - месяц прописью (января..декабря)
-          Y    - год в диапазоне от 0 до 99
-          YY   - год в диапазоне от 00 до 99
-          YYYY - год в виде четырехзначного числа
+          y    - год в диапазоне от 0 до 99            (допускается Y)
+          yy   - год в диапазоне от 00 до 99           (допускается YY)
+          yyyy - год в виде четырехзначного числа      (допускается YYYY)
           h    - час в 12-часовом формате от 1 до 12
           hh   - час в 12-часовом формате от 01 до 12
           H    - час в 23-часовом формате от 0 до 23
           HH   - час в 23-часовом формате от 00 до 23
           m    - минуты в диапазоне от 0 до 59
           mm   - минуты в диапазоне от 00 до 59
-          s    - секунды в диапазоне от 0 до 59
-          ss   - секунды в диапазоне от 00 до 59
+          s    - секунды в диапазоне от 0 до 59        (допускается S)
+          ss   - секунды в диапазоне от 00 до 59       (допускается SS)
           T    - Первый символ указателя AM/PM
           TT   - Указатель AM/PM
           t    - Первый символ указателя am/pm
@@ -172,14 +172,17 @@ String processDateMacrosInText(String textLine) {
       //  YYYY - год в виде четырехзначного числа
       str = String(ayear);
       sFmtProcess.replace("YYYY", str);
+      sFmtProcess.replace("yyyy", str);
   
       //  YY   - год в диапазоне от 00 до 99
       str = str.substring(2);
       sFmtProcess.replace("YY", str);
+      sFmtProcess.replace("yy", str);
   
       //  Y    - год в диапазоне от 0 до 99
       if (str[0] == '0') str = str.substring(1);
       sFmtProcess.replace("Y", str);
+      sFmtProcess.replace("y", str);
   
       
       //  HH   - час в 23-часовом формате от 00 до 23
@@ -214,10 +217,12 @@ String processDateMacrosInText(String textLine) {
       //  ss   - секунды в диапазоне от 00 до 59
       str = String(secs);
       if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("SS", str);
       sFmtProcess.replace("ss", str);
   
       //  s    - секунды в диапазоне от 0 до 59
       str = String(secs);
+      sFmtProcess.replace("S", str);
       sFmtProcess.replace("s", str);
   
       //  tt   - Указатель AM/PM
@@ -304,10 +309,7 @@ String processDateMacrosInText(String textLine) {
             char c = s_nn.charAt(0);
             if (len == 1 || (c >= 'A' && c <= 'Z')) {        
               // Номер следующей к показу строки, извлеченный из макроса в формате 1..9,A..Z
-              if (c >= '1' && c <= '9') 
-                afterEventIdx = (int8_t)(c - '0');
-              else if (c >= 'A' && c <= 'Z') 
-                afterEventIdx = 10 + (int8_t)(c - 'A');        
+              afterEventIdx = getTextIndex(c);
             } else {
               // Номер следующей к показу строки, извлеченный из макроса в формате десятичного числа
               afterEventIdx = s_nn.toInt();
@@ -410,7 +412,7 @@ boolean prepareNextText() {
     currentTextLineIdx = textLines[0].charAt(0) == '#' ? 1 : 0;
   }
 
-  currentText = processMacrosInText(textLines[currentTextLineIdx]);
+  currentText = currentTextLineIdx < 0 ? "" : processMacrosInText(textLines[currentTextLineIdx]);
 
   return currentText.length() > 0;
 }
@@ -439,29 +441,29 @@ String processMacrosInText(String textLine) {
       "{CC} "- отображать строку указанным цветом С; Цвет - в виде #AA77FE; Специальные значения - #000001 - радуга;  - #000002 - каждая буква свой цвет;
       "{BC} "- отображать строку на однотонном фоне указанного цвета С; Цвет - в виде #337700;
       "{D:F}" - где F - один из форматов даты / времени
-        d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
-        dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
-        ddd  - сокращенное название дня недели       (допускается DDD)
-        dddd - полное название дня недели            (допускается DDDD)
-        M    - месяц от 1 до 12
-        MM   - месяц от 01 до 12
-        MMM  - месяц прописью (янв..дек)
-        MMMМ - месяц прописью (января..декабря)
-        Y    - год в диапазоне от 0 до 99
-        YY   - год в диапазоне от 00 до 99
-        YYYY - год в виде четырехзначного числа
-        h    - час в 12-часовом формате от 1 до 12
-        hh   - час в 12-часовом формате от 01 до 12
-        H    - час в 23-часовом формате от 0 до 23
-        HH   - час в 23-часовом формате от 00 до 23
-        m    - минуты в диапазоне от 0 до 59
-        mm   - минуты в диапазоне от 00 до 59
-        s    - секунды в диапазоне от 0 до 59
-        ss   - секунды в диапазоне от 00 до 59
-        T    - Первый символ указателя AM/PM
-        TT   - Указатель AM/PM
-        t    - Первый символ указателя am/pm
-        tt   - Указатель am/pm
+                d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
+                dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
+                ddd  - сокращенное название дня недели       (допускается DDD)
+                dddd - полное название дня недели            (допускается DDDD)
+                M    - месяц от 1 до 12
+                MM   - месяц от 01 до 12
+                MMM  - месяц прописью (янв..дек)
+                MMMМ - месяц прописью (января..декабря)
+                y    - год в диапазоне от 0 до 99            (допускается Y)
+                yy   - год в диапазоне от 00 до 99           (допускается YY)
+                yyyy - год в виде четырехзначного числа      (допускается YYYY)
+                h    - час в 12-часовом формате от 1 до 12
+                hh   - час в 12-часовом формате от 01 до 12
+                H    - час в 23-часовом формате от 0 до 23
+                HH   - час в 23-часовом формате от 00 до 23
+                m    - минуты в диапазоне от 0 до 59
+                mm   - минуты в диапазоне от 00 до 59
+                s    - секунды в диапазоне от 0 до 59        (допускается S)
+                ss   - секунды в диапазоне от 00 до 59       (допускается SS)
+                T    - Первый символ указателя AM/PM
+                TT   - Указатель AM/PM
+                t    - Первый символ указателя am/pm
+                tt   - Указатель am/pm
         
         Если формат не указан - используется формат H:mm        
         пример: "Красноярское время {DHH:mm}" - бегущая строка "Красноярское время 07:15"  
@@ -500,7 +502,7 @@ String processMacrosInText(String textLine) {
     if (textLine.length() == 0 || textLine.charAt(0) == '-' || textLine.indexOf("{-}") >= 0) {
       attempt++;  
       currentTextLineIdx = getNextLine(currentTextLineIdx);
-      textLine = textLines[currentTextLineIdx];
+      textLine = currentTextLineIdx < 0 ? "" : textLines[currentTextLineIdx];
       continue;
     }
 
@@ -534,12 +536,9 @@ String processMacrosInText(String textLine) {
       char c = tmp.charAt(0);
       if (len == 1 || (c >= 'A' && c <= 'Z')) {        
         // Запоминаем номер следующей к показу строки, извлеченный из макроса
-        if (c >= '1' && c <= '9') 
-          nextTextLineIdx = (int8_t)(c - '0');
-        else if (c >= 'A' && c <= 'Z') 
-          nextTextLineIdx = 10 + (int8_t)(c - 'A');        
+          nextTextLineIdx = getTextIndex(c);
       } else {
-        nextTextLineIdx = tmp.toInt();
+         nextTextLineIdx = tmp.toInt();
       }
       
       if (nextTextLineIdx >= sizeOfTextsArray) {
@@ -728,6 +727,7 @@ String processMacrosInText(String textLine) {
 }
 
 // Получить индекс строки для отображения
+// -1 - если показывать нечего
 int8_t getNextLine(int8_t currentIdx) {
   // Если не задана следующая строка - брать следующую из массива? в соответствии с правилом
   // sequenceIdx < 0 - просто брать следующую строку
@@ -741,15 +741,21 @@ int8_t getNextLine(int8_t currentIdx) {
     if (sequenceIdx >= textLines[0].length()) {
       sequenceIdx = 1;  // перемотать на начало последовательности
     }
-    byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
     char c = textLines[0].charAt(sequenceIdx);
     if (c == '#') {
-      nextLineIdx = random8(1,sizeOfTextsArray-1);
+      byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+      byte arr[size], cnt = 0;
+      memset(arr, '\0', size + 1);
+      for (int i = 0; i < size; i++) {
+        String text = textLines[i];
+        bool disabled = (text.length() == 0) || (i == 0 && text[0] == '#') || (text[0] == '-') || (text.indexOf("{-}") >= 0);
+        if (disabled) continue;
+        arr[cnt++] = i;
+      }
+      // Выбрать индексы строк, которые не отключены;
+      nextLineIdx = cnt == 0 ? -1 : arr[random8(0,cnt - 1)];
     } else {
-      if (c >= '1' && c <= '9') 
-        nextLineIdx = (int8_t)(c - '0');
-      else if (c >= 'A' && c <= 'Z') 
-        nextLineIdx = 10 + (int8_t)(c - 'A');        
+      nextLineIdx = getTextIndex(c);
       sequenceIdx++;
     }
   }
@@ -846,4 +852,64 @@ uint8_t getFont(uint8_t font, uint8_t row) {
     return pgm_read_byte(&(fontHEX[font + 47][row]));
   }
   return 0;
+}
+
+// получить строку статусов массива строк текстов бегущей строки
+//  0 - серый - пустая
+//  1 - черный - отключена
+//  2 - зеленый - активна - просто текст? без макросов
+//  3 - фиолетовый - активна, содержит макросы кроме даты
+//  4 - синий - активная, содержит макрос даты
+//  5 - красный - для строки 0 - это управляющая строка
+String getTextStates() {
+  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  char buf[size + 1];
+  memset(buf, '\0', size + 1);
+  for (byte i=0; i < size; i++) {
+    String text = textLines[i];    
+    char c = '0';    // статус - пустая
+    if (text.length() > 0) {
+      if (i == 0 && text[0] == '#')
+        c = '5';     // статус - строка 0 - управляющая последовательность
+      else if (text[0] == '-' || text.indexOf("{-}") >=0)
+        c = '1';     // статус - отключена
+      else if (text.indexOf("{") < 0)
+        c = '2';     // статус - текст без макросов
+      else if (text.indexOf("{") >= 0 && text.indexOf("{D") < 0 && text.indexOf("{R") < 0)
+        c = '3';     // статус - текст с макрросами, но без дато-зависимых макросов
+      else if (text.indexOf("{D") >= 0 || text.indexOf("{R") >= 0)
+        c = '4';     // статус - текст с макрросами, но без дато-зависимых макросов
+    }
+    buf[i] = c;
+  }  
+  return String(buf);
+}
+
+// получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
+int8_t getTextIndex(char c) {
+  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  int8_t idx = -1;
+  if (c >= '0' && c <= '9') 
+    idx = (int8_t)(c - '0');
+  else if (c >= 'A' && c <= 'Z') 
+    idx = 10 + (int8_t)(c - 'A');        
+  return (idx < 0 || idx >= size) ? -1 : idx;
+}
+
+// получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
+char getAZIndex(byte idx) {
+  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  char c;
+  if (idx >= 0 && idx <= 9)             
+     c = char('0' + idx);
+  else if (idx >= 10 && idx < size)               
+     c = char('A' + idx - 10);
+  return c;
+}
+
+// получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
+String getTextByAZIndex(char c) {
+  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  int8_t idx = getTextIndex(c);
+  return (idx < 0 || idx >= size) ? "" : textLines[idx];
 }
