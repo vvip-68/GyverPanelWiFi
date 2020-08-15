@@ -106,14 +106,14 @@ void doEffectWithOverlay(byte aMode) {
       // Если указан спец-эффект поверх которого бежит строка - отобразить его
       if (specialTextEffect >= 0) {
         processEffect(specialTextEffect);
-      } if (useSpecialBackColor) {
+      } else if (useSpecialBackColor) {
         // Задана отрисовка строки поверх однотонной заливки указанным цветом
         fillAll(specialBackColor);
       } else {
         // Отобразить текущий эффект, поверх которого будет нарисована строка
         processEffect(aMode);
       }
-    } else     {
+    } else {
       // Иначе отрисовать текущий эффект
       processEffect(aMode);
     }

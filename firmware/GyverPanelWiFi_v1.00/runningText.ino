@@ -90,14 +90,14 @@ String processDateMacrosInText(String textLine) {
   uint8_t  aday = day();
   uint8_t  amnth = month();
   uint16_t ayear = year();
-  uint8_t  wd = weekday();  // day of the week, Sunday is day 0 
   uint8_t  hrs = hour();
   uint8_t  mins = minute();
   uint8_t  secs = second();
   bool     am = isAM();
   bool     pm = isPM();
 
-  if (wd == 0) wd = 7;      // Sunday is day 7
+  int8_t   wd = weekday()-1;  // day of the week, Sunday is day 0   
+  if (wd == 0) wd = 7;        // Sunday is day 7, Monday is day 1;
 
   while (true) {
     // {D} - отображать текущее время в формате 'HH:mm'
@@ -454,8 +454,8 @@ String processMacrosInText(String textLine) {
                 yyyy - год в виде четырехзначного числа      (допускается YYYY)
                 h    - час в 12-часовом формате от 1 до 12
                 hh   - час в 12-часовом формате от 01 до 12
-                H    - час в 23-часовом формате от 0 до 23
-                HH   - час в 23-часовом формате от 00 до 23
+                H    - час в 24-часовом формате от 0 до 23
+                HH   - час в 24-часовом формате от 00 до 23
                 m    - минуты в диапазоне от 0 до 59
                 mm   - минуты в диапазоне от 00 до 59
                 s    - секунды в диапазоне от 0 до 59        (допускается S)
