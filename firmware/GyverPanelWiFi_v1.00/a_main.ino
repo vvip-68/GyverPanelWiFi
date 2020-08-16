@@ -1561,7 +1561,7 @@ void sendPageParams(int page) {
       str+=String(ssid) + "]|NA:[";
       str+=String(pass) + "]|IP:";
       if (wifi_connected) str += WiFi.localIP().toString(); 
-      else                str += String(F("нет подключения"));
+      else                str += F("нет подключения");
       str+=";";
       break;
     case 7:  // Настройки режимов автовключения по времени
@@ -1799,7 +1799,7 @@ void showCurrentIP(boolean autoplay) {
   wifi_print_ip = true;
   wifi_print_ip_text = true;
   wifi_print_idx = 0; 
-  wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : String(F("Нет подключения к сети WiFi"));
+  wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : F("Нет подключения к сети WiFi");
   // Если параметр autoplay == true - включить режим автосмены режимов так,
   // что строка IP адреса будет показана несколько раз, затем автоматически включится другой режим.
   // autoplay == true - при установке IP адреса из программы

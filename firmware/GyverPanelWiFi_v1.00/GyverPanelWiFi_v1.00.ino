@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.00.2020.0816")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.00.2020.0817")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -57,6 +57,42 @@ void setup() {
   // Подключение к сети
   connectToNetwork();
 
+    // Port defaults to 8266
+    // ArduinoOTA.setPort(8266);
+   
+    // Hostname defaults to esp8266-[ChipID]
+    ArduinoOTA.setHostname("Panel-WiFi");
+   
+    // No authentication by default
+    // ArduinoOTA.setPassword((const char *)"123");
+   
+    ArduinoOTA.onStart([]() {
+     String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = F("скетча...");
+      else // U_SPIFFS
+        type = F("файловой системы SPIFFS...");
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.print(F("Начато обносление "));    
+      Serial.println(type);    
+    });
+    ArduinoOTA.onEnd([]() {
+      Serial.println(F("\nОбновление завершено"));
+    });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    });
+    ArduinoOTA.onError([](ota_error_t error) {
+      Serial.print(F("Ошибка: "));
+      Serial.println(error);
+      if      (error == OTA_AUTH_ERROR)    Serial.println(F("Неверное имя/пароль сети"));
+      else if (error == OTA_BEGIN_ERROR)   Serial.println(F("Не удалось запустить обновление"));
+      else if (error == OTA_CONNECT_ERROR) Serial.println(F("Не удалось установить соединение"));
+      else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Не удалось получить данные"));
+      else if (error == OTA_END_ERROR)     Serial.println(F("Ошибка завершения сессии"));
+    });
+    ArduinoOTA.begin();
+  
   // UDP-клиент на указанном порту
   udp.begin(localPort);
 
@@ -129,6 +165,7 @@ void setup() {
 }
 
 void loop() {
+  ArduinoOTA.handle();
   process();
 }
 

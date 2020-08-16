@@ -551,17 +551,7 @@ void calculateDawnTime() {
 
   // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnHour, dawnMinute, dawnWeekDay);
 
-  Serial.print(String(F("Следующий рассвет в "))+String(dawnHour)+ F(":") + String(dawnMinute));
-  switch(dawnWeekDay) {
-    case 1: Serial.println(F(", понедельник")); break;
-    case 2: Serial.println(F(", вторник")); break;
-    case 3: Serial.println(F(", среда")); break;
-    case 4: Serial.println(F(", четверг")); break;
-    case 5: Serial.println(F(", пятница")); break;
-    case 6: Serial.println(F(", суббота")); break;
-    case 7: Serial.println(F(", воскресенье")); break;
-    default: Serial.println(); break;
-  }  
+  Serial.print(String(F("Следующий рассвет в ")) + String(dawnHour)+ F(":") + String(dawnMinute) + ", " + getWeekdayString(dawnWeekDay));
 }
 
 // Проверка времени срабатывания будильника

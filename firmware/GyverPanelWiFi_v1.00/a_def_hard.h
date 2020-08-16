@@ -103,8 +103,14 @@
 
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
+  #include <ESP8266mDNS.h>
 #endif
 
+#if defined(ESP32)
+  #include <ESPmDNS.h>
+#endif
+
+#include <ArduinoOTA.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include <EEPROM.h>
