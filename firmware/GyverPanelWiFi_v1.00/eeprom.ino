@@ -1101,26 +1101,37 @@ void loadTexts() {
 
   while (addr < 4096 && idx < size && !finished) {
    
-   memset(incomeBuffer, '\0', max_text_size);
-   int16_t i = 0;
+    memset(incomeBuffer, '\0', max_text_size);
+    int16_t i = 0;
    
-   while (i < max_text_size) {
-     byte c = EEPROMread(addr++);
-     finished = c == '\0' || addr == 4095;
-     if (finished || c == '\r') break;
-     incomeBuffer[i++] = c;
-   }
+    while (i < max_text_size) {
+      byte c = EEPROMread(addr++);
+      finished = c == '\0' || addr == 4095;
+      if (finished || c == '\r') break;
+      incomeBuffer[i++] = c;
+    }
 
-   // Сформировать строку из загруженного буфера
-   textLines[idx] = String(incomeBuffer);
+    // Сформировать строку из загруженного буфера
+    textLines[idx] = String(incomeBuffer);
 
-   // Если строка пустая 
-   if (textLines[idx].length() == 0) {
-     textLines[idx] = "-" + getAZIndex(idx);
-   }
+    // Если строка пустая 
+    if (textLines[idx].length() == 0) {
+      textLines[idx] = "-" + getAZIndex(idx);
+    }
 
-   idx++;
+    idx++;
   }
+
+  memoryAvail = (4095 - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
+  if (memoryAvail < 0) memoryAvail = 0;
+  
+  Serial.print(F("Загрузка строк выполнена.\nИпользованы адреса EEPROM "));
+  Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
+  if (addr >= 4095) {
+    Serial.println(F("Память заполнена."));
+  }
+  Serial.print(F("Свободно ячеек "));
+  Serial.println(String(4095 - addr));
 
   for (byte i=idx; i<size; i++) {
      textLines[idx] = "-" + getAZIndex(idx);
@@ -1136,7 +1147,7 @@ void loadTexts() {
     text.toCharArray(incomeBuffer, len);
     crc ^= getCrc16((uint8_t*)incomeBuffer, len);
   }
-   
+  
   /*
   // Это пример макросов в строках, использовались для отладки режимов замены макросов в тексте бегущей строки
   //
@@ -1188,6 +1199,8 @@ bool saveTexts() {
 
   // CRC совпадает - массив строк не изменен - сохранять нечего
   if (crc == new_crc) return true;
+
+  bool completed = true;
   
   for (byte i=0; i<size; i++) {
         
@@ -1199,15 +1212,36 @@ bool saveTexts() {
       EEPROMwrite(addr++, textLines[i][j++]);
       if (addr == 4095) break;
     }
-    if (addr == 4095) break;
+
+    if (addr == 4095) {
+      completed = false;
+      break;
+    }
     
     EEPROMwrite(addr++, '\r');
-    if (addr == 4095) break;
+    if (addr == 4095) {
+      completed = false;
+      break;
+    }
   }
 
   // Символ завершение данных после того, как все строки записаны
   if (addr < 4096) {  
     EEPROMwrite(addr, '\0');
+  }
+
+  memoryAvail = (4095 - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
+  if (memoryAvail < 0) memoryAvail = 0;
+  
+  Serial.print(F("Сохранение строк выполнено.\nИпользованы адреса EEPROM "));
+  Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
+  if (addr >= 4095) {
+    Serial.println(F("Память заполнена."));
+  }
+  Serial.print(F("Свободно ячеек "));
+  Serial.println(String(4095 - addr));
+  if (!completed) {
+    Serial.println(F("Не все строки были загружены."));
   }
 
   return addr < 4096;
