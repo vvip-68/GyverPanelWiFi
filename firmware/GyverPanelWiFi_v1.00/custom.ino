@@ -71,7 +71,7 @@ void doEffectWithOverlay(byte aMode) {
   // Нужно прекратить показ текста бегущей строки
   if (needStopText) {    
     showTextNow = false; 
-    ignoreTextOverlaySettingforEffect = false;
+    ignoreTextOverlaySettingforEffect = nextTextLineIdx >= 0;
     
     // Если строка показывалась на фоне специального эффекта для строки или специальной однотонной заливки - восстановить эффект, который был до отображения строки
     if (saveEffectBeforeText >= 0 || useSpecialBackColor) {
