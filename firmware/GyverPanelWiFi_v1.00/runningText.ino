@@ -39,6 +39,8 @@ void runningText() {
   fillString(text, color);
 }
 
+// Обработать макросы даты в строке
+// textLine - строка, содержащая макросы
 String processDateMacrosInText(String textLine) {
   /* -------------------------------------------------------------
    Эти форматы содержат строку, зависящую от текущего времени.
@@ -245,7 +247,7 @@ String processDateMacrosInText(String textLine) {
   
       break;
     }
-  
+
     // "{R01.01.2021#N}" 
     idx = textLine.indexOf("{R");
     if (idx >= 0) {
@@ -912,4 +914,32 @@ String getTextByAZIndex(char c) {
   byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   int8_t idx = getTextIndex(c);
   return (idx < 0 || idx >= size) ? "" : textLines[idx];
+}
+
+// получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
+// Обработать макросы даты в нее входящие, удалить все прочие макросы, обрезать до длины 40 символов
+// Обработанный текст отправить в телефон для заполнения списка строк
+String getTextByAZIndex2(char c) {
+  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  int8_t idx = getTextIndex(c), i1 = 0, i2 = 0;
+  String text = "";
+  if (idx >= 0 || idx < size) {
+    text = textLines[idx];
+    // Удалить все макросы кроме макросов да "{D"    
+    i1 = text.indexOf("{");
+    while (i1>=0) {
+      i2 = i1 + 1;      
+      if (text.length() > i2 && text[i2] == 'D') {
+        i1 = text.indexOf("{", i2);  
+        continue;
+      }
+      while (i2<text.length() && text[i2] != '}') i2++;
+      text.remove(i1, i2 - i1 + 1);
+      i1 = text.indexOf("{", i2);
+    }
+    
+    // Обработать макрос даты
+    text = processDateMacrosInText(text);
+  }  
+  return text;
 }

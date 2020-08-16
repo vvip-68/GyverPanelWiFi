@@ -16,15 +16,18 @@ void customRoutine(byte aMode) {
 void doEffectWithOverlay(byte aMode) {
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
-  bool textOvEn  = textOverlayEnabled && (getEffectTextOverlayUsage(aMode) || ignoreTextOverlaySettingforEffect);
+  bool textOvEn  = (textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect;
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
   bool needStopText = false;
   
   // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
   if (!showTextNow && textOvEn && ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L))) {
+    
     // Обработать следующую строку для отображения, установить параметры; 
     // Если нет строк к отображению - продолжать отображать оверлей часов
-    if (prepareNextText()) {               
+    boolean saveIgnoreState = ignoreTextOverlaySettingforEffect;
+    if (prepareNextText()) {  
+      ignoreTextOverlaySettingforEffect = saveIgnoreState;
       fullTextFlag = false;
       loadingTextFlag = false;
       showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
@@ -66,14 +69,16 @@ void doEffectWithOverlay(byte aMode) {
   }
 
   // Нужно прекратить показ текста бегущей строки
-  if (needStopText) {
+  if (needStopText) {    
     showTextNow = false; 
-
-    // Если строка показывалась на фоне специального эффекта для строки - восстановить эффект, который был до отображения строки
-    if (saveEffectBeforeText >= 0) {
-      loadingFlag = specialTextEffect != saveEffectBeforeText;  // Восстановленный эффект надо будет перезагрузить
-      saveEffectBeforeText = -1;                                // Сбросить сохраненный / спецэффект
+    ignoreTextOverlaySettingforEffect = false;
+    
+    // Если строка показывалась на фоне специального эффекта для строки или специальной однотонной заливки - восстановить эффект, который был до отображения строки
+    if (saveEffectBeforeText >= 0 || useSpecialBackColor) {
+      loadingFlag = specialTextEffect != saveEffectBeforeText || useSpecialBackColor;  // Восстановленный эффект надо будет перезагрузить, т.к. иначе эффекты с оверлеем будут использовать оставшийся от спецэффекта/спеццвета фон
+      saveEffectBeforeText = -1;                                                       // Сбросить сохраненный / спецэффект
       specialTextEffect = -1;      
+      useSpecialBackColor = false;
     }
 
     // Если к показы задана следующая строка - установить время показа предыдущей в 0, чтобы
@@ -92,7 +97,7 @@ void doEffectWithOverlay(byte aMode) {
   bool needOverlay  = 
        (aMode == MC_CLOCK) ||                                                         // Если включен режим "Часы" (ночные часы)
        (aMode == MC_TEXT) ||                                                          // Если включен режим "Бегущая строка" (show IP address)       
-      (!showTextNow && clockOvEn && !useSpecialBackColor) || 
+      (!showTextNow && clockOvEn) || 
        (showTextNow && textOvEn);
 
   // В прошлой итерации часы / текст были наложены с оверлеем?
@@ -143,26 +148,25 @@ void doEffectWithOverlay(byte aMode) {
 
   overlayDelayed = needOverlay;
   
-  if (needOverlay) {
-    overlayWrap();
-    // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
-    if (init_time && !showTextNow && aMode != MC_TEXT) {
-      setOverlayColors();
-      if (c_size == 1 && showDateInClock && showDateState) {      
-        drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
-      } else {
-        drawClock(hrs, mins, dotFlag, CLOCK_XC, CLOCK_Y);
-      }
-    } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
-      // Нарисоватьоверлеем текст бегущей строки
-      if (textReady) {
-        // Сдвинуть позицию отображения бегущей строки
-        shiftTextPosition();
-      }
-      // Нарисовать текст в текущей позиции
-      runningText();
+  if (needOverlay) overlayWrap();
+
+  // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
+  if (init_time && !showTextNow && aMode != MC_TEXT) {
+    setOverlayColors();
+    if (c_size == 1 && showDateInClock && showDateState) {      
+      drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+    } else {
+      drawClock(hrs, mins, dotFlag, CLOCK_XC, CLOCK_Y);
     }
-  }  
+  } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
+    // Нарисоватьоверлеем текст бегущей строки
+    if (textReady) {
+      // Сдвинуть позицию отображения бегущей строки
+      shiftTextPosition();
+    }
+    // Нарисовать текст в текущей позиции
+    runningText();
+  }
 
   FastLED.show();
 }

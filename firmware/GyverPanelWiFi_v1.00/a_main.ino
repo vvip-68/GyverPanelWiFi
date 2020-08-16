@@ -664,6 +664,7 @@ void parsing() {
       // 13 - Настройки бегущей cтроки  
       // - $13 0 N; - активация для редактирования строки с номером N - запрос текста строки N - 0..35 
       // - $13 1 N; - активация прокручивания строки с номером N - 0..35
+      // - $13 3 I; - запросить текст бегущей строки с индексом I
       // - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       // - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
       // - $13 13 X; - скорость прокрутки бегущей строки
@@ -680,10 +681,17 @@ void parsing() {
            case 1:               // $13 1 N; установить строку N = 0..35 как активную отображаемую строку          
              // Если строка 0 - управляющая - ее нельзя включать принудительно.
              b_tmp = intData[2] > 0 || (intData[2] == 0 && textLines[0].charAt(0) != '#');
-             if (b_tmp) {
+             if (b_tmp) {              
                nextTextLineIdx = intData[2];  // nextTextLineIdx - индекс следующей принудительно отображаемой строки
+               ignoreTextOverlaySettingforEffect = true;
                fullTextFlag = true;
                textLastTime = 0;
+             }
+             break;
+           case 3:               // $13 3 I; - Запросить текст бегущей строки с индексом I
+             if (intData[2] >= 1 && (intData[2]<(sizeof(textLines) / sizeof(String)))) {
+               sendTextIdx = intData[2];
+               sendPageParams(92);
              }
              break;
            case 9:               // $13 9 I; - Периодичность отображения бегущей строки (в секундах)
@@ -710,7 +718,9 @@ void parsing() {
              saveTextOverlayEnabled(textOverlayEnabled);
              break;
         }
-        sendPageParams(3);
+        if (intData[1] != 3) {
+          sendPageParams(3);
+        }
         break;
         
       // ----------------------------------------------------
@@ -825,7 +835,7 @@ void parsing() {
       case 18: 
         if (intData[1] == 0) { // ping
           sendAcknowledge();
-        } else {               // запрос параметров страницы приложения
+        } else {                          // запрос параметров страницы приложения
           sendPageParams(intData[1]);
         }
         break;
@@ -1422,7 +1432,9 @@ void sendPageParams(int page) {
   //               4 - синий - активная, содержит макрос даты
   //               5 - красный - для строки 0 - это управляющая строка
   // TA:X        активная кнопка, для которой отправляется текст - 0..9,A..Z
-  // TX:[текст]  текст для активной строки, ограничители [] обязательны
+  // TX:[текст]  текст для активной строки. Ограничители [] обязательны
+  // TY:[Z:текст] обработанный текст для активной строки, после преобразования макросов, если они есть. Ограничители [] обязательны Z - индекс строки в списке 0..35
+  // TZ:[Z:текст] обработанный текст для активной строки, после преобразования макросов, если они есть. Ограничители [] обязательны Z - индекс строки в списке 0..35 (в ответ на получения TZ телефон отправляет запрос на следующую строку, в TY - нет)
 
   String str = "", color, text;
   CRGB c1, c2;
@@ -1480,7 +1492,11 @@ void sendPageParams(int page) {
              "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b) +
              "|TS:" + getTextStates() +                 // Строка состояния заполненности строк теккста
              "|TA:" + String(editIdx) +                 // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
-             "|TX:[" + getTextByAZIndex(editIdx) + ']';
+             "|TX:[" + getTextByAZIndex(editIdx) + ']'; // Активная кнопка текста. Должна быть ПЕРЕД строкой текста, т.к сначала приложение должно знать в какую позицию списка помещать строку editIdx - '0'..'9'..'A'..'Z'
+      if (editIdx != '#' && editIdx != '0') {
+        // str += "|TY:[" + String(getTextIndex(editIdx)) + ":" + String(editIdx) + " > '" + getTextByAZIndex2(editIdx) + "']";  // Очищенная от макросов строка
+        str += "|TY:[" + String(getTextIndex(editIdx)) + ":" + String(editIdx) + " > '" + getTextByAZIndex(editIdx) + "']";      // Исходная строка без обработки
+      }
       str+=";";
       break;
     case 4:  // Настройки часов.
@@ -1553,6 +1569,12 @@ void sendPageParams(int page) {
              "|AM4T:"+String(AM4_hour)+" "+String(AM4_minute)+"|AM4A:"+String(AM4_effect_id);
       str+=";";
       break;
+    case 92:  // Запрос текста бегущих строк для заполнения списка в программе
+      if (sendTextIdx >= 1 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
+        // str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > " + getTextByAZIndex2(getAZIndex(sendTextIdx)) + "'];"; // Обработанная строка, из которой удалены макросв
+        str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > " + getTextByAZIndex(getAZIndex(sendTextIdx)) + "'];";     // Исходная строка без обработки
+      }
+      break;
 #if (USE_MP3 == 1)
     case 93:  // Запрос списка звуков будильника
       str="$18 S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
@@ -1583,7 +1605,6 @@ void sendPageParams(int page) {
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*) incomeBuffer, str.length()+1);
     udp.endPacket();
-    delay(0);
     Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
   } else {
     sendAcknowledge();
