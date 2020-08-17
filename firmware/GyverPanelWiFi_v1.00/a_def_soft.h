@@ -12,54 +12,54 @@
 // Список и порядок эффектов, передаваймый в приложение на смартфоне. Данный список попадает в комбобокс выбора, 
 // чей индекс передается из приложения в контроллер матрицы для выбора, поэтому порядок должен соответствовать 
 // списку эффектов, определенному выше
-#define EFFECT_LIST F("Лампа,Снегопад,Кубик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Звездопад,Конфетти," \
+#define EFFECT_LIST F("Ночные часы,Лампа,Снегопад,Кубик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Звездопад,Конфетти," \
                       "Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Смена цвета," \
                       "Светлячки,Водоворот,Циклон,Мерцание,Северное сияние,Тени,Лабиринт,Змейка,Тетрис," \
                       "Палитра,Спектрум,Анимация,Рассвет")
 
 // ID эффектов
-#define MC_FILL_COLOR            0
-#define MC_SNOW                  1
-#define MC_BALL                  2
-#define MC_RAINBOW               3
-#define MC_PAINTBALL             4
-#define MC_FIRE                  5
-#define MC_MATRIX                6
-#define MC_BALLS                 7
-#define MC_STARFALL              8
-#define MC_SPARKLES              9
-#define MC_NOISE_MADNESS        10
-#define MC_NOISE_CLOUD          11
-#define MC_NOISE_LAVA           12
-#define MC_NOISE_PLASMA         13
-#define MC_NOISE_RAINBOW        14
-#define MC_NOISE_RAINBOW_STRIP  15
-#define MC_NOISE_ZEBRA          16
-#define MC_NOISE_FOREST         17
-#define MC_NOISE_OCEAN          18
-#define MC_COLORS               19
-#define MC_LIGHTERS             20
-#define MC_SWIRL                21
-#define MC_CYCLON               22
-#define MC_FLICKER              23
-#define MC_PACIFICA             24
-#define MC_SHADOWS              25
-#define MC_MAZE                 26
-#define MC_SNAKE                27
-#define MC_TETRIS               28
-#define MC_PALETTE              29
-#define MC_ANALYZER             30
-#define MC_IMAGE                31
-#define MC_DAWN_ALARM           32
+#define MC_CLOCK                 0         // Режим отображения часов (когда "Ночные часы" или просто "Часы" на черном фоне, а не как оверлей поверх других эффектов
+#define MC_FILL_COLOR            1
+#define MC_SNOW                  2
+#define MC_BALL                  3
+#define MC_RAINBOW               4
+#define MC_PAINTBALL             5
+#define MC_FIRE                  6
+#define MC_MATRIX                7
+#define MC_BALLS                 8
+#define MC_STARFALL              9
+#define MC_SPARKLES             10
+#define MC_NOISE_MADNESS        11
+#define MC_NOISE_CLOUD          12
+#define MC_NOISE_LAVA           13
+#define MC_NOISE_PLASMA         14
+#define MC_NOISE_RAINBOW        15
+#define MC_NOISE_RAINBOW_STRIP  16
+#define MC_NOISE_ZEBRA          17
+#define MC_NOISE_FOREST         18
+#define MC_NOISE_OCEAN          19
+#define MC_COLORS               20
+#define MC_LIGHTERS             21
+#define MC_SWIRL                22
+#define MC_CYCLON               23
+#define MC_FLICKER              24
+#define MC_PACIFICA             25
+#define MC_SHADOWS              26
+#define MC_MAZE                 27
+#define MC_SNAKE                28
+#define MC_TETRIS               29
+#define MC_PALETTE              30
+#define MC_ANALYZER             31
+#define MC_IMAGE                32
+#define MC_DAWN_ALARM           33
 
-#define MAX_EFFECT              33         // количество эффектов, определенных в прошивке
+#define MAX_EFFECT              34         // количество эффектов, определенных в прошивке
 #define MAX_SPEC_EFFECT         11         // количество эффектов быстрого доступа определенных в прошивке -> 0..10
 
 // ---------------------------------
 #define SPECIAL_EFFECTS_START  120         // Некоторые специальные "служебные" эффекты имеют код >= SPECIAL_EFFECTS_START
                                            // Внимание !!! - для идентификатора режима используется тип int8_t (-128..127, нужно значение -1), поэтому код режима не может быть больше 127 !!!
-#define MC_TEXT                124         // Режим бегущей строки (для отображения IP адреса) - бегущая строка на черном фоне
-#define MC_CLOCK               125         // Режим отображения часов (когда "Ночные часы" или просто "Часы" на черном фоне, а не как оверлей поверх других эффектов
+#define MC_TEXT                125         // Режим бегущей строки (для отображения IP адреса) - бегущая строка на черном фоне
 #define MC_DAWN_ALARM_SPIRAL   126         // Специальный режим, вызывается из DEMO_DAWN_ALARM для ламп на круговой матрице - огонек по спирали
 #define MC_DAWN_ALARM_SQUARE   127         // Специальный режим, вызывается из DEMO_DAWN_ALARM для плоских матриц - огонек по спирали на плоскости матрицы
 // ---------------------------------

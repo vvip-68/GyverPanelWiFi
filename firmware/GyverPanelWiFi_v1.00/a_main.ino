@@ -88,7 +88,7 @@ void process() {
     // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
     // поэтому отображать эффект "ночные часы"
     byte br = specialMode ? specialBrightness : globalBrightness;
-    if (br == 1 && !(loadingFlag || isAlarming)) {
+    if (br == 1 && !(loadingFlag || isAlarming || thisMode == MC_TEXT)) {
       customRoutine(MC_CLOCK);    
     } else {    
       customRoutine(thisMode);
@@ -327,6 +327,7 @@ void parsing() {
     13 - Настройки бкгущей cтроки  
       - $13 0 N; - активация для редактирования строки с номером N - запрос текста строки
       - $13 1 N; - активация прокручивания строки с номером N
+      - $13 3 I; - запросить текст бегущей строки с индексом I
       - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
       - $13 13 X; - скорость прокрутки бегущей строки
@@ -402,10 +403,11 @@ void parsing() {
       idleState = false;      
     }
 
-    // Режимы кроме 4 (яркость), 14 (новый спец-режим) и 18 (запрос параметров страницы),
+    // Режимы кроме 4 (яркость), 13.3 14 (новый спец-режим) и 18 (запрос параметров страницы),
     // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) 
     // 23 (доп.параметры) - сбрасывают спец-режим
-    if (intData[0] != 4 && intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
+    if (intData[0] != 4 && !(intData[0] == 13 && intData[1] == 3) && 
+        intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
         intData[0] != 20 && intData[0] != 21 && intData[0] != 23) {
       if (specialMode) {
         idleTimer.setInterval(idleTime);
@@ -582,17 +584,28 @@ void parsing() {
         //              действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0) {    
           // Включить эффект      
+          /*
           // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать другой случайный эффект
           if (tmp_eff == MC_CLOCK){
              if (!(allowHorizontal || allowVertical)) {
                setRandomMode2();
              }
-          }          
-          manualMode = true;
-          AUTOPLAY = false;
-          loadingFlag = intData[1] == 0;
-          setEffect(tmp_eff);
-          if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
+          } 
+          */         
+          // Если в приложении выбраны эффект "Ночные часы", но они недоступны из за размеров матрицы - выключить матрицу
+          if (tmp_eff == MC_CLOCK){
+             if (!(allowHorizontal || allowVertical)) {
+               setSpecialMode(0); // Выключить
+             } else {
+               setSpecialMode(8); 
+             }
+          } else {
+            manualMode = true;
+            AUTOPLAY = false;
+            loadingFlag = intData[1] == 0;
+            setEffect(tmp_eff);
+            if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
+          }
         } else 
         
         if (intData[1] == 1) {
@@ -1461,17 +1474,20 @@ void sendPageParams(int page) {
         tmp_eff = random8(0, MAX_EFFECT - 1);
       }
       str="$18 EF:"+String(tmp_eff+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
-      str+="|UE:"+String((getEffectUsage(tmp_eff) ? "1" : "0"));
+      // Использовать в демо-режиме
+      str+="|UE:"+(tmp_eff == MC_CLOCK
+         ? "X":
+         (String((getEffectUsage(tmp_eff) ? "1" : "0"))));
       // Оверлей бегущей строки
-      str+="|UT:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS
+      str+="|UT:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || tmp_eff == MC_CLOCK
          ? "X":
          (String(getEffectTextOverlayUsage(tmp_eff) ? "1" : "0")));
       // Оверлей часов   
-      str+="|UC:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS
+      str+="|UC:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || tmp_eff == MC_CLOCK
          ? "X" 
          : (String(getEffectClockOverlayUsage(tmp_eff) ? "1" : "0")));
       // Настройка скорости
-      str+="|SE:"+(tmp_eff == MC_PACIFICA  || tmp_eff == MC_SHADOWS
+      str+="|SE:"+(tmp_eff == MC_PACIFICA  || tmp_eff == MC_SHADOWS || tmp_eff == MC_CLOCK
          ? "X" 
          : String(255 - constrain(map(getEffectSpeed(tmp_eff), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
@@ -1479,7 +1495,7 @@ void sendPageParams(int page) {
       str+="|SQ:"+getParam2ForMode(tmp_eff);
       // Контраст
       str+="|BE:"+(tmp_eff == MC_PACIFICA || tmp_eff == MC_DAWN_ALARM ||
-                   tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS  
+                   tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || tmp_eff == MC_CLOCK
          ? "X" 
          : String(effectContrast[tmp_eff]));
       str+=";";
@@ -1573,7 +1589,6 @@ void sendPageParams(int page) {
       break;
     case 92:  // Запрос текста бегущих строк для заполнения списка в программе
       if (sendTextIdx >= 1 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
-        // str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > " + getTextByAZIndex2(getAZIndex(sendTextIdx)) + "'];"; // Обработанная строка, из которой удалены макросв
         str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > " + getTextByAZIndex(getAZIndex(sendTextIdx)) + "'];";     // Исходная строка без обработки
       }
       break;
@@ -1630,6 +1645,7 @@ String getParamForMode(byte mode) {
    case MC_PALETTE:
    case MC_ANALYZER:
    case MC_IMAGE:
+   case MC_CLOCK:
      str = "X";
      break;
    default:

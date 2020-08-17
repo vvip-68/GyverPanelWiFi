@@ -1,3 +1,4 @@
+
 // ************************ НАСТРОЙКИ ************************
 
 byte lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
@@ -16,7 +17,7 @@ void customRoutine(byte aMode) {
 void doEffectWithOverlay(byte aMode) {
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
-  bool textOvEn  = (textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect;
+  bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
   bool needStopText = false;
   
@@ -108,7 +109,7 @@ void doEffectWithOverlay(byte aMode) {
   
   if (effectReady) {
     if (showTextNow) {
-      // Если указан спец-эффект поверх которого бежит строка - отобразить его
+      // Если указан другой эффект, поверх которого бежит строка - отобразить его
       if (specialTextEffect >= 0) {
         processEffect(specialTextEffect);
       } else if (useSpecialBackColor) {
@@ -122,6 +123,12 @@ void doEffectWithOverlay(byte aMode) {
       // Иначе отрисовать текущий эффект
       processEffect(aMode);
     }
+  }
+
+  // Смещение бегущей строки
+  if (textReady) {
+    // Сдвинуть позицию отображения бегущей строки
+    shiftTextPosition();
   }
 
   // Смещение движущихся часов 
@@ -149,7 +156,7 @@ void doEffectWithOverlay(byte aMode) {
   overlayDelayed = needOverlay;
   
   if (needOverlay) overlayWrap();
-
+  
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
   if (init_time && !showTextNow && aMode != MC_TEXT) {
     setOverlayColors();
@@ -160,10 +167,6 @@ void doEffectWithOverlay(byte aMode) {
     }
   } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
     // Нарисоватьоверлеем текст бегущей строки
-    if (textReady) {
-      // Сдвинуть позицию отображения бегущей строки
-      shiftTextPosition();
-    }
     // Нарисовать текст в текущей позиции
     runningText();
   }
@@ -266,7 +269,6 @@ void nextModeHandler() {
   setTimersForMode(thisMode);
   
   FastLED.clear();
-  FastLED.show();
   FastLED.setBrightness(globalBrightness);
 }
 
@@ -301,8 +303,6 @@ void prevModeHandler() {
   setTimersForMode(thisMode);
   
   FastLED.clear();
-  FastLED.show();
-  FastLED.setBrightness(globalBrightness);
 }
 
 void setTimersForMode(byte aMode) {
@@ -406,7 +406,6 @@ void checkIdleState() {
       AUTOPLAY = true;
       manualMode = false;
       FastLED.clear();
-      FastLED.show();
     }
   }  
 }

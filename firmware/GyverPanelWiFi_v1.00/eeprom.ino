@@ -1,4 +1,4 @@
-#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EEPROM_OK 0xAA                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 5 байт на эффект
 #define TEXT_EEPROM 800                    // начальная ячейка eeprom с текстом бегущих строк
 
@@ -291,10 +291,13 @@ void saveDefaults() {
   }
 
   // Специальные настройки отдельных эффектов
+  saveEffectUsage(MC_CLOCK, false);
+  saveEffectTextOverlayUsage(MC_CLOCK, false); 
   saveEffectTextOverlayUsage(MC_MAZE, false);
   saveEffectTextOverlayUsage(MC_SNAKE, false);
   saveEffectTextOverlayUsage(MC_TETRIS, false);
   saveEffectTextOverlayUsage(MC_IMAGE, false);
+  saveEffectClockOverlayUsage(MC_CLOCK, false);
   saveEffectClockOverlayUsage(MC_MAZE, false);
   saveEffectClockOverlayUsage(MC_SNAKE, false);
   saveEffectClockOverlayUsage(MC_TETRIS, false);

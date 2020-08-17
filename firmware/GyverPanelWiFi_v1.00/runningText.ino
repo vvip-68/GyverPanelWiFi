@@ -18,12 +18,12 @@ void runningText() {
     if (textHasDateTime) {
       currentText = processDateMacrosInText(currentText);   // Обработать строку, превратив макросы даты в отображаемые значения
       text = currentText;
-      if (text.length() == 0) {                      // Если дата еще не инициализирована - вернет другую строку, не требующую даты
-         fullTextFlag = true;                        // Если нет строк, не зависящих от даты - вернется пустая строка - отображать нечего
+      if (text.length() == 0) {                             // Если дата еще не инициализирована - вернет другую строку, не требующую даты
+         fullTextFlag = true;                               // Если нет строк, не зависящих от даты - вернется пустая строка - отображать нечего
          return;
       }
     } else {
-      text = currentText;                            // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
+      text = currentText;                                   // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
     }
   }
     
@@ -779,9 +779,7 @@ void fillString(String text, uint32_t color) {
 #else
     loadingTextFlag = false;        
 #endif
-    loadingTextFlag = false;
   }
-  
   byte i = 0, j = 0;
   while (text[i] != '\0') {
     if ((byte)text[i] > 191) {    // работаем с русскими буквами!
