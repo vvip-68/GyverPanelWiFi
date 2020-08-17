@@ -137,6 +137,10 @@
 #endif
 #endif
 
+// Comment the next line to stop useing hardware randomizer for initial random seed. 
+// So reading analog input 0 + microseconds will be used instead
+#define TRUE_RANDOM
+
 // =======================================================
 
 #define COLOR_ORDER GRB         // порядок цветов на ленте. Если цвет отображается некорректно - меняйте. Начать можно с RGB
