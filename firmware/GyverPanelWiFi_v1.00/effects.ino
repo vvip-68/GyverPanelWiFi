@@ -66,7 +66,7 @@ void lightBallsRoutine() {
   uint32_t ms = millis();
 
   byte  cnt = map8(255-effectScaleParam[MC_PAINTBALL],1,4);  // 1..4 шариков
-  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1/*(float)(seg_num * 2)*/ : (float)seg_num);
+  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
@@ -1668,4 +1668,84 @@ void analyzerRoutine() {
     fallTimer = millis();
   }
   
+}
+
+// ****************************** СИНУСЫ *****************************
+
+void prizmataRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    dir_mx = WIDTH >= HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    // modeCode = MC_PRIZMATA;
+  }
+  
+  EVERY_N_MILLIS(33) {
+     hue++;
+  }
+  
+  FastLED.clear();
+
+  // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
+  byte spd = map8(255-effectSpeed, 12, 64);   
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+
+  if (dir_mx == 0) {
+    for (uint8_t x = 0; x < WIDTH; x++) {
+      uint8_t y = beatsin8(spd + x, 0, HEIGHT-1);
+      drawPixelXY(x, y, ColorFromPalette(RainbowColors_p, x * 7 + hue, effectBrightness));
+    }
+  } else {
+    for (uint8_t y = 0; y < HEIGHT; y++) {
+      uint8_t x = beatsin8(spd + y, 0, WIDTH-1);
+      drawPixelXY(x, y, ColorFromPalette(RainbowColors_p, x * 7 + hue, effectBrightness));
+    }
+  }
+}
+
+// *************************** ВЫШИВАНКА **************************
+
+int8_t count = 0;
+
+byte flip = 0;
+byte generation = 0;
+
+void munchRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    //modeCode = MC_MUNCH;
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
+    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
+    dir = 1;
+  }
+
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+
+  for (byte x = 0; x < seg_size; x++) {
+    for (byte y = 0; y < seg_size; y++) {
+      for (byte n = 0; n < seg_num; n++) {
+        CRGB color = ((x ^ y ^ flip) < count ? ColorFromPalette(RainbowStripeColors_p, ((x ^ y) << 4) + generation, effectBrightness) : CRGB::Black);
+        if (dir_mx == 0)
+          drawPixelXY(seg_offset + x + (n * seg_size), y, color);
+        else   
+          drawPixelXY(x, seg_offset + y + (n * seg_size), color);
+      }
+    }
+  }
+
+  count += dir;
+
+  if (count <= 0 || count >= WIDTH / seg_num) {
+    dir = -dir;
+  }
+
+  if (count <= 0) {
+    if (flip == 0)
+      flip = 7;
+    else
+      flip = 0;
+  }
+
+  generation++;
 }

@@ -1,7 +1,3 @@
-#define EEPROM_OK 0xAA                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
-#define EFFECT_EEPROM 300                  // начальная ячейка eeprom с параметрами эффектов, 5 байт на эффект
-#define TEXT_EEPROM 800                    // начальная ячейка eeprom с текстом бегущих строк
-
 void loadSettings() {
 
   // Адреса в EEPROM:
@@ -199,54 +195,27 @@ void loadSettings() {
     for (byte i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i]  = 50;  // среднее значение для параметра. Конкретное значение зависит от эффекта
       effectScaleParam2[i] = 0;   // второй параметр эффекта по умолчанию равен 0. Конкретное значение зависит от эффекта
-      effectContrast[i]    = 224; // контраст эффекта - полная яркость
+      effectContrast[i]    = 192; // контраст эффекта - полная яркость
     }
 
-    // Значения текстовых строк по умолчанию
-    // Строки толжны быть разными при компиляции, иначе умный компилятор присвоит им один и тот же адрес в памяти
-    textLines[ 0] = "-0";                    
-    textLines[ 1] = "-1";
-    textLines[ 2] = "-2";
-    textLines[ 3] = "-3";
-    textLines[ 4] = "-4";
-    textLines[ 5] = "-5";
-    textLines[ 6] = "-6";
-    textLines[ 7] = "-7";
-    textLines[ 8] = "-8";
-    textLines[ 9] = "-9";
-    textLines[10] = "-A";
-    textLines[11] = "-B";
-    textLines[12] = "-C";
-    textLines[13] = "-D";
-    textLines[14] = "-E";
-    textLines[15] = "-F";
-    textLines[16] = "-G";
-    textLines[17] = "-H";
-    textLines[18] = "-I";
-    textLines[19] = "-J";
-    textLines[20] = "-K";
-    textLines[21] = "-L";
-    textLines[22] = "-M";
-    textLines[23] = "-N";
-    textLines[24] = "-O";
-    textLines[25] = "-P";
-    textLines[26] = "-Q";
-    textLines[27] = "-R";
-    textLines[28] = "-S";
-    textLines[29] = "-T";
-    textLines[30] = "-U";
-    textLines[31] = "-V";
-    textLines[32] = "-W";
-    textLines[33] = "-X";
-    textLines[34] = "-Y";
-    textLines[35] = "-Z";
-
+    // Значения текстовых строк по умолчанию - 
+    textLines[0] = "##";
+    for (byte i = 1; i<36; i++) textLines[i] = "";
   }
   
   // После первой инициализации значений - сохранить их принудительно
   if (!isInitialized) {
+    Serial.println(F("Инициализация EEPROM..."));
+    clearEEPROM();
     saveDefaults();
     saveSettings();
+    Serial.println();
+  }
+}
+
+void clearEEPROM() {
+  for (int addr = 1; addr < EEPROM_MAX; addr++) {
+    EEPROM.write(addr, 0);
   }
 }
 
@@ -303,6 +272,9 @@ void saveDefaults() {
   saveEffectClockOverlayUsage(MC_TETRIS, false);
   saveEffectClockOverlayUsage(MC_IMAGE, false);
 
+  setClockScrollSpeed(150);
+  setTextScrollSpeed(186);
+  
   setScaleForEffect(MC_FIRE, 0);                 // Огонь красного цвета
   setScaleForEffect2(MC_PAINTBALL, 1);           // Использовать сегменты для эффекта Пэйнтбол на широких матрицах
   setScaleForEffect2(MC_SWIRL, 1);               // Использовать сегменты для эффекта Водоворот на широких матрицах
@@ -1102,14 +1074,16 @@ void loadTexts() {
   int idx = 0;                           
   bool finished = false;
 
-  while (addr < 4096 && idx < size && !finished) {
+  memoryAvail = (EEPROM_MAX - TEXT_EEPROM) / 2;  // UTF8 кирилицы - один символ 2 байта
+
+  while (addr < EEPROM_MAX && idx < size && !finished) {
    
     memset(incomeBuffer, '\0', max_text_size);
     int16_t i = 0;
    
     while (i < max_text_size) {
       byte c = EEPROMread(addr++);
-      finished = c == '\0' || addr == 4095;
+      finished = c == '\0' || addr == EEPROM_MAX - 1;
       if (finished || c == '\r') break;
       incomeBuffer[i++] = c;
     }
@@ -1117,29 +1091,36 @@ void loadTexts() {
     // Сформировать строку из загруженного буфера
     textLines[idx] = String(incomeBuffer);
 
-    // Если строка пустая 
-    if (textLines[idx].length() == 0) {
-      textLines[idx] = "-" + getAZIndex(idx);
-    }
-
     idx++;
   }
 
-  memoryAvail = (4095 - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
+  memoryAvail = (EEPROM_MAX - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
   if (memoryAvail < 0) memoryAvail = 0;
-  
-  Serial.print(F("Загрузка строк выполнена.\nИпользованы адреса EEPROM "));
-  Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
-  if (addr >= 4095) {
+
+  if (addr == TEXT_EEPROM + 1) {
+    Serial.println(F("Нет сохраненных строк"));
+  } else {
+    Serial.print(F("Загрузка строк выполнена.\nИпользованы адреса EEPROM "));
+    Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
+  }
+  if (addr >= EEPROM_MAX) {
     Serial.println(F("Память заполнена."));
   }
   Serial.print(F("Свободно ячеек "));
-  Serial.println(String(4095 - addr));
+  Serial.println(String(EEPROM_MAX - addr));
 
+  // Заполнить оставшиеся строки массивва пустой строкой
   for (byte i=idx; i<size; i++) {
-     textLines[idx] = "-" + getAZIndex(idx);
+     textLines[idx] = "";
   }
 
+  /*
+  // Контрольная печать загруженных строк
+  for (byte i=0; i<size; i++) {
+     Serial.println("Строка " + String(i) + " = '" + textLines[i] + "'");
+  }
+  */
+  
   // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
   // если флаг eepromModified == true
   crc = 0;
@@ -1147,8 +1128,10 @@ void loadTexts() {
     String text = textLines[i];
     uint16_t len = text.length();
     if (len > BUF_MAX_SIZE) len = BUF_MAX_SIZE;
-    text.toCharArray(incomeBuffer, len);
-    crc ^= getCrc16((uint8_t*)incomeBuffer, len);
+    if (len>0) {
+      text.toCharArray(incomeBuffer, len);
+      crc ^= getCrc16((uint8_t*)incomeBuffer, len);
+    }
   }
   
   /*
@@ -1174,7 +1157,7 @@ void loadTexts() {
   textLines[17] = "-Дата и время: {D:DD.MM.YY hh:mm tt}";
   textLines[18] = "До Нового года осталось {R01.01.2021#20}";
   textLines[19] = "Это строка 19 на фоне {E30}Analyzer";
-  textLines[20] = "С Новым годом!";
+  textLines[20] = "С Новым годом!{-}";  // отоброжение должно быть отключено, иначе строка будет отображаться как обычная, а не только как заместитель при наступлении события
   */
   
   // Если строка 0 - управляющая - установить индекс последовательности отображения на 1-й символ (т.к. нулевой - это '#')
@@ -1182,13 +1165,15 @@ void loadTexts() {
 }
 
 // Сохранения массива строк "Бегущей строки"
-// Весть текст (все строки массива) сохраняются сплошным потоком, начиная с адреса TEXT_EEPROM до 4095? то есть примерно доступно 3K байта под строки.
+// Весть текст (все строки массива) сохраняются сплошным потоком, начиная с адреса TEXT_EEPROM до EEPROM_MAX, то есть примерно доступно 3K байта под строки.
 // UTF8 для кириллицы имеет преимущественно два байта на символ - можно всего сохранить порядка 1500 букв
 // Строки массива разделяются символом '\r'; Последний символ сохранения данных - '\0'
 
 bool saveTexts() {
   int addr = TEXT_EEPROM;  
   int size = sizeof(textLines) / sizeof(String);
+
+  memoryAvail = (EEPROM_MAX - TEXT_EEPROM) / 2;  // UTF8 кирилицы - один символ 2 байта
 
   // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
   uint16_t new_crc = 0; 
@@ -1213,41 +1198,42 @@ bool saveTexts() {
     // Сохранить новое значение
     while (j < len) {
       EEPROMwrite(addr++, textLines[i][j++]);
-      if (addr == 4095) break;
+      if (addr == EEPROM_MAX - 1) break;
     }
 
-    if (addr == 4095) {
+    if (addr == EEPROM_MAX - 1) {
       completed = false;
       break;
     }
+
+    if (completed) EEPROMwrite(addr++, '\r');
     
-    EEPROMwrite(addr++, '\r');
-    if (addr == 4095) {
+    if (addr == EEPROM_MAX - 1) {
       completed = false;
       break;
     }
   }
 
   // Символ завершение данных после того, как все строки записаны
-  if (addr < 4096) {  
+  if (addr < EEPROM_MAX - 1) {  
     EEPROMwrite(addr, '\0');
   }
 
-  memoryAvail = (4095 - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
+  memoryAvail = (EEPROM_MAX - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
   if (memoryAvail < 0) memoryAvail = 0;
   
   Serial.print(F("Сохранение строк выполнено.\nИпользованы адреса EEPROM "));
   Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
-  if (addr >= 4095) {
+  if (addr >= EEPROM_MAX - 1) {
     Serial.println(F("Память заполнена."));
   }
   Serial.print(F("Свободно ячеек "));
-  Serial.println(String(4095 - addr));
+  Serial.println(String(EEPROM_MAX - addr));
   if (!completed) {
     Serial.println(F("Не все строки были загружены."));
   }
 
-  return addr < 4096;
+  return addr < EEPROM_MAX;
 }
 
 bool isFirstLineControl() {

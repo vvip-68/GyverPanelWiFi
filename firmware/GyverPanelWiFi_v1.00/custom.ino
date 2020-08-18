@@ -158,7 +158,7 @@ void doEffectWithOverlay(byte aMode) {
   if (needOverlay) overlayWrap();
   
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
-  if (init_time && !showTextNow && aMode != MC_TEXT) {
+  if (clockOvEn && init_time && !showTextNow && aMode != MC_TEXT) {
     setOverlayColors();
     if (c_size == 1 && showDateInClock && showDateState) {      
       drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
@@ -206,7 +206,9 @@ void processEffect(byte aMode) {
     case MC_SNAKE:               snakeRoutine(); break;
     case MC_TETRIS:              tetrisRoutine(); break;
     case MC_PALETTE:             paletteRoutine(); break;
+    case MC_MUNCH:               munchRoutine(); break;
     case MC_ANALYZER:            analyzerRoutine(); break;
+    case MC_PRIZMATA:            prizmataRoutine(); break;
     case MC_IMAGE:               animationRoutine(); break;
     case MC_TEXT:                runningText(); break;
     case MC_CLOCK:               clockRoutine(); break;
@@ -311,7 +313,7 @@ void setTimersForMode(byte aMode) {
     effectSpeed = getEffectSpeed(aMode);
     if (effectSpeed == 0) effectSpeed = 2;
     // Эти режимы смотрятся (работают) только на максимальной скорости;
-    if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS)
+    if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || aMode == MC_SHADOWS || aMode == MC_PRIZMATA)
       effectTimer.setInterval(1);        
     else
       effectTimer.setInterval(effectSpeed);

@@ -1589,7 +1589,7 @@ void sendPageParams(int page) {
       break;
     case 92:  // Запрос текста бегущих строк для заполнения списка в программе
       if (sendTextIdx >= 1 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
-        str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > " + getTextByAZIndex(getAZIndex(sendTextIdx)) + "'];";     // Исходная строка без обработки
+        str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > '" + getTextByAZIndex(getAZIndex(sendTextIdx)) + "'];";     // Исходная строка без обработки
       }
       break;
 #if (USE_MP3 == 1)
@@ -1644,6 +1644,8 @@ String getParamForMode(byte mode) {
    case MC_TETRIS:
    case MC_PALETTE:
    case MC_ANALYZER:
+   case MC_PRIZMATA:
+   case MC_MUNCH:
    case MC_IMAGE:
    case MC_CLOCK:
      str = "X";

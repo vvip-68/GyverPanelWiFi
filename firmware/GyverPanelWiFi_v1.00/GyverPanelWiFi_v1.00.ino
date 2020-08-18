@@ -22,7 +22,13 @@ void setup() {
   ESP.wdtEnable(WDTO_8S);
 #endif
   // Инициализация EEPROM и загрузка начальных значений переменных и параметров
-  EEPROM.begin(4096);
+
+#if (EEPROM_MAX <= EEPROM_TEXT)
+  #pragma message "Не выделено памяти для хранения строк эффекта 'Бегущая строка'"
+  EEPROM.begin(EEPROM_TEXT);
+#else  
+  EEPROM.begin(EEPROM_MAX);
+#endif
 
   Serial.begin(115200);
   delay(300);

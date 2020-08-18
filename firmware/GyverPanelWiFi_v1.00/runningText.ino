@@ -284,7 +284,6 @@ String processDateMacrosInText(String textLine) {
           str = str.substring(0,idx);
         }
 
-
         // Здесь - str - дата события, s_nn - номер строки замены или пустая строка, если строки замены нет
         // Получить дату наступления события из строки 'ДД.ММ.ГГГГ'
         time_t t_now = now();
@@ -332,7 +331,16 @@ String processDateMacrosInText(String textLine) {
           }
 
           // Получить текст строки замены. Он может содержать макросы, в т.ч и макросы даты. Их нужно обработать.
-          textLine = processMacrosInText(textLines[afterEventIdx]);
+          // Для того, чтобы указанная строка замены не отображалась при обычном переборе - она должна быть помечена как отключенная - '-' в начале строки или '{-}' в любом месте
+          // Когда же пришло время отобразить строку - перед обработкой макросов ее нужно "включить"
+          textLine = textLines[afterEventIdx];
+
+          if (textLine.length() == 0) return "";              
+          if (textLine[0] == '-') textLine = textLine.substring(1);
+          if (textLine.indexOf("{-}") >= 0) textLine.replace("{-}", "");
+          if (textLine.length() == 0) return "";    
+          
+          textLine = processMacrosInText(textLine);
           
           // Строка замены содержит в себе макросы даты? Если да - вычислить всё снова для новой строки                   
           if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0) continue;
@@ -341,7 +349,34 @@ String processDateMacrosInText(String textLine) {
           return textLine;
         }
 
-        // Событие еще не наступило - вычислить сколько до его наступления осталось времени
+        // Событие еще не наступило
+        
+        // Чтобы строка замены наступившего события не показывалась в обычном порядке - она должна быть отключена
+        // Проверить, что это так и если не отключена - отключить
+        uint8_t len = s_nn.length();        
+        if (len > 0) {
+          // Преобразовать строку в индекс
+          char c = s_nn.charAt(0);
+          int8_t nm = -1;
+          if (len == 1 || (c >= 'A' && c <= 'Z')) {        
+            // Номер следующей к показу строки, извлеченный из макроса в формате 1..9,A..Z
+            nm = getTextIndex(c);
+          } else {
+            // Номер следующей к показу строки, извлеченный из макроса в формате десятичного числа
+            nm = s_nn.toInt();
+          }
+    
+          byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+          if (nm > 0 && nm < sizeOfTextsArray) {
+            String s = textLines[nm];
+            if (s.length() > 0 && s[0] != '-' && s.indexOf("{-}") < 0) {
+              textLines[nm] = textLines[nm]+"{-}";
+              saveTexts();
+            }
+          }
+        }
+        
+        // Вычислить сколько до его наступления осталось времени
         t_diff = t_event - t_now; // кол-во секунд до события
 
         // Пересчет секунд в дней до события / часов до события / минут до события
@@ -504,7 +539,7 @@ String processMacrosInText(String textLine) {
     if (textLine.length() == 0 || textLine.charAt(0) == '-' || textLine.indexOf("{-}") >= 0) {
       attempt++;  
       currentTextLineIdx = getNextLine(currentTextLineIdx);
-      textLine = currentTextLineIdx < 0 ? "" : textLines[currentTextLineIdx];
+      textLine = (currentTextLineIdx < 0 || currentTextLineIdx >= sizeOfTextsArray) ? "" : textLines[currentTextLineIdx];
       continue;
     }
 
