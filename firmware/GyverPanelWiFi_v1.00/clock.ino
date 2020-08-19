@@ -8,7 +8,7 @@
 
 #define CONTRAST_COLOR_1 CRGB::Orange  // контрастный цвет часов
 #define CONTRAST_COLOR_2 CRGB::Green   // контрастный цвет часов
-#define CONTRAST_COLOR_3 CRGB::Yellow   // контрастный цвет часов
+#define CONTRAST_COLOR_3 CRGB::Yellow  // контрастный цвет часов
 
 #define HUE_STEP 5          // шаг цвета часов в режиме радужной смены
 #define HUE_GAP 30          // шаг цвета между цифрами в режиме радужной смены
@@ -77,27 +77,6 @@ void getNTP() {
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
   // wait to see if a reply is available
   ntp_t = millis();  
-}
-
-boolean overlayAllowed() {
-  // Оверлей не разрешен, если часы еще не инициализированы
-  if (!init_time) return false;
-
-  // Часы влазят на матрицу?
-  if (!(allowHorizontal || allowVertical)) return false;
-
-  // В режиме Бегущая строк (show IP) как отднльный эффект и в режиме "Часы" как отдельный эффект оверлей недоступен.
-  // Отображение часов или бегущей строки оверлеем поверх эффекта имеют другой режим (не MC_TEXT или MC_CLOCK)
-  if (thisMode == MC_TEXT || thisMode == MC_CLOCK) return false;
-
-  // Отображение часов в спец.режиме
-  if (specialMode) return specialClock;
-  
-  // Оверлей разрешен общими настройками часов? 
-  bool allowed = (!showTextNow && getClockOverlayEnabled()) || 
-                  (showTextNow && getTextOverlayEnabled());
-  
-  return allowed;
 }
 
 String clockCurrentText() {
@@ -429,22 +408,6 @@ void checkCalendarState() {
   }  
 }
 
-boolean needUnwrap() {
-  // Эти режимы используют сдвиг содержимого матрицы или его размытие без перерисовки всего изображения
-  // При оверлее часов при следующей перерисовке требуется восстанавливать изображение
-  // удаляя нарисованные часы и восстанавливае состояние как оно было до прорисовки часов
-  if (thisMode == MC_SNOW ||
-      thisMode == MC_SPARKLES ||
-      thisMode == MC_CYCLON ||
-      thisMode == MC_MATRIX ||
-      thisMode == MC_STARFALL ||
-      thisMode == MC_BALLS ||
-      thisMode == MC_FIRE ||
-      thisMode == MC_PAINTBALL ||
-      thisMode == MC_SWIRL) return true;
-  else return false;
-}
-
 void contrastClock() {  
   for (byte i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
 }
@@ -473,16 +436,18 @@ void setOverlayColors() {
       case MC_NOISE_CLOUD:
       case MC_NOISE_FOREST:
       case MC_NOISE_OCEAN: 
-        contrastClockA();
+      case MC_WATERFALL:
+      case MC_RAIN:      
+        contrastClockA(); // оранжевые
         break;
       case MC_NOISE_LAVA:
-        contrastClockB();
+        contrastClockB(); // зеленые
         break;
       case MC_DAWN_ALARM:
-        contrastClockC();
+        contrastClockC(); // желтые или инверсные
         break;      
       default:
-        contrastClock();
+        contrastClock();  // белые
         break;
     }
   } else {

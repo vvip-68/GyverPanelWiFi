@@ -1029,6 +1029,11 @@ void dawnLampSquare() {
     memset(tail2, 0, sizeof(uint16_t) * 8);
     
     tailColor = CHSV(0, 255, 255 - 8 * tailBrightnessStep); 
+
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
+    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами        
   }
   
   int8_t x=col, y=row;
@@ -1056,10 +1061,16 @@ void dawnLampSquare() {
     tailColor2 = CHSV(dawnHue2, dawnSat2, 255 - i * tailBrightnessStep); 
 
     if (i<=step_cnt) {
-      x  = tail[i] >>8; y  = tail[i]  & 0xff;
-      x2 = tail2[i]>>8; y2 = tail2[i] & 0xff;
-      drawPixelXY(x,  y,  tailColor);  
-      drawPixelXY(x2, y2, tailColor2);  
+      x  =  tail[i] >>8;  
+      y  = tail[i]  & 0xff;
+      x2 =  tail2[i]>>8;  
+      y2 = tail2[i] & 0xff;
+      for (byte n=0; n < seg_num; n++) {
+        uint8_t cx = dir_mx == 0 ? (seg_offset * (n + 1) + seg_size * n) : 0;
+        uint8_t cy = dir_mx == 0 ? 0 : (seg_offset * (n + 1) + seg_size * n);
+        drawPixelXY(x + cx,  y + cy,  tailColor);
+        drawPixelXY(x2 + cx, y2 + cy, tailColor2);  
+      }
     }
   }
   
@@ -1127,8 +1138,8 @@ void dawnLampSquare() {
       break;
   }
   
-  bool out  = (col  < 0 || col  >= WIDTH) && (row  < 0 || row  >= HEIGHT);
-  bool out2 = (col2 < 0 || col2 >= WIDTH) && (row2 < 0 || row2 >= HEIGHT);
+  bool out  = (col  < 0 || col  >= seg_size) && (row  < 0 || row  >= seg_size);
+  bool out2 = (col2 < 0 || col2 >= seg_size) && (row2 < 0 || row2 >= seg_size);
   if (out && out2) {
     // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
     dawnColorIdx = dawnBrightness >> 4;  
@@ -1138,25 +1149,21 @@ void dawnLampSquare() {
 }
 
 void SetStartPos() {
-  if (WIDTH % 2 == 1)
+  if (seg_size % 2 == 1)
   {
-    col = WIDTH / 2 + 1;
+    col = seg_size / 2 + 1;
     col2 = col;
-  } else {
-    col = WIDTH / 2 - 1;      // 7
-    col2 = WIDTH - col - 1 ;  // 8
-  }
-
-  if (HEIGHT % 2 == 1)
-  {
-    row = HEIGHT / 2 + 1;
+    row = seg_size / 2 + 1;
     row2 = row;
   } else {
-    row = HEIGHT / 2 - 1;     // 7
-    row2 = HEIGHT - row - 1;  // 8
+    col = seg_size / 2 - 1;
+    col2 = seg_size - col - 1;
+    row = seg_size / 2 - 1;
+    row2 = seg_size - row - 1;
   }
   
   dir = 2; dir2 = 0;
+  
   // 0 - вниз; 1 - влево; 2 - вверх; 3 - вправо;
   range[0] = row-2; range[1] = col-2; range[2] = row+2; range[3] = col+2;
   range2[0] = row2-2; range2[1] = col2-2; range2[2] = row2+2; range2[3] = col2+2;
@@ -1748,4 +1755,616 @@ void munchRoutine() {
   }
 
   generation++;
+}
+
+// *************************** ДОЖДЬ **************************
+
+CRGB rainColor = CRGB(60,80,90);
+CRGB lightningColor = CRGB(72,72,80);
+CRGBPalette16 rain_p( CRGB::Black, rainColor);
+CRGBPalette16 rainClouds_p( CRGB::Black, CRGB(15,24,24), CRGB(9,15,15), CRGB::Black );
+
+#define NUM_LAYERSMAX 2
+uint8_t noise3d[NUM_LAYERSMAX][WIDTH][HEIGHT];
+
+void rain(byte backgroundDepth, byte spawnFreq, byte tailLength, bool splashes, bool clouds, bool storm) {
+  
+  static uint16_t noiseX = random16();
+  static uint16_t noiseY = random16();
+  static uint16_t noiseZ = random16();
+
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  
+  fadeToBlackBy( leds, NUM_LEDS, 255-tailLength);
+
+  // Loop for each column individually
+  for (uint8_t x = 0; x < WIDTH; x++) {
+    // Step 1.  Move each dot down one cell
+    for (uint8_t i = 0; i < HEIGHT; i++) {
+      if (noise3d[0][x][i] >= backgroundDepth) {  // Don't move empty cells
+        if (i > 0) noise3d[0][x][wrapY(i-1)] = noise3d[0][x][i];
+        noise3d[0][x][i] = 0;
+      }
+    }
+
+    // Step 2.  Randomly spawn new dots at top
+    if (random8() < spawnFreq) {
+      noise3d[0][x][HEIGHT-1] = random(backgroundDepth, effectBrightness);
+    }
+
+    // Step 3. Map from tempMatrix cells to LED colors
+    for (uint8_t y = 0; y < HEIGHT; y++) {
+      if (noise3d[0][x][y] >= backgroundDepth) {  // Don't write out empty cells
+        leds[XY(x,y)] = ColorFromPalette(rain_p, noise3d[0][x][y], effectBrightness);
+      }
+    }
+
+    // Step 4. Add splash if called for
+    if (splashes) {
+      // FIXME, this is broken
+      byte j = line[x];
+      byte v = noise3d[0][x][0];
+
+      if (j >= backgroundDepth) {
+        leds[XY(wrapX(x-2),0)] = ColorFromPalette(rain_p, j/3, effectBrightness);
+        leds[XY(wrapX(x+2),0)] = ColorFromPalette(rain_p, j/3, effectBrightness);
+        line[x] = 0;   // Reset splash
+      }
+
+      if (v >= backgroundDepth) {
+        leds[XY(wrapX(x-1),1)] = ColorFromPalette(rain_p, v/2, effectBrightness);
+        leds[XY(wrapX(x+1),1)] = ColorFromPalette(rain_p, v/2, effectBrightness);
+        line[x] = v; // Prep splash for next frame
+      }
+    }
+
+    // Step 5. Add lightning if called for
+    if (storm && random16() < 72) {
+      
+      // uint8_t lightning[WIDTH][HEIGHT];
+      // ESP32 does not like static arrays  https://github.com/espressif/arduino-esp32/issues/2567
+      uint8_t *lightning = (uint8_t *) malloc(WIDTH * HEIGHT);
+      
+      if (lightning != NULL) { 
+        lightning[scale8(random8(), WIDTH-1) + (HEIGHT-1) * WIDTH] = 255;  // Random starting location
+        for(uint8_t ly = HEIGHT-1; ly > 1; ly--) {
+          for (uint8_t lx = 1; lx < WIDTH-1; lx++) {
+            if (lightning[lx + ly * WIDTH] == 255) {
+              lightning[lx + ly * WIDTH] = 0;
+              uint8_t dir = random8(4);
+              switch (dir) {
+                case 0:
+                  leds[XY(lx+1,ly-1)] = lightningColor;
+                  lightning[(lx+1) + (ly-1) * WIDTH] = 255; // move down and right
+                break;
+                case 1:
+                  leds[XY(lx,ly-1)] = CRGB(128,128,128);   // я без понятия, почему у верхней молнии один оттенок, а у остальных - другой
+                  lightning[lx + (ly-1) * WIDTH] = 255;    // move down
+                break;
+                case 2:
+                  leds[XY(lx-1,ly-1)] = CRGB(128,128,128);
+                  lightning[(lx-1) + (ly-1) * WIDTH] = 255; // move down and left
+                break;
+                case 3:
+                  leds[XY(lx-1,ly-1)] = CRGB(128,128,128);
+                  lightning[(lx-1) + (ly-1) * WIDTH] = 255; // fork down and left
+                  leds[XY(lx-1,ly-1)] = CRGB(128,128,128);
+                  lightning[(lx+1) + (ly-1) * WIDTH] = 255; // fork down and right
+                break;
+              }
+            }
+          }
+        }
+        free(lightning);
+      } else {
+        Serial.println("lightning malloc failed"); 
+      }
+    }
+
+    // Step 6. Add clouds if called for
+    if (clouds) {
+      uint16_t noiseScale = 250;  // A value of 1 will be so zoomed in, you'll mostly see solid colors. A value of 4011 will be very zoomed out and shimmery
+      const uint8_t cloudHeight = HEIGHT * 0.2 + 1; // это уже 20% c лишеним, но на высоких матрицах будет чуть меньше
+
+      // This is the array that we keep our computed noise values in
+      //static uint8_t noise[WIDTH][cloudHeight];
+      static uint8_t *noise = (uint8_t *) malloc(WIDTH * cloudHeight);
+      
+      if (noise != NULL) {      
+        int xoffset = noiseScale * x + hue;  
+        for(uint8_t z = 0; z < cloudHeight; z++) {
+          int yoffset = noiseScale * z - hue;
+          uint8_t dataSmoothing = 192;
+          uint8_t noiseData = qsub8(inoise8(noiseX + xoffset,noiseY + yoffset,noiseZ),16);
+          noiseData = qadd8(noiseData,scale8(noiseData,39));
+          noise[x * cloudHeight + z] = scale8( noise[x * cloudHeight + z], dataSmoothing) + scale8( noiseData, 256 - dataSmoothing);
+          nblend(leds[XY(x,HEIGHT-z-1)], ColorFromPalette(rainClouds_p, noise[x * cloudHeight + z], effectBrightness), (cloudHeight-z)*(250/cloudHeight));
+        }
+      } else { 
+        Serial.println("noise malloc failed"); 
+      } 
+      noiseZ++;
+    }
+  }
+}
+
+
+void rainRoutine()
+{
+  if (loadingFlag) {
+    loadingFlag = false;
+    //modeCode = MC_RAIN;
+  }
+
+  byte intensity = beatsin8(map8(effectScaleParam[MC_RAIN],2,6), 4, 60);
+  
+  // ( Depth of dots, frequency of new dots, length of tails, splashes, clouds, ligthening )
+  if (intensity <= 35) 
+    // Lightweight
+    rain(60, intensity, 10, true, true, false);
+  else
+    // Stormy
+    rain(0, intensity, 10, true, true, true);
+}
+
+// ************************* ВОДОПАД ************************
+
+#define COOLINGNEW 32
+#define SPARKINGNEW 80
+extern const TProgmemRGBPalette16 WaterfallColors_p FL_PROGMEM = {0x000000, 0x060707, 0x101110, 0x151717, 0x1C1D22, 0x242A28, 0x363B3A, 0x313634, 0x505552, 0x6B6C70, 0x98A4A1, 0xC1C2C1, 0xCACECF, 0xCDDEDD, 0xDEDFE0, 0xB2BAB9};
+
+void waterfallRoutine() {
+
+  if (loadingFlag) {
+    loadingFlag = false;
+    //modeCode = MC_WATERFALL;
+  }
+
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+
+  for (uint8_t x = 0; x < WIDTH; x++) {
+
+    // Step 1.  Cool down every cell a little
+    for (int i = 0; i < HEIGHT; i++) {
+      noise3d[0][x][i] = qsub8(noise3d[0][x][i], random8(0, ((COOLINGNEW * 10) / HEIGHT) + 2));
+    }
+
+    // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+    for (int k = HEIGHT - 1; k >= 2; k--) {
+      noise3d[0][x][k] = (noise3d[0][x][k - 1] + noise3d[0][x][k - 2] + noise3d[0][x][k - 2]) / 3;
+    }
+
+    // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
+    if (random8() < SPARKINGNEW) {
+      int y = random8(2);
+      noise3d[0][x][y] = qadd8(noise3d[0][x][y], random8(160, 255));
+    }
+
+    // Step 4.  Map from heat cells to LED colors
+    for (int j = 0; j < HEIGHT; j++) {
+      // Scale the heat value from 0-255 down to 0-240
+      // for best results with color palettes.
+      byte colorindex = scale8(noise3d[0][x][j], 240);
+      leds[XY(x, (HEIGHT - 1) - j)] = ColorFromPalette(WaterfallColors_p, colorindex, effectBrightness);
+    }
+  }
+}
+
+// ********************** ОГОНЬ-2 (КАМИН) *********************
+
+void fire2Routine()
+{
+  if (loadingFlag) {
+    loadingFlag = false;
+    //modeCode = MC_FIRE2;
+  }
+  
+#if HEIGHT/6 > 6
+  #define FIRE_BASE 6
+#else
+  #define FIRE_BASE HEIGHT/6+1
+#endif
+  
+  // COOLING: How much does the air cool as it rises?
+  // Less cooling = taller flames.  More cooling = shorter flames.  
+  byte cooling = map8(effectSpeed, 70, 100);     
+  
+  // SPARKING: What chance (out of 255) is there that a new spark will be lit?
+  // Higher chance = more roaring fire.  Lower chance = more flickery fire.
+  byte sparking = map8(effectScaleParam[MC_FIRE2], 90, 150);
+  
+  // SMOOTHING; How much blending should be done between frames
+  // Lower = more blending and smoother flames. Higher = less blending and flickery flames
+  const uint8_t fireSmoothing = 80;
+  
+  // Add entropy to random number generator; we use a lot of it.
+  random16_add_entropy(random(256));
+
+  byte effectBrightness = map8(getBrightnessCalculated(globalBrightness, effectContrast[thisMode]), 32,128);
+
+  // Loop for each column individually
+  for (uint8_t x = 0; x < WIDTH; x++) {
+    
+    // Step 1.  Cool down every cell a little
+    for (uint8_t i = 0; i < HEIGHT; i++) {
+      noise3d[0][x][i] = qsub8(noise3d[0][x][i], random(0, ((cooling * 10) / HEIGHT) + 2));
+    }
+
+    // Step 2.  Heat from  cell drifts 'up' and diffuses a little
+    for (uint8_t k = HEIGHT; k > 1; k--) {
+      noise3d[0][x][wrapY(k)] = (noise3d[0][x][k - 1] + noise3d[0][x][wrapY(k - 2)] + noise3d[0][x][wrapY(k - 2)]) / 3;
+    }
+
+    // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
+    if (random8() < sparking) {
+      uint8_t j = random8(FIRE_BASE);
+      noise3d[0][x][j] = qadd8(noise3d[0][x][j], random(160, 255));
+    }
+
+    // Step 4.  Map from heat cells to LED colors
+    // Blend new data with previous frame. Average data between neighbouring pixels
+    for (uint8_t y = 0; y < HEIGHT; y++)
+      nblend(leds[XY(x,y)], ColorFromPalette(HeatColors_p, ((noise3d[0][x][y]*0.7) + (noise3d[0][wrapX(x+1)][y]*0.3)), effectBrightness), fireSmoothing);
+  }
+}
+
+// ************************** СТРЕЛКИ *************************
+int8_t  arrow_x[4], arrow_y[4], stop_x[4], stop_y[4];
+byte    arrow_direction;            // 0x01 - слева направо; 0x02 - снизу вверх; 0х04 - справа налево; 0х08 - сверху вниз
+byte    arrow_mode, arrow_mode_orig;// 0 - по очереди все варианты
+                                    // 1 - по очереди от края до края экрана; 
+                                    // 2 - одновременно по горизонтали навстречу к ентру, затем одновременно по вертикали навстречу к центру
+                                    // 3 - одновременно все к центру
+                                    // 4 - по два (горизонталь / вертикаль) все от своего края к противоположному, стрелки смещены от центра на 1/3
+                                    // 5 - одновременно все от своего края к противоположному, стрелки смещены от центра на 1/3
+bool    arrow_complete, arrow_change_mode;
+byte    arrow_hue[4];
+byte    arrow_play_mode_count[6];        // Сколько раз проигрывать полностью каждый режим если вариант 0 - текущий счетчик
+byte    arrow_play_mode_count_orig[6];   // Сколько раз проигрывать полностью каждый режим если вариант 0 - исходные настройки
+
+void arrowsRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    //modeCode = MC_ARROWS;
+    FastLED.clear();
+    arrow_complete = false;
+    arrow_mode_orig = effectScaleParam2[MC_ARROWS];
+    arrow_mode = arrow_mode_orig == 0 ? random8(1,5) : arrow_mode_orig;
+    arrow_play_mode_count_orig[0] = 0;
+    arrow_play_mode_count_orig[1] = 4;  // 4 фазы - все стрелки показаны по кругу один раз - переходить к следующему ->
+    arrow_play_mode_count_orig[2] = 4;  // 2 фазы - гориз к центру (1), затем верт к центру (2) - обе фазы повторить по 2 раза -> 4
+    arrow_play_mode_count_orig[3] = 4;  // 1 фаза - все к центру (1) повторить по 4 раза -> 4
+    arrow_play_mode_count_orig[4] = 4;  // 2 фазы - гориз к центру (1), затем верт к центру (2) - обе фазы повторить по 2 раза -> 4
+    arrow_play_mode_count_orig[5] = 4;  // 1 фаза - все сразу (1) повторить по 4 раза -> 4
+    for (byte i=0; i<6; i++) {
+      arrow_play_mode_count[i] = arrow_play_mode_count_orig[i];
+    }
+    arrowSetupForMode(arrow_mode, true);
+  }
+  
+  byte effectBrightness = map8(getBrightnessCalculated(globalBrightness, effectContrast[thisMode]), 32,255);  
+
+  fader(65);
+  CHSV color;
+  
+  // движение стрелки - cлева направо
+  if ((arrow_direction & 0x01) > 0) {
+    color = CHSV(arrow_hue[0], 255, effectBrightness);
+    for (int8_t x = 0; x <= 4; x++) {
+      for (int8_t y = 0; y <= x; y++) {    
+        if (arrow_x[0] - x >= 0 && arrow_x[0] - x <= stop_x[0]) { 
+          CHSV clr = (x < 4 || (x == 4 && y < 2)) ? color : CHSV(0,0,0);
+          drawPixelXY(arrow_x[0] - x, arrow_y[0] - y, clr);
+          drawPixelXY(arrow_x[0] - x, arrow_y[0] + y, clr);
+        }
+      }    
+    }
+    arrow_x[0]++;
+  }
+
+  // движение стрелки - cнизу вверх
+  if ((arrow_direction & 0x02) > 0) {
+    color = CHSV(arrow_hue[1], 255, effectBrightness);
+    for (int8_t y = 0; y <= 4; y++) {
+      for (int8_t x = 0; x <= y; x++) {    
+        if (arrow_y[1] - y >= 0 && arrow_y[1] - y <= stop_y[1]) { 
+          CHSV clr = (y < 4 || (y == 4 && x < 2)) ? color : CHSV(0,0,0);
+          drawPixelXY(arrow_x[1] - x, arrow_y[1] - y, clr);
+          drawPixelXY(arrow_x[1] + x, arrow_y[1] - y, clr);
+        }
+      }    
+    }
+    arrow_y[1]++;
+  }
+
+  // движение стрелки - cправа налево
+  if ((arrow_direction & 0x04) > 0) {
+    color = CHSV(arrow_hue[2], 255, effectBrightness);
+    for (int8_t x = 0; x <= 4; x++) {
+      for (int8_t y = 0; y <= x; y++) {    
+        if (arrow_x[2] + x >= stop_x[2] && arrow_x[2] + x < WIDTH) { 
+          CHSV clr = (x < 4 || (x == 4 && y < 2)) ? color : CHSV(0,0,0);
+          drawPixelXY(arrow_x[2] + x, arrow_y[2] - y, clr);
+          drawPixelXY(arrow_x[2] + x, arrow_y[2] + y, clr);
+        }
+      }    
+    }
+    arrow_x[2]--;
+  }
+
+  // движение стрелки - cверху вниз
+  if ((arrow_direction & 0x08) > 0) {
+    color = CHSV(arrow_hue[3], 255, effectBrightness);
+    for (int8_t y = 0; y <= 4; y++) {
+      for (int8_t x = 0; x <= y; x++) {    
+        if (arrow_y[3] + y >= stop_y[3] && arrow_y[3] + y < HEIGHT) { 
+          CHSV clr = (y < 4 || (y == 4 && x < 2)) ? color : CHSV(0,0,0);
+          drawPixelXY(arrow_x[3] - x, arrow_y[3] + y, clr);
+          drawPixelXY(arrow_x[3] + x, arrow_y[3] + y, clr);
+        }
+      }    
+    }
+    arrow_y[3]--;
+  }
+
+  // Проверка завершения движения стрелки, переход к следующей фазе или режиму
+  
+  switch (arrow_mode) {
+
+    case 1:
+      // Последовательно - слева-направо -> снизу вверх -> справа налево -> сверху вниз и далее по циклу
+      // В каждый сомент времени сктивна только одна стрелка, если она дошла до края - переключиться на следующую и задать ее начальные координаты
+      arrow_complete = false;
+      switch (arrow_direction) {
+        case 1: arrow_complete = arrow_x[0] > stop_x[0]; break;
+        case 2: arrow_complete = arrow_y[1] > stop_y[1]; break;
+        case 4: arrow_complete = arrow_x[2] < stop_x[2]; break;
+        case 8: arrow_complete = arrow_y[3] < stop_y[3]; break;
+      }
+
+      arrow_change_mode = false;
+      if (arrow_complete) {
+        arrow_direction = (arrow_direction << 1) & 0x0F;
+        if (arrow_direction == 0) arrow_direction = 1;
+        if (arrow_mode_orig == 0) {
+          arrow_play_mode_count[1]--;
+          if (arrow_play_mode_count[1] == 0) {
+            arrow_play_mode_count[1] = arrow_play_mode_count_orig[1];
+            arrow_mode = random8(1,5);
+            arrow_change_mode = true;
+          }
+        }
+
+        arrowSetupForMode(arrow_mode, arrow_change_mode);
+      }
+      break;
+
+    case 2:
+      // Одновременно горизонтальные навстречу до половины экрана
+      // Затем одновременно вертикальные до половины экрана. Далее - повторять
+      arrow_complete = false;
+      switch (arrow_direction) {
+        case  5: arrow_complete = arrow_x[0] > stop_x[0]; break;   // Стрелка слева и справа встречаются в центре одновременно - проверять только стрелку слева
+        case 10: arrow_complete = arrow_y[1] > stop_y[1]; break;   // Стрелка снизу и сверху встречаются в центре одновременно - проверять только стрелку снизу
+      }
+
+      arrow_change_mode = false;
+      if (arrow_complete) {
+        arrow_direction = arrow_direction == 5 ? 10 : 5;
+        if (arrow_mode_orig == 0) {
+          arrow_play_mode_count[2]--;
+          if (arrow_play_mode_count[2] == 0) {
+            arrow_play_mode_count[2] = arrow_play_mode_count_orig[2];
+            arrow_mode = random8(1,5);
+            arrow_change_mode = true;
+          }
+        }
+        
+        arrowSetupForMode(arrow_mode, arrow_change_mode);
+      }
+      break;
+
+    case 3:
+      // Одновременно со всех сторон к центру
+      // Завершение кадра режима - когда все стрелки собрались в центре.
+      // Проверять стрелки по самой длинной стороне
+      if (WIDTH >= HEIGHT)
+        arrow_complete = arrow_x[0] > stop_x[0];
+      else 
+        arrow_complete = arrow_y[1] > stop_y[1];
+        
+      arrow_change_mode = false;
+      if (arrow_complete) {
+        if (arrow_mode_orig == 0) {
+          arrow_play_mode_count[3]--;
+          if (arrow_play_mode_count[3] == 0) {
+            arrow_play_mode_count[3] = arrow_play_mode_count_orig[3];
+            arrow_mode = random8(1,5);
+            arrow_change_mode = true;
+          }
+        }
+        
+        arrowSetupForMode(arrow_mode, arrow_change_mode);
+      }
+      break;
+
+    case 4:
+      // Одновременно слева/справа от края до края со смещением горизонтальной оси на 1/3 высоты, далее
+      // одновременно снизу/сверху от края до края со смещением вертикальной оси на 1/3 ширины
+      // Завершение кадра режима - когда все стрелки собрались в центре.
+      // Проверять стрелки по самой длинной стороне
+      switch (arrow_direction) {
+        case  5: arrow_complete = arrow_x[0] > stop_x[0]; break;   // Стрелка слева и справа движутся и достигают края одновременно - проверять только стрелку слева
+        case 10: arrow_complete = arrow_y[1] > stop_y[1]; break;   // Стрелка снизу и сверху движутся и достигают края одновременно - проверять только стрелку снизу
+      }
+
+      arrow_change_mode = false;
+      if (arrow_complete) {
+        arrow_direction = arrow_direction == 5 ? 10 : 5;
+        if (arrow_mode_orig == 0) {
+          arrow_play_mode_count[4]--;
+          if (arrow_play_mode_count[4] == 0) {
+            arrow_play_mode_count[4] = arrow_play_mode_count_orig[4];
+            arrow_mode = random8(1,5);
+            arrow_change_mode = true;
+          }
+        }
+        
+        arrowSetupForMode(arrow_mode, arrow_change_mode);
+      }
+      break;
+
+    case 5:
+      // Одновременно со всех сторон от края до края со смещением горизонтальной оси на 1/3 высоты, далее
+      // Проверять стрелки по самой длинной стороне
+      if (WIDTH >= HEIGHT)
+        arrow_complete = arrow_x[0] > stop_x[0];
+      else 
+        arrow_complete = arrow_y[1] > stop_y[1];
+
+      arrow_change_mode = false;
+      if (arrow_complete) {
+        if (arrow_mode_orig == 0) {
+          arrow_play_mode_count[5]--;
+          if (arrow_play_mode_count[5] == 0) {
+            arrow_play_mode_count[5] = arrow_play_mode_count_orig[5];
+            arrow_mode = random8(1,5);
+            arrow_change_mode = true;
+          }
+        }
+        
+        arrowSetupForMode(arrow_mode, arrow_change_mode);
+      }
+      break;
+  }
+
+}
+
+void arrowSetupForMode(byte mode, bool change) {
+    switch (mode) {
+      case 1:
+        if (change) arrow_direction = 1;
+        arrowSetup_mode1();    // От края матрицы к краю, по центру гориз и верт
+        break;
+      case 2:
+        if (change) arrow_direction = 5;
+        arrowSetup_mode2();    // По центру матрицы (гориз / верт) - ограничение - центр матрицы
+        break;
+      case 3:
+        if (change) arrow_direction = 15;
+        arrowSetup_mode2();    // как и в режиме 2 - по центру матрицы (гориз / верт) - ограничение - центр матрицы
+        break;
+      case 4:
+        if (change) arrow_direction = 5;
+        arrowSetup_mode4();    // От края матрицы к краю, верт / гориз
+        break;
+      case 5:
+        if (change) arrow_direction = 15;
+        arrowSetup_mode4();    // как и в режиме 4 от края матрицы к краю, на 1/3
+        break;
+    }
+}
+void arrowSetup_mode1() {
+  // Слева направо
+  if ((arrow_direction & 0x01) > 0) {
+    arrow_hue[0] = random8();
+    arrow_x[0] = 0;
+    arrow_y[0] = HEIGHT / 2;
+    stop_x [0] = WIDTH + 7;      // скрывается за экраном на 7 пикселей
+    stop_y [0] = 0;              // неприменимо 
+  }    
+  // снизу вверх
+  if ((arrow_direction & 0x02) > 0) {
+    arrow_hue[1] = random8();
+    arrow_y[1] = 0;
+    arrow_x[1] = WIDTH / 2;
+    stop_y [1] = HEIGHT + 7;     // скрывается за экраном на 7 пикселей
+    stop_x [1] = 0;              // неприменимо 
+  }    
+  // справа налево
+  if ((arrow_direction & 0x04) > 0) {
+    arrow_hue[2] = random8();
+    arrow_x[2] = WIDTH - 1;
+    arrow_y[2] = HEIGHT / 2;
+    stop_x [2] = -7;             // скрывается за экраном на 7 пикселей
+    stop_y [2] = 0;              // неприменимо 
+  }
+  // сверху вниз
+  if ((arrow_direction & 0x08) > 0) {
+    arrow_hue[3] = random8();
+    arrow_y[3] = HEIGHT - 1;
+    arrow_x[3] = WIDTH / 2;
+    stop_y [3] = -7;             // скрывается за экраном на 7 пикселей
+    stop_x [3] = 0;              // неприменимо 
+  }
+}
+
+void arrowSetup_mode2() {
+  // Слева направо до половины экрана
+  if ((arrow_direction & 0x01) > 0) {
+    arrow_hue[0] = random8();
+    arrow_x[0] = 0;
+    arrow_y[0] = HEIGHT / 2;
+    stop_x [0] = WIDTH / 2 - 1;  // до центра экрана
+    stop_y [0] = 0;              // неприменимо 
+  }    
+  // снизу вверх до половины экрана
+  if ((arrow_direction & 0x02) > 0) {
+    arrow_hue[1] = random8();
+    arrow_y[1] = 0;
+    arrow_x[1] = WIDTH / 2;
+    stop_y [1] = HEIGHT / 2 - 1; // до центра экрана
+    stop_x [1] = 0;              // неприменимо 
+  }    
+  // справа налево до половины экрана
+  if ((arrow_direction & 0x04) > 0) {
+    arrow_hue[2] = random8();
+    arrow_x[2] = WIDTH - 1;
+    arrow_y[2] = HEIGHT / 2;
+    stop_x [2] = WIDTH / 2;      // до центра экрана
+    stop_y [2] = 0;              // неприменимо 
+  }
+  // сверху вниз до половины экрана
+  if ((arrow_direction & 0x08) > 0) {
+    arrow_hue[3] = random8();
+    arrow_y[3] = HEIGHT - 1;
+    arrow_x[3] = WIDTH / 2;
+    stop_y [3] = HEIGHT / 2;     // до центра экрана
+    stop_x [3] = 0;              // неприменимо 
+  }
+}
+
+void arrowSetup_mode4() {
+  // Слева направо
+  if ((arrow_direction & 0x01) > 0) {
+    arrow_hue[0] = random8();
+    arrow_x[0] = 0;
+    arrow_y[0] = (HEIGHT / 3) * 2;
+    stop_x [0] = WIDTH + 7;      // скрывается за экраном на 7 пикселей
+    stop_y [0] = 0;              // неприменимо 
+  }    
+  // снизу вверх
+  if ((arrow_direction & 0x02) > 0) {
+    arrow_hue[1] = random8();
+    arrow_y[1] = 0;
+    arrow_x[1] = (WIDTH / 3) * 2;
+    stop_y [1] = HEIGHT + 7;     // скрывается за экраном на 7 пикселей
+    stop_x [1] = 0;              // неприменимо 
+  }    
+  // справа налево
+  if ((arrow_direction & 0x04) > 0) {
+    arrow_hue[2] = random8();
+    arrow_x[2] = WIDTH - 1;
+    arrow_y[2] = HEIGHT / 3;
+    stop_x [2] = -7;             // скрывается за экраном на 7 пикселей
+    stop_y [2] = 0;              // неприменимо 
+  }
+  // сверху вниз
+  if ((arrow_direction & 0x08) > 0) {
+    arrow_hue[3] = random8();
+    arrow_y[3] = HEIGHT - 1;
+    arrow_x[3] = WIDTH / 3;
+    stop_y [3] = -7;             // скрывается за экраном на 7 пикселей
+    stop_x [3] = 0;              // неприменимо 
+  }
 }

@@ -193,7 +193,7 @@ void process() {
         setRandomMode();
       }
 
-#if (LAMP_MODE == 1)
+#if (DEVICE_TYPE == 1)
       // Четырехкратное нажатие включает режим "Лампа" из любого режима, в т.ч. из сна (обработка - ниже)            
       // Пятикратное нажатие - показать текущий IP WiFi-соединения            
       else if (clicks == 5) {
@@ -235,7 +235,7 @@ void process() {
       }            
     }
 
-#if (LAMP_MODE == 1)
+#if (DEVICE_TYPE == 1)
     // Если устройство - ламна - длительное нажатие кнопки включает яркий белый свет
     else if (isButtonHold) {
         // Включить панель - белый цвет
@@ -634,7 +634,12 @@ void parsing() {
           if (thisMode == tmp_eff && tmp_eff == MC_RAINBOW) {
             // При получении параметра 2 эффекта "Радуга" (тип радуги) - надо переинициализировать эфект
             // Если установлен тип радуги - "случайный" - продолжаем показывать тот что был
-            loadingFlag = effectScaleParam2 [tmp_eff] != 0;
+            loadingFlag = effectScaleParam2[tmp_eff] != 0;
+          } else
+          if (thisMode == tmp_eff && tmp_eff == MC_ARROWS) {
+            // При получении параметра 2 эффекта "Стрелки" -  вид - надо переинициализировать эфект
+            // Если установлен тип - "случайный" - продолжаем показывать тот что был
+            loadingFlag = true;
           } else
           if (thisMode == tmp_eff && tmp_eff == MC_PAINTBALL) {
             // При получении параметра 2 эффекта "Пэйнтбол" (сегменты) - надо переинициализировать эфект
@@ -1487,7 +1492,7 @@ void sendPageParams(int page) {
          ? "X" 
          : (String(getEffectClockOverlayUsage(tmp_eff) ? "1" : "0")));
       // Настройка скорости
-      str+="|SE:"+(tmp_eff == MC_PACIFICA  || tmp_eff == MC_SHADOWS || tmp_eff == MC_CLOCK
+      str+="|SE:"+(tmp_eff == MC_PACIFICA  || tmp_eff == MC_SHADOWS || tmp_eff == MC_CLOCK || tmp_eff == MC_WATERFALL
          ? "X" 
          : String(255 - constrain(map(getEffectSpeed(tmp_eff), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
       // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
@@ -1646,6 +1651,8 @@ String getParamForMode(byte mode) {
    case MC_ANALYZER:
    case MC_PRIZMATA:
    case MC_MUNCH:
+   case MC_ARROWS:
+   case MC_WATERFALL:
    case MC_IMAGE:
    case MC_CLOCK:
      str = "X";
@@ -1666,9 +1673,14 @@ String getParam2ForMode(byte mode) {
      // Эффект "Радуга" имеет несколько вариантов - список выбора варианта отображения
      // Дополнительный параметр представлен в приложении списком выбора
      //           Маркер типа - список выбора         0,1,2,3,4               0         1            2              3            4
-     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Вертикальная радуга,Горизонтальная радуга,Диагональная радуга,Вращающаяся радуга")); // "L>4Случайная,Вертикальная,Горизонтальная,Диагональная,Вращающаяся"
+     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Вертикальная радуга,Горизонтальная радуга,Диагональная радуга,Вращающаяся радуга"));
      break;
-
+   case MC_ARROWS:
+     // Эффект "Стрелки" имеет несколько вариантов - список выбора варианта отображения
+     // Дополнительный параметр представлен в приложении списком выбора
+     //           Маркер типа - список выбора         0,1,2,3,4               0               1       2       3       4          5
+     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,1-центр,2-центр,4-центр,2-смещение,4-смещение"));
+     break;
    case MC_PAINTBALL:
    case MC_SWIRL:
    case MC_CYCLON:

@@ -396,9 +396,9 @@ String processDateMacrosInText(String textLine) {
         else if (restDays == 0 && restHours == 0 && restMinutes > 0)
           tmp = String(restMinutes) + WriteMinutes(restMinutes);
         else if (restDays == 0 && restHours > 0 && restMinutes > 0)
-          tmp = String(restHours) + WriteHours(restHours) + String(restMinutes) + WriteMinutes(restMinutes);
+          tmp = String(restHours) + WriteHours(restHours) + " " + String(restMinutes) + WriteMinutes(restMinutes);
         else if (restDays > 0 && restDays <= 7 && restHours > 0)
-          tmp = String(restDays) + WriteDays(restDays) + String(restHours) + WriteHours(restHours);
+          tmp = String(restDays) + WriteDays(restDays) + " " + String(restHours) + WriteHours(restHours);
         else  
           tmp = String(restDays) + WriteDays(restDays);
         

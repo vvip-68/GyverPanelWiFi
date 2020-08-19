@@ -275,14 +275,18 @@ void saveDefaults() {
   setClockScrollSpeed(150);
   setTextScrollSpeed(186);
   
-  setScaleForEffect(MC_FIRE, 0);                 // Огонь красного цвета
-  setScaleForEffect2(MC_PAINTBALL, 1);           // Использовать сегменты для эффекта Пэйнтбол на широких матрицах
-  setScaleForEffect2(MC_SWIRL, 1);               // Использовать сегменты для эффекта Водоворот на широких матрицах
-  setScaleForEffect2(MC_RAINBOW, 0);             // Использовать рандомный выбор эффекта радуга 0 - random; 1 - диагональная; 2 - горизонтальная; 3 - вертикальная; 4 - вращающаяся
+  setScaleForEffect(MC_FIRE, 0);            // Огонь красного цвета
+  setScaleForEffect2(MC_PAINTBALL, 1);      // Использовать сегменты для эффекта Пэйнтбол на широких матрицах
+  setScaleForEffect2(MC_SWIRL, 1);          // Использовать сегменты для эффекта Водоворот на широких матрицах
+  setScaleForEffect2(MC_RAINBOW, 0);        // Использовать рандомный выбор эффекта радуга 0 - random; 1 - диагональная; 2 - горизонтальная; 3 - вертикальная; 4 - вращающаяся  
 
-  setGlobalColor(globalColor);                   // Цвет панели в режиме "Лампа"
-  setGlobalClockColor(globalClockColor);         // Цвет часов в режиме "Монохром" 
-  setGlobalTextColor(globalTextColor);           // Цвет текста в режиме "Монохром"
+  byte ball_size = min(WIDTH,HEIGHT) / 4;
+  if (ball_size > 5) ball_size = 5;
+  setScaleForEffect(MC_BALL, ball_size );   // Размер кубика по умолчанию
+  
+  setGlobalColor(globalColor);              // Цвет панели в режиме "Лампа"
+  setGlobalClockColor(globalClockColor);    // Цвет часов в режиме "Монохром" 
+  setGlobalTextColor(globalTextColor);      // Цвет текста в режиме "Монохром"
 
   setUseSoftAP(useSoftAP);
 

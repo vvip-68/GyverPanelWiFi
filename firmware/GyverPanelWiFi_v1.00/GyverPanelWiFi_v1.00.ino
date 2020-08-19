@@ -159,18 +159,10 @@ void setup() {
     isNightClock = spc_mode == 8;
   } else {
     thisMode = getCurrentManualMode();
+    Serial.println("Режим: " + String(thisMode)); // +++
     if (thisMode < 0) {
       setRandomMode2();
     } else {
-      while (1) {
-        // Если режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)        
-        if (getEffectUsage(thisMode)) break;
-        thisMode++;
-        if (thisMode >= MAX_EFFECT) {
-          thisMode = 0;
-          break;
-        }
-      }
       setEffect(thisMode);        
     }
   }

@@ -370,7 +370,7 @@ String WriteDays(int iDays) {
   iDays = iDays %10;
   if (iDays2 == 1) return F(" дней");  
   if (iDays  == 1) return F(" день");
-  if (iDays  == 2 || iDays == 3 || iDays== 4) return F(" дня");
+  if (iDays  >= 2 && iDays <= 4) return F(" дня");
   return F(" дней");
 }
 
@@ -381,18 +381,18 @@ String WriteHours(int iHours) {
 }
 
 String WriteMinutes(int iMinutes){
-  if (iMinutes >= 5 || iMinutes <= 20) return F(" минут");
+  if (iMinutes >= 5 && iMinutes <= 20) return F(" минут");
   iMinutes = iMinutes %10;
   if (iMinutes == 1) return F(" минута");
-  if (iMinutes >= 2 || iMinutes <= 4) return F(" минуты");
+  if (iMinutes >= 2 && iMinutes <= 4) return F(" минуты");
   return F(" минут");
 }
 
 String WriteSeconds(int iSeconds){
-  if (iSeconds >= 5 || iSeconds <= 20) return F(" секунд");
+  if (iSeconds >= 5 && iSeconds <= 20) return F(" секунд");
   iSeconds = iSeconds %10;
   if (iSeconds == 1) return F(" секунда");
-  if (iSeconds >= 2 || iSeconds <= 4) return F(" секунды");
+  if (iSeconds >= 2 && iSeconds <= 4) return F(" секунды");
   return F(" секунд");
 }
 
@@ -428,4 +428,12 @@ uint16_t getCrc16(uint8_t * data, uint16_t len)
     }
  
     return crc.value;
+}
+
+uint8_t wrapX(int8_t x) {
+  return (x + WIDTH) % WIDTH;
+}
+
+uint8_t wrapY(int8_t y) {
+  return (y + HEIGHT) % HEIGHT;
 }
