@@ -1018,6 +1018,11 @@ void dawnLampSpiral() {
 void dawnLampSquare() {
 
   if (loadingFlag) {
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
+    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами        
+
     SetStartPos();
     
     dawnBrightness = MIN_DAWN_BRIGHT; 
@@ -1029,11 +1034,6 @@ void dawnLampSquare() {
     memset(tail2, 0, sizeof(uint16_t) * 8);
     
     tailColor = CHSV(0, 255, 255 - 8 * tailBrightnessStep); 
-
-    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
-    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
-    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
-    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами        
   }
   
   int8_t x=col, y=row;
