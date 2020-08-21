@@ -89,33 +89,35 @@ void process() {
         }
       }
 
-      #if (USE_WEATHER == 1)     
-        // Если настройки программы предполагают получение сведений о текущей погоде - выполнить обновление данных с погодного сервера
-        if (weather_t > 0 && millis() - weather_t > 5000) {
-          Serial.println(F("Таймаут запроса погоды!"));
-          weather_t = 0;
-          weather_cnt++;
-          if (init_weather && weather_cnt >= 10) {
-            Serial.println(F("Не удалось установить соединение с сервером погоды."));  
-            refresh_weather = false;
-          }
-        }
-        
-        bool timeToGetWeather = weatherTimer.isReady(); 
-        if (timeToGetWeather) { weather_cnt = 0; weather_t == 0; refresh_weather = true; }
-        if (refresh_weather && weather_t == 0 && (weather_cnt < 50 || !init_weather)) {
-          getWeather();
-          if (weather_cnt >= 50) {
-            if (init_weather) {
-              udp.flush();
-            } else {
-              weather_cnt = 0;
+      #if (USE_WEATHER == 1)  
+        if (useWeather) {   
+          // Если настройки программы предполагают получение сведений о текущей погоде - выполнить обновление данных с погодного сервера
+          if (weather_t > 0 && millis() - weather_t > 5000) {
+            Serial.println(F("Таймаут запроса погоды!"));
+            weather_t = 0;
+            weather_cnt++;
+            if (init_weather && weather_cnt >= 10) {
+              Serial.println(F("Не удалось установить соединение с сервером погоды."));  
+              refresh_weather = false;
             }
-          }        
-        }
-        if (init_weather && (millis() - weather_time > weatherActualityDuration * 3600L * 1000L)) {
-          init_weather = false;
-          refresh_weather = true;
+          }
+          
+          bool timeToGetWeather = weatherTimer.isReady(); 
+          if (timeToGetWeather) { weather_cnt = 0; weather_t == 0; refresh_weather = true; }
+          if (refresh_weather && weather_t == 0 && (weather_cnt < 50 || !init_weather)) {
+            getWeather();
+            if (weather_cnt >= 50) {
+              if (init_weather) {
+                udp.flush();
+              } else {
+                weather_cnt = 0;
+              }
+            }        
+          }
+          if (init_weather && (millis() - weather_time > weatherActualityDuration * 3600L * 1000L)) {
+            init_weather = false;
+            refresh_weather = true;
+          }
         }
       #endif
     }
@@ -366,6 +368,8 @@ void parsing() {
       - $13 0 N; - активация для редактирования строки с номером N - запрос текста строки
       - $13 1 N; - активация прокручивания строки с номером N
       - $13 3 I; - запросить текст бегущей строки с индексом I
+      - $13 4 X; - использовать получение погоды с погодного сервера
+      - $13 5 I; - запросить интервал получения погоды с сервера (в минутах)
       - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
       - $13 13 X; - скорость прокрутки бегущей строки
@@ -721,6 +725,8 @@ void parsing() {
       // - $13 0 N; - активация для редактирования строки с номером N - запрос текста строки N - 0..35 
       // - $13 1 N; - активация прокручивания строки с номером N - 0..35
       // - $13 3 I; - запросить текст бегущей строки с индексом I
+      // - $13 4 X; - использовать получение погоды с погодного сервера
+      // - $13 5 I; - запросить интервал получения погоды с сервера (в минутах)
       // - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       // - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
       // - $13 13 X; - скорость прокрутки бегущей строки
@@ -748,6 +754,21 @@ void parsing() {
              if (intData[2] >= 1 && (intData[2]<(sizeof(textLines) / sizeof(String)))) {
                sendTextIdx = intData[2];
                sendPageParams(92);
+             }
+             break;
+           case 4:               // $13 4 X; - Использовать подучение погоды с сервера 0 - нет; 1 - да
+             useWeather = intData[2] == 1;
+             setUseWeather(useWeather);
+             if (wifi_connected) {
+               refresh_weather = true; weather_t = 0; weather_cnt = 0;
+             }
+             break;
+           case 5:               // $13 5 I; - Интервал обновления погоды с сервера в минутах
+             SYNC_WEATHER_PERIOD = intData[2];
+             setWeatherInterval(SYNC_WEATHER_PERIOD);
+             weatherTimer.setInterval(1000L * 60 * SYNC_WEATHER_PERIOD);
+             if (wifi_connected) {
+               refresh_weather = true; weather_t = 0; weather_cnt = 0;
              }
              break;
            case 9:               // $13 9 I; - Периодичность отображения бегущей строки (в секундах)
@@ -932,8 +953,7 @@ void parsing() {
              timeZoneOffset = (int8_t)intData[3];
              saveTimeZone(timeZoneOffset);
              saveNtpSyncTime(SYNC_TIME_PERIOD);
-             saveTimeZone(timeZoneOffset);
-             ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
+             ntpSyncTimer.setInterval(1000L * 60 * SYNC_TIME_PERIOD);
              if (wifi_connected) {
                refresh_time = true; ntp_t = 0; ntp_cnt = 0;
              }
@@ -1491,7 +1511,9 @@ void sendPageParams(int page) {
   // TX:[текст]  текст для активной строки. Ограничители [] обязательны
   // TY:[Z:текст] обработанный текст для активной строки, после преобразования макросов, если они есть. Ограничители [] обязательны Z - индекс строки в списке 0..35
   // TZ:[Z:текст] обработанный текст для активной строки, после преобразования макросов, если они есть. Ограничители [] обязательны Z - индекс строки в списке 0..35 (в ответ на получения TZ телефон отправляет запрос на следующую строку, в TY - нет)
-  // OM:X       сколько ячеек осталось свободно для хранения строк
+  // OM:X        сколько ячеек осталось свободно для хранения строк
+  // WU:X        Использовать получение погоды с сервераж X: 0 - выключено; 1 - включено
+  // WT:число    Период запроса сведений о погоде в минутах
 
   String str = "", color, text;
   CRGB c1, c2;
@@ -1551,7 +1573,9 @@ void sendPageParams(int page) {
              "|ST:" + String(255 - getTextScrollSpeed()) +
              "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b) +
              "|OM:" + String(memoryAvail) +
-             "|TS:" + getTextStates() +                 // Строка состояния заполненности строк теккста
+             "|WU:" + (useWeather ? "1" : "0") + +      // Пока настройки погоды (пока) располагаются на странице настроек бегущей строки 
+             "|WT:" + String(SYNC_WEATHER_PERIOD) +
+             "|TS:" + getTextStates() +                 // Строка состояния заполненности строк текста
              "|TA:" + String(editIdx) +                 // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
              "|TX:[" + getTextByAZIndex(editIdx) + ']'; // Активная кнопка текста. Должна быть ПЕРЕД строкой текста, т.к сначала приложение должно знать в какую позицию списка помещать строку editIdx - '0'..'9'..'A'..'Z'
       if (editIdx != '#' && editIdx != '0') {

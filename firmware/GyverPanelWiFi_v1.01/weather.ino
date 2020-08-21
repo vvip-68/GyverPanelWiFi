@@ -3,13 +3,13 @@
 
 bool getWeather() {
   
-  if (!wifi_connected) return false;
-  if (!client.connect("yandex.com",443)) return false;        // Устанавливаем соединение с указанным хостом (Порт 443 для https)
+  if (!wifi_connected) return false;  
+  if (!client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
 
   Serial.println(F("Запрос текущей погоды"));
   
   // Отправляем запрос
-  client.println(String(F("GET /time/sync.json?geo=")) + regionID + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
+  client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
     
   // Проверяем статус запроса
   char status[32] = {0};
@@ -74,7 +74,7 @@ void decodeWeather(){
   char * out = strtok(icon,"-");        // Выделяем первую часть из строки до символа '-'
   String part = String(out);
   while (out != NULL) {                 // Выделяем последующие части строки в цикле, пока значение out не станет нулевым (пустым)
-    if (part == "skc")                // Перебираем в условиях все возможные варианты, зашифрованные в названии иконки
+    if (part == "skc")                  // Перебираем в условиях все возможные варианты, зашифрованные в названии иконки
       weather = F("Ясно");
     else if (part == "ovc")
       weather = F("Пасмурно");

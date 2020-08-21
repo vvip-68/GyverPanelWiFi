@@ -81,7 +81,9 @@ void loadSettings() {
   //  171 - Режим цвета оверлея текста X: 0,1,2,3                                                            // getTextColor()                 // setTextColor(COLOR_TEXT_MODE)  
   //  172 - Скорость прокрутки оверлея текста                                                                // getTextScrollSpeed()           // setTextScrollSpeed(speed_value)  
   //  173 - Отображать бегущую строку оверлеем в режимах                                                     // getTextOverlayEnabled()        // saveTextOverlayEnabled(textOverlayEnabled)
-  //**174 - не используется
+  //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
+  //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
+  //**176 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -183,6 +185,9 @@ void loadSettings() {
     AM4_hour      = getAM4hour();
     AM4_minute    = getAM4minute();
     AM4_effect_id = getAM4effect();
+
+    useWeather =  getUseWeather();
+    SYNC_WEATHER_PERIOD = getWeatherInterval();
 
     loadStaticIP();
     loadTexts();
@@ -315,12 +320,15 @@ void saveDefaults() {
   setAM4hour(AM4_hour);                 // Режим 4 по времени - часы
   setAM4minute(AM4_minute);             // Режим 4 по времени - минуты
   setAM4effect(AM4_effect_id);          // Режим 4 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
-  
+
+  setUseWeather(useWeather);
+  setWeatherInterval(SYNC_WEATHER_PERIOD);
+
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
   saveTexts();
 
   setCurrentSpecMode(-1);               // Текущий спец-режим - это не спец-режим
-  setCurrentManualMode(-1);             // Текущий вручную включенный спец-режим
+  setCurrentManualMode(-1);             // Текущий вручную включенный режим
 }
 
 void saveSettings() {
@@ -1329,6 +1337,27 @@ void setTextScrollSpeed(byte clr) {
 byte getTextScrollSpeed() {
   byte clr = EEPROMread(172);
   return clr;
+}
+
+boolean getUseWeather() {
+  return EEPROMread(174) == 1;
+}
+
+void setUseWeather(boolean use) {
+  if (use != getUseWeather()) {
+    EEPROMwrite(174, use ? 1 : 0);
+  }
+}
+
+byte getWeatherInterval() {
+  return EEPROMread(175);
+}
+
+// Скорость прокрутки бегущей строки
+void setWeatherInterval(byte interval) {
+  if (interval != getWeatherInterval()) {
+    EEPROMwrite(175, interval);
+  }  
 }
 
 // ----------------------------------------------------------
