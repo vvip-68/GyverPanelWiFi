@@ -477,6 +477,8 @@ String processMacrosInText(String textLine) {
                Если указаны оба - работает модификатор показа по времени
       "{CC} "- отображать строку указанным цветом С; Цвет - в виде #AA77FE; Специальные значения - #000001 - радуга;  - #000002 - каждая буква свой цвет;
       "{BC} "- отображать строку на однотонном фоне указанного цвета С; Цвет - в виде #337700;
+      "{WS} "- отображать вместо {WS} состояние текущей погоды - "Пасмурно", "Ясно", "Дождь", "Гроза" и т.д
+      "{WT} "- отображать вместо {WT} текущую температуру водуха, например "+26", "-31"
       "{D:F}" - где F - один из форматов даты / времени
                 d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
                 dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
@@ -537,6 +539,14 @@ String processMacrosInText(String textLine) {
     // -------------------------------------------------------------    
 
     if (textLine.length() == 0 || textLine.charAt(0) == '-' || textLine.indexOf("{-}") >= 0) {
+      attempt++;  
+      currentTextLineIdx = getNextLine(currentTextLineIdx);
+      textLine = (currentTextLineIdx < 0 || currentTextLineIdx >= sizeOfTextsArray) ? "" : textLines[currentTextLineIdx];
+      continue;
+    }
+
+    // Если в строке содержится макрос, связанный с погодой, но погода еще не получена с сервера - пропускать строку, брать следующую
+    if (!init_weather && (textLine.indexOf("{WS}") >= 0 || textLine.indexOf("{WT}") >= 0)) {
       attempt++;  
       currentTextLineIdx = getNextLine(currentTextLineIdx);
       textLine = (currentTextLineIdx < 0 || currentTextLineIdx >= sizeOfTextsArray) ? "" : textLines[currentTextLineIdx];
@@ -738,7 +748,21 @@ String processMacrosInText(String textLine) {
       // Есть еще вхождения макроса?
       idx = textLine.indexOf("{B");  
     }
+
+    // {WS} - отображать текущую погоду - "Ясно", "Облачно" и т.д
+    idx = textLine.indexOf("{WS}");
+    if (idx >= 0) {
+      textLine.replace("{WS}", weather);
+    }
       
+    // {WT} - отображать текущую температурв в виде "+26" или "-26"
+    idx = textLine.indexOf("{WT}");
+    if (idx >= 0) {
+      // Подготовить строку текущего времени HH:mm и заменить все вхождения {D} на эту строку
+      String s_temperatire = (temperature == 0 ? "" : (temperature > 0 ? "+" : "-")) + String(temperature);
+      textLine.replace("{WT}", s_temperatire);
+    }
+
     // -------------------------------------------------------------
     // Эти форматы содержат строку, зависящую от текущего времени.
     // Оставить эти форматы как есть в строке - они будут обрабатываться на каждом проходе, подставляя текцщее время
@@ -790,7 +814,17 @@ int8_t getNextLine(int8_t currentIdx) {
         arr[cnt++] = i;
       }
       // Выбрать индексы строк, которые не отключены;
-      nextLineIdx = cnt == 0 ? -1 : arr[random8(0,cnt - 1)];
+      if (cnt == 0)
+        nextLineIdx = -1;
+      else {
+        byte att = 0;
+        byte idx = random8(0,cnt - 1);
+        while (arr[idx] == nextLineIdx && att < cnt) {
+          att++; idx++;
+          if (idx >= cnt) idx = 0;
+        }        
+        nextLineIdx = arr[idx];
+      }
     } else {
       nextLineIdx = getTextIndex(c);
       sequenceIdx++;

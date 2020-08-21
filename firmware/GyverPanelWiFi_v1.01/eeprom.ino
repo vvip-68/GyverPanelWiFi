@@ -83,7 +83,8 @@ void loadSettings() {
   //  173 - Отображать бегущую строку оверлеем в режимах                                                     // getTextOverlayEnabled()        // saveTextOverlayEnabled(textOverlayEnabled)
   //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
-  //**176 - не используется
+  // 176,177 - Код региона для получения погоды                                                              // getWeatherRegion()             // setWeatherRegion(regionID)
+  //**178 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -187,6 +188,7 @@ void loadSettings() {
     AM4_effect_id = getAM4effect();
 
     useWeather =  getUseWeather();
+    regionID = getWeatherRegion();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
 
     loadStaticIP();
@@ -322,6 +324,7 @@ void saveDefaults() {
   setAM4effect(AM4_effect_id);          // Режим 4 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
 
   setUseWeather(useWeather);
+  setWeatherRegion(regionID);
   setWeatherInterval(SYNC_WEATHER_PERIOD);
 
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
@@ -543,7 +546,7 @@ bool getUseNtp() {
 
 void saveNtpSyncTime(uint16_t value) {
   if (value != getNtpSyncTime()) {
-    EEPROM_int_write(6, SYNC_TIME_PERIOD);
+    EEPROM_int_write(6, value);
   }
 }
 
@@ -1350,14 +1353,27 @@ void setUseWeather(boolean use) {
 }
 
 byte getWeatherInterval() {
-  return EEPROMread(175);
+  byte value = EEPROMread(175);
+  if (value < 10) value = 10;
+  return value;
 }
 
-// Скорость прокрутки бегущей строки
+// Интервал обновления погоды
 void setWeatherInterval(byte interval) {
   if (interval != getWeatherInterval()) {
     EEPROMwrite(175, interval);
   }  
+}
+
+uint16_t getWeatherRegion() {
+  uint16_t region = EEPROM_int_read(176);  
+  return region;
+}
+
+void setWeatherRegion(uint16_t value) {
+  if (value != getWeatherRegion()) {
+    EEPROM_int_write(176, value);
+  }
 }
 
 // ----------------------------------------------------------

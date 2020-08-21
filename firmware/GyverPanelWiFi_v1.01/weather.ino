@@ -6,11 +6,12 @@ bool getWeather() {
   if (!wifi_connected) return false;  
   if (!client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
 
+  Serial.println();
   Serial.println(F("Запрос текущей погоды"));
   
   // Отправляем запрос
   client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
-    
+
   // Проверяем статус запроса
   char status[32] = {0};
   client.readBytesUntil('\r', status, sizeof(status));
@@ -44,13 +45,20 @@ bool getWeather() {
 
   client.stop();
 
-  sunriseTime  = doc["clocks"][regionID]["sunrise"].as<String>();          // Достаём время восхода - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunrise 
-  sunsetTime   = doc["clocks"][regionID]["sunset"].as<String>();           // Достаём время заката - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunset
-  temperature  = doc["clocks"][regionID]["weather"]["temp"].as<int8_t>();  // Достаём время заката - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
-  skyColor     = doc["clocks"][regionID]["skyColor"].as<String>();         // Рекомендованный цвет фона
-  isNight      = doc["clocks"][regionID]["isNight"].as<boolean>();
-  
-  strcpy(icon, doc["clocks"][regionID]["weather"]["icon"].as<String>().c_str());  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+  String regId = String(regionID);
+  sunriseTime  = doc["clocks"][regId]["sunrise"].as<String>();          // Достаём время восхода - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunrise 
+  sunsetTime   = doc["clocks"][regId]["sunset"].as<String>();           // Достаём время заката - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunset
+  temperature  = doc["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём время заката - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
+  skyColor     = doc["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
+  isNight      = doc["clocks"][regId]["isNight"].as<boolean>();
+  strcpy(icon,   doc["clocks"][regId]["weather"]["icon"].as<String>().c_str());  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+
+  // #57bbfe
+  if (skyColor.length() != 7) {
+    Serial.print(F("JSON не содержит данных о погоде"));
+    return false;
+  }
+
   decodeWeather();
   
   weather_time = millis();  // запомнить время получения погоды с сервера
@@ -58,13 +66,14 @@ bool getWeather() {
   refresh_weather = false;
   weather_t = 0; 
   weather_cnt = 0;
-
+  
   Serial.println(F("Погода получена:"));
   Serial.print(F("Сейчас: "));
   Serial.print(weather + ", "); 
   if (temperature > 0) Serial.print("+"); 
   if (temperature < 0) Serial.print("-"); 
   Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
+  Serial.println("Код иконки: '" + String(icon) + "'");
   Serial.println(dayTime);
   
   return true;

@@ -164,7 +164,6 @@ void setup() {
     isNightClock = spc_mode == 8;
   } else {
     thisMode = getCurrentManualMode();
-    Serial.println("Режим: " + String(thisMode)); // +++
     if (thisMode < 0) {
       setRandomMode2();
     } else {
