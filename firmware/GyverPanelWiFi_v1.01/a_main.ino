@@ -749,7 +749,7 @@ void parsing() {
              }
              break;
         }
-        sendPageParams(3);  // +++ - пока всё отправляется на страницу бегущих часов... +++ - для погоды нужна отдельная страница настроек в программе на телефоне
+        sendPageParams(1);
         break;
 
       // ----------------------------------------------------
@@ -1542,8 +1542,11 @@ void sendPageParams(int page) {
       if (AUTOPLAY && !manualMode) str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
-      str+="|RM:" + String(useRandomSequence);
-      str+="|PW:" + String(CURRENT_LIMIT);
+      str += "|RM:" + String(useRandomSequence) +
+             "|PW:" + String(CURRENT_LIMIT) +
+             "|WU:" + (useWeather ? "1" : "0") +
+             "|WT:" + String(SYNC_WEATHER_PERIOD) +
+             "|WR:" + String(regionID);
       str+=";";
       break;
     case 2:  // Эффекты. Вернуть: Номер эффекта, Скорость эффекта; Использовать в демо, оверлей текста и часов 
@@ -1589,9 +1592,6 @@ void sendPageParams(int page) {
              "|ST:" + String(255 - getTextScrollSpeed()) +
              "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b) +
              "|OM:" + String(memoryAvail) +
-             "|WU:" + (useWeather ? "1" : "0") + +      // Пока настройки погоды (пока) располагаются на странице настроек бегущей строки 
-             "|WT:" + String(SYNC_WEATHER_PERIOD) +
-             "|WR:" + String(regionID) +
              "|TS:" + getTextStates() +                 // Строка состояния заполненности строк текста
              "|TA:" + String(editIdx) +                 // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
              "|TX:[" + getTextByAZIndex(editIdx) + ']'; // Активная кнопка текста. Должна быть ПЕРЕД строкой текста, т.к сначала приложение должно знать в какую позицию списка помещать строку editIdx - '0'..'9'..'A'..'Z'

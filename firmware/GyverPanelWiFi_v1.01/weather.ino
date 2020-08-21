@@ -51,7 +51,7 @@ bool getWeather() {
   temperature  = doc["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём время заката - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
   skyColor     = doc["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
   isNight      = doc["clocks"][regId]["isNight"].as<boolean>();
-  strcpy(icon,   doc["clocks"][regId]["weather"]["icon"].as<String>().c_str());  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+  icon         = doc["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
 
   // #57bbfe
   if (skyColor.length() != 7) {
@@ -79,33 +79,55 @@ bool getWeather() {
   return true;
 }
 
+/*
+Код расшифровки иконки. Возможные значения:
+  bkn-minus-ra-d — облачно с прояснениями, небольшой дождь (день)
+  bkn-minus-sn-d — облачно с прояснениями, небольшой снег (день)
+  bkn-minus-sn-n — облачно с прояснениями, небольшой снег (ночь)
+  bkn-d — переменная облачность (день)
+  bkn-n — переменная облачность (ночь)
+  bkn-ra-d — переменная облачность, дождь (день)
+  bkn-ra-n — переменная облачность, дождь (ночь)
+  bkn-sn-d — переменная облачность, снег (день)
+  bkn-sn-n — переменная облачность, снег (ночь)
+  bl — метель
+  fg-d — туман
+  ovc — облачно
+  ovc-minus-ra — облачно, временами дождь
+  ovc-minus-sn — облачно, временами снег
+  ovc-ra — облачно, дождь
+  ovc-sn — облачно, снег
+  ovc-ts-ra — облачно, дождь, гроза
+  skc-d — ясно (день)
+  skc-n — ясно (ночь)
+*/
+
 void decodeWeather(){  
-  char * out = strtok(icon,"-");        // Выделяем первую часть из строки до символа '-'
-  String part = String(out);
-  while (out != NULL) {                 // Выделяем последующие части строки в цикле, пока значение out не станет нулевым (пустым)
-    if (part == "skc")                  // Перебираем в условиях все возможные варианты, зашифрованные в названии иконки
-      weather = F("Ясно");
-    else if (part == "ovc")
-      weather = F("Пасмурно");
-    else if (part == "bkn")
-      weather = F("Облачно");
-    else if (part == "ra")
-      weather = F("Дождь'");
-    else if (part == "ts")
-      weather = F("Гроза");
-    else if (part == "sn")
-      weather = F("Снег");
-    else if (part == "bl")
-      weather = F("Метель'");
-    else if (part == "fg")
-      weather = F("Туман");
-    else if (part == "n")
-      dayTime = F("Темное время суток");
-    else if (String(out) == "d")
-      dayTime = F("Светлое время суток");
-    
-    out = strtok(NULL,"-");              // Выделяем очередную часть
+  bool hasDay   = icon.endsWith("-d");
+  bool hasNight = icon.endsWith("-n");
+  if (hasDay)
+    dayTime = F("Светлое время суток");  // Сейчас день
+  else if (hasNight)           
+    dayTime = F("Темное время суток");   // Сейчас ночь
+
+  if (hasDay || hasNight) {
+    icon = icon.substring(0, icon.length() - 2);
   }
+
+  if      (icon == F("bkn-minus-ra"))  weather = F("облачно с прояснениями, небольшой дождь");
+  else if (icon == F("bkn-minus-sn"))  weather = F("облачно с прояснениями, небольшой снег");
+  else if (icon == F("bkn"))           weather = F("переменная облачность");
+  else if (icon == F("bkn-ra"))        weather = F("переменная облачность, дождь");
+  else if (icon == F("bkn-sn"))        weather = F("переменная облачность, снег");
+  else if (icon == F("bl"))            weather = F("метель");
+  else if (icon == F("fg"))            weather = F("туман");
+  else if (icon == F("ovc"))           weather = F("облачно");
+  else if (icon == F("ovc-minus-ra"))  weather = F("облачно, временами дождь");
+  else if (icon == F("ovc-minus-sn"))  weather = F("облачно, временами снег");
+  else if (icon == F("ovc-ra"))        weather = F("облачно, дождь");
+  else if (icon == F("ovc-sn"))        weather = F("облачно, снег");
+  else if (icon == F("ovc-ts-ra"))     weather = F("облачно, дождь, гроза");
+  else if (icon == F("skc"))           weather = F("ясно");  
 }
 
 #else

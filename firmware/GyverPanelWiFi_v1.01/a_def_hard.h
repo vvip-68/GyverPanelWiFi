@@ -23,12 +23,12 @@
 #define STRIP_DIRECTION 3     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
 #define USE_MP3 0             // поставьте 0, если у вас нет звуковой карты MP3 плеера
 #define USE_TM1637 0          // поставьте 1, если используется дополнительный индикатор TM1637, 0 если индикатора нет
-#define USE_WEATHER 1                    // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
+#define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
 
 #define LED_PIN 2             // D2 пин ленты
 #define STX D3                // D3 of ESP8266, connect to RX of DFPlayer module
 #define SRX D4                // D4 of ESP8266, connect to TX of DFPlayer module
-#define PIN_BTN D1            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
+#define PIN_BTN D1            // кнопка подключена сюда (D1 --- КНОПКА --- GND)
 #define DIO D5                // D5 TM1637 display DIO pin - не используется
 #define CLK D7                // D7 TM1637 display CLK pin - не используется
 #endif
@@ -79,7 +79,6 @@
 #define STRIP_DIRECTION 1     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
 #define USE_MP3 0             // поставьте 0, если у вас нет звуковой карты MP3 плеера
 #define USE_TM1637 0          // поставьте 1, если используется дополнительный индикатор TM1637? 0 если индикатора нет
-#define USE_WEATHER 1                    // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
 
 #define LED_PIN (2U)          // пин ленты, физически подключена к пину D2 на плате
 #define SRX (16U)             // 16 is RX of ESP32, connect to TX of DFPlayer
