@@ -520,7 +520,10 @@ void parsing() {
               str.trim();
               tmp_eff = getTextIndex(c); // '0'..'9','A'..'Z' -> 0..35
               if (tmp_eff >= 0) {
-                textLines[tmp_eff] = str;
+                textLines[tmp_eff] = str;                
+              }
+              if (tmp_eff == 0 && textLines[0] == "#") {
+                 textLines[0] = "##";
               }
               saveTexts();
               break;

@@ -16,6 +16,12 @@ void customRoutine(byte aMode) {
 
 void doEffectWithOverlay(byte aMode) {
 
+  bool effectReady = effectTimer.isReady();
+  bool clockReady = clockTimer.isReady();
+  bool textReady = textTimer.isReady();
+
+  if (!(effectReady || (clockReady && !showTextNow) || (textReady && showTextNow))) return;
+
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
   bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
@@ -88,12 +94,6 @@ void doEffectWithOverlay(byte aMode) {
     textLastTime = nextTextLineIdx >= 0 ? 0 : millis();
   }
 
-  bool effectReady = effectTimer.isReady();
-  bool clockReady = clockTimer.isReady();
-  bool textReady = textTimer.isReady();
-
-  if (!(effectReady || (clockReady && !showTextNow) || (textReady && showTextNow))) return;
-
   // Нужно сохранять оверлей эффекта до отрисовки часов или бегущей строки поверх эффекта?
   bool needOverlay  = 
        (aMode == MC_CLOCK) ||                                                         // Если включен режим "Часы" (ночные часы)
@@ -103,7 +103,7 @@ void doEffectWithOverlay(byte aMode) {
 
   // В прошлой итерации часы / текст были наложены с оверлеем?
   // Если да - восстановить пиксели эффекта сохраненные перед наложением часов / текста
-  if (overlayDelayed && !loadingFlag) {
+  if (overlayDelayed) { //  && !loadingFlag
     overlayUnwrap();
   }  
   

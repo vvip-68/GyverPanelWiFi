@@ -559,37 +559,33 @@ String processMacrosInText(String textLine) {
     if (idx >= 0) {
       // Подготовить строку текущего времени HH:mm и заменить все вхождения {D} на эту строку
       String s_temperature = (temperature == 0 ? "" : (temperature > 0 ? "+" : "-")) + String(temperature);
-      String s_color_before = "", s_color_after = "";
+      String s_color = "";
 
       if (useTemperatureColor) {
 
-        s_color_after = ("000000" + String(globalTextColor, HEX));
-        if (s_color_after.length() > 6) s_color_after = s_color_after.substring(s_color_after.length() - 6);
-        s_color_after = "{C#" + s_color_after + "}";
-        
         if      (temperature <= -30)
-          s_color_before = cold_less_30;
+          s_color = cold_less_30;
         else if (temperature <= -20)
-          s_color_before = cold_29_20;
+          s_color = cold_29_20;
         else if (temperature <= -10)
-          s_color_before = cold_19_10;
+          s_color = cold_19_10;
         else if (temperature <= -4)
-          s_color_before = cold_9_4;
+          s_color = cold_9_4;
         else if (temperature <=  3)
-          s_color_before = zero_3_3;
+          s_color = zero_3_3;
         else if (temperature <=  9)
-          s_color_before = hot_4_9;
+          s_color = hot_4_9;
         else if (temperature <= 19)
-          s_color_before = hot_10_19;
+          s_color = hot_10_19;
         else if (temperature <= 29)
-          s_color_before = hot_20_29;
+          s_color = hot_20_29;
         else
-          s_color_before = hot_30_great;
+          s_color = hot_30_great;
           
-        s_color_before = "{C" + s_color_before + "}";        
+        s_color = "{C" + s_color + "}";        
       }
       
-      textLine.replace("{WT}", s_color_before+s_temperature+s_color_after);
+      textLine.replace("{WT}", s_color + s_temperature);
     }
 
     // -------------------------------------------------------------
