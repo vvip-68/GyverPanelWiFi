@@ -84,7 +84,8 @@ void loadSettings() {
   //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
   // 176,177 - Код региона для получения погоды                                                              // getWeatherRegion()             // setWeatherRegion(regionID)
-  //**178 - не используется
+  //**178 - использовать цвет при показе температуры: 0 - нет; 1 - цвет в зависимости от теммпературы        // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
+  //**179 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -190,6 +191,7 @@ void loadSettings() {
     useWeather =  getUseWeather();
     regionID = getWeatherRegion();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
+    useTemperatureColor = getUseTemperatureColor();
 
     loadStaticIP();
     loadTexts();
@@ -326,7 +328,8 @@ void saveDefaults() {
   setUseWeather(useWeather);
   setWeatherRegion(regionID);
   setWeatherInterval(SYNC_WEATHER_PERIOD);
-
+  setUseTemperatureColor(useTemperatureColor);
+       
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
   saveTexts();
 
@@ -1384,6 +1387,16 @@ uint16_t getWeatherRegion() {
 void setWeatherRegion(uint16_t value) {
   if (value != getWeatherRegion()) {
     EEPROM_int_write(176, value);
+  }
+}
+
+boolean getUseTemperatureColor() {
+  return EEPROMread(178) == 1;
+}
+
+void setUseTemperatureColor(boolean use) {
+  if (use != getUseTemperatureColor()) {
+    EEPROMwrite(178, use ? 1 : 0);
   }
 }
 

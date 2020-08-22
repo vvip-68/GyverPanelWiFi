@@ -206,11 +206,12 @@ void fadePixel(byte i, byte j, byte step) {     // новый фейдер
 // hex string to uint32_t
 uint32_t HEXtoInt(String hexValue) {
 
+  hexValue.toUpperCase();
   if (hexValue.charAt(0) == '#') {
     hexValue = hexValue.substring(1);
   }
 
-  if (hexValue.startsWith("0x") || hexValue.startsWith("0X")) {
+  if (hexValue.startsWith("0X")) {
     hexValue = hexValue.substring(2);
   }
 

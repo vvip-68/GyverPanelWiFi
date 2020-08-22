@@ -171,6 +171,7 @@ void setup() {
     }
   }
   autoplayTimer = millis();
+
 }
 
 void loop() {
