@@ -52,12 +52,14 @@ bool getWeather() {
   skyColor     = doc["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
   isNight      = doc["clocks"][regId]["isNight"].as<boolean>();
   icon         = doc["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
-
+  
   // #57bbfe
   if (skyColor.length() != 7) {
     Serial.print(F("JSON не содержит данных о погоде"));
     return false;
   }
+
+  String icon_orig = icon;
 
   decodeWeather();
   
@@ -73,8 +75,9 @@ bool getWeather() {
   if (temperature > 0) Serial.print("+"); 
   if (temperature < 0) Serial.print("-"); 
   Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
-  Serial.println("Код иконки: '" + String(icon) + "'");
+  Serial.println(String(F("Код иконки: '")) + icon_orig + "'");
   Serial.println(dayTime);
+  Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   
   return true;
 }
@@ -105,6 +108,7 @@ bool getWeather() {
 void decodeWeather(){  
   bool hasDay   = icon.endsWith("-d");
   bool hasNight = icon.endsWith("-n");
+  
   if (hasDay)
     dayTime = F("Светлое время суток");  // Сейчас день
   else if (hasNight)           

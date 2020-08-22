@@ -27,9 +27,9 @@
 
 #define LED_PIN 2             // D2 пин ленты
 #define STX D3                // D3 of ESP8266, connect to RX of DFPlayer module
-#define SRX D4                // D4 of ESP8266, connect to TX of DFPlayer module
-#define PIN_BTN D1            // кнопка подключена сюда (D1 --- КНОПКА --- GND)
-#define DIO D5                // D5 TM1637 display DIO pin - не используется
+#define SRX D5                // D4 of ESP8266, connect to TX of DFPlayer module
+#define PIN_BTN D4            // кнопка подключена сюда (D1 --- КНОПКА --- GND)
+#define DIO D6                // D5 TM1637 display DIO pin - не используется
 #define CLK D7                // D7 TM1637 display CLK pin - не используется
 #endif
 
@@ -52,7 +52,7 @@
 #define STX D3                // D3 of ESP8266, connect to RX of DFPlayer module
 #define SRX D5                // D4 of ESP8266, connect to TX of DFPlayer module
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
-#define DIO D5                // D5 TM1637 display DIO pin - не используется
+#define DIO D6                // D5 TM1637 display DIO pin - не используется
 #define CLK D7                // D7 TM1637 display CLK pin - не используется
 #endif
 */
