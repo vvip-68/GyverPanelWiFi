@@ -38,34 +38,49 @@ typedef struct {
   uint32_t transparent_color;       // Этот цвет - прозрачный, пиксели этого цвета не рисуются
   uint32_t background_first_color;  // Цвет заливки ВСЕЙ матрицы перед тем, как рисовать самый первый фрейм при активации эффекта анимации
   uint32_t background_color;        // Цвет заливки ВСЕЙ матрицы перед тем, как рисовать очередной фрейм
+  int8_t   background_effect[6];    // Наряду с одноцветной заливкой в качестве "подложки" можно использовать эффект - один из списка (случайный выбор);
+                                    // Если все элементы массива = -1 - не использовать
 } animation_t;
  
 #include "bitmap1.h"
 
 // ------------------- Загрузка картинок и фреймов анимации -------------------
 
-int8_t currentImageIdx = 1;            // Текущая отрисовываемая анимация
+int8_t currentImageIdx = 1;               // Текущая отрисовываемая анимация
 
-animation_t image_desc;                // Структура с параметрами отрисоовки анимации
+animation_t image_desc;                   // Структура с параметрами отрисоовки анимации
 
-int8_t  pos_x = 0, pos_y = 0;          // Текущая позиция вывода изображения
-int8_t  edge_left = 0, edge_right = 0; // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разварачивается обратно, когда tiot видима
-int8_t  edge_bottom = 0, edge_top = 0; // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разварачивается обратно, когда tiot видима
-int8_t  rcNum = 0;                     // Номер строки/колонки в кадре, если идет отрисовка по строкам/колонкам
-uint8_t frameNum = 0;                  // Номер кадра в анимации
-uint8_t frames_in_image = 0;           // Количество фреймов в картинке
-bool    first_draw = false;            // Ртрисовка самого первого кадра после включения эффекта   
-bool    frame_completed = false;       // Отрисовка кадра завершена (при каждом кадре если рисуется покадрово или после отрисовки всех строк кадра, если рисуется построчно)
-bool    image_completed = false;       // Отрисовка всех кадров изображения завершена
-bool    draw_by_row = false;           // Эта картинка рисуется построчно, а не покадров
-bool    flip_x = false;                // Картинка зеркально отражена по оси X
-bool    flip_y = false;                // Картинка зеркально отражена по оси Y
-bool    inverse_dir_x = false;         // Произошла смена направления движения при движении по горизонтали
-bool    inverse_dir_y = false;         // Произошла смена направления движения при движении по горизонтали
-unsigned long last_draw_row = 0;       // Время последнего обращения к процедуре отрисовки строки изображения, если рисуем картинку построчно
-unsigned long last_draw_frame = 0;     // Время последней отрисовки полгого кадра изображения
-unsigned long last_move_x = 0;         // Время последнего смещения картинки по оси X
-unsigned long last_move_y = 0;         // Время последнего смещения картинки по оси Y
+int8_t  pos_x = 0, pos_y = 0;             // Текущая позиция вывода изображения
+int8_t  edge_left = 0, edge_right = 0;    // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разварачивается обратно, когда tiot видима
+int8_t  edge_bottom = 0, edge_top = 0;    // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разварачивается обратно, когда tiot видима
+int8_t  rcNum = 0;                        // Номер строки/колонки в кадре, если идет отрисовка по строкам/колонкам
+uint8_t frameNum = 0;                     // Номер кадра в анимации
+uint8_t frames_in_image = 0;              // Количество фреймов в картинке
+bool    first_draw = false;               // Ртрисовка самого первого кадра после включения эффекта   
+bool    frame_completed = false;          // Отрисовка кадра завершена (при каждом кадре если рисуется покадрово или после отрисовки всех строк кадра, если рисуется построчно)
+bool    image_completed = false;          // Отрисовка всех кадров изображения завершена
+bool    draw_by_row = false;              // Эта картинка рисуется построчно, а не покадров
+bool    flip_x = false;                   // Картинка зеркально отражена по оси X
+bool    flip_y = false;                   // Картинка зеркально отражена по оси Y
+bool    inverse_dir_x = false;            // Произошла смена направления движения при движении по горизонтали
+bool    inverse_dir_y = false;            // Произошла смена направления движения при движении по горизонтали
+unsigned long last_draw_row = 0;          // Время последнего обращения к процедуре отрисовки строки изображения, если рисуем картинку построчно
+unsigned long last_draw_frame = 0;        // Время последней отрисовки полгого кадра изображения
+unsigned long last_move_x = 0;            // Время последнего смещения картинки по оси X
+unsigned long last_move_y = 0;            // Время последнего смещения картинки по оси Y
+
+#define    MAX_IMAGE_WIDTH   16           // Здесь указаны максимальные размеры картинки, используемые в прошивке для которого нужен оверлей
+#define    MAX_IMAGE_HEIGHT  16           // Если картинка не использует эффекты в качестве бакграунда - оверлей не нужен
+                                          // Не указывайте оверлей больше чем нужно - это расходует RAM
+                                       
+#define    IMG_OVERLAY_SIZE  MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT
+CRGBArray <IMG_OVERLAY_SIZE> overlayImg;  // буфер оверлея; по максимуму - для сохранения буфера эффекта, поверх которого будет отрисована картинка макс размера для которой требуется оверлей
+
+
+int8_t  background_effect = -1;           // Номер эффекта, который используется в качестве фона анимации
+bool    img_overlay = false;              // Есть сохраненный оверлей?
+int8_t  img_overlay_x = -1;               // Позиция сохраняемого / восстанавливаемого оверлея X,Y; ширина = MAX_IMAGE_WIDTH, высота = MAX_IMAGE_HEIGHT
+int8_t  img_overlay_y = -1;
 
 // Загрузка в RAM описателя картинки из PROGMEM
 void loadDescriptor(const animation_t (*src_desc)) {
@@ -146,11 +161,10 @@ void animationRoutine() {
   // ------------- ИНИЦИАЛИЗАЦИЯ ПАРАМЕТРОВ --------------
 
   if (loadingFlag) {
-    // modeCode = MC_IMAGE;
-    loadingFlag = false;    
     FastLED.clear();
 
     currentImageIdx = effectScaleParam2[thisMode];
+    
     // Индексы доступных картинок - от  1 до MAX_IMAGE_NUM;
     // Eсли currentImageIdx == 0 - брать случайную картинку
     if (currentImageIdx == 0 || currentImageIdx > MAX_IMAGE_NUM) {
@@ -194,23 +208,13 @@ void animationRoutine() {
       pos_y = (HEIGHT - image_desc.frame_height) / 2;
     }
 
-    // Начальная отрисовка - зеркальная аооси X, Y
+    // Начальная отрисовка - зеркальная по оси X, Y
     flip_x = (image_desc.options &  64) > 0;
     flip_y = (image_desc.options & 128) > 0;
     
-    // Нужна заливка всей матрицы перед отрисовкой самого первого кадра?
-    if ((image_desc.options & 8) > 0) {
-      // В опциях есть заливка бакграунда перед отрисовкой самого первого кадра
-      CRGB color = image_desc.background_first_color;
-      color.nscale8_video(effectBrightness);
-      fillAll(color);
-    } else if ((image_desc.options & 16) > 0) {
-      // В опциях есть заливка бакграунда перед отрисовкой каждого кадра
-      CRGB color = image_desc.background_color;
-      color.nscale8_video(effectBrightness);
-      fillAll(image_desc.background_color);
-    }
-    
+    inverse_dir_x = false;
+    inverse_dir_y = false;
+
     // Если задан интервал между отрисовкой строк - рисуем построчно
     // Если межстрочный интервал зада нулевым - рисуем покадрово
     draw_by_row = image_desc.draw_row_interval > 0;
@@ -219,7 +223,68 @@ void animationRoutine() {
       case 3:  rcNum = image_desc.frame_width - 1; break;
       default: rcNum = 0; break;
     }
-       
+
+    // Если указаны эффекты в качестве подложки - выбрать случайный из указанного списка
+    // Эффекты в бакграунде недоступны при построчной отрисовке кадра
+    if (!draw_by_row) {
+      uint8_t size = sizeof(image_desc.background_effect) / sizeof(image_desc.background_effect[0]);   // Размер массива
+      int8_t arr[size + 1], cnt = 0, att = 0;
+      memset(arr, -1, size);
+  
+      for (int i = 0; i < size; i++) {
+        int8_t eff = image_desc.background_effect[i];    
+        if (eff > 0 && eff < MAX_EFFECT && eff != MC_IMAGE) {
+          arr[cnt++] = image_desc.background_effect[i];
+        }
+      }
+  
+      if (cnt > 0){      
+        
+        // Если в настройах указан только один эффект - использовать его.
+        // Если несколько - добавить один шанс - не использовать эффект в качестве бакграунда (на черном фоне)
+        if (cnt > 1) arr[cnt++] = -1;
+        
+        int8_t idx = random8(0, cnt - 1);
+        while (arr[idx] > 0 && arr[idx] == background_effect && att < cnt) {
+          att++; idx++;
+          if (idx >= cnt) idx = 0;
+        }                
+        background_effect = arr[idx];
+
+        // Здесь пока LoadingFlag == true - нужно вызвать "отрисовку"  эффекта подложки, чтобы он инициализировал свои переменные / нарисовал первый кадр
+        int8_t saveMode = thisMode;
+        thisMode = background_effect;
+        processEffect(background_effect);
+        thisMode = saveMode;
+        // Эффект "Анимация" работает не по таймеру - здесь нужно установить таймер для скорости эффекта, используемого в качестве бакграунда
+        byte effectSpeed = getEffectSpeed(background_effect);
+        effectTimer.setInterval(effectSpeed);
+      } else {
+        background_effect = -1;
+      }
+    }
+
+    // Нужна заливка всей матрицы перед отрисовкой самого первого кадра?
+    if (background_effect < 1) {
+      if (image_desc.background_effect < 0) {
+        if ((image_desc.options & 8) > 0) {
+          // В опциях есть заливка бакграунда перед отрисовкой самого первого кадра
+          CRGB color = image_desc.background_first_color;
+          color.nscale8_video(effectBrightness);
+          fillAll(color);
+        } else if ((image_desc.options & 16) > 0) {
+          // В опциях есть заливка бакграунда перед отрисовкой каждого кадра
+          CRGB color = image_desc.background_color;
+          color.nscale8_video(effectBrightness);
+          fillAll(image_desc.background_color);
+        }
+      }
+    }
+
+    loadingFlag = false;    
+    // modeCode = MC_IMAGE;
+
+    img_overlay = false;
     first_draw = true;
     image_completed = false;
     frame_completed = false;    
@@ -336,7 +401,7 @@ void animationRoutine() {
     }
     
   }
-
+  
   // -----------------------------------------------------
   // Пришло время отрисовки следующей строки (если ресуется построчно)? 
   // -----------------------------------------------------
@@ -346,15 +411,46 @@ void animationRoutine() {
   
   // -----------------------------------------------------
   // Пришло время отрисовки следующего кадра?
+  // Если в качестве бакграунда используется какой-либо эффект - отрисовка происходит непрерывно, 
+  // а вот переход к следующему кадру - с указанным интервалом
   // -----------------------------------------------------
-  if (millis() - last_draw_frame < image_desc.draw_frame_interval) return;
 
+  if (background_effect <= 0 || draw_by_row) {
+    if (millis() - last_draw_frame < image_desc.draw_frame_interval) return;
+  }
 
-  // Нужна заливка всей матрицы перед отрисовкой очередного кадра?  
-  if (!first_draw && frame_completed && ((image_desc.options & 16) > 0)) {
-    CRGB color = image_desc.background_color;
-    color.nscale8_video(effectBrightness);
-    fillAll(image_desc.background_color);
+  bool need_change_frame = (millis() - last_draw_frame >= image_desc.draw_frame_interval);
+
+  // В качестве фона для картинки указан эффект - его нужно отрисовывать по собственномй таймеру
+  // предварительно при необходимости восстановив оверлей - то, поверх чего нарисована картинка
+
+  if (image_desc.background_effect <= 0) {
+    // Нужна заливка всей матрицы перед отрисовкой очередного кадра?  
+    if (!first_draw && frame_completed && ((image_desc.options & 16) > 0)) {
+      CRGB color = image_desc.background_color;
+      color.nscale8_video(effectBrightness);
+      fillAll(image_desc.background_color);
+    }
+  } else {
+
+      if (img_overlay) {
+        unwrapImageOverlay(img_overlay_x, img_overlay_y);
+        img_overlay = false;
+      }
+
+      // Анимация работает по собственному таймеру, а вот если в качестве подложки выбран эффект - он обрабатывается
+      // по таймеру, кстановленному на скорость эффекта в блоке инициализации анимации.
+      if (effectTimer.isReady()) {
+        int8_t saveMode = thisMode;
+        thisMode = background_effect;
+        processEffect(background_effect);
+        thisMode = saveMode;
+      }
+  
+      img_overlay = true;
+      img_overlay_x = pos_x;
+      img_overlay_y = pos_y;
+      wrapImageOverlay(pos_x, pos_y); 
   }
 
   first_draw = false;
@@ -437,7 +533,7 @@ void animationRoutine() {
   // -----------------------------------------------
   // Если кадр отрисован полностью  - брать следующий по циклу
   // -----------------------------------------------
-  if (frame_completed) {
+  if (frame_completed && need_change_frame) {
     last_draw_frame = millis();
     if (++frameNum >= frames_in_image) {
       image_completed = true;
@@ -547,4 +643,32 @@ static uint32_t expandColor(uint16_t color) {
   return ((uint32_t)pgm_read_byte(&gamma5[ color >> 11       ]) << 16) |
          ((uint32_t)pgm_read_byte(&gamma6[(color >> 5) & 0x3F]) <<  8) |
          pgm_read_byte(&gamma5[ color       & 0x1F]);
+}
+
+void wrapImageOverlay(int8_t x, int8_t y) {
+  int16_t thisLED = 0;  
+  for (uint8_t i = 0; i < MAX_IMAGE_WIDTH; i++) {
+    int8_t xx = x + i;
+    if (xx < 0 || xx >= WIDTH) continue;
+    for (uint8_t j = 0; j < MAX_IMAGE_WIDTH; j++) {
+      int8_t yy = y + j;
+      if (yy < 0 || yy >= HEIGHT) continue;
+      overlayImg[thisLED] = leds[getPixelNumber(xx, yy)];
+      thisLED++;
+    }
+  }  
+}
+
+void unwrapImageOverlay(int8_t x, int8_t y) {
+  int16_t thisLED = 0;
+  for (uint8_t i = 0; i < MAX_IMAGE_WIDTH; i++) {
+    int8_t xx = x + i;
+    if (xx < 0 || xx >= WIDTH) continue;
+    for (uint8_t j = 0; j < MAX_IMAGE_HEIGHT; j++) {
+      int8_t yy = y + j;
+      if (yy < 0 || yy >= HEIGHT) continue;
+      leds[getPixelNumber(xx, yy)] = overlayImg[thisLED];
+      thisLED++; 
+    }
+  }
 }

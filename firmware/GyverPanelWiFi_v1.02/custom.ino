@@ -16,9 +16,11 @@ void customRoutine(byte aMode) {
 
 void doEffectWithOverlay(byte aMode) {
 
-  bool effectReady = effectTimer.isReady();
   bool clockReady = clockTimer.isReady();
   bool textReady = textTimer.isReady();
+  
+  bool effectReady = aMode == MC_IMAGE || effectTimer.isReady(); // "Анимация" использует собственные "таймеры" для отрисовки - отрисовка без задержек; Здесь таймер опрашивать нельзя - он после опроса сбросится. 
+                                                                 // А должен читаться в эффекте анимации, проверяя не пришло ли время отрисовать эффект фона
 
   if (!(effectReady || (clockReady && !showTextNow) || (textReady && showTextNow))) return;
 
