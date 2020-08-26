@@ -216,6 +216,7 @@ void processEffect(byte aMode) {
     case MC_WATERFALL:           waterfallRoutine(); break;
     case MC_IMAGE:               animationRoutine(); break;
     case MC_ARROWS:              arrowsRoutine(); break;
+    case MC_WEATHER:             weatherRoutine(); break;
     case MC_TEXT:                runningText(); break;
     case MC_CLOCK:               clockRoutine(); break;
     case MC_DAWN_ALARM:          dawnProcedure(); break;
@@ -320,7 +321,8 @@ void setTimersForMode(byte aMode) {
     if (effectSpeed == 0) effectSpeed = 2;
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
-        aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_WATERFALL || aMode == MC_IMAGE)
+        aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_WATERFALL || 
+        aMode == MC_IMAGE || aMode == MC_WEATHER)
       effectTimer.setInterval(1);        
     else
       effectTimer.setInterval(effectSpeed);

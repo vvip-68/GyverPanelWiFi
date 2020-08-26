@@ -59,8 +59,6 @@ bool getWeather() {
     return false;
   }
 
-  String icon_orig = icon;
-
   decodeWeather();
   
   weather_time = millis();  // запомнить время получения погоды с сервера
@@ -75,7 +73,7 @@ bool getWeather() {
   if (temperature > 0) Serial.print("+"); 
   if (temperature < 0) Serial.print("-"); 
   Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
-  Serial.println(String(F("Код иконки: '")) + icon_orig + "'");
+  Serial.println(String(F("Код иконки: '")) + icon + "'");
   Serial.println(dayTime);
   Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   
@@ -95,12 +93,12 @@ bool getWeather() {
   bkn-sn-n — переменная облачность, снег (ночь)
   bl — метель
   fg-d — туман
-  ovc — облачно
-  ovc-minus-ra — облачно, временами дождь
-  ovc-minus-sn — облачно, временами снег
-  ovc-ra — облачно, дождь
-  ovc-sn — облачно, снег
-  ovc-ts-ra — облачно, дождь, гроза
+  ovc — пасмурно
+  ovc-minus-ra — пасмурно, временами дождь
+  ovc-minus-sn — пасмурно, временами снег
+  ovc-ra — пасмурно, дождь
+  ovc-sn — пасмурно, снег
+  ovc-ts-ra — пасмурно, дождь, гроза
   skc-d — ясно (день)
   skc-n — ясно (ночь)
 */
@@ -108,6 +106,7 @@ bool getWeather() {
 void decodeWeather(){  
   bool hasDay   = icon.endsWith("-d");
   bool hasNight = icon.endsWith("-n");
+  String ico = icon;
   
   if (hasDay)
     dayTime = F("Светлое время суток");  // Сейчас день
@@ -115,23 +114,23 @@ void decodeWeather(){
     dayTime = F("Темное время суток");   // Сейчас ночь
 
   if (hasDay || hasNight) {
-    icon = icon.substring(0, icon.length() - 2);
+    ico = icon.substring(0, icon.length() - 2);
   }
 
-  if      (icon == F("bkn-minus-ra"))  weather = F("облачно с прояснениями, небольшой дождь");
-  else if (icon == F("bkn-minus-sn"))  weather = F("облачно с прояснениями, небольшой снег");
-  else if (icon == F("bkn"))           weather = F("переменная облачность");
-  else if (icon == F("bkn-ra"))        weather = F("переменная облачность, дождь");
-  else if (icon == F("bkn-sn"))        weather = F("переменная облачность, снег");
-  else if (icon == F("bl"))            weather = F("метель");
-  else if (icon == F("fg"))            weather = F("туман");
-  else if (icon == F("ovc"))           weather = F("пасмурно");
-  else if (icon == F("ovc-minus-ra"))  weather = F("пасмурно, временами дождь");
-  else if (icon == F("ovc-minus-sn"))  weather = F("пасмурно, временами снег");
-  else if (icon == F("ovc-ra"))        weather = F("пасмурно, дождь");
-  else if (icon == F("ovc-sn"))        weather = F("пасмурно, снег");
-  else if (icon == F("ovc-ts-ra"))     weather = F("пасмурно, дождь, гроза");
-  else if (icon == F("skc"))           weather = F("ясно");  
+  if      (ico == F("bkn-minus-ra"))  weather = F("облачно с прояснениями, небольшой дождь");
+  else if (ico == F("bkn-minus-sn"))  weather = F("облачно с прояснениями, небольшой снег");
+  else if (ico == F("bkn"))           weather = F("переменная облачность");
+  else if (ico == F("bkn-ra"))        weather = F("переменная облачность, дождь");
+  else if (ico == F("bkn-sn"))        weather = F("переменная облачность, снег");
+  else if (ico == F("bl"))            weather = F("метель");
+  else if (ico == F("fg"))            weather = F("туман");
+  else if (ico == F("ovc"))           weather = F("пасмурно");
+  else if (ico == F("ovc-minus-ra"))  weather = F("пасмурно, временами дождь");
+  else if (ico == F("ovc-minus-sn"))  weather = F("пасмурно, временами снег");
+  else if (ico == F("ovc-ra"))        weather = F("пасмурно, дождь");
+  else if (ico == F("ovc-sn"))        weather = F("пасмурно, снег");
+  else if (ico == F("ovc-ts-ra"))     weather = F("пасмурно, дождь, гроза");
+  else if (ico == F("skc"))           weather = F("ясно");  
 }
 
 #else
@@ -141,3 +140,230 @@ bool getWeather() {
 }
 
 #endif
+
+// Строка цвета, соответствующая температуре
+String getTemperatureColor(int8_t temp) {
+  String s_color;
+  if      (temp <= -30)
+    s_color = cold_less_30;
+  else if (temp <= -20)
+    s_color = cold_29_20;
+  else if (temp <= -10)
+    s_color = cold_19_10;
+  else if (temp <= -4)
+    s_color = cold_9_4;
+  else if (temp <=  3)
+    s_color = zero_3_3;
+  else if (temp <=  9)
+    s_color = hot_4_9;
+  else if (temp <= 19)
+    s_color = hot_10_19;
+  else if (temp <= 29)
+    s_color = hot_20_29;
+  else
+    s_color = hot_30_great;
+  return s_color;
+}
+
+// Получить индекс иконки в мвссиве иконок погоды
+uint8_t getWeatherFrame(String icon) {
+  if (icon == "skc-d") return 0;
+  if (icon == "skc-n") return 1;
+  if (icon == "bkn-d") return 2;
+  if (icon == "bkn-n") return 3;
+  if (icon == "bkn-minus-ra-d") return 4;
+  if (icon == "bkn-minus-ra-n") return 5;
+  if (icon == "bkn-minus-sn-d") return 6;
+  if (icon == "bkn-minus-sn-n") return 7;
+  if (icon == "bkn-ra-d") return 8;
+  if (icon == "bkn-ra-n") return 9;
+  if (icon == "bkn-sn-d") return 10;
+  if (icon == "bkn-sn-n") return 11;
+  if (icon == "bl") return 12;
+  if (icon == "fg-d") return 13;
+  if (icon == "ovc") return 14;
+  if (icon == "ovc-minus-ra") return 15;
+  if (icon == "ovc-minus-sn") return 16;
+  if (icon == "ovc-ra") return 17;
+  if (icon == "ovc-sn") return 18;
+  if (icon == "ovc-ts-ra") return 19;
+  return random8(0,19);
+}
+
+uint8_t fade_weather_phase = 0;        // Плавная смена картинок: 0 - плавное появление; 1 - отображение; 2 - затухание
+uint8_t fade_step = 0;
+uint8_t weather_frame_num = 0;
+int8_t  weather_text_x, weather_text_y;
+
+void weatherRoutine() {
+
+  boolean need_fade_image = false;     // Если отображение значения температуры наслаивается на картинку и задано использовать цвета для отображения значения -
+                                       // яркость картинки нужно немного приглушать, чтобы цифры температуры не сливались с картинкой
+  
+  if (loadingFlag) {
+    loadingFlag = false;
+    // modeCode = MC_WEATHER;
+    
+    FastLED.clear();                   // очистить экран
+
+    // Загрузить описатель массива изображений погоды
+    loadDescriptor(&animation_weather);
+    frames_in_image = sizeof(weather_array) / sizeof(weather_array[0]);
+
+    // Координаты вывода изображения - центрировать
+    image_desc.options = 1+2+4+16;             // Центрировать по вертикали/горизонтали, есть прозрачные пиксели, перед отрисовкой кадра - заливать цветом
+    image_desc.transparent_color = 0x000000;   // Ролзоачные пиксели - черные
+    image_desc.background_color = 0x000000;    // Заливка - черная (?)
+    image_desc.draw_frame_interval = 2500;     // Интервал перехода к следующей картинке
+    image_desc.draw_row_interval = 0;          // Рисовка - картинка целиком
+    image_desc.move_type = 0;                  // Нет движения картинки
+
+    flip_x = false;
+    flip_y = false;
+
+    if (init_weather) {
+      
+      // Если режим c отображением температуры - по максимуму картинка погоды - в левом верхнем углу, температура не перекрывая - в правом нижнем
+      // Общая площадь - размер картинки плюс размер отображения погоды
+      // Если полученный размер выходит за границы - сдвигаем позицию погоды вверх/влево, пока она не поместится в размер.
+      // Полученную скорректированную площадь отрисовки размещаем по центру матирицы
+      pos_x = 0;
+      pos_y = HEIGHT - image_desc.frame_height;
+      weather_text_x = image_desc.frame_width - 3; // знак +/- пусть залазит на картинку  
+      weather_text_y = pos_y - 5;
+
+      uint8_t text_w = 15;   // +15C - 4 знака шрифта 3x5 + по пробелу между знаками = 12 + 3 = 15;
+      
+      while(weather_text_x > 0 && weather_text_x + text_w > WIDTH) weather_text_x--;
+      while(weather_text_y < 0) weather_text_y++;
+
+      // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
+      // Высота картинки + text = oт "weather_text_x" до "pos_y + image_desc.frame_height"; - если матрица выше - центрировать конгломерат по матрице
+      uint8_t offset_x = (WIDTH - (weather_text_x + text_w - pos_x)) / 2;
+      uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2;
+
+      pos_x += offset_x;
+      pos_y += offset_y;
+      weather_text_x += offset_x;
+      weather_text_y += offset_y;
+
+      /*
+      if (WIDTH == HEIGHT && weather_text_x - pos_x < 3) {
+        weather_text_y = (image_desc.frame_height - 5) / 2;
+      }
+      */
+      
+      #if (USE_WEATHER == 1)     
+        need_fade_image = useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5);
+      #endif   
+      
+    } else {
+      // Если режим без отображения температуры - рисовать картинки погоды по центру матрицы
+      pos_x = (WIDTH - image_desc.frame_width) / 2;
+      pos_y = (HEIGHT - image_desc.frame_height) / 2;
+    }
+
+    // Если погода отключена или еще не получена - просто рисуем картинки по кругу
+    // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
+    weather_frame_num = init_weather ? getWeatherFrame(icon) : 0;      // Флаг: true - погода полученаж false - погода не получена / не актуальна
+    fade_weather_phase = init_weather ? 1 : 0;                         // плавное появление картинки
+  }  
+
+  // Нарисовать картинку
+  loadImageFrame(weather_array[weather_frame_num]);
+  
+  byte spd = map8(255-effectSpeed, 2, 24);   
+
+  // Если находимся в фазе 0 - плавное появление картинки - затенить только что отрисованную картинку, постепенно уменьшая затенение
+  if (fade_weather_phase == 0) {
+    fade_step += spd;
+    if ((uint16_t)fade_step + spd >= 255) {
+      fade_weather_phase = 1;
+      last_draw_frame = millis();
+    } else {  
+      fader(255 - fade_step);
+    }
+  } else
+
+  // Если находимся в фазе 1 - отображение - считаем сколько времени уже отображается, не пора ли переходить к фазе затухания и следующему кадру
+  if (fade_weather_phase == 1) {
+    if (need_fade_image) {
+      fader(64);
+    }
+    if (!init_weather) {
+      if (millis() - last_draw_frame > image_desc.draw_frame_interval) {
+        fade_weather_phase = 2;
+        fade_step = 0;
+      }
+    } else {
+      // Чтобы картинка при известной погоде не выглядела статично - придаем ей некоторое "дыхание"
+      uint8_t beat = beatsin8(10, 25, 155);
+      fader(beat);
+    }
+  } else
+  
+  // Если находимся в фазе 2 - плавное затухание картинки - затенить только что отрисованную картинку, постепенно увеличивая затенение
+  if (fade_weather_phase == 2) {
+    fade_step += spd;
+    if ((uint16_t)fade_step + spd >= 255) {
+      fillAll(CRGB(image_desc.background_color));
+      fade_step = 0;
+      fade_weather_phase = 0;
+      weather_frame_num++;
+      if (weather_frame_num >= frames_in_image) {
+        weather_frame_num = 0;
+      }      
+    } else {  
+      fader(fade_step);
+    }
+  }
+
+  #if (USE_WEATHER == 1)     
+
+  // Если температура известна - нарисовать температуру
+  if (init_weather) {
+    
+    // Получить цвет отображения значения температуры
+    CRGB color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
+    
+    // Если температура - однозначная - сместиться на одно знакоместо
+    byte text_x = weather_text_x;
+    byte text_y = weather_text_y;
+    
+    if (abs(temperature) < 10) text_x += 4;
+    
+    // Нарисовать '+' или '-' если температура не 0
+    // Горизонтальная черта - общая для '-' и '+'
+    for(int i = 0; i < 3; i++) {
+      drawPixelXY(text_x + i, text_y + 2, color);      
+    }
+    // Для плюcа - вертикальная черта
+    drawPixelXY(text_x + 1, text_y + 1, color);
+    drawPixelXY(text_x + 1, text_y + 3, color);
+    
+    text_x += 4;
+
+    // Десятки температуры
+    if (abs(temperature) >= 10) {
+      drawDigit3x5(abs(temperature) / 10, text_x, text_y, color);
+      text_x += 4;
+    }
+
+    // Единицы температуры
+    drawDigit3x5(abs(temperature) % 10, text_x, text_y, color);
+    text_x += 4;
+
+    // Буква 'C'
+    for(int i = 0; i < 3; i++) {
+      drawPixelXY(text_x, text_y + 1 + i, color);      
+    }
+
+    for(int i = 0; i < 2; i++) {
+      drawPixelXY(text_x + 1 + i, text_y, color);      
+      drawPixelXY(text_x + 1 + i, text_y + 4, color);      
+    }
+  }
+  
+  #endif
+  
+}

@@ -562,27 +562,7 @@ String processMacrosInText(String textLine) {
       String s_color = "";
 
       if (useTemperatureColor) {
-
-        if      (temperature <= -30)
-          s_color = cold_less_30;
-        else if (temperature <= -20)
-          s_color = cold_29_20;
-        else if (temperature <= -10)
-          s_color = cold_19_10;
-        else if (temperature <= -4)
-          s_color = cold_9_4;
-        else if (temperature <=  3)
-          s_color = zero_3_3;
-        else if (temperature <=  9)
-          s_color = hot_4_9;
-        else if (temperature <= 19)
-          s_color = hot_10_19;
-        else if (temperature <= 29)
-          s_color = hot_20_29;
-        else
-          s_color = hot_30_great;
-          
-        s_color = "{C" + s_color + "}";        
+        s_color = "{C" + getTemperatureColor(temperature) + "}";
       }
       
       textLine.replace("{WT}", s_color + s_temperature);

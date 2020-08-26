@@ -43,6 +43,7 @@ typedef struct {
 } animation_t;
  
 #include "bitmap1.h"
+#include "weather.h"
 
 // ------------------- Загрузка картинок и фреймов анимации -------------------
 
@@ -156,6 +157,8 @@ void loadImageFrame(const uint16_t (*frame)) {
 
 void animationRoutine() {
 
+  const uint16_t *ppFrame;
+  
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);  
 
   // ------------- ИНИЦИАЛИЗАЦИЯ ПАРАМЕТРОВ --------------
@@ -186,7 +189,15 @@ void animationRoutine() {
       case 1:
         // Марио
         loadDescriptor(&animation_mario);
+        frames_in_image = sizeof(mario_array) / sizeof(mario_array[0]);
         break;
+      /*  
+      case 99:
+        // Погода
+        loadDescriptor(&animation_weather);
+        frames_in_image = sizeof(weather_array) / sizeof(weather_array[0]);
+        break;
+      */  
       default:
         return;  
     }
@@ -194,8 +205,6 @@ void animationRoutine() {
     frameNum = 0;
     last_draw_row = 0; 
     last_draw_frame = 0;
-    
-    frames_in_image = sizeof(mario_array) / sizeof(mario_array[0]);
     
     pos_x = image_desc.start_x; 
     pos_y = image_desc.start_y;
@@ -456,9 +465,7 @@ void animationRoutine() {
   first_draw = false;
   frame_completed = false;
   image_completed = false;
-  
-  const uint16_t *ppFrame;
-  
+    
   // -----------------------------------------------
 
   // Здесь определяется какая конкретно картинка сейчас отображается
@@ -467,6 +474,12 @@ void animationRoutine() {
     case 1:      
       ppFrame = mario_array[frameNum];
       break;
+    /*  
+    // Погода
+    case 99:      
+      ppFrame = weather_array[frameNum];
+      break;
+    */  
     default:
       return;  
   }
@@ -488,7 +501,7 @@ void animationRoutine() {
   // или - рисуем кадр целиком за раз
   // -----------------------------------------------
   {
-    loadImageFrame(mario_array[frameNum]);
+    loadImageFrame(ppFrame);
   }
 
   // -----------------------------------------------
