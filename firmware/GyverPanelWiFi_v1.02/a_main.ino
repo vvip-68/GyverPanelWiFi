@@ -1744,6 +1744,7 @@ String getParamForMode(byte mode) {
    case MC_WATERFALL:
    case MC_IMAGE:
    case MC_WEATHER:
+   case MC_LIFE:
    case MC_CLOCK:
      str = "X";
      break;

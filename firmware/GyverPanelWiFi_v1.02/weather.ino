@@ -74,8 +74,8 @@ bool getWeather() {
   if (temperature < 0) Serial.print("-"); 
   Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
   Serial.println(String(F("Код иконки: '")) + icon + "'");
-  Serial.println(dayTime);
   Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
+  Serial.println(dayTime);
   
   return true;
 }

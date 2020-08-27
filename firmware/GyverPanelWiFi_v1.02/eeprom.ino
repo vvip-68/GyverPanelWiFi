@@ -275,11 +275,15 @@ void saveDefaults() {
   saveEffectTextOverlayUsage(MC_SNAKE, false);
   saveEffectTextOverlayUsage(MC_TETRIS, false);
   saveEffectTextOverlayUsage(MC_IMAGE, false);
+  saveEffectTextOverlayUsage(MC_WEATHER, false);
+  saveEffectTextOverlayUsage(MC_LIFE, false);
   saveEffectClockOverlayUsage(MC_CLOCK, false);
   saveEffectClockOverlayUsage(MC_MAZE, false);
   saveEffectClockOverlayUsage(MC_SNAKE, false);
   saveEffectClockOverlayUsage(MC_TETRIS, false);
   saveEffectClockOverlayUsage(MC_IMAGE, false);
+  saveEffectClockOverlayUsage(MC_WEATHER, false);
+  saveEffectClockOverlayUsage(MC_LIFE, false);
 
   setClockScrollSpeed(150);
   setTextScrollSpeed(186);
