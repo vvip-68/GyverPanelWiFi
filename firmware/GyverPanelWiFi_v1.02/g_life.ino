@@ -7,7 +7,7 @@ uint8_t  world [HEIGHT][BYTE_WIDTH];         // Битовый массив кл
 uint8_t  gener [HEIGHT][BYTE_WIDTH];         // Битовый массив клеток поля текущего поколения. бит=1 - клетка "жива", bit=0 - клетка мертва
 
 uint32_t generation_cnt = 0;                 // Счетчик поколений
-uint16_t gen_crc[2] = {0,0};                 // контрольная сумма для выявления зацикливаний
+uint16_t gen_crc[4] = {0,0,0,0};             // контрольная сумма для выявления зацикливаний
 
 bool     start_pause;
 uint8_t  offset_x;                           // Ширина игрового поля должна быть кратна 8 бит и меньше ширины матрицы
@@ -223,11 +223,11 @@ void lifeRoutine() {
 
   uint16_t crc = getCrc16((uint8_t*)world, HEIGHT * BYTE_WIDTH);
 
-  bool is_cycle = crc == gen_crc[0] || crc == gen_crc[1];
+  bool is_cycle = crc == gen_crc[0] || crc == gen_crc[1] || crc == gen_crc[2] || crc == gen_crc[3];
   bool is_optimal = memcmp(gener, world, HEIGHT * BYTE_WIDTH) == 0; // Что-то изменилось от предыдущего поколения к новому?
   uint16_t live_points = get_live_count(world);                   // есть живые клетки?
   
-  gen_crc[generation_cnt % 2] = crc; 
+  gen_crc[generation_cnt % 4] = crc; 
 
   gameOverFlag = (live_points == 0 || is_optimal || is_cycle);
 
