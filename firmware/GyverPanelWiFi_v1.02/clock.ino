@@ -676,10 +676,12 @@ void stopAlarm() {
 
     // Во время работы будильника индикатор плавно мерцает.
     // После завершения работы - восстановить яркость индикатора
-    
-    display.setBrightness(7);
-    StopSound(1000);
 
+    #if (USE_TM1637 == 1)
+    display.setBrightness(7);
+    #endif
+
+    StopSound(1000);
     resetModes();  
 
     manualMode = false;

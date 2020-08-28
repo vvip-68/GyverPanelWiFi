@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.01.2020.0826")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.01.2020.0828")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -164,7 +164,7 @@ void setup() {
     isNightClock = spc_mode == 8;
   } else {
     thisMode = getCurrentManualMode();
-    if (thisMode < 0) {
+    if (thisMode < 0 || thisMode == MC_TEXT) {
       setRandomMode2();
     } else {
       setEffect(thisMode);        

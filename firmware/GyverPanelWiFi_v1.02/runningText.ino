@@ -188,7 +188,6 @@ boolean prepareNextText() {
   textHasDateTime = false;        // Строка имеет макрос отображения текущего времени - ее нужно пересчитывать каждый раз при отрисовкеж Если макроса времени нет - рассчитать текст строки один раз на этапе инициализации  
   textHasMultiColor = false;      // Строк имеет множественное определение цвета - многоцветная строка
   currentText  = "";              // Текст текущей отображаемаой строки
-  ignoreTextOverlaySettingforEffect = false;  // Сброс флага "отображать строку на эффекте, даже если эффектом это запрещено"
 
   // Получить очередную строку из массива строк, обработав все макросы кроме даты-зависимых
   // Если макросы, зависимые от даты есть - установить флаг textHasDateTime? макросы оставить в строке
@@ -210,7 +209,7 @@ boolean prepareNextText() {
   if (currentTextLineIdx < 0 || currentTextLineIdx >= sizeOfTextsArray) {
     currentTextLineIdx = textLines[0].charAt(0) == '#' ? 1 : 0;
   }
-
+  
   currentText = currentTextLineIdx < 0 ? "" : processMacrosInText(textLines[currentTextLineIdx]);
 
   return currentText.length() > 0;
@@ -345,7 +344,13 @@ String processMacrosInText(String textLine) {
     
     // -------------------------------------------------------------    
     // Строка начинается с '-' или пустая или содержит "{-}" - эта строка отключена, брать следующую
+    // Строку показывать даже если отключена когда установлен флаг ignoreTextOverlaySettingforEffect
     // -------------------------------------------------------------    
+
+    if (textLine.length() > 0 && ignoreTextOverlaySettingforEffect) {
+      if (textLine[0] == '-') textLine[0] = ' ';
+      textLine.replace("{-}", "");
+    }
 
     if (textLine.length() == 0 || textLine.charAt(0) == '-' || textLine.indexOf("{-}") >= 0) {
       attempt++;  

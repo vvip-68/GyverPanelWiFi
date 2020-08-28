@@ -22,7 +22,7 @@ void doEffectWithOverlay(byte aMode) {
   bool effectReady = aMode == MC_IMAGE || effectTimer.isReady(); // "Анимация" использует собственные "таймеры" для отрисовки - отрисовка без задержек; Здесь таймер опрашивать нельзя - он после опроса сбросится. 
                                                                  // А должен читаться в эффекте анимации, проверяя не пришло ли время отрисовать эффект фона
 
-  if (!(effectReady || (clockReady && !showTextNow) || (textReady && showTextNow))) return;
+  if (!(effectReady || (clockReady && !showTextNow) || (textReady && (showTextNow || thisMode == MC_TEXT)))) return;
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
   bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
@@ -30,13 +30,11 @@ void doEffectWithOverlay(byte aMode) {
   bool needStopText = false;
   
   // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
-  if (!showTextNow && textOvEn && ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L))) {
+  if (!showTextNow && textOvEn && (ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
     
     // Обработать следующую строку для отображения, установить параметры; 
     // Если нет строк к отображению - продолжать отображать оверлей часов
-    boolean saveIgnoreState = ignoreTextOverlaySettingforEffect;
     if (prepareNextText()) {  
-      ignoreTextOverlaySettingforEffect = saveIgnoreState;
       fullTextFlag = false;
       loadingTextFlag = false;
       showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
@@ -47,12 +45,14 @@ void doEffectWithOverlay(byte aMode) {
     // Если указано, что строка должна отображаться на фоне конкретного эффекта - его надо инициализировать    
     if (specialTextEffect >= 0) {
       saveEffectBeforeText = thisMode;   // сохранить текущий эффект
+      setTimersForMode(specialTextEffect);
       loadingFlag = specialTextEffect != saveEffectBeforeText;
     }
   } else
 
   // Если строка отображается, но флаг разрешения сняли - прекратить отображение
   if (showTextNow && !textOvEn) {
+    ignoreTextOverlaySettingforEffect = false;
     needStopText = true;
   } else 
   
@@ -90,6 +90,10 @@ void doEffectWithOverlay(byte aMode) {
       useSpecialBackColor = false;
     }
 
+    // Текст мог быть на фоне другого эффекта, у которого свой таймер.
+    // После остановки отображения текста на фоне эффекта, установить таймер текущего эффекта
+    setTimersForMode(thisMode);
+    
     // Если к показы задана следующая строка - установить время показа предыдущей в 0, чтобы
     // следующая строка начала показываться немедленно, иначе - запомнить время окончания показа строки,
     // от которого отсчитывается когда начинать следующий показ
@@ -324,7 +328,7 @@ void setTimersForMode(byte aMode) {
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_WATERFALL || 
         aMode == MC_IMAGE || aMode == MC_WEATHER || aMode == MC_LIFE)
-      effectTimer.setInterval(1);        
+      effectTimer.setInterval(10);        
     else
       effectTimer.setInterval(effectSpeed);
   }

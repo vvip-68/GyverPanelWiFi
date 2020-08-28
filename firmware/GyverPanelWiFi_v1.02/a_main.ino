@@ -173,6 +173,12 @@ void process() {
       }
     }
 
+    if (clicks > 0) {
+      Serial.print(F("Кнопка нажата "));  
+      Serial.print(String(clicks));
+      Serial.println(F(" раз"));  
+    }
+
     // Любое нажатие кнопки останавливает будильник
     if ((isAlarming || isPlayAlarmSound) && (isButtonHold || clicks > 0)) {
       stopAlarm();
@@ -783,6 +789,9 @@ void parsing() {
              // Если строка 0 - управляющая - ее нельзя включать принудительно.
              b_tmp = intData[2] > 0 || (intData[2] == 0 && textLines[0].charAt(0) != '#');
              if (b_tmp) {              
+               if (thisMode == MC_TEXT){
+                  setRandomMode2();
+               } 
                nextTextLineIdx = intData[2];  // nextTextLineIdx - индекс следующей принудительно отображаемой строки
                ignoreTextOverlaySettingforEffect = true;
                fullTextFlag = true;
@@ -1691,7 +1700,7 @@ void sendPageParams(int page) {
       str="$18 S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
       break;
     case 94:  // Запрос списка звуков рассвета
-      str="$18 S2:[" + String(DAWN_SOUND_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
+      str="$18 S2:[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
       break;
 #endif      
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
@@ -1923,7 +1932,8 @@ void setEffect(byte eff) {
 
 void showCurrentIP(boolean autoplay) {
   setEffect(MC_TEXT);
-  wifi_print_ip = true;
+  textHasMultiColor = false;
+  wifi_print_ip = true;  
   wifi_print_ip_text = true;
   wifi_print_idx = 0; 
   wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : F("Нет подключения к сети WiFi");
