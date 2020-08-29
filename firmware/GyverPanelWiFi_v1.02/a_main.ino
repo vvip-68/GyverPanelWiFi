@@ -216,10 +216,7 @@ void process() {
       if (clicks == 2) {
         bool tmpSaveSpecial = specialMode;
         resetModes();  
-        idleTimer.setInterval(4294967295);
-        idleTimer.reset();        
-        manualMode = true;
-        saveAutoplay(false);
+        setManualModeTo(true);
         if (tmpSaveSpecial) setRandomMode();
         else                nextMode();
       }
@@ -227,13 +224,8 @@ void process() {
       // Тройное нажатие - включить случайный режим с автосменой
       else if (clicks == 3) {
         // Включить демо-режим
-        idleTimer.setInterval(idleTime);
-        idleTimer.reset();        
-        resetModes();  
-
-        manualMode = false;
-        saveAutoplay(true);
-        
+        resetModes();          
+        setManualModeTo(false);        
         setRandomMode();
       }
 
@@ -647,14 +639,13 @@ void parsing() {
           */         
           // Если в приложении выбраны эффект "Ночные часы", но они недоступны из за размеров матрицы - выключить матрицу
           if (tmp_eff == MC_CLOCK){
-             if (!(allowHorizontal || allowVertical)) {
-               setSpecialMode(0); // Выключить
-             } else {
-               setSpecialMode(8); 
-             }
+            if (!(allowHorizontal || allowVertical)) {
+              setSpecialMode(0); // Выключить
+            } else {
+              setSpecialMode(8); 
+            }
           } else {
-            manualMode = true;
-            saveAutoplay(false);        
+            setManualModeTo(true);        
             loadingFlag = intData[1] == 0;
             setEffect(tmp_eff);
             if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
@@ -881,23 +872,13 @@ void parsing() {
       // ----------------------------------------------------
       
       case 16:
-        if      (intData[1] == 0) manualMode = true;
-        else if (intData[1] == 1) manualMode = false;
+        if      (intData[1] == 0) setManualModeTo(true);
+        else if (intData[1] == 1) setManualModeTo(false);
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
         else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
 
-        idleState = !manualMode;
-        if (manualMode || idleTime == 0) {
-          idleTimer.setInterval(4294967295);
-          idleTimer.reset();
-        }
-        if (idleState) {
-          autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
-        }
-        saveAutoplay(!manualMode);
-        saveRandomMode(useRandomSequence);
-        
+        saveRandomMode(useRandomSequence);        
         setCurrentManualMode(manualMode ? (int8_t)thisMode : -1);
         if (manualMode) {
           setCurrentSpecMode(-1);
@@ -916,6 +897,7 @@ void parsing() {
         idleTime = ((long)intData[2] * 60 * 1000L);  // минуты -> миллисек
         saveAutoplayTime(autoplayTime);
         saveIdleTime(idleTime);
+        idleState = !manualMode;
         if (!manualMode) {
           autoplayTimer = millis();
         }
@@ -924,7 +906,6 @@ void parsing() {
         else
           idleTimer.setInterval(idleTime);
         idleTimer.reset();
-        idleState = !manualMode;
         sendAcknowledge();
         break;
 
@@ -1812,7 +1793,6 @@ void sendAcknowledge() {
 
 void setSpecialMode(int spc_mode) {
         
-  manualMode = true;
   loadingFlag = true;
   isTurnedOff = false;
   isNightClock = false;
@@ -1883,6 +1863,7 @@ void setSpecialMode(int spc_mode) {
     specialModeId = spc_mode;
   }  
 
+  setManualModeTo(true);
   setCurrentSpecMode(spc_mode);
   setCurrentManualMode(-1);
 }
@@ -1930,12 +1911,7 @@ void showCurrentIP(boolean autoplay) {
   // autoplay == true - при установке IP адреса из программы
   // autoplay == false - при вызове отображения текущеко IP адреса по пятикратному нажатию кнопки.
   if (autoplay) {
-    manualMode = false;
-    autoplayTimer = millis();
-    idleTimer.setInterval(idleTime);
-    idleTimer.reset();
-    idleState = true;  
-    saveAutoplay(true);
+    setManualModeTo(false);
   }
 }
 
@@ -1958,4 +1934,19 @@ void setRandomMode2() {
   }
   
   if (cnt >= 10) setEffect(0);
+}
+
+void setManualModeTo(bool isManual) {
+  manualMode = isManual;
+  saveAutoplay(!manualMode);
+  idleState = !manualMode;
+  if (idleTime == 0 || manualMode || specialMode) {
+    idleTimer.setInterval(4294967295);
+  } else {
+    idleTimer.setInterval(idleTime);    
+  }
+  idleTimer.reset();
+  if (!manualMode) {
+    autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
+  }
 }

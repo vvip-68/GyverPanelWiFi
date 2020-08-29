@@ -620,9 +620,7 @@ void checkAlarmTime() {
     StopSound(1000);   
 
     resetModes();  
-    
-    manualMode = false;
-    saveAutoplay(true);
+    setManualModeTo(false);
 
     if (saveSpecialMode){
        setSpecialMode(saveSpecialModeId);
@@ -682,11 +680,10 @@ void stopAlarm() {
     #endif
 
     StopSound(1000);
+
     resetModes();  
-
-    manualMode = false;
-    saveAutoplay(true);
-
+    setManualModeTo(false);
+    
     if (saveSpecialMode){
        setSpecialMode(saveSpecialModeId);
     } else {
@@ -833,15 +830,8 @@ void SetAutoMode(byte amode) {
   } else {
     Serial.print(F("включение режима "));    
     // Если режим включения == 0 - случайный режим и автосмена по кругу
-    manualMode = ef != 0;
-    if (manualMode) {
-      // Таймер возврата в авторежим отключен    
-      idleTimer.setInterval(4294967295);
-      idleTimer.reset();
-    }
-    saveAutoplay(!manualMode);
-    
     resetModes();  
+    setManualModeTo(ef != 0);    
 
     String s_tmp = String(EFFECT_LIST);
     

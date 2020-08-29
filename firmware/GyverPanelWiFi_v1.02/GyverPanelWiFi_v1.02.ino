@@ -172,6 +172,13 @@ void setup() {
   }
   autoplayTimer = millis();
 
+  if (manualMode || specialMode) {
+    idleTimer.setInterval(4294967295);
+  } else {
+    idleTimer.setInterval(idleTime);    
+  }
+  idleTimer.reset();            
+
 }
 
 void loop() {

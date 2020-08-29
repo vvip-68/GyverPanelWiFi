@@ -491,7 +491,7 @@ void saveMaxBrightness(byte brightness) {
 void saveAutoplay(boolean value) {
   if (value != getAutoplay()) {
     EEPROMwrite(2, value ? 1 : 0);
-  }
+  }  
 }
 
 bool getAutoplay() {
