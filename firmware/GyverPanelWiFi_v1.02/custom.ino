@@ -393,7 +393,7 @@ void checkIdleState() {
   
   if (idleState) {
     unsigned long ms = millis();
-    if ((ms - autoplayTimer > autoplayTime) && !manualMode && AUTOPLAY) {    // таймер смены режима
+    if ((ms - autoplayTimer > autoplayTime) && !manualMode) {    // таймер смены режима
       bool ok = true;
       if (
           thisMode == MC_TEXT   && !fullTextFlag ||   // Эффект "Бегущая строка" (показать IP адрес) не сменится на другой, пока вся строка не будет показана полностью
@@ -419,8 +419,8 @@ void checkIdleState() {
       idleState = true;                                     
       autoplayTimer = millis();
       loadingFlag = true;
-      AUTOPLAY = true;
       manualMode = false;
+      saveAutoplay(true);
       FastLED.clear();
     }
   }  

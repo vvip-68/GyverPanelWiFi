@@ -219,8 +219,7 @@ void process() {
         idleTimer.setInterval(4294967295);
         idleTimer.reset();        
         manualMode = true;
-        AUTOPLAY = false;
-        saveAutoplay(AUTOPLAY);        
+        saveAutoplay(false);
         if (tmpSaveSpecial) setRandomMode();
         else                nextMode();
       }
@@ -233,8 +232,7 @@ void process() {
         resetModes();  
 
         manualMode = false;
-        AUTOPLAY = true;
-        saveAutoplay(AUTOPLAY);
+        saveAutoplay(true);
         
         setRandomMode();
       }
@@ -398,7 +396,7 @@ void parsing() {
        - $14 9;  Часы бегущей строкой;
        - $14 10; Часы простые;  
     15 - скорость $15 скорость таймер; 0 - таймер эффектов
-    16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode
+    16 - Режим смены эффектов: $16 value; N: 2 - PrevMode; 3 - NextMode
     17 - Время автосмены эффектов и бездействия: $17 сек сек;
     18 - Запрос текущих параметров программой: $18 page;  page: 1 - настройки; 5 - эффекты; 
     19 - работа с настройками часов
@@ -656,7 +654,7 @@ void parsing() {
              }
           } else {
             manualMode = true;
-            AUTOPLAY = false;
+            saveAutoplay(false);        
             loadingFlag = intData[1] == 0;
             setEffect(tmp_eff);
             if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
@@ -879,45 +877,38 @@ void parsing() {
         break;
 
       // ----------------------------------------------------
-      // 16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode
+      // 16 - Режим смены эффектов: $16 value; N: 0 - ручной режим;  1 - авторежим; 2 - PrevMode; 3 - NextMode; 5 - вкл/выкл случайный выбор следующего режима
       // ----------------------------------------------------
       
       case 16:
-        manualMode = intData[1] == 1;
-        if      (intData[1] == 0) AUTOPLAY = true;
-        else if (intData[1] == 1) AUTOPLAY = false;
+        if      (intData[1] == 0) manualMode = true;
+        else if (intData[1] == 1) manualMode = false;
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
-        else if (intData[1] == 4) AUTOPLAY = intData[2] == 1;
         else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
 
-        idleState = !manualMode && AUTOPLAY;
+        idleState = !manualMode;
         if (manualMode || idleTime == 0) {
           idleTimer.setInterval(4294967295);
           idleTimer.reset();
         }
-        if (AUTOPLAY) {
+        if (idleState) {
           autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
         }
-        saveAutoplay(AUTOPLAY);
+        saveAutoplay(!manualMode);
         saveRandomMode(useRandomSequence);
         
-        setCurrentManualMode(AUTOPLAY ? -1 : (int8_t)thisMode);
-        if (getCurrentManualMode() >= 0) {
+        setCurrentManualMode(manualMode ? (int8_t)thisMode : -1);
+        if (manualMode) {
           setCurrentSpecMode(-1);
         }
 
-        loadingFlag = true;
-
-        if (!manualMode && AUTOPLAY) {
-          sendPageParams(1);
-        } else {        
-          sendAcknowledge();
-        }
+        sendPageParams(1);
         break;
 
       // ----------------------------------------------------
-      // 17 - Время автосмены эффектов и бездействия: $17 сек сек;
+      // 17 - Время автосмены эффектов и бездействия: $17 сек
+      ;
       // ----------------------------------------------------
 
       case 17: 
@@ -925,16 +916,15 @@ void parsing() {
         idleTime = ((long)intData[2] * 60 * 1000L);  // минуты -> миллисек
         saveAutoplayTime(autoplayTime);
         saveIdleTime(idleTime);
-        if (AUTOPLAY) {
+        if (!manualMode) {
           autoplayTimer = millis();
-          manualMode = false;
         }
         if (idleTime == 0 || manualMode) // тамймер отключен
           idleTimer.setInterval(4294967295);
         else
           idleTimer.setInterval(idleTime);
         idleTimer.reset();
-        idleState = !manualMode && AUTOPLAY;
+        idleState = !manualMode;
         sendAcknowledge();
         break;
 
@@ -1427,8 +1417,6 @@ void parsing() {
             if (intData[0] == 0) {
               incomingByte = ending;
               parseStarted = false;
-              manualMode = true;
-              AUTOPLAY = false;
             } else {
               parseMode = NORMAL;
             }
@@ -1464,7 +1452,7 @@ void parsing() {
 void sendPageParams(int page) {
   // W:число     ширина матрицы
   // H:число     высота матрицы
-  // DM:Х        демо режим, где Х = 0 - выкл (ручное управление); 1 - вкл
+  // DM:Х        демо режим, где Х = 0 - ручное управление; 1 - авторежим
   // AP:Х        автосменарежимов, где Х = 0 - выкл; 1 - вкл
   // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
   // PD:число    продолжительность режима в секундах
@@ -1556,12 +1544,13 @@ void sendPageParams(int page) {
   
   switch (page) { 
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
-      str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
-      if (manualMode)  str+="0|AP:"; else str+="1|AP:";
-      if (AUTOPLAY && !manualMode) str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
-      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
-      str += "|RM:" + String(useRandomSequence) +
+      str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT) +
+             "|DM:" + (manualMode ? "0" : "1") +
+             "|BR:" + String(globalBrightness) + 
+             "|PD:" + String(autoplayTime / 1000) + 
+             "|IT:" + String(idleTime / 60 / 1000) +
+             "|AL:" + (((isAlarming || isPlayAlarmSound) && !isAlarmStopped)  ? "1" : "0") + 
+             "|RM:" + String(useRandomSequence) +
              "|PW:" + String(CURRENT_LIMIT) +
              "|WU:" + (useWeather ? "1" : "0") +
              "|WT:" + String(SYNC_WEATHER_PERIOD) +
@@ -1823,7 +1812,6 @@ void sendAcknowledge() {
 
 void setSpecialMode(int spc_mode) {
         
-  AUTOPLAY = false;
   manualMode = true;
   loadingFlag = true;
   isTurnedOff = false;
@@ -1943,11 +1931,11 @@ void showCurrentIP(boolean autoplay) {
   // autoplay == false - при вызове отображения текущеко IP адреса по пятикратному нажатию кнопки.
   if (autoplay) {
     manualMode = false;
-    AUTOPLAY = true;
     autoplayTimer = millis();
     idleTimer.setInterval(idleTime);
     idleTimer.reset();
     idleState = true;  
+    saveAutoplay(true);
   }
 }
 

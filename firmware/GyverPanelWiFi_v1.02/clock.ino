@@ -622,7 +622,7 @@ void checkAlarmTime() {
     resetModes();  
     
     manualMode = false;
-    AUTOPLAY = true;
+    saveAutoplay(true);
 
     if (saveSpecialMode){
        setSpecialMode(saveSpecialModeId);
@@ -685,7 +685,7 @@ void stopAlarm() {
     resetModes();  
 
     manualMode = false;
-    AUTOPLAY = false;
+    saveAutoplay(true);
 
     if (saveSpecialMode){
        setSpecialMode(saveSpecialModeId);
@@ -833,12 +833,13 @@ void SetAutoMode(byte amode) {
   } else {
     Serial.print(F("включение режима "));    
     // Если режим включения == 0 - случайный режим и автосмена по кругу
-    AUTOPLAY = ef == 0;
-    if (!AUTOPLAY) {
+    manualMode = ef != 0;
+    if (manualMode) {
       // Таймер возврата в авторежим отключен    
       idleTimer.setInterval(4294967295);
       idleTimer.reset();
     }
+    saveAutoplay(!manualMode);
     
     resetModes();  
 
@@ -850,7 +851,7 @@ void SetAutoMode(byte amode) {
       uint32_t cnt = CountTokens(s_tmp, ','); 
       ef = random8(0, cnt - 1); 
     } else {
-      ef -= 1; // Приведение номера эффекта (номер с 1) к индексу в массиве ALARM_LIST (индекс c 0)
+      ef -= 1; // Приведение номера эффекта (номер с 1) к индексу в массиве EFFECT_LIST (индекс c 0)
     }
 
     s_tmp = GetToken(s_tmp, ef+1, ',');
