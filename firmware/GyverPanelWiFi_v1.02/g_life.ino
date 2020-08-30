@@ -1,7 +1,6 @@
 #define  BYTE_WIDTH  (WIDTH / 8)             // Массив должен быть кратен 8 битам (сколько байт по ширине)
 #define  WORLD_WIDTH  (BYTE_WIDTH * 8)       // Ширина игрового поля в точках с учетом кратности байту
 #define  GEN_COLOR  CRGB::Green              // Цвет счетчика поколений
-#define  LIFE_COLOR CRGB(64,64,64)  
 
 uint8_t  world [HEIGHT][BYTE_WIDTH];         // Битовый массив клеток поля текущего поколения. бит=1 - клетка "жива", bit=0 - клетка мертва
 uint8_t  gener [HEIGHT][BYTE_WIDTH];         // Битовый массив клеток поля текущего поколения. бит=1 - клетка "жива", bit=0 - клетка мертва
@@ -42,14 +41,17 @@ void setXY (uint8_t world[][BYTE_WIDTH], uint8_t x, uint8_t y, boolean val) {
  */
 void init_world(uint8_t world[][BYTE_WIDTH]) {
 
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  CRGB color = CRGB(effectBrightness,effectBrightness,effectBrightness);
+  
   // Отрисовываем имеющимися средствами на игровом боле произвольное двухзначное число
   for (uint8_t i = 0; i < seg_num; i++) {
     uint8_t px = ((seg_size - 7) / 2) + (dir_mx == 0 ? i * seg_size : 0);
     uint8_t py = ((seg_size - 5) / 2) + (dir_mx == 0 ? 0 : i * seg_size);
     
     uint8_t val = random8(10,100);
-    drawDigit3x5(val / 10, px,     py, LIFE_COLOR);
-    drawDigit3x5(val % 10, px + 4, py, LIFE_COLOR);  
+    drawDigit3x5(val / 10, px,     py, color);
+    drawDigit3x5(val % 10, px + 4, py, color);  
   }
   FastLED.show();
 
@@ -69,9 +71,11 @@ void init_world(uint8_t world[][BYTE_WIDTH]) {
  * Вывести на экран игровое поле
  */
 void print_world(uint8_t world[][BYTE_WIDTH]) {
+  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+
   for (uint8_t x = offset_x; x < WIDTH - offset_x; x++) {
     for (uint8_t y = 0; y < HEIGHT; y++) {
-      CRGB color = getXY(world, x - offset_x, y) ? LIFE_COLOR : CRGB::Black; 
+      CRGB color = getXY(world, x - offset_x, y) ? CRGB(effectBrightness,effectBrightness,effectBrightness) : CRGB::Black; 
       drawPixelXY(x, y, color);
     }
   }  
