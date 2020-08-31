@@ -25,11 +25,11 @@ void drawPattern(uint8_t ptrn, uint8_t X, uint8_t Y, uint8_t W, uint8_t H, char 
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
   
   for (uint8_t x = 0; x < WIDTH + W; x++) {
-    uint8_t in = (uint8_t)pgm_read_byte(&(patterns[ptrn][lineIdx][x % 10])); 
-    CHSV color = colorMR[in];
-    CHSV color2 = color.v != 0 ? CHSV(color.h, color.s, effectBrightness) : color;
     int8_t xx = offset_x + x;
     if (xx >= 0 && xx < WIDTH) {
+      uint8_t in = (uint8_t)pgm_read_byte(&(patterns[ptrn][lineIdx][x % 10])); 
+      CHSV color = colorMR[in];
+      CHSV color2 = color.v != 0 ? CHSV(color.h, color.s, effectBrightness) : color;
       drawPixelXY(xx, y, color2); 
     }
   }

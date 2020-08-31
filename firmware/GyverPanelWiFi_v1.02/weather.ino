@@ -229,11 +229,12 @@ void weatherRoutine() {
       pos_x = 0;
       pos_y = HEIGHT - image_desc.frame_height;
       weather_text_x = image_desc.frame_width - 3; // знак +/- пусть залазит на картинку  
-      weather_text_y = pos_y - 5;
+      weather_text_y = pos_y - 5;                  // отступ от низа картинки; 5 - высота шрифта
 
-      uint8_t text_w = 15;   // +15C - 4 знака шрифта 3x5 + по пробелу между знаками = 12 + 3 = 15;
+   // uint8_t text_w = 15;   // +15C - 4 знака шрифта 3x5 + по пробелу между знаками = 12 + 3 = 15;
+      uint8_t text_w = 12;   // +15 - 3 знака шрифта 3x5 + по пробелу между знаками = 9 + 3 = 12;
       
-      while(weather_text_x > 0 && weather_text_x + text_w > WIDTH) weather_text_x--;
+      while(weather_text_x > 0 && weather_text_x + text_w - 1 > WIDTH) weather_text_x--;
       while(weather_text_y < 0) weather_text_y++;
 
       // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
@@ -352,6 +353,7 @@ void weatherRoutine() {
     drawDigit3x5(abs(temperature) % 10, text_x, text_y, color);
     text_x += 4;
 
+    /*
     // Буква 'C'
     for(int i = 0; i < 3; i++) {
       drawPixelXY(text_x, text_y + 1 + i, color);      
@@ -361,6 +363,7 @@ void weatherRoutine() {
       drawPixelXY(text_x + 1 + i, text_y, color);      
       drawPixelXY(text_x + 1 + i, text_y + 4, color);      
     }
+    */
   }
   
   #endif
