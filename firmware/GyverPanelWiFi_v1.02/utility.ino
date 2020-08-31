@@ -438,3 +438,30 @@ uint8_t wrapX(int8_t x) {
 uint8_t wrapY(int8_t y) {
   return (y + HEIGHT) % HEIGHT;
 }
+
+// Сдвиг всей матрицы вниз
+void shiftDown() {
+  for (byte x = 0; x < WIDTH; x++) {
+    for (byte y = 0; y < HEIGHT - 1; y++) {
+      drawPixelXY(x, y, getPixColorXY(x, y + 1));
+    }
+  }
+}
+
+// Сдвиг всей матрицы вверх
+void shiftUp() {
+  for (byte x = 0; x < WIDTH; x++) {
+    for (byte y = HEIGHT - 1; y > 0; y--) {
+      drawPixelXY(x, y, getPixColorXY(x, y - 1));
+    }
+  }
+}
+
+// Сдвиг всей матрицы по диагонали
+void shiftDiag() {
+  for (byte y = 0; y < HEIGHT - 1; y++) {
+    for (byte x = WIDTH - 1; x > 0; x--) {
+      drawPixelXY(x, y, getPixColorXY(x - 1, y + 1));
+    }
+  }
+}

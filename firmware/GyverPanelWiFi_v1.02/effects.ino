@@ -11,11 +11,7 @@ void snowRoutine() {
   }
 
   // сдвигаем всё вниз
-  for (byte x = 0; x < WIDTH; x++) {
-    for (byte y = 0; y < HEIGHT - 1; y++) {
-      drawPixelXY(x, y, getPixColorXY(x, y + 1));
-    }
-  }
+  shiftDown();
 
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
@@ -553,7 +549,7 @@ void fireRoutine() {
   }
 
   if (pcnt >= 100) {
-    shiftUp();
+    shiftFireUp();
     generateLine();
     pcnt = 0;
   }
@@ -573,7 +569,7 @@ void generateLine() {
 
 //shift all values in the matrix up one row
 
-void shiftUp() {
+void shiftFireUp() {
   for (uint8_t y = HEIGHT - 1; y > 0; y--) {
     for (uint8_t x = 0; x < WIDTH; x++) {
       uint8_t newX = x;
@@ -675,11 +671,7 @@ void matrixRoutine() {
   }
 
   // сдвигаем всё вниз
-  for (byte x = 0; x < WIDTH; x++) {
-    for (byte y = 0; y < HEIGHT - 1; y++) {
-      drawPixelXY(x, y, getPixColorXY(x, y + 1));
-    }
-  }
+  shiftDown();
 }
 
 
@@ -785,11 +777,7 @@ void starfallRoutine() {
   }
 
   // сдвигаем по диагонали
-  for (byte y = 0; y < HEIGHT - 1; y++) {
-    for (byte x = WIDTH - 1; x > 0; x--) {
-      drawPixelXY(x, y, getPixColorXY(x - 1, y + 1));
-    }
-  }
+  shiftDiag();
 
   // уменьшаем яркость левой и верхней линии, формируем "хвосты"
   for (byte i = 4; i < HEIGHT; i++) {
