@@ -400,6 +400,7 @@ void parsing() {
       - $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
       - $19 7 X; - Размер часов X: 0 - авто, 1 - малые 3х5, 2 - большие 5x7
       - $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
+      - $19 9 X; - Показывать температуру вместе с малыми часами 1 - да; 0 - нет
       - $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
       - $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
       - $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
@@ -734,6 +735,7 @@ void parsing() {
       // - $12 5 I С; - интервал получения погоды с сервера в минутах (I) и код региона C
       // ----------------------------------------------------
 
+      #if (USE_WEATHER == 1)                  
       case 12:
          switch (intData[1]) {
            case 3:               // $12 3 X; - Использовать отображение температуры цветом 0 - нет; 1 - да
@@ -760,6 +762,7 @@ void parsing() {
         }
         sendPageParams(1);
         break;
+      #endif
 
       // ----------------------------------------------------
       // 13 - Настройки бегущей cтроки  
@@ -936,6 +939,7 @@ void parsing() {
       //   $19 6 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
       //   $19 7 X; - Размер часов X: 0 - авто, 1 - малые 3х5, 2 - большие 5x7
       //   $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
+      //   $19 9 X; - Показывать температуру вместе с малыми часами 1 - да; 0 - нет
       //   $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
       //   $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
       //   $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
@@ -998,11 +1002,19 @@ void parsing() {
              setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
              init_time = true; refresh_time = false; ntp_cnt = 0;
              break;
+           case 9:               // $19 9 X; - Показывать температуру в режиме часов  X: 0 - нет, 1 - да
+             if (allowHorizontal || allowVertical) {
+               showWeatherInClock = intData[2] == 1;
+             } else {
+               showWeatherInClock = false;
+             }
+             setShowWeatherInClock(showWeatherInClock);
+             break;
            case 10:               // $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
              setNightClockColor(intData[2]);
              nightClockColor = getNightClockColor();
              if (isNightClock) {
-                specialBrightness = nightClockColor == 0 ? 1 : 255; // красные часы?
+                specialBrightness = MIN_BRIGHT_FOR_NIGHT;
                 FastLED.setBrightness(specialBrightness);
              }             
              break;
@@ -1025,31 +1037,23 @@ void parsing() {
                saveClockOverlayEnabled(clockOverlayEnabled);
              }
              setShowDateInClock(showDateInClock);
+             // ------ временно!
+             // Приложение Thunkable для управления со смартфона достигло своего предела, при котором добавление новых элементов и блоков кода
+             // уже невозможно - программа перестает собираться. По этой причине отображение температуры совместно с малыми часами
+             // управляется синхронно с "Отображать дату в малых часах" - тем же чекбоксом
+             // Когда / Если будет написана отдельная программа управления с телефона не на Thunkable, а на Android SDK - 
+             // тогда для вкл/выкл отображения температуры в часах нужно завести отдельный контрол, который будет вкл/выкл отображение температуры
+             // независимо от настроек даты в часах.
+             // Специальная уоманда  $19 9 X; ужереализована (см. выше)
+             showWeatherInClock = showDateInClock;
+             setShowWeatherInClock(showWeatherInClock);
+             // ------             
              break;
            case 17:               // $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
              showDateDuration = intData[2];
              showDateInterval = intData[3];
              setShowDateDuration(showDateDuration);
              setShowDateInterval(showDateInterval);
-             break;
-           case 11:               // $19 11 X; - Режим цвета бегущей строкой X: 0,1,2,           
-             COLOR_TEXT_MODE = intData[2];
-             if (COLOR_TEXT_MODE > 2) COLOR_TEXT_MODE = 0;
-             setTextColor(COLOR_TEXT_MODE);
-             break;
-           case 13:               // $19 13 X; - скорость прокрутки бегущей строки
-             setTextScrollSpeed(255 - intData[2]);
-             setTimersForMode(thisMode);
-             break;
-           case 15:               // $19 15 00FFAA;
-             // В строке цвет - "$19 15 00FFAA;" - цвет часов текстовой строкой для режима "монохромный", сохраняемый в globalTextColor
-             str = String(incomeBuffer).substring(7,13);
-             globalTextColor = (uint32_t)HEXtoInt(str);
-             setGlobalTextColor(globalTextColor);
-             break;
-           case 18:               // $19 18 X; - сохранить настройку X "Бегущая строка в эффектах"
-             textOverlayEnabled = intData[2] == 1;
-             saveTextOverlayEnabled(textOverlayEnabled);
              break;
         }
         if (intData[1] != 8) {
@@ -1523,6 +1527,7 @@ void sendPageParams(int page) {
   // WT:число    Период запроса сведений о погоде в минутах
   // WR:число    Регион погоды - https://tech.yandex.ru/xml/doc/dg/reference/regions-docpage/
   // WC:X        Использовать цвет для отображения температуры X: 0 - выключено; 1 - включено
+  // DW:X        показывать температуру вместе с малыми часами 0-нет, 1-да
 
   String str = "", color, text;
   CRGB c1, c2;
@@ -1532,16 +1537,18 @@ void sendPageParams(int page) {
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT) +
              "|DM:" + (manualMode ? "0" : "1") +
-             "|BR:" + String(globalBrightness) + 
              "|PD:" + String(autoplayTime / 1000) + 
              "|IT:" + String(idleTime / 60 / 1000) +
              "|AL:" + (((isAlarming || isPlayAlarmSound) && !isAlarmStopped)  ? "1" : "0") + 
              "|RM:" + String(useRandomSequence) +
              "|PW:" + String(CURRENT_LIMIT) +
+           #if (USE_WEATHER == 1)                  
              "|WU:" + (useWeather ? "1" : "0") +
              "|WT:" + String(SYNC_WEATHER_PERIOD) +
              "|WR:" + String(regionID) + 
-             "|WC:" + (useTemperatureColor ? "1" : "0");
+             "|WC:" + (useTemperatureColor ? "1" : "0") +
+           #endif  
+             "|BR:" + String(globalBrightness);
       str+=";";
       break;
     case 2:  // Эффекты. Вернуть: Номер эффекта, Скорость эффекта; Использовать в демо, оверлей текста и часов 
@@ -1615,6 +1622,7 @@ void sendPageParams(int page) {
              "|NP:" + (useNtp ? "1" : "0") +
              "|NT:" + String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset) +
              "|NS:["+String(ntpServerName)+"]" +
+             "|DW:" + (showWeatherInClock ? "1" : "0") +
              "|OF:" + (needTurnOffClock ? "1" : "0"); 
       str+=";";
       break;
@@ -1852,7 +1860,7 @@ void setSpecialMode(int spc_mode) {
       tmp_eff = MC_CLOCK;
       specialClock = false;
       isNightClock = true;
-      specialBrightness = nightClockColor == 0 ? 1 : 255;   // красные часы?
+      specialBrightness = MIN_BRIGHT_FOR_NIGHT;
       break;
     case 9:  // Палитра;
       tmp_eff = MC_PALETTE;

@@ -552,6 +552,8 @@ String processMacrosInText(String textLine) {
       idx = textLine.indexOf("{B");  
     }
 
+    #if (USE_WEATHER == 1)     
+    
     // {WS} - отображать текущую погоду - "Ясно", "Облачно" и т.д
     idx = textLine.indexOf("{WS}");
     if (idx >= 0) {
@@ -573,6 +575,8 @@ String processMacrosInText(String textLine) {
       textLine.replace("{WT}", s_color + s_temperature);
     }
 
+    #endif
+     
     // -------------------------------------------------------------
     // "{CC}"- отображать строку указанным цветом С; Цвет - в виде #AA77FE
     // -------------------------------------------------------------

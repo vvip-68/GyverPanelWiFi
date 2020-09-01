@@ -185,30 +185,60 @@ byte getClockX(int8_t x) {
 // нарисовать часы
 void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
+  int8_t x = X;
+  
   byte h10 = hrs / 10;
   byte h01 = hrs % 10;
   byte m10 = mins / 10;
   byte m01 = mins % 10;
-
+  
   if (CLOCK_ORIENT == 0) {
 
     if (c_size == 1) {
 
-      // отрисовка часов 3x5
-      if (h10 == 1 && m01 != 1 && X > 0) X--;
+      // Часы занимают 4 знакоместав 3x5 + 3 разделительных колонуи, итого 15 точек по горизонтали
+      // Однако реально они могут занимать меньше места, если в часах/минутах есть 11. Эксттремально е значение 1:11 занимает 10 точек и также должнго быть отцентрировано в этих 15 точках
+      // Центр композиции - разделительное двоеточие
+      // Если десятки часов = 1 - смещаем начала отрисовки на 1 вправо 
+      // Если единицы часов = 1 - смещаем начала отрисовки на 1 вправо
+      // если десятки часов - 0 - не рисуется, смещаем начало отрисовки на 3 вправо
+
+      // Тут дурь, но не смог правильно бодобрать корректировку для всех вариантов ЧЧ:MM чтобы и центрировались правильно и расстояние между цифрами часов-минут было правильное      
+      byte w = 15;      
+      if (h10 == 1) w--;
+      if (m01 == 1) w--;
+      if (h10 == 0) w -= (h01 == 1 ? 3 : 4);
+      x += ((15 - w) / 2) + (w == 15 ? 0 : 1);
+      
+      if (h10 > 0) x--;
+      if (hrs == 0 && mins == 0) x--;
+      if (hrs == 21 && m01 != 1) x += 2;
+            
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
-        drawDigit3x5(h10, X + (h10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-      } else {
-        X -= 2;
+        x += (h10 == 2 ? 1 : 0);
+        drawDigit3x5(h10, x, Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+        x += (h10 == 1 ? 3 : 4);
+        x += (h10 == 2 && h01 == 1 ? -1 : 0);
       }  
-      drawDigit3x5(h01, X + 4, Y, clockLED[1]);
+
+      drawDigit3x5(h01, x, Y, clockLED[1]);
+      x += 3;
+      
       if (dots) {
-        drawPixelXY(getClockX(X + 7), Y + 1, clockLED[2]);
-        drawPixelXY(getClockX(X + 7), Y + 3, clockLED[2]);
+        drawPixelXY(getClockX(x), Y + 1, clockLED[2]);
+        drawPixelXY(getClockX(x), Y + 3, clockLED[2]);
       }
-      drawDigit3x5(m10, X + 8, Y, clockLED[3]);
-      drawDigit3x5(m01, X + 12 + (m01 == 1 ? -1 : 0) + (m10 == 1 && m01 != 1 ? -1 : 0), Y, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+      x++;
+
+      drawDigit3x5(m10, x, Y, clockLED[3]);      
+      x += (m10 == 1 ? 3 : 4);
+
+      x += (m10 != 1 && m01 == 1 ? -1 : 0);
+      drawDigit3x5(m01, x , Y, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+      x += (m01 == 1 ? 2 : 3);
+
+      CLOCK_WX = x - 11;   // температуру выравнивать по правому краю с часами. 11 - 3символа температуры 3x5 + 2 пробела
 
     } else {
 
@@ -257,6 +287,74 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
     drawDigit3x5(m01, X + 4, Y, clockLED[4]);
 
   }
+}
+
+void drawTemperature() {
+#if (USE_WEATHER == 1)           
+
+  if (weatherOverlayEnabled) {          
+
+    // позиция выводатемпературы по X вычисляется при отрисовке часов и сохраняется в глобальную переменную CLOCK_WX
+    // При этом рассчитана на символы шириной 3
+    // Если десятки градусов = 1 - сместить на колонку вправо
+    // Если единицы градусов = 1 - сместить на колонку вправо
+    // Если десятки градусов = 0 - сместить на 4 колонки вправо и 0 не рисовать
+    // Если температура 0 - рисовать 0C
+    byte temp_x = CLOCK_WX + 12; 
+    byte temp_y = CLOCK_WY;
+
+    byte t = abs(temperature);
+    byte dec_t = t / 10;
+    byte edc_t = t % 10;
+    
+    // Получить цвет отображения значения температуры
+    CRGB color;          
+    if (isNightClock) 
+      color = useTemperatureColor ? (temperature <= - 4 ? CRGB(0x000002) : (temperature >= 3 ? CRGB(0x020000) : CRGB(0x020202))) : clockLED[0];
+    else 
+      color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
+
+    // Для правильного позиционирования - рисуем справа налево
+    if (temperature == 0) {
+      // При температуре = 0 - ресуем маленький значок C
+      temp_x -= 3;  
+      for(int i = 0; i < 3; i++) {
+        drawPixelXY(getClockX(temp_x), temp_y + i, color);      
+      }
+      drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
+      drawPixelXY(getClockX(temp_x + 1), temp_y + 2, color);      
+    }
+
+    // Единицы градусов
+    temp_x -= (edc_t == 1 ? 3 : 4);
+    drawDigit3x5(edc_t, getClockX(temp_x), temp_y, color);
+    temp_x += (dec_t == 0 && edc_t == 1 ? 1 : 0);
+
+    // Десятки градусов
+    if (dec_t != 0) {
+      temp_x -= (dec_t == 1 ? 3 : 4);
+      drawDigit3x5(dec_t, getClockX(temp_x), temp_y, color);
+      temp_x += (dec_t == 1 ? 1 : 0);
+    }
+            
+    // Нарисовать '+' или '-' если температура не 0
+    // Горизонтальная черта - общая для '-' и '+'
+    if (temperature != 0) {
+       temp_x -= 4;
+      for(int i = 0; i < 3; i++) {
+        drawPixelXY(getClockX(temp_x + i), temp_y + 2, color);      
+      }
+      
+      // Для плюcа - вертикальная черта
+      if (temperature > 0) {
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 1, color);
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 3, color);
+      }
+      temp_x += 4;
+    }    
+  }
+  
+#endif
 }
 
 // нарисовать дату календаря
@@ -373,13 +471,8 @@ void clockTicker() {
 }
 
 void overlayWrap() {
-  // Текст выводится в позиции y = getTextY() и занимает высоту LET_HEIGHT
-  // Часы верт / горизонт выводятся в позиции y = CLOCK_Y и занимают 5 для горизонтальных или 11 для вертикальных
-  // Кадлендарь выводится выводятся в позиции y = CALENDAR_Y и занимает 11 строк для вертикальных
-  // В оверлей отправляется полоса от y_low до y_high во всю штрину матрицы
-  
-  int16_t thisLED = 0;
-  
+  // В оверлей отправляется полоса от y_low до y_high во всю штрину матрицы  
+  int16_t thisLED = 0;  
   for (uint8_t i = 0; i < WIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
       overlayLEDs[thisLED] = leds[getPixelNumber(i,j)];
@@ -389,9 +482,7 @@ void overlayWrap() {
 }
 
 void overlayUnwrap() {
-
-  int16_t thisLED = 0;
-  
+  int16_t thisLED = 0;  
   for (uint8_t i = 0; i < WIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
       leds[getPixelNumber(i, j)] = overlayLEDs[thisLED];
@@ -400,6 +491,33 @@ void overlayUnwrap() {
   }
 }
 
+
+void overlayWeatherWrap() {
+
+  // Погода выводится - правая граница = правой границы часов, ширина вывода = 3 симв 3x5 + 2 пробела между - 11 симв.
+  // Строка вывода - yw_overlay_low до yw_overlay_high, позиция отсчитывается от CLOCK_XC - позиции вывода часов
+  int16_t thisLED = 0;
+  int8_t xx = CLOCK_WX;
+  for (int8_t i = xx; i < xx + 11; i++) {
+    for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
+      overlayWeather[thisLED] = leds[getPixelNumber(getClockX(i),j)];
+      thisLED++;
+    }
+  }
+}
+
+void overlayWeatherUnwrap() {
+
+  int16_t thisLED = 0;
+  int8_t xx = CLOCK_WX;  // в часах - 4 символа, в погоде - 3 символа - т.е. позиция погоды сдвинута на одно знакоместо
+  
+  for (int8_t i = xx; i < xx + 11; i++) {
+    for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
+      leds[getPixelNumber(getClockX(i), j)] = overlayWeather[thisLED];
+      thisLED++; 
+    }
+  }
+}
 
 void checkCalendarState() {
   if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
@@ -921,8 +1039,8 @@ void checkClockOrigin() {
 uint32_t getNightClockColorByIndex(byte idx) {
   uint32_t color = 0x010000;  // Red
   switch (idx) {
-    case 0: color = 0xFF0000; break;  // Red     для красных часов яркость равна 1, цвет - максимально красный. Это дает более тусклые часы
-    case 1: color = 0x000200; break;  // Green   для остальных цветов - яркость 255, цвет - минимальный для данного цвета
+    case 0: color = 0x020000; break;  // Red
+    case 1: color = 0x000200; break;  // Green
     case 2: color = 0x000002; break;  // Blue
     case 3: color = 0x000202; break;  // Cyan
     case 4: color = 0x020002; break;  // Magenta

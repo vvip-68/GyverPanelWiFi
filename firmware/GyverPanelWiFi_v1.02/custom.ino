@@ -24,6 +24,20 @@ void doEffectWithOverlay(byte aMode) {
 
   if (!(effectReady || (clockReady && !showTextNow) || (textReady && (showTextNow || thisMode == MC_TEXT)))) return;
 
+  // В прошлой итерации часы / текст были наложены с оверлеем?
+  // Если да - восстановить пиксели эффекта сохраненные перед наложением часов / текста
+  if (overlayDelayed) {
+    overlayUnwrap();
+    overlayDelayed = false;
+  }  
+
+  #if (USE_WEATHER == 1)       
+    if (overlayDelayed2) {
+      overlayWeatherUnwrap();
+      overlayDelayed2 = false;
+    } 
+  #endif
+
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
   bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
@@ -106,13 +120,7 @@ void doEffectWithOverlay(byte aMode) {
        (aMode == MC_TEXT) ||                                                          // Если включен режим "Бегущая строка" (show IP address)       
       (!showTextNow && clockOvEn) || 
        (showTextNow && textOvEn);
-
-  // В прошлой итерации часы / текст были наложены с оверлеем?
-  // Если да - восстановить пиксели эффекта сохраненные перед наложением часов / текста
-  if (overlayDelayed) { //  && !loadingFlag
-    overlayUnwrap();
-  }  
-  
+    
   if (effectReady) {
     if (showTextNow) {
       // Если указан другой эффект, поверх которого бежит строка - отобразить его
@@ -155,25 +163,67 @@ void doEffectWithOverlay(byte aMode) {
     }
   }
 
+  // Пришло время отобразить дату (календарь) в малых часах?
   if (c_size == 1) {
     checkCalendarState();
   }
-
-  overlayDelayed = needOverlay;
-  
-  if (needOverlay) overlayWrap();
   
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
   if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT) || aMode == MC_CLOCK)) {
+    overlayDelayed = needOverlay;
     setOverlayColors();
     if (c_size == 1 && showDateInClock && showDateState) {      
+      if (needOverlay) {
+        y_overlay_low  = CALENDAR_Y;
+        y_overlay_high = y_overlay_low + 10;    // Малые часы - вертикальные или календарь занимает 11 строк - 2 строки шрифта 3x5 плюс пробел между строками
+        overlayWrap();
+      }      
       drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
     } else {
-      drawClock(hrs, mins, dotFlag, CLOCK_XC, CLOCK_Y);
+      weatherOverlayEnabled = false;
+      byte CLK_Y = CLOCK_Y;
+
+      if (needOverlay) {
+        #if (USE_WEATHER == 1)       
+          weatherOverlayEnabled = useWeather && init_weather && (c_size == 1) && showWeatherInClock && (CLOCK_ORIENT == 0) && allowVertical && allowHorizontal;  // Нужно 2 строки шрифта 3x5 + один пробел между строками минимум
+          overlayDelayed2 = weatherOverlayEnabled;
+          if (weatherOverlayEnabled) {
+            CLK_Y += 3;                                            // Сдвинуть позицию часов на 3 строки выше с контролем не выхода за высоту матрицы
+            while (CLK_Y + 5 >= HEIGHT) CLK_Y--;
+            CLOCK_WY = CLK_Y - 7;                                  // Пытаемся сделать две строки отступа между часами и погодой (5 + 2), 5 - высота шрифта
+            while (CLOCK_WY < 0) CLOCK_WY++;                       // Поднимаем строку вывода температуры, если она выходит за размер матрицы
+    
+            yw_overlay_low  = CLOCK_WY;                            // Низ сохраняемого оверлея погоды - строка вывода температуры
+            yw_overlay_high = yw_overlay_low + 4;                  // Размер - 5 строк при шрифте 3x5            
+          }
+        #endif
+
+        y_overlay_low  = CLK_Y;                                 // Низ оверлея часов - строка вывода часов
+        y_overlay_high = y_overlay_low + (c_size == 1 ? (CLOCK_ORIENT == 0 ? 4 : 10) : 6); // Размер оверлея - 5 строк при шрифте 3x5, 7 строк при шрифтк 5х7, 11 строк при малых сасах вертикальной ориентации
+        overlayWrap();                                          // Сохранить оверлей эффекта ПОД часами
+      }      
+      
+      drawClock(hrs, mins, dotFlag, CLOCK_XC, CLK_Y);
+
+      #if (USE_WEATHER == 1)       
+        if (needOverlay) {
+          if (weatherOverlayEnabled) {            
+            overlayWeatherWrap();                                  // Сохраняем пиксели эффекта под выводом температуры (правый край температуры - совпадает с правым краем часов, ширина - 3 символа шрифта 3х5 и 2 пробела между цифрами
+            drawTemperature();
+          }
+        }      
+      #endif
+            
     }
-  } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {
+  } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {   // MC_CLOCK - ночные часы; MC_TEXT - показ IP адреса - всё на черном фоне
     // Нарисоватьоверлеем текст бегущей строки
     // Нарисовать текст в текущей позиции
+    overlayDelayed = needOverlay;
+    if (needOverlay) {
+      y_overlay_low  = getTextY();                      // Нижняя строка вывода строки текста
+      y_overlay_high = y_overlay_low + LET_HEIGHT - 1;  // Высота букв
+      overlayWrap();
+    }
     runningText();
   }
 
@@ -225,7 +275,7 @@ void processEffect(byte aMode) {
     case MC_TEXT:                runningText(); break;
     case MC_CLOCK:               clockRoutine(); break;
     case MC_DAWN_ALARM:          dawnProcedure(); break;
-    case MC_PATTERNS  :          patternRoutine(); break;
+    case MC_PATTERNS:            patternRoutine(); break;
     
     // Спец.режимы так же как и обычные вызываются в customModes (MC_DAWN_ALARM_SPIRAL и MC_DAWN_ALARM_SQUARE)
     case MC_DAWN_ALARM_SPIRAL:   dawnLampSpiral(); break;

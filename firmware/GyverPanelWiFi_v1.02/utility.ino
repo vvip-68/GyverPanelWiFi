@@ -105,15 +105,13 @@ void fillAll(CRGB color) {
 // функция отрисовки точки по координатам X Y
 void drawPixelXY(int8_t x, int8_t y, CRGB color) {
   if (x < 0 || x > WIDTH - 1 || y < 0 || y > HEIGHT - 1) return;
-  int thisPixel = getPixelNumber(x, y) * SEGMENTS;
-  for (byte i = 0; i < SEGMENTS; i++) {
-    leds[thisPixel + i] = color;
-  }
+  int thisPixel = getPixelNumber(x, y);
+  leds[thisPixel] = color;
 }
 
 // функция получения цвета пикселя по его номеру
 uint32_t getPixColor(int thisSegm) {
-  int thisPixel = thisSegm * SEGMENTS;
+  int thisPixel = thisSegm;
   if (thisPixel < 0 || thisPixel > NUM_LEDS - 1) return 0;
   return (((uint32_t)leds[thisPixel].r << 16) | ((long)leds[thisPixel].g << 8 ) | (long)leds[thisPixel].b);
 }

@@ -32,7 +32,7 @@ void loadSettings() {
   //   29 - Номер последнего активированного вручную режима                                                  // getCurrentManualMode()        // setCurrentManualMode(xxx)
   //   30 - Отображать часы оверлеем в режимах                                                               // getClockOverlayEnabled()      // saveClockOverlayEnabled(clockOverlayEnabled)
   //   31 - Использовать случайную последовательность в демо-режиме                                          // getRandomMode()               // saveRandomMode(useRandomSequence)
-  //***32 -  не используется
+  //   32 - Отображать с часами текущую температуру                                                          // getShowWeatherInClock()       // setShowWeatherInClock(showWeatherInClock)
   //   33 - Режим 1 по времени - часы                                                                        // getAM1hour()                  // setAM1hour(AM1_hour)
   //   34 - Режим 1 по времени - минуты                                                                      // getAM1minute()                // setAM1minute(AM1_minute) 
   //   35 - Режим 1 по времени - -3 - выкл. (не исп.); -2 - выкл. (черный экран); -1 - ночн.часы, 0 - случ., // getAM1effect()                // setAM1effect(AM1_effect_id)
@@ -123,6 +123,7 @@ void loadSettings() {
     manualMode = !getAutoplay();
     CLOCK_ORIENT = getClockOrientation();
     COLOR_MODE = getClockColor();
+    CLOCK_SIZE = getClockSize();
     COLOR_TEXT_MODE = getTextColor();
     CURRENT_LIMIT = getPowerLimit();
     TEXT_INTERVAL = getTextInterval();
@@ -188,10 +189,13 @@ void loadSettings() {
     AM4_minute    = getAM4minute();
     AM4_effect_id = getAM4effect();
 
+  #if (USE_WEATHER == 1)     
     useWeather =  getUseWeather();
     regionID = getWeatherRegion();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
     useTemperatureColor = getUseTemperatureColor();
+    showWeatherInClock = useWeather && getShowWeatherInClock();
+  #endif  
 
     loadStaticIP();
     loadTexts();
@@ -329,10 +333,13 @@ void saveDefaults() {
   setAM4minute(AM4_minute);             // Режим 4 по времени - минуты
   setAM4effect(AM4_effect_id);          // Режим 4 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
 
+#if (USE_WEATHER == 1)       
   setUseWeather(useWeather);
   setWeatherRegion(regionID);
   setWeatherInterval(SYNC_WEATHER_PERIOD);
   setUseTemperatureColor(useTemperatureColor);
+  setShowWeatherInClock(showWeatherInClock);
+#endif
        
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
   saveTexts();
@@ -596,6 +603,18 @@ byte getClockOrientation() {
 void saveClockOrientation(byte orientation) {
   if (orientation != getClockOrientation()) {
     EEPROMwrite(15, orientation == 1 ? 1 : 0);
+  }
+}
+
+bool getShowWeatherInClock() {
+  bool val = EEPROMread(32) == 1;
+  if (val && HEIGHT < 11) val = 0;
+  return val;
+}
+
+void setShowWeatherInClock(boolean use) {  
+  if (use != getShowWeatherInClock()) {
+    EEPROMwrite(32, use ? 1 : 0);
   }
 }
 

@@ -231,7 +231,6 @@ void weatherRoutine() {
       weather_text_x = image_desc.frame_width - 3; // знак +/- пусть залазит на картинку  
       weather_text_y = pos_y - 5;                  // отступ от низа картинки; 5 - высота шрифта
 
-   // uint8_t text_w = 15;   // +15C - 4 знака шрифта 3x5 + по пробелу между знаками = 12 + 3 = 15;
       uint8_t text_w = 12;   // +15 - 3 знака шрифта 3x5 + по пробелу между знаками = 9 + 3 = 12;
       
       while(weather_text_x > 0 && weather_text_x + text_w - 1 > WIDTH) weather_text_x--;
@@ -247,12 +246,6 @@ void weatherRoutine() {
       weather_text_x += offset_x;
       weather_text_y += offset_y;
 
-      /*
-      if (WIDTH == HEIGHT && weather_text_x - pos_x < 3) {
-        weather_text_y = (image_desc.frame_height - 5) / 2;
-      }
-      */
-      
       #if (USE_WEATHER == 1)     
         need_fade_image = useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5);
       #endif   
@@ -265,7 +258,11 @@ void weatherRoutine() {
 
     // Если погода отключена или еще не получена - просто рисуем картинки по кругу
     // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
-    weather_frame_num = init_weather ? getWeatherFrame(icon) : 0;      // Флаг: true - погода полученаж false - погода не получена / не актуальна
+    #if (USE_WEATHER == 1)
+      weather_frame_num = init_weather ? getWeatherFrame(icon) : 0;
+    #else
+      weather_frame_num =  0;      
+    #endif
     fade_weather_phase = init_weather ? 1 : 0;                         // плавное появление картинки
   }  
 
@@ -333,14 +330,18 @@ void weatherRoutine() {
     if (abs(temperature) < 10) text_x += 4;
     
     // Нарисовать '+' или '-' если температура не 0
-    // Горизонтальная черта - общая для '-' и '+'
-    for(int i = 0; i < 3; i++) {
-      drawPixelXY(text_x + i, text_y + 2, color);      
+    if (temperature != 0) {
+      // Горизонтальная черта - общая для '-' и '+'
+      for(int i = 0; i < 3; i++) {
+        drawPixelXY(text_x + i, text_y + 2, color);      
+      }
+      
+      // Для плюcа - вертикальная черта
+      if (temperature > 0) {
+        drawPixelXY(text_x + 1, text_y + 1, color);
+        drawPixelXY(text_x + 1, text_y + 3, color);
+      }
     }
-    // Для плюcа - вертикальная черта
-    drawPixelXY(text_x + 1, text_y + 1, color);
-    drawPixelXY(text_x + 1, text_y + 3, color);
-    
     text_x += 4;
 
     // Десятки температуры

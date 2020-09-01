@@ -147,9 +147,6 @@ void setup() {
   // Проверить соответствие позиции вывода часов размерам матрицы
   // При необходимости параметры отображения часов корректируются в соответствии с текущими аппаратными возможностями
   checkClockOrigin();
-
-  y_overlay_low  = min(getTextY(), min(CLOCK_Y, CALENDAR_Y));
-  y_overlay_high = max(getTextY() + LET_HEIGHT - 1, y_overlay_low + 10);
   
   // Если был задан спец.режим во время предыдущего сеанса работы матрицы - включить его
   // Номер спец-режима запоминается при его включении и сбрасывается при включении обычного режима или игры
@@ -177,8 +174,7 @@ void setup() {
   } else {
     idleTimer.setInterval(idleTime);    
   }
-  idleTimer.reset();            
-
+  idleTimer.reset();
 }
 
 void loop() {
