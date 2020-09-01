@@ -186,7 +186,7 @@ byte getClockX(int8_t x) {
 void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
   int8_t x = X;
-  
+
   byte h10 = hrs / 10;
   byte h01 = hrs % 10;
   byte m10 = mins / 10;
@@ -210,9 +210,10 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
       if (h10 == 0) w -= (h01 == 1 ? 3 : 4);
       x += ((15 - w) / 2) + (w == 15 ? 0 : 1);
       
-      if (h10 > 0) x--;
+      if (h10 < 2 && m01 != 1) x--;
+      if (h10 == 1 && m01 == 1) x--;
+      if (h10 == 2) x--;
       if (hrs == 0 && mins == 0) x--;
-      if (hrs == 21 && m01 != 1) x += 2;
             
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
