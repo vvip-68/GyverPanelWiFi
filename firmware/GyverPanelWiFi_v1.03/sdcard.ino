@@ -145,7 +145,7 @@ void sdcardRoutine() {
       
   if (fxdata.available()) {
     char tmp;
-    fxdata.readBytes(&tmp, 1); // ??? какой-то байт в начале последовательности - отметка начала кадра ???
+    fxdata.readBytes(&tmp, 1); // ??? какой-то байт в начале последовательности - отметка начала кадра / номер канала кадрового потока, передаваемого на устройство ???
     char* ptr = reinterpret_cast<char*>(&leds[0]);
     int16_t cnt = fxdata.readBytes(ptr, NUM_LEDS * 3); // 3 байта на цвет RGB
     play_file_finished = (cnt != NUM_LEDS * 3);

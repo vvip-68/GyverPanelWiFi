@@ -67,6 +67,10 @@ void setup() {
   #if (USE_SD == 1)
     InitializeSD();
   #endif
+
+  #if (USE_POWER == 1)
+    pinMode(POWER_PIN, OUTPUT);
+  #endif
      
   #if defined(ESP8266)
     WiFi.setSleepMode(WIFI_NONE_SLEEP);

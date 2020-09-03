@@ -210,8 +210,17 @@ void process() {
     }
     
     // Прочие клики работают только если не выключено
-    if (!isTurnedOff) {
-
+    if (isTurnedOff) {
+      // Выключить питание матрицы
+      #if (USE_POWER == 1)
+        digitalWrite(POWER_PIN, POWER_OFF);
+      #endif      
+    } else {
+      // Включить питание матрицы
+      #if (USE_POWER == 1)
+        digitalWrite(POWER_PIN, POWER_ON);
+      #endif
+      
       // Был двойной клик - следующий эффект, сброс автоматического переключения
       if (clicks == 2) {
         bool tmpSaveSpecial = specialMode;
@@ -1778,6 +1787,7 @@ String getParam2ForMode(byte mode) {
      //           Маркер типа - список выбора         0,1,2,3,4               0               1      2    3    4      5    7      8       9      10     11    12    13       14       15
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Зигзаг,Ноты,Ромб,Сердце,Елка,Клетка,Смайлик,Зигзаг,Полосы,Волны,Чешуя,Портьера,Плетенка,Снежинка"));
      break;
+   #if (USE_SD == 1)     
    case MC_SDCARD:
      // Эффект "SD-card" имеет несколько вариантов - список выбора файла эффекта
      // Дополнительный параметр представлен в приложении списком выбора
@@ -1790,6 +1800,7 @@ String getParam2ForMode(byte mode) {
        str += "," + tmp;
      }
      break;
+     #endif
    case MC_IMAGE:
      // Эффект "Анимация" имеет несколько вариантов - список выбора отображаемой картинки
      // Дополнительный параметр представлен в приложении списком выбора
