@@ -263,6 +263,7 @@
 - SD card shield https://ali.onl/1FjV https://ali.onl/1FjW https://ali.onl/1FjZ
 - Динамики http://ali.onl/1h3u https://ali.onl/1FjX
 - Проводочки http://ali.ski/JQRler  http://ali.ski/_SuCF
+- Дисплеи TM1637 https://ali.onl/1Fkg https://ali.onl/1Fkf
 
 ## Вам скорее всего пригодится
 * [Всё для пайки (паяльники и примочки)](http://alexgyver.ru/all-for-soldering/)
