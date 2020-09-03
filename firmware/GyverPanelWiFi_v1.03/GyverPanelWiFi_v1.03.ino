@@ -62,6 +62,11 @@ void setup() {
   #if (USE_MP3 == 1)
     InitializeDfPlayer1();
   #endif
+
+  // Инициализация SD-карты
+  #if (USE_SD == 1)
+    InitializeSD();
+  #endif
      
   #if defined(ESP8266)
     WiFi.setSleepMode(WIFI_NONE_SLEEP);

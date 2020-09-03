@@ -1,0 +1,173 @@
+#if (USE_SD == 1)
+
+#define MAX_FILES 128
+
+File fxdata;
+File folder;
+
+String  nameFiles[MAX_FILES];    // Список имен файлов, найденных в папке на SD-карте
+uint8_t countFiles = 0;          // Количество найденных файлов эффектов
+int8_t  currentFile = -1;        // Текущий проигрываемый эффект или -1 если играть в случайном порядке
+
+int8_t  file_idx = currentFile;  // Служебное - для определения какой следующий файл воспроизводить
+String  fileName;                // Полное имя файла эффекта, включая имя папки
+
+void InitializeSD() {  
+  isSdCardReady = false;
+  Serial.println(F("\nИнициализация SD-карты..."));  
+  if (SD.begin(SD_CS_PIN)) {
+    Serial.println(F("Загрузка списка файлов с эффектами..."));  
+    loadDirectory();
+    isSdCardReady = countFiles > 0;  
+  } else {
+    Serial.println(F("SD-карта недоступна"));
+  }
+}
+
+void loadDirectory() {
+
+  String directoryName = "/" + String(WIDTH) + "x" + String(HEIGHT);
+  Serial.print(F("Папка с эффектами "));
+  Serial.print(directoryName);
+  if (SD.exists(directoryName)) {
+    Serial.println(F(" обнаружена."));
+  } else {
+    Serial.println(F(" не обнаружена."));
+    return;
+  }
+
+  String file_name;
+  uint32_t file_size;
+  float fsize;
+  byte sz = 0;
+  String fs_name;
+  
+  boolean first = true;
+  folder = SD.open(directoryName);
+    
+  while (folder) {
+    File entry =  folder.openNextFile();
+    
+    // Очередной файл найден? Нет - завершить
+    if (!entry) break;
+        
+    if (!entry.isDirectory()) {
+            
+      file_name = entry.name();
+      file_size = entry.size();
+      
+      if (!file_name.endsWith(".out") || file_size == 0) {
+        entry.close();
+        continue;    
+      }
+
+      if (countFiles >= MAX_FILES) {
+        Serial.print(F("Максимальное количество эффектов: "));        
+        Serial.println(MAX_FILES);
+        entry.close();
+        break;
+      }
+        
+      if (first) {
+        first = false;
+        Serial.println(F("Найдены файлы эффектов:"));        
+      }
+
+      sz = 0;
+      fsize = file_size;
+      fs_name = F("байт");
+
+      if (fsize > 1024) { fsize /= 1024.0; fs_name = "К"; sz++;}
+      if (fsize > 1024) { fsize /= 1024.0; fs_name = "М"; sz++;}
+      if (fsize > 1024) { fsize /= 1024.0; fs_name = "Г"; sz++;}
+            
+      Serial.print("  ");
+      Serial.print(file_name);
+      Serial.print("\t");
+      if (sz == 0)
+        Serial.print(file_size, DEC);
+      else
+        Serial.print(fsize, 2);      
+      Serial.println(" " + fs_name);
+      
+      nameFiles[countFiles++] = file_name;
+    }
+    
+    entry.close();
+  }
+
+  if (countFiles == 0) {
+    Serial.println(F("Доступных файлов эффектов не найдено"));
+  }  
+}
+
+void sdcardRoutine() {
+  
+ if (loadingFlag) {
+    loadingFlag = false;
+    //modeCode = MC_SDCARD;
+
+    // Если карта не готова (нт файлов эффектов) - перейти к следующему режиму
+    if (!isSdCardReady) {
+      nextMode();
+      return;
+    }
+    
+   if (currentFile < 0) {
+      if (countFiles == 1) {
+        file_idx = 0;
+      } else if (countFiles == 2) {
+        file_idx = (file_idx != 1) ? 0 : 1;
+      } else {
+        file_idx = random8(0,countFiles);
+      }
+    } else {
+      file_idx = currentFile;
+    }
+    
+    fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
+    play_file_finished = false;
+    Serial.print(F("Загрузка файла эффекта: '"));
+    Serial.print(fileName);
+
+    fxdata = SD.open(fileName);
+    if (fxdata) {
+      Serial.println(F("' -> ok"));
+    } else {
+      Serial.println(F("' -> ошибка"));
+    }
+
+    FastLED.clear();
+  }  
+
+  // Карта присутствует и файл открылся правильно?
+  // Что-то пошло не так - перейти к следующему эффекту
+  if (!(isSdCardReady && fxdata)) {
+    nextMode();
+    return;    
+  }
+      
+  if (fxdata.available()) {
+    char tmp;
+    fxdata.readBytes(&tmp, 1); // ??? какой-то байт в начале последовательности - отметка начала кадра ???
+    char* ptr = reinterpret_cast<char*>(&leds[0]);
+    int16_t cnt = fxdata.readBytes(ptr, NUM_LEDS * 3); // 3 байта на цвет RGB
+    play_file_finished = (cnt != NUM_LEDS * 3);
+  } else {
+    play_file_finished = true;
+    fxdata.close();
+  }
+
+  if (play_file_finished) {
+    Serial.println("'" + fileName + String(F("' - завершено")));
+    if (currentFile >= 0) {
+      currentFile++; 
+      if (currentFile > countFiles - 1) {
+        currentFile = 0;
+      }
+    }
+    loadingFlag = true;
+  }
+}
+
+#endif

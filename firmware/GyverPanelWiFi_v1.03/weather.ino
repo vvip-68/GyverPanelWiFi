@@ -228,17 +228,15 @@ void weatherRoutine() {
       // Полученную скорректированную площадь отрисовки размещаем по центру матирицы
       pos_x = 0;
       pos_y = HEIGHT - image_desc.frame_height;
-      weather_text_x = image_desc.frame_width - 3; // знак +/- пусть залазит на картинку  
+      weather_text_x = image_desc.frame_width + 8; // знак +/- пусть залазит на картинку  - это прая границаемпературы
       weather_text_y = pos_y - 5;                  // отступ от низа картинки; 5 - высота шрифта
-
-      uint8_t text_w = 12;   // +15 - 3 знака шрифта 3x5 + по пробелу между знаками = 9 + 3 = 12;
       
-      while(weather_text_x > 0 && weather_text_x + text_w - 1 > WIDTH) weather_text_x--;
+      while(weather_text_x > 0 && weather_text_x >= WIDTH) weather_text_x--;
       while(weather_text_y < 0) weather_text_y++;
 
       // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
       // Высота картинки + text = oт "weather_text_x" до "pos_y + image_desc.frame_height"; - если матрица выше - центрировать конгломерат по матрице
-      uint8_t offset_x = (WIDTH - (weather_text_x + text_w - pos_x)) / 2;
+      uint8_t offset_x = (WIDTH - (weather_text_x - pos_x)) / 2;
       uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2;
 
       pos_x += offset_x;
@@ -324,49 +322,52 @@ void weatherRoutine() {
     CRGB color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
     
     // Если температура - однозначная - сместиться на одно знакоместо
-    byte text_x = weather_text_x;
-    byte text_y = weather_text_y;
+    byte temp_x = weather_text_x;
+    byte temp_y = weather_text_y;
+
+    byte t = abs(temperature);
+    byte dec_t = t / 10;
+    byte edc_t = t % 10;
     
-    if (abs(temperature) < 10) text_x += 4;
-    
-    // Нарисовать '+' или '-' если температура не 0
-    if (temperature != 0) {
-      // Горизонтальная черта - общая для '-' и '+'
+    // Для правильного позиционирования - рисуем справа налево
+    if (temperature == 0) {
+      // При температуре = 0 - ресуем маленький значок C
+      temp_x -= 3;  
       for(int i = 0; i < 3; i++) {
-        drawPixelXY(text_x + i, text_y + 2, color);      
+        drawPixelXY(getClockX(temp_x), temp_y + i, color);      
+      }
+      drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
+      drawPixelXY(getClockX(temp_x + 1), temp_y + 2, color);      
+    }
+
+    // Единицы градусов
+    temp_x -= (edc_t == 1 ? 3 : 4);
+    drawDigit3x5(edc_t, getClockX(temp_x), temp_y, color);
+    temp_x += (dec_t == 0 && edc_t == 1 ? 1 : 0);
+
+    // Десятки градусов
+    if (dec_t != 0) {
+      temp_x -= (dec_t == 1 ? 3 : 4);
+      drawDigit3x5(dec_t, getClockX(temp_x), temp_y, color);
+      temp_x += (dec_t == 1 ? 1 : 0);
+    }
+            
+    // Нарисовать '+' или '-' если температура не 0
+    // Горизонтальная черта - общая для '-' и '+'
+    if (temperature != 0) {
+       temp_x -= 4;
+      for(int i = 0; i < 3; i++) {
+        drawPixelXY(getClockX(temp_x + i), temp_y + 2, color);      
       }
       
       // Для плюcа - вертикальная черта
       if (temperature > 0) {
-        drawPixelXY(text_x + 1, text_y + 1, color);
-        drawPixelXY(text_x + 1, text_y + 3, color);
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 1, color);
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 3, color);
       }
-    }
-    text_x += 4;
-
-    // Десятки температуры
-    if (abs(temperature) >= 10) {
-      drawDigit3x5(abs(temperature) / 10, text_x, text_y, color);
-      text_x += 4;
-    }
-
-    // Единицы температуры
-    drawDigit3x5(abs(temperature) % 10, text_x, text_y, color);
-    text_x += 4;
-
-    /*
-    // Буква 'C'
-    for(int i = 0; i < 3; i++) {
-      drawPixelXY(text_x, text_y + 1 + i, color);      
-    }
-
-    for(int i = 0; i < 2; i++) {
-      drawPixelXY(text_x + 1 + i, text_y, color);      
-      drawPixelXY(text_x + 1 + i, text_y + 4, color);      
-    }
-    */
+      temp_x += 4;
+    }    
   }
   
-  #endif
-  
+  #endif  
 }

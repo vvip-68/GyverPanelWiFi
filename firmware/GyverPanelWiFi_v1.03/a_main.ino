@@ -1581,7 +1581,8 @@ void sendPageParams(int page) {
       str+="|SQ:"+getParam2ForMode(tmp_eff);
       // Контраст
       str+="|BE:"+(tmp_eff == MC_PACIFICA || tmp_eff == MC_DAWN_ALARM ||
-                   tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || tmp_eff == MC_CLOCK
+                   tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || 
+                   tmp_eff == MC_CLOCK || tmp_eff == MC_SDCARD
          ? "X" 
          : String(effectContrast[tmp_eff]));
       str+=";";
@@ -1739,6 +1740,7 @@ String getParamForMode(byte mode) {
    case MC_LIFE:
    case MC_PATTERNS:
    case MC_CLOCK:
+   case MC_SDCARD:
      str = "X";
      break;
    default:

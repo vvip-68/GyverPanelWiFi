@@ -276,7 +276,11 @@ void processEffect(byte aMode) {
     case MC_CLOCK:               clockRoutine(); break;
     case MC_DAWN_ALARM:          dawnProcedure(); break;
     case MC_PATTERNS:            patternRoutine(); break;
-    
+
+    #if (USE_SD == 1)
+    case MC_SDCARD:              sdcardRoutine(); break;
+    #endif
+
     // Спец.режимы так же как и обычные вызываются в customModes (MC_DAWN_ALARM_SPIRAL и MC_DAWN_ALARM_SQUARE)
     case MC_DAWN_ALARM_SPIRAL:   dawnLampSpiral(); break;
     case MC_DAWN_ALARM_SQUARE:   dawnLampSquare(); break;
