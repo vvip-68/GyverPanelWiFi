@@ -45,8 +45,8 @@
 
 #define LED_PIN  2            // D2 пин ленты
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
-#define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET
+#define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
 #endif
 #endif
 
