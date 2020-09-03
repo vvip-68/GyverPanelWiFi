@@ -1,16 +1,10 @@
 #if (USE_SD == 1)
 
-#define MAX_FILES 128
-
 File fxdata;
 File folder;
 
-String  nameFiles[MAX_FILES];    // Список имен файлов, найденных в папке на SD-карте
-uint8_t countFiles = 0;          // Количество найденных файлов эффектов
-int8_t  currentFile = -1;        // Текущий проигрываемый эффект или -1 если играть в случайном порядке
-
-int8_t  file_idx = currentFile;  // Служебное - для определения какой следующий файл воспроизводить
-String  fileName;                // Полное имя файла эффекта, включая имя папки
+int8_t  file_idx;    // Служебное - для определения какой следующий файл воспроизводить
+String  fileName;    // Полное имя файла эффекта, включая имя папки
 
 void InitializeSD() {  
   isSdCardReady = false;
@@ -104,16 +98,18 @@ void loadDirectory() {
 void sdcardRoutine() {
   
  if (loadingFlag) {
-    loadingFlag = false;
-    //modeCode = MC_SDCARD;
+   loadingFlag = false;
+   //modeCode = MC_SDCARD;
 
-    // Если карта не готова (нт файлов эффектов) - перейти к следующему режиму
-    if (!isSdCardReady) {
-      nextMode();
-      return;
-    }
+   // Если карта не готова (нт файлов эффектов) - перейти к следующему режиму
+   if (!isSdCardReady) {
+     nextMode();
+     return;
+   }
     
-   if (currentFile < 0) {
+   int8_t currentFile = effectScaleParam2[MC_SDCARD] - 1;
+    
+   if (currentFile < 0 || currentFile >= countFiles) {
       if (countFiles == 1) {
         file_idx = 0;
       } else if (countFiles == 2) {
@@ -160,12 +156,14 @@ void sdcardRoutine() {
 
   if (play_file_finished) {
     Serial.println("'" + fileName + String(F("' - завершено")));
+    /*
     if (currentFile >= 0) {
       currentFile++; 
       if (currentFile > countFiles - 1) {
         currentFile = 0;
       }
     }
+    */
     loadingFlag = true;
   }
 }

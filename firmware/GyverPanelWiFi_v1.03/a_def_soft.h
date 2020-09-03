@@ -403,8 +403,14 @@ int8_t   AM4_effect_id = -3;             // Режим 4 по времени - I
 // ************************* РАБОТА С SD КАРТОЙ *************************
 
 #if (USE_SD == 1)
-bool isSdCardReady = false;
-bool play_file_finished = false;
+
+#define MAX_FILES 128
+
+bool    isSdCardReady = false;       // Флаг - SD карта инициализирована корректно
+bool    play_file_finished = false;  // Флаг - воспроизведение эффекта завершено
+String  nameFiles[MAX_FILES];        // Список имен файлов, найденных в папке на SD-карте
+uint8_t countFiles = 0;              // Количество найденных файлов эффектов
+
 #endif
 
 // ************************* ПРОЧИЕ ПЕРЕМЕННЫЕ *************************
