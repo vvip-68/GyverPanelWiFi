@@ -250,17 +250,19 @@
 ## Материалы и компоненты
 ### Ссылки оставлены на магазины
 Полный список компонентов есть в статье https://alexgyver.ru/matrix_guide/
-- NodeMCU http://ali.ski/RgD5P  http://ali.ski/_1FJZ
-- Wemos D1 mini http://ali.ski/FuTgbO  http://ali.ski/Z9feWU
-- Матрица 16x16 http://ali.ski/BCKQT  http://ali.ski/bRW14  http://ali.ski/X-tBrQ
-- Адресная лента (для DIY матрицы) http://ali.ski/2dmOe_  http://ali.ski/rqgqdq  http://ali.ski/4Ma9iH
+- NodeMCU http://ali.ski/_1FJZ, https://ali.onl/1FjU
+- Wemos D1 mini http://ali.ski/FuTgbO, https://ali.onl/1FjS https://ali.onl/1Fk1
+- Wemos D1 mini Pro https://ali.onl/1FjT https://ali.onl/1Fk0
+- Матрица 16x16 http://ali.ski/BCKQT http://ali.ski/bRW14 http://ali.ski/X-tBrQ
+- Адресная лента (для DIY матрицы) http://ali.ski/rqgqdq  http://ali.ski/4Ma9iH
+- Готовая гирлянда на 20/50/100 диодов (2м/5м/10м) https://ali.onl/1Fk3 https://ali.onl/1Fk4 https://ali.onl/1Fk5
 - Сенсорная кнопка http://ali.ski/aWQBAa  http://ali.ski/rsOrSB
 - Резисторы http://ali.ski/UEez2
 - БП 5V (брать 3A минимум) http://ali.ski/K-CThT  http://ali.ski/3UWXJ
 - MP3 DFPlayer http://ali.onl/1gY1 http://ali.onl/1gY3
-- Динамики http://ali.onl/1h3u http://ali.onl/1h3v
+- SD card shield https://ali.onl/1FjV https://ali.onl/1FjW https://ali.onl/1FjZ
+- Динамики http://ali.onl/1h3u https://ali.onl/1FjX
 - Проводочки http://ali.ski/JQRler  http://ali.ski/_SuCF
-- Плафон https://leroymerlin.ru/product/plafon-cilindr-18212968/
 
 ## Вам скорее всего пригодится
 * [Всё для пайки (паяльники и примочки)](http://alexgyver.ru/all-for-soldering/)
