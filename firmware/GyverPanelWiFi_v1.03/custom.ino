@@ -386,6 +386,8 @@ void setTimersForMode(byte aMode) {
       effectTimer.setInterval(10);        
     else
       effectTimer.setInterval(effectSpeed);
+  } else if (aMode == MC_CLOCK) {
+      effectTimer.setInterval(250);        
   }
     
   clockSpeed = getClockScrollSpeed();
