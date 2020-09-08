@@ -97,7 +97,7 @@ void loadDirectory() {
 
 void sdcardRoutine() {
   
- if (loadingFlag) {
+ if (loadingFlag || play_file_finished) {
    loadingFlag = false;
    //modeCode = MC_SDCARD;
 
@@ -106,21 +106,24 @@ void sdcardRoutine() {
      nextMode();
      return;
    }
-    
-   int8_t currentFile = effectScaleParam2[MC_SDCARD] - 1;
-    
-   if (currentFile < 0 || currentFile >= countFiles) {
-      if (countFiles == 1) {
-        file_idx = 0;
-      } else if (countFiles == 2) {
-        file_idx = (file_idx != 1) ? 0 : 1;
+
+   // Выбор другого файла - только если установлен loadingFlag
+   // Если сюда попали по play_file_finished - просто вернуться к началу проигранного файла и воспроизвести его еще раз.
+   // Это позволит длительное время "играть" эффект использую зацикленные короткие фрагменты 
+   if (loadingFlag) {
+     int8_t currentFile = effectScaleParam2[MC_SDCARD] - 1;    
+     if (currentFile < 0 || currentFile >= countFiles) {
+        if (countFiles == 1) {
+          file_idx = 0;
+        } else if (countFiles == 2) {
+          file_idx = (file_idx != 1) ? 0 : 1;
+        } else {
+          file_idx = random8(0,countFiles);
+        }
       } else {
-        file_idx = random8(0,countFiles);
+        file_idx = currentFile;
       }
-    } else {
-      file_idx = currentFile;
     }
-    
     fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
     play_file_finished = false;
     Serial.print(F("Загрузка файла эффекта: '"));
@@ -164,7 +167,6 @@ void sdcardRoutine() {
       }
     }
     */
-    loadingFlag = true;
   }
 }
 
