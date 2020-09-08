@@ -98,7 +98,6 @@ void loadDirectory() {
 void sdcardRoutine() {
   
  if (loadingFlag || play_file_finished) {
-   loadingFlag = false;
    //modeCode = MC_SDCARD;
 
    // Если карта не готова (нт файлов эффектов) - перейти к следующему режиму
@@ -124,6 +123,7 @@ void sdcardRoutine() {
         file_idx = currentFile;
       }
     }
+
     fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
     play_file_finished = false;
     Serial.print(F("Загрузка файла эффекта: '"));
@@ -137,6 +137,7 @@ void sdcardRoutine() {
     }
 
     FastLED.clear();
+    loadingFlag = false;
   }  
 
   // Карта присутствует и файл открылся правильно?
