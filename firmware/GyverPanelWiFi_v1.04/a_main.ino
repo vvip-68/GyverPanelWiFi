@@ -511,7 +511,6 @@ void parsing() {
       // ----------------------------------------------------
 
       case 6:
-        loadingFlag = true;
         b_tmp = 0;
         tmp_eff = receiveText.indexOf("|");
         if (tmp_eff > 0) {
@@ -1977,17 +1976,17 @@ void setRandomMode2() {
   byte newMode, cnt = 0;
   
   #if (USE_SD == 1)  
-    // На SD арте содержится более 40 эффектов плюсом к 40 эффектов, заданных в прошивке
-    // Когда эффект следующий выбирается случайным образом, вероятность что выпадет SD-карта достаточно мала.
-    // Искуственным образом увеличиваем вероятность эффекта с SD-карты
-    if (getEffectUsage(MC_SDCARD)) {
-      newMode = random8(0, 200);
-      if (newMode % 10 == 0) {
-        newMode = MC_SDCARD;
-        setEffect(newMode);
-        return;
-      }
-    }   
+  // На SD арте содержится более 40 эффектов плюсом к 40 эффектов, заданных в прошивке
+  // Когда эффект следующий выбирается случайным образом, вероятность что выпадет SD-карта достаточно мала.
+  // Искуственным образом увеличиваем вероятность эффекта с SD-карты
+  if (getEffectUsage(MC_SDCARD)) {
+    newMode = random16(0, 200);
+    if (newMode % 10 == 0) {
+      newMode = MC_SDCARD;
+      setEffect(newMode);
+      return;
+    }
+  }   
   #endif
 
   while (cnt < 10) {

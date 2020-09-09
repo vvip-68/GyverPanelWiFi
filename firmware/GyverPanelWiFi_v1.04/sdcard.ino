@@ -110,7 +110,8 @@ void sdcardRoutine() {
    // Если сюда попали по play_file_finished - просто вернуться к началу проигранного файла и воспроизвести его еще раз.
    // Это позволит длительное время "играть" эффект использую зацикленные короткие фрагменты 
    if (loadingFlag) {
-     int8_t currentFile = effectScaleParam2[MC_SDCARD] - 1;    
+     int8_t currentFile = (specialTextEffectParam >= 0) ? (specialTextEffectParam - 1) : (effectScaleParam2[MC_SDCARD] - 1);
+        
      if (currentFile < 0 || currentFile >= countFiles) {
         if (countFiles == 1) {
           file_idx = 0;
@@ -123,7 +124,7 @@ void sdcardRoutine() {
         file_idx = currentFile;
       }
     }
-
+    
     fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
     play_file_finished = false;
     Serial.print(F("Загрузка файла эффекта: '"));
@@ -152,7 +153,7 @@ void sdcardRoutine() {
     fxdata.readBytes(&tmp, 1); // ??? какой-то байт в начале последовательности - отметка начала кадра / номер канала кадрового потока, передаваемого на устройство ???
     char* ptr = reinterpret_cast<char*>(&leds[0]);
     int16_t cnt = fxdata.readBytes(ptr, NUM_LEDS * 3); // 3 байта на цвет RGB
-    play_file_finished = (cnt != NUM_LEDS * 3);
+    play_file_finished = (cnt != NUM_LEDS * 3);    
   } else {
     play_file_finished = true;
     fxdata.close();

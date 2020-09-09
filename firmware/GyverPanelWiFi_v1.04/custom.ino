@@ -60,7 +60,9 @@ void doEffectWithOverlay(byte aMode) {
     if (specialTextEffect >= 0) {
       saveEffectBeforeText = thisMode;   // сохранить текущий эффект
       setTimersForMode(specialTextEffect);
-      loadingFlag = specialTextEffect != saveEffectBeforeText;
+      // Если заказанный эффект не тот же, что сейчас воспроизводится или если эффект имеет вариант - выполнить инициализацию эффекта
+      loadingFlag = (specialTextEffect != saveEffectBeforeText) || (specialTextEffectParam >=0 && getParam2ForMode(specialTextEffect).charAt(0) != 'X');
+      Serial.println("loadingFlag="+String(loadingFlag));
     }
   } else
 
@@ -95,7 +97,8 @@ void doEffectWithOverlay(byte aMode) {
   if (needStopText) {    
     showTextNow = false; 
     ignoreTextOverlaySettingforEffect = nextTextLineIdx >= 0;
-    
+    specialTextEffectParam = -1;
+
     // Если строка показывалась на фоне специального эффекта для строки или специальной однотонной заливки - восстановить эффект, который был до отображения строки
     if (saveEffectBeforeText >= 0 || useSpecialBackColor) {
       loadingFlag = specialTextEffect != saveEffectBeforeText || useSpecialBackColor;  // Восстановленный эффект надо будет перезагрузить, т.к. иначе эффекты с оверлеем будут использовать оставшийся от спецэффекта/спеццвета фон
@@ -457,7 +460,8 @@ void checkIdleState() {
       //  showTextNow && !gameOverFlag           ||   // Если нужно чтобы эффект не менялся, пока не пробежит вся строка оверлеем - раскомментарить эту строку
           thisMode == MC_MAZE   && !gameOverFlag ||   // Лабиринт не меняем на другой эффект, пока игра не закончится (не выйдем из лабиринта)
       //  thisMode == MC_SNAKE  && !gameOverFlag ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
-          thisMode == MC_TETRIS && !gameOverFlag)     // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)
+          thisMode == MC_TETRIS && !gameOverFlag ||   // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)
+          showTextNow && (specialTextEffect >= 0))    // Воспроизводится бегущая строка на фоне указанного эффекта
       {        
         // Если бегущая строка или игра не завершены - смены режима не делать
         ok = false;

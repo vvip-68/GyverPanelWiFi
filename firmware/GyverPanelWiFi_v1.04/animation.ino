@@ -166,7 +166,7 @@ void animationRoutine() {
   if (loadingFlag) {
     FastLED.clear();
 
-    currentImageIdx = effectScaleParam2[thisMode];
+    currentImageIdx = (specialTextEffectParam >= 0) ? specialTextEffectParam : effectScaleParam2[thisMode];
     
     // Индексы доступных картинок - от  1 до MAX_IMAGE_NUM;
     // Eсли currentImageIdx == 0 - брать случайную картинку

@@ -313,9 +313,9 @@ void rainbowRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     // modeCode = MC_RAINBOW;
-    rainbow_type = effectScaleParam2[MC_RAINBOW];
+    rainbow_type = (specialTextEffectParam >= 0) ? specialTextEffectParam : effectScaleParam2[MC_RAINBOW];
     // Если авто - генерировать один из типов - 1-Вертикальная радуга, 2-Горизонтальная радуга, 3-Диагональная радуга, 4-Вращающаяся радуга
-    if (rainbow_type == 0) {
+    if (rainbow_type == 0 || rainbow_type > 4) {
       rainbow_type = random8(1,4);
     }     
     FastLED.clear();  // очистить
@@ -2016,8 +2016,9 @@ void arrowsRoutine() {
     //modeCode = MC_ARROWS;
     FastLED.clear();
     arrow_complete = false;
-    arrow_mode_orig = effectScaleParam2[MC_ARROWS];
-    arrow_mode = arrow_mode_orig == 0 ? random8(1,5) : arrow_mode_orig;
+    arrow_mode_orig = (specialTextEffectParam >= 0) ? specialTextEffectParam : effectScaleParam2[MC_ARROWS];
+    
+    arrow_mode = (arrow_mode_orig == 0 || arrow_mode_orig > 5) ? random8(1,5) : arrow_mode_orig;
     arrow_play_mode_count_orig[0] = 0;
     arrow_play_mode_count_orig[1] = 4;  // 4 фазы - все стрелки показаны по кругу один раз - переходить к следующему ->
     arrow_play_mode_count_orig[2] = 4;  // 2 фазы - гориз к центру (1), затем верт к центру (2) - обе фазы повторить по 2 раза -> 4

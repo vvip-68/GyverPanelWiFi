@@ -64,8 +64,8 @@ void drawPicture_XY(uint8_t iconIdx, uint8_t X, uint8_t Y, uint8_t W, uint8_t H)
 void patternRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
-    patternIdx = effectScaleParam2[MC_PATTERNS] - 1;
-    if (patternIdx < 0) {
+    patternIdx = (specialTextEffectParam >= 0) ? (specialTextEffectParam - 1) : (effectScaleParam2[MC_PATTERNS] - 1);
+    if (patternIdx < 0 || patternIdx > MAX_PATTERN) {
       patternIdx = random8(0,MAX_PATTERN);
     }
     if (dir == 'd') 
