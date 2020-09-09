@@ -1973,10 +1973,26 @@ void setRandomMode() {
 }
 
 void setRandomMode2() {
-  byte cnt = 0;
+  
+  byte newMode, cnt = 0;
+  
+  #if (USE_SD == 1)  
+    // На SD арте содержится более 40 эффектов плюсом к 40 эффектов, заданных в прошивке
+    // Когда эффект следующий выбирается случайным образом, вероятность что выпадет SD-карта достаточно мала.
+    // Искуственным образом увеличиваем вероятность эффекта с SD-карты
+    if (getEffectUsage(MC_SDCARD)) {
+      newMode = random8(0, 200);
+      if (newMode % 10 == 0) {
+        newMode = MC_SDCARD;
+        setEffect(newMode);
+        return;
+      }
+    }   
+  #endif
+
   while (cnt < 10) {
     cnt++;
-    byte newMode = random8(0, MAX_EFFECT - 1);
+    newMode = random8(0, MAX_EFFECT - 1);
     if (!getEffectUsage(newMode)) continue;
 
     setEffect(newMode);
