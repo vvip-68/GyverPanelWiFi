@@ -49,15 +49,6 @@ void setup() {
   FastLED.clear();
   FastLED.show();
 
-#if defined(ESP8266) && defined(TRUE_RANDOM)
-  unsigned long seed = (int)RANDOM_REG32;
-#else
-  unsigned long seed = (int)(analogRead(0) ^ micros());
-#endif
-  randomSeed(seed);
-
- // randomSeed(analogRead(0) ^ millis());    // пинаем генератор случайных чисел
-
   // Первый этап инициализации плеера - подключение и основные настройки
   #if (USE_MP3 == 1)
     InitializeDfPlayer1();
@@ -78,6 +69,15 @@ void setup() {
 
   // Подключение к сети
   connectToNetwork();
+
+  // пинаем генератор случайных чисел
+#if defined(ESP8266) && defined(TRUE_RANDOM)
+  unsigned long seed = (int)RANDOM_REG32;
+#else
+  unsigned long seed = (int)(analogRead(0) ^ micros());
+#endif
+  randomSeed(seed);
+  random16_set_seed(seed);
 
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);

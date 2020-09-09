@@ -62,7 +62,6 @@ void doEffectWithOverlay(byte aMode) {
       setTimersForMode(specialTextEffect);
       // Если заказанный эффект не тот же, что сейчас воспроизводится или если эффект имеет вариант - выполнить инициализацию эффекта
       loadingFlag = (specialTextEffect != saveEffectBeforeText) || (specialTextEffectParam >=0 && getParam2ForMode(specialTextEffect).charAt(0) != 'X');
-      Serial.println("loadingFlag="+String(loadingFlag));
     }
   } else
 

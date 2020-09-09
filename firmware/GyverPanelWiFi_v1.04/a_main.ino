@@ -458,10 +458,10 @@ void parsing() {
     // Режимы кроме 4 (яркость), 13.3 14 (новый спец-режим) и 18 (запрос параметров страницы),
     // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) 
     // 23 (доп.параметры) - сбрасывают спец-режим
-    if (intData[0] != 4 && !(intData[0] == 13 && intData[1] == 3) && 
-        intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
-        intData[0] != 20 && intData[0] != 21 && intData[0] != 23) {
-      if (specialMode) {
+    if (specialMode) {
+        if (intData[0] != 4 && !(intData[0] == 13 && intData[1] == 3) && 
+            intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
+            intData[0] != 20 && intData[0] != 21 && intData[0] != 23) {
         idleTimer.setInterval(idleTime);
         idleTimer.reset();
         specialMode = false;
@@ -1976,22 +1976,19 @@ void setRandomMode2() {
   byte newMode, cnt = 0;
   
   #if (USE_SD == 1)  
-  // На SD арте содержится более 40 эффектов плюсом к 40 эффектов, заданных в прошивке
+  // На SD арте содержится более 40 эффектов плюсом к 40 эффектам, заданных в прошивке
   // Когда эффект следующий выбирается случайным образом, вероятность что выпадет SD-карта достаточно мала.
   // Искуственным образом увеличиваем вероятность эффекта с SD-карты
-  if (getEffectUsage(MC_SDCARD)) {
-    newMode = random16(0, 200);
-    if (newMode % 10 == 0) {
-      newMode = MC_SDCARD;
-      setEffect(newMode);
-      return;
-    }
+  if (getEffectUsage(MC_SDCARD) && (random16(0, 200) % 10 == 0)) {
+    newMode = MC_SDCARD;
+    setEffect(newMode);
+    return;
   }   
   #endif
 
   while (cnt < 10) {
     cnt++;
-    newMode = random8(0, MAX_EFFECT - 1);
+    newMode = random16(0, MAX_EFFECT - 1);
     if (!getEffectUsage(newMode)) continue;
 
     setEffect(newMode);

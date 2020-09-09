@@ -118,7 +118,7 @@ void sdcardRoutine() {
         } else if (countFiles == 2) {
           file_idx = (file_idx != 1) ? 0 : 1;
         } else {
-          file_idx = random8(0,countFiles);
+          file_idx = random16(0,countFiles);
         }
       } else {
         file_idx = currentFile;
