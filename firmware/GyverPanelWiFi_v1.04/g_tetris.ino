@@ -98,7 +98,8 @@ void tetrisRoutine() {
       buttons = 4;
       if (checkArea(3)) {       // проверка возможности поворота
         prev_ang = ang;         // запоминаем старый угол
-        ang = ++ang % 4;        // изменяем ang от 0 до 3 (да, хитро)
+        ang++;
+        ang = ang % 4;          // изменяем ang от 0 до 3
         redrawFigure(prev_ang, pos, height);    // перерисовать фигуру
       }
     }
@@ -252,7 +253,8 @@ void newGameTetris() {
   ang = random(4);    // и угол поворота
   //color = colors[random(6)];      // случайный цвет
 
-  color_index = ++color_index % 6;  // все цвета по очереди
+  color_index++;
+  color_index = color_index % 6;    // все цвета по очереди
   color = colors[color_index];
 
   // Ширина стакана равна его высоте
@@ -318,11 +320,11 @@ boolean checkArea(int8_t check_type) {
   // этот режим для проверки поворота. Поэтому "поворачиваем"
   // фигуру на следующий угол чтобы посмотреть, не столкнётся ли она с чем
   if (check_type == 3) {
-    this_ang = ++this_ang % 4;
+    this_ang++;
+    this_ang = this_ang % 4;
     offset = 0;   // разрешаем оказаться вплотную к стенке
   }
 
-  byte y_st = 1;
   byte x_st = left_offset + 1;
   byte x_en = right_offset - 1;
 

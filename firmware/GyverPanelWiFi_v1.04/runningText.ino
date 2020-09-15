@@ -335,7 +335,6 @@ String processMacrosInText(String textLine) {
   boolean found = false;
   uint8_t attempt = 0;
   int16_t idx, idx2;
-  char c;
   String tmp, tmp1;
 
   // Размер массива строк
@@ -697,8 +696,7 @@ String processDateMacrosInText(String textLine) {
   */
 
   String   str, tmp, outText;
-  uint8_t  idx, idx2, iDay, iMonth;
-  uint16_t iYear;
+  uint8_t  idx, idx2;
   uint8_t  aday = day();
   uint8_t  amnth = month();
   uint16_t ayear = year();
@@ -902,10 +900,10 @@ String processDateMacrosInText(String textLine) {
         
         // Корректная дата - 10 символов, точки в позициях 2 и 5
         if (str.length() == 10 && str.charAt(2) == '.' && str.charAt(5) == '.') {
-           int8_t iDay   = (str[0] - '0') * 10 + (str[1] - '0');
-           int8_t iMonth = (str[3] - '0') * 10 + (str[4] - '0');
+           uint8_t iDay   = (str[0] - '0') * 10 + (str[1] - '0');
+           uint8_t iMonth = (str[3] - '0') * 10 + (str[4] - '0');
            str = str.substring(6);
-           int16_t iYear = str.toInt();
+           uint16_t iYear = str.toInt();
 
            tmElements_t tm = {0, 0, 0, 0, iDay, iMonth, CalendarYrToTm(iYear)};
            t_event = makeTime(tm);
@@ -1121,7 +1119,7 @@ int8_t getTextIndex(char c) {
 // получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
 char getAZIndex(byte idx) {
   byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
-  char c;
+  char c = 'Z';
   if (idx >= 0 && idx <= 9)             
      c = char('0' + idx);
   else if (idx >= 10 && idx < size)               

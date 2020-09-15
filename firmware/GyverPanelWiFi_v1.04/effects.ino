@@ -1218,7 +1218,7 @@ void flickerRoutine() {
     hue_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();    
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  // byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
   // fill the led array 2/16-bit noise values
   fill_2dnoise16(leds, WIDTH, HEIGHT, (MATRIX_TYPE == 0),
@@ -1273,7 +1273,7 @@ void pacificaRoutine()
     loadingFlag = false;
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  // byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
   // Increment the four "color index start" counters, one for each wave layer.
   // Each is incremented at a different speed, and the speeds vary over time.
@@ -1388,8 +1388,6 @@ void shadowsRoutine() {
   sPseudotime += deltams * msmultiplier;
   sHue16 += deltams * beatsin88( 400, 5,9);
   uint16_t brightnesstheta16 = sPseudotime;
-
-  byte bri_dx = map8(255-effectSpeed, 50, 100);
 
   for( uint16_t i = 0 ; i < NUM_LEDS; i++) {
     hue16 += hueinc16;
@@ -1585,7 +1583,7 @@ void analyzerRoutine() {
     for (int i = 0; i < WIDTH; i++) {
         posOffset[i] = (i < WIDTH - st || i > WIDTH - st + SIN_WIDTH)
           ? 0
-          : posOffset[i] = map8(sin8(map(i, WIDTH-st, WIDTH - st + SIN_WIDTH, 0, 255)), 1, HEIGHT + HEIGHT / 2);
+          : map8(sin8(map(i, WIDTH-st, WIDTH - st + SIN_WIDTH, 0, 255)), 1, HEIGHT + HEIGHT / 2);
     }
   } else
 

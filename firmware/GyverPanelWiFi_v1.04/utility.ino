@@ -84,7 +84,7 @@ void drawDigit5x7(byte digit, byte X, byte Y, CRGB color) {
     byte thisByte = pgm_read_byte(&(font5x7[digit][x]));
     for (byte y = 0; y < 7; y++) {
       if (y + Y > HEIGHT) continue;
-      if (thisByte & (1 << 6 - y)) drawPixelXY(getClockX(x + X), y + Y, color);
+      if (thisByte & (1 << (6 - y))) drawPixelXY(getClockX(x + X), y + Y, color);
     }
   }
 }

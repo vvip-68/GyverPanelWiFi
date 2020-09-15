@@ -1478,11 +1478,12 @@ void EEPROM_string_write(uint16_t addr, String buffer, uint16_t max_len) {
   
   // Обрезать строку, если ее длина больше доступного места
   if (len > max_len) len = max_len;
-  i=0;
 
   // Сохранить новое значение
+  i = 0;
   while (i < len) {
-    EEPROMwrite(addr+i, buffer[i++]);
+    EEPROMwrite(addr+i, buffer[i]);
+    i++;
   }
 
   eepromModified = true;

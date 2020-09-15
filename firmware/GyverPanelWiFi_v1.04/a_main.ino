@@ -103,7 +103,7 @@ void process() {
           }
           
           bool timeToGetWeather = weatherTimer.isReady(); 
-          if (timeToGetWeather) { weather_cnt = 0; weather_t == 0; refresh_weather = true; }
+          if (timeToGetWeather) { weather_cnt = 0; weather_t = 0; refresh_weather = true; }
           if (refresh_weather && weather_t == 0 && (weather_cnt < 50 || !init_weather)) {
             getWeather();
             if (weather_cnt >= 50) {
