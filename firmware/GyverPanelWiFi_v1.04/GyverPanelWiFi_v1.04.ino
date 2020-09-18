@@ -87,7 +87,8 @@ void setup() {
   // ArduinoOTA.setPort(8266);
  
   // Hostname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname("Panel-WiFi");
+  String host_name = String(F("Panel-WiFi-")) + String(DEVICE_ID);
+  ArduinoOTA.setHostname(host_name.c_str());
  
   // No authentication by default
   // ArduinoOTA.setPassword((const char *)"123");
