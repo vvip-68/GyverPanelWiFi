@@ -1702,6 +1702,14 @@ int8_t count = 0;
 byte flip = 0;
 byte generation = 0;
 
+const TProgmemRGBPalette16 MunchColors_p FL_PROGMEM =
+{
+    0xFF0000, 0x000000, 0xAB5500, 0x000000,
+    0xABAB00, 0x000000, 0x00FF00, 0x000000,
+    0x00AB55, 0x000000, 0x0000FF, 0x000000,
+    0x5500AB, 0x000000, 0xAB0055, 0x000000
+};
+
 void munchRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -1718,7 +1726,7 @@ void munchRoutine() {
   for (byte x = 0; x < seg_size; x++) {
     for (byte y = 0; y < seg_size; y++) {
       for (byte n = 0; n < seg_num; n++) {
-        CRGB color = ((x ^ y ^ flip) < count ? ColorFromPalette(RainbowStripeColors_p, ((x ^ y) << 4) + generation, effectBrightness) : CRGB::Black);
+        CRGB color = ((x ^ y ^ flip) < count ? ColorFromPalette(MunchColors_p, ((x ^ y) << 4) + generation, effectBrightness) : CRGB::Black);
         if (dir_mx == 0)
           drawPixelXY(seg_offset + x + (n * seg_size), y, color);
         else   
@@ -1735,7 +1743,7 @@ void munchRoutine() {
 
   if (count <= 0) {
     if (flip == 0)
-      flip = 7;
+      flip = 15;
     else
       flip = 0;
   }
