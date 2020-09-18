@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.01.2020.0907")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.04.2020.0917")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -67,6 +67,10 @@ void setup() {
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
   #endif
 
+  // Настройка кнопки
+  butt.setStepTimeout(100);
+  butt.setClickTimeout(500);
+
   // Подключение к сети
   connectToNetwork();
 
@@ -117,10 +121,6 @@ void setup() {
 
   // UDP-клиент на указанном порту
   udp.begin(localPort);
-
-  // Настройка кнопки
-  butt.setStepTimeout(100);
-  butt.setClickTimeout(500);
 
   // Настройка внешнего дисплея TM1637
   #if (USE_TM1637 == 1)
@@ -214,22 +214,49 @@ void startWiFi() {
     }              
     WiFi.begin(ssid, pass);
   
-    // Проверка соединения (таймаут 5 секунд)
-    for (int j = 0; j < 10; j++ ) {
-      wifi_connected = WiFi.status() == WL_CONNECTED; 
-      if (wifi_connected) {
-        // Подключение установлено
-        Serial.println();
-        Serial.print(F("WiFi подключен. IP адрес: "));
-        Serial.println(WiFi.localIP());
+    // Проверка соединения (таймаут 180 секунд, прерывается при необходимости нажатием кнопки)
+    // Такой таймаут нужен в случае, когда отключают электричество, при последующем включении устройство стартует быстрее
+    // чем роутер успеет загрузитиься и создаать сеть. При коротком таймауте устройство не найдет сеть и создаст точку доступа,
+    // не сможет получить время, погоду и т.д.
+    bool stop_waiting = false;
+    unsigned long start_wifi_check = millis();
+    unsigned long last_wifi_check = 0;
+    int16_t cnt = 0;
+    while (!(stop_waiting || wifi_connected)) {
+      if (millis() - last_wifi_check > 500) {
+        last_wifi_check = millis();
+        wifi_connected = WiFi.status() == WL_CONNECTED; 
+        if (wifi_connected) {
+          // Подключение установлено
+          Serial.println();
+          Serial.print(F("WiFi подключен. IP адрес: "));
+          Serial.println(WiFi.localIP());
+          break;
+        }
+        if (cnt % 50 == 0) {
+          Serial.println();
+        }
+        Serial.print(".");
+        cnt++;
+      }
+      if (millis() - start_wifi_check > 180000) {
+        // Время ожидания подключения к сети вышло
         break;
       }
-      delay(500);
-      Serial.print(".");
+      // Опрос состояния кнопки
+      butt.tick();
+      if (butt.hasClicks()) {
+        butt.getClicks();
+        Serial.println();
+        Serial.println(F("Нажата кнопка.\nОжидание подключения к сети WiFi прервано."));  
+        stop_waiting = true;
+        break;
+      }
+      delay(0);
     }
     Serial.println();
 
-    if (!wifi_connected)
+    if (!wifi_connected && !stop_waiting)
       Serial.println(F("Не удалось подключиться к сети WiFi."));
   }  
 }
