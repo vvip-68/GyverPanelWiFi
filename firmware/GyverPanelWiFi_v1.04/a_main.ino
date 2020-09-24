@@ -631,7 +631,7 @@ void parsing() {
       // ----------------------------------------------------
 
       case 8:      
-        tmp_eff = intData[2];        
+        tmp_eff = intData[2];
         // intData[1] : дейстие -> 0 - выбор эффекта;  1 - параметры #1 и #2; 2 - вкл/выкл "использовать в демо-режиме"
         // intData[2] : номер эффекта
         // intData[3] : действие = 1: значение параметра #1 или #2
@@ -1931,6 +1931,8 @@ void resetModes() {
 void setEffect(byte eff) {
 
   resetModes();
+  if (eff >= MAX_EFFECT) return;
+  
   if (eff == MC_TEXT)
     loadingTextFlag = true;
   else
@@ -1967,7 +1969,7 @@ void showCurrentIP(boolean autoplay) {
 void setRandomMode() {
     String s_tmp = String(EFFECT_LIST);    
     uint32_t cnt = CountTokens(s_tmp, ','); 
-    byte ef = random8(0, cnt - 1); 
+    byte ef = random8(0, cnt); 
     setEffect(ef);
 }
 
@@ -1988,7 +1990,7 @@ void setRandomMode2() {
 
   while (cnt < 10) {
     cnt++;
-    newMode = random16(0, MAX_EFFECT - 1);
+    newMode = random16(0, MAX_EFFECT);
     if (!getEffectUsage(newMode)) continue;
 
     setEffect(newMode);

@@ -392,6 +392,7 @@ byte getEffectSpeed(byte effect) {
 }
 
 boolean getEffectUsage(byte effect) {
+  if (effect >= MAX_EFFECT) return false;
   const int addr = EFFECT_EEPROM;
   byte value = EEPROMread(addr + effect*5 + 1);
   return (value & 0x01) != 0;                                  // b0 - использовать эффект в демо-режиме

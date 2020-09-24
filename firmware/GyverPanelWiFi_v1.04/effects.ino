@@ -920,7 +920,7 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);
   }
 
-  byte effect = isAlarming ? alarmEffect :  MC_DAWN_ALARM;
+  byte effect = isAlarming ? alarmEffect : MC_DAWN_ALARM;
   if (effect == MC_DAWN_ALARM) {
     // Если устройство лампа (DEVICE_TYPE == 0) - матрица свернута в "трубу" - рассвет - огонек, бегущий вкруговую по спирали
     // Если устройство плоская матрица в рамке (DEVICE_TYPE == 1) - рассвет - огонек, бегущий по спирали от центра матрицы к краям на плоскости
