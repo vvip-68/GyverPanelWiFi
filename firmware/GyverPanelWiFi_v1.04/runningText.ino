@@ -264,8 +264,9 @@ int8_t getNextLine(int8_t currentIdx) {
 }
 
 // Выполнить разбор строки на наличие макросов, применить указанные настройки
-String processMacrosInText(String textLine) {  
+String processMacrosInText(const String text) {  
 
+  String textLine = text;
   /*   
      Общие правила:
      - Макрос - последовательность управляющих конструкций, каждая из которых заключена в фигурные скобки, например "{Exx}" 
@@ -649,7 +650,9 @@ String processMacrosInText(String textLine) {
 
 // Обработать макросы даты в строке
 // textLine - строка, содержащая макросы
-String processDateMacrosInText(String textLine) {
+String processDateMacrosInText(const String text) {
+
+  String textLine = text;
   
   /* -------------------------------------------------------------
    Эти форматы содержат строку, зависящую от текущего времени.
@@ -1027,8 +1030,9 @@ String processDateMacrosInText(String textLine) {
 }
 
 // Обработать макросы цвета в строке, в случае если строка многоцветная
-String processColorMacros(String text) {
-  
+String processColorMacros(const String txt) {
+
+  String text = txt;
   // Обнулить массивы позиций цвета и самого цвета
   for (byte i = 0; i<MAX_COLORS; i++) {
     textColorPos[i] = 0;
@@ -1038,11 +1042,11 @@ String processColorMacros(String text) {
   // Если макрос цвета указан не с начала строки - начало строки отображать цветом globalTextColor
   byte cnt = 0;
   int8_t idx, idx2;  
-  
+
   idx = text.indexOf("{C");
   if (idx > 0) {
-    textColorPos[idx] = 0;
-    textColor[idx] = globalTextColor;   
+    textColorPos[cnt] = 0;
+    textColor[cnt] = globalTextColor;   
     cnt++;
   }
 
@@ -1081,7 +1085,7 @@ String processColorMacros(String text) {
 }
 
 // Проверка содержит ли эта строка множественное задание цвета
-boolean checkIsTextMultiColor(String text) {
+boolean checkIsTextMultiColor(const String text) {
 
   // Строка не содержит макроса цвета
   int16_t idx = text.indexOf("{C"), idx_first = idx;
