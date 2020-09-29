@@ -83,9 +83,9 @@ void loadSettings() {
   //  173 - Отображать бегущую строку оверлеем в режимах                                                     // getTextOverlayEnabled()        // saveTextOverlayEnabled(textOverlayEnabled)
   //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
-  // 176,177 - Код региона для получения погоды                                                              // getWeatherRegion()             // setWeatherRegion(regionID)
-  //**178 - использовать цвет при показе температуры: 0 - нет; 1 - цвет в зависимости от теммпературы        // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
-  //**179 - не используется
+  // 176,177,178,179 - Код региона для получения погоды (4 байта - uint32_t)                                 // getWeatherRegion()             // setWeatherRegion(regionID)
+  //  180 - использовать цвет при показе температуры: 0 - нет; 1 - цвет в зависимости от теммпературы        // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
+  //**181 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -1405,24 +1405,24 @@ void setWeatherInterval(byte interval) {
   }  
 }
 
-uint16_t getWeatherRegion() {
-  uint16_t region = EEPROM_int_read(176);  
+uint32_t getWeatherRegion() {
+  uint32_t region = EEPROM_long_read(176);  
   return region;
 }
 
-void setWeatherRegion(uint16_t value) {
+void setWeatherRegion(uint32_t value) {
   if (value != getWeatherRegion()) {
-    EEPROM_int_write(176, value);
+    EEPROM_long_write(176, value);
   }
 }
 
 boolean getUseTemperatureColor() {
-  return EEPROMread(178) == 1;
+  return EEPROMread(180) == 1;
 }
 
 void setUseTemperatureColor(boolean use) {
   if (use != getUseTemperatureColor()) {
-    EEPROMwrite(178, use ? 1 : 0);
+    EEPROMwrite(180, use ? 1 : 0);
   }
 }
 
@@ -1451,6 +1451,23 @@ void EEPROM_int_write(uint16_t addr, uint16_t num) {
   byte raw[2];
   (uint16_t&)raw = num;
   for (byte i = 0; i < 2; i++) EEPROMwrite(addr+i, raw[i]);
+  eepromModified = true;
+  saveSettingsTimer.reset();
+}
+
+// чтение uint32_t
+uint32_t EEPROM_long_read(uint16_t addr) {    
+  byte raw[4];
+  for (byte i = 0; i < 4; i++) raw[i] = EEPROMread(addr+i);
+  uint32_t &num = (uint32_t&)raw;
+  return num;
+}
+
+// запись uint32_t
+void EEPROM_long_write(uint16_t addr, uint32_t num) {
+  byte raw[4];
+  (uint32_t&)raw = num;
+  for (byte i = 0; i < 4; i++) EEPROMwrite(addr+i, raw[i]);
   eepromModified = true;
   saveSettingsTimer.reset();
 }

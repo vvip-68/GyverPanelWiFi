@@ -96,7 +96,7 @@ void process() {
             Serial.println(F("Таймаут запроса погоды!"));
             weather_t = 0;
             weather_cnt++;
-            if (init_weather && weather_cnt >= 10) {
+            if (init_weather && weather_cnt >= 50) {
               Serial.println(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
             }
@@ -104,7 +104,8 @@ void process() {
           
           bool timeToGetWeather = weatherTimer.isReady(); 
           if (timeToGetWeather) { weather_cnt = 0; weather_t = 0; refresh_weather = true; }
-          if (refresh_weather && weather_t == 0 && (weather_cnt < 50 || !init_weather)) {
+          if (timeToGetWeather || (refresh_weather && weather_t == 0 && (weather_cnt < 50 || !init_weather))) {            
+            weather_t = millis();
             getWeather();
             if (weather_cnt >= 50) {
               if (init_weather) {
