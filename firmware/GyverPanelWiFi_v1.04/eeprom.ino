@@ -84,8 +84,9 @@ void loadSettings() {
   //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
   // 176,177,178,179 - Код региона для получения погоды (4 байта - uint32_t)                                 // getWeatherRegion()             // setWeatherRegion(regionID)
-  //  180 - использовать цвет при показе температуры: 0 - нет; 1 - цвет в зависимости от теммпературы        // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
-  //**181 - не используется
+  //  180 - использовать цвет при показе температуры дневн. часы: 0 - нет; 1 - цвет в зависимости от теммпературы       // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
+  //  181 - использовать цвет при показе температуры ночн. часы: 0 - нет; 1 - цвет в зависимости от теммпературы        // getUseTemperatureColorNight()  // setUseTemperatureColorNight(useTemperatureColorNight)
+  //**182 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -194,6 +195,7 @@ void loadSettings() {
     regionID = getWeatherRegion();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
     useTemperatureColor = getUseTemperatureColor();
+    useTemperatureColorNight = getUseTemperatureColorNight();
     showWeatherInClock = useWeather && getShowWeatherInClock();
   #endif  
 
@@ -1423,6 +1425,16 @@ boolean getUseTemperatureColor() {
 void setUseTemperatureColor(boolean use) {
   if (use != getUseTemperatureColor()) {
     EEPROMwrite(180, use ? 1 : 0);
+  }
+}
+
+boolean getUseTemperatureColorNight() {
+  return EEPROMread(181) == 1;
+}
+
+void setUseTemperatureColorNight(boolean use) {
+  if (use != getUseTemperatureColorNight()) {
+    EEPROMwrite(181, use ? 1 : 0);
   }
 }
 

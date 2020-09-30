@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.04.2020.0929")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.04.2020.1001")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -40,6 +40,15 @@ void setup() {
 
   loadSettings();
 
+  // Эти два параметра устанавливаются только в прошивке, изменить их из приложения на смартфоне нельзя - там нет соответствующих переключателей,
+  // т.к. объем программы в Thuncable Classic достиг максимума и добавить новые элементы в интерфейс уже нельзя
+  /*
+  useTemperatureColor = true;
+  setUseTemperatureColor(useTemperatureColor);
+  useTemperatureColorNight = true;
+  setUseTemperatureColorNight(useTemperatureColorNight);
+  */
+  
   // Настройки ленты
   FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(globalBrightness);

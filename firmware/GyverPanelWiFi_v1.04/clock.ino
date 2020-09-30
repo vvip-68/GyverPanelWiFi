@@ -311,7 +311,7 @@ void drawTemperature() {
     // Получить цвет отображения значения температуры
     CRGB color;          
     if (isNightClock) 
-      color = useTemperatureColor ? (temperature <= - 4 ? CRGB(0x000002) : (temperature >= 3 ? CRGB(0x020000) : CRGB(0x020202))) : clockLED[0];
+      color = useTemperatureColorNight ? (temperature < -3 ? CRGB(0x000002) : (temperature > 3 ? CRGB(0x020000) : CRGB(0x020202))) : clockLED[0];
     else 
       color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
 
