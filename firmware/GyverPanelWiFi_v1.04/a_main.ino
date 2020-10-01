@@ -362,6 +362,7 @@ void parsing() {
         4 - имя точки доступа
         5 - пароль к точке доступа
         6 - настройки будильников
+        7 - строка запрашиваемых параметров для процедуры getStateString(), например - "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
     8 - эффект
       - $8 0 N; включить эффект N
       - $8 1 N D; D -> параметр #1 для эффекта N;
@@ -401,7 +402,20 @@ void parsing() {
     15 - скорость $15 скорость таймер; 0 - таймер эффектов
     16 - Режим смены эффектов: $16 value; N: 2 - PrevMode; 3 - NextMode
     17 - Время автосмены эффектов и бездействия: $17 сек сек;
-    18 - Запрос текущих параметров программой: $18 page;  page: 1 - настройки; 5 - эффекты; 
+    18 - Запрос текущих параметров программой: $18 page; page - страница настройки в программе на смартфоне (1..7) или специальный параметр (92..99)
+         page 1:  // Настройки
+         page 2:  // Эффекты
+         page 3:  // Настройки бегущей строки
+         page 4:  // Настройки часов
+         page 5:  // Настройки будильника
+         page 6:  // Настройки подключения
+         page 7:  // Настройки режимов автовключения по времени
+         page 92: // Запрос текста бегущих строк для заполнения списка в программе
+         page 93: // Запрос списка звуков будильника
+         page 94: // Запрос списка звуков рассвета
+         page 95: // Ответ состояния будильника - сообщение по инициативе сервера
+         page 96: // Ответ демо-режима звука - сообщение по инициативе сервера
+         page 99: // Запрос списка эффектов
     19 - работа с настройками часов
       - $19 1 X; - сохранить настройку X "Часы в эффектах"
       - $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
@@ -510,6 +524,7 @@ void parsing() {
       //   4 - имя точки доступа
       //   5 - пароль точки доступа
       //   6 - настройки будильника в формате $6 6|DD EF WD HH1 MM1 HH2 MM2 HH3 MM3 HH4 MM4 HH5 MM5 HH6 MM6 HH7 MM7        
+      //   7 - строка запрашиваемых параметров для процедуры getStateString(), например - "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
       // ----------------------------------------------------
 
       case 6:
@@ -603,13 +618,18 @@ void parsing() {
                 calculateDawnTime();            
               }
               break;
+            case 7:
+              // Запрос значений параметров, требуемых приложением вида "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+              // Передать строку для формирования, затем отправить параметры в приложение
+              str = "$18 " + getStateString(str) + ";";
+              break;
            }
         }
 
-        // При сохранении текста бегущей строки не нужно сразу автоматически сохранять ее в EEPROM
-        // Сохранение будет выполнено по таймеру. Остальные полученные строки - сохранять сразу, ибо это
-        // настройки сети, будильники и другая критически важная информация
-        if (b_tmp != 0) {
+        // При сохранении текста бегущей строки (b_tmp == 0) не нужно сразу автоматически сохранять ее в EEPROM - Сохранение будет выполнено по таймеру. 
+        // При получении запроса параметров (b_tmp == 7) ничего сохранять не нужно - просто отправить требуемые параметры
+        // Остальные полученные строки - сохранять сразу, ибо это настройки сети, будильники и другая критически важная информация
+        if (b_tmp != 0 && b_tmp != 7) {
           saveSettings();
         }
         
@@ -617,6 +637,8 @@ void parsing() {
           sendPageParams(3);
         else if (b_tmp == 6) 
           sendPageParams(4);
+        else if (b_tmp == 7) 
+          sendStringData(str);
         else
           sendAcknowledge();
         break;
@@ -938,7 +960,20 @@ void parsing() {
         break;
 
       // ----------------------------------------------------
-      // 18 - Запрос текущих параметров программой: $18 page;  page: 1 - настройки; 5 - эффекты; 
+      // 18 - Запрос текущих параметров программой: $18 page;
+      //    page 1:  // Настройки
+      //    page 2:  // Эффекты
+      //    page 3:  // Настройки бегущей строки
+      //    page 4:  // Настройки часов
+      //    page 5:  // Настройки будильника
+      //    page 6:  // Настройки подключения
+      //    page 7:  // Настройки режимов автовключения по времени
+      //    page 92:  // Запрос текста бегущих строк для заполнения списка в программе
+      //    page 93:  // Запрос списка звуков будильника
+      //    page 94:  // Запрос списка звуков рассвета
+      //    page 95:  // Ответ состояния будильника - сообщение по инициативе сервера
+      //    page 96:  // Ответ демо-режима звука - сообщение по инициативе сервера
+      //    page 99:  // Запрос списка эффектов
       // ----------------------------------------------------
 
       case 18: 
@@ -1460,6 +1495,116 @@ void parsing() {
 }
 
 void sendPageParams(int page) {
+
+  String str = "", color, text;
+  CRGB c1, c2;
+  int8_t tmp_eff = -1;
+  
+  switch (page) { 
+    case 1:  // Настройки
+      str = getStateString("W|H|DM|PD|ID|AL|RM|PW|BR|WU|WT|WR|WC|WN");
+      break;
+    case 2:  // Эффекты
+      str = getStateString("EF|UE|UT|UC|SE|SS|SQ|BE");
+      break;
+    case 3:  // Настройки бегущей строки
+      str = getStateString("TE|TI|CT|ST|C2|OM|TS|TA|TX|TY");
+      break;
+    case 4:  // Настройки часов
+      str = getStateString("CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF");
+      break;
+    case 5:  // Настройки будильника
+      str = getStateString("AL|AW|AT|AE|MX|MU|MD|MV|MA|MB|MP");
+      break;
+    case 6:  // Настройки подключения
+      str = getStateString("AU|AN|AA|NW|NA|IP");
+      break;
+    case 7:  // Настройки режимов автовключения по времени
+      str = getStateString("AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A");
+      break;
+    case 92:  // Запрос текста бегущих строк для заполнения списка в программе
+      str = getStateString("TZ");
+      break;
+#if (USE_MP3 == 1)
+    case 93:  // Запрос списка звуков будильника
+      str = getStateString("S1");
+      break;
+    case 94:  // Запрос списка звуков рассвета
+      str = getStateString("S2");
+      break;
+#endif      
+    case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
+      str = getStateString("AL");
+      cmd95 = str;
+      break;
+    case 96:  // Ответ демо-режима звука - сообщение по инициативе сервера
+      str = getStateString("MP");
+      cmd96 = str;
+      break;
+    case 99:  // Запрос списка эффектов
+      str = getStateString("LE");
+      break;
+  }
+  
+  if (str.length() > 0) {
+    // Отправить клиенту запрошенные параметры страницы / режимов
+    str = "$18 " + str + ";";
+    sendStringData(str);
+  } else {
+    sendAcknowledge();
+  }
+}
+
+void sendStringData(String &str) {
+  str.toCharArray(incomeBuffer, str.length()+1);    
+  udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  udp.write((const uint8_t*) incomeBuffer, str.length()+1);
+  udp.endPacket();
+  Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
+}
+
+String getStateString(String keys) {
+  String str = "", s_tmp, key;
+  int16_t pos_start = 0;
+  int16_t pos_end = keys.indexOf('|', pos_start);
+  int16_t len = keys.length();
+  if (pos_end < 0) pos_end = len;
+
+  // Некоторые параметры зависят от текущего эффекта
+  // Текущим эффектом может быть эффект, отсутствующий в списке эффектов и включенный как служебный эффект - 
+  // например "Ночные часы" или "IP адрес". 
+  // В этом случаее в приложении эффект не будет найден - индекс в списке комбобокса
+  // будет 0 и приложение на телефоне крашится. В этом случае отправляем параметры случайного эффекта, точно из списка.
+  int8_t tmp_eff = thisMode;
+  if (tmp_eff >= SPECIAL_EFFECTS_START) {
+    tmp_eff = random8(0, MAX_EFFECT - 1);
+  }
+
+  // Строка keys содержит ключи запрашиваемых данных, разделенных знаком '|', например "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+  while (pos_start < len && pos_end >= pos_start) {
+    if (pos_end > pos_start) {      
+      key = keys.substring(pos_start, pos_end);
+      if (key.length() > 0) {
+        s_tmp = getStateValue(key, tmp_eff);
+        if (s_tmp.length() > 0) {
+          str += s_tmp + "|";
+        }
+      }      
+    }
+    pos_start = pos_end + 1;
+    pos_end = keys.indexOf('|', pos_start);
+    if (pos_end < 0) pos_end = len;
+  }
+
+  len = str.length();
+  if (len > 0 && str.charAt(len - 1) == '|') {
+    str = str.substring(0, len - 1);
+  }
+  return str;
+}
+
+String getStateValue(String &key, int8_t effect) {
+
   // W:число     ширина матрицы
   // H:число     высота матрицы
   // DM:Х        демо режим, где Х = 0 - ручное управление; 1 - авторежим
@@ -1487,7 +1632,7 @@ void sendPageParams(int page) {
   // UC:X        использовать часы поверх эффекта 0-нет, 1-да
   // LE:[список] список эффектов, разделенный запятыми, ограничители [] обязательны        
   // AL:X        сработал будильник 0-нет, 1-да
-  // AT:HH MM    часы-минуты времени будильника -> например "09 15"
+  // AT: DW HH MM  часы-минуты времени будильника для дня недели DW 1..7 -> например "AT:1 09 15"
   // AW:число    битовая маска дней недели будильника b6..b0: b0 - пн .. b7 - вс
   // AD:число    продолжительность рассвета, мин
   // AE:число    эффект, использующийся для будильника
@@ -1550,191 +1695,279 @@ void sendPageParams(int page) {
   // WN:X        Использовать цвет для отображения температуры в ночных часах  X: 0 - выключено; 1 - включено
   // DW:X        показывать температуру вместе с малыми часами 0-нет, 1-да
 
-  String str = "", color, text;
-  CRGB c1, c2;
-  int8_t tmp_eff = -1;
+  String str = "";
   
-  switch (page) { 
-    case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
-      str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT) +
-             "|DM:" + (manualMode ? "0" : "1") +
-             "|PD:" + String(autoplayTime / 1000) + 
-             "|IT:" + String(idleTime / 60 / 1000) +
-             "|AL:" + (((isAlarming || isPlayAlarmSound) && !isAlarmStopped)  ? "1" : "0") + 
-             "|RM:" + String(useRandomSequence) +
-             "|PW:" + String(CURRENT_LIMIT) +
-           #if (USE_WEATHER == 1)                  
-             "|WU:" + (useWeather ? "1" : "0") +
-             "|WT:" + String(SYNC_WEATHER_PERIOD) +
-             "|WR:" + String(regionID) + 
-             "|WC:" + (useTemperatureColor ? "1" : "0") +
-             "|WN:" + (useTemperatureColorNight ? "1" : "0") +
-           #endif  
-             "|BR:" + String(globalBrightness);
-      str+=";";
-      break;
-    case 2:  // Эффекты. Вернуть: Номер эффекта, Скорость эффекта; Использовать в демо, оверлей текста и часов 
-      tmp_eff = thisMode;
-      // Текущим эффектом может быть эффект, отсутствующий в списке эффектов и включенный как служебный эффект - 
-      // например "Ночные часы" или "ID адрес". В этом случаее в приложении эффект не будет найден - индекс в списке комбобокса
-      // будет 0 и приложение на телефоне крашится. В этом случае отправляем параметры случайного эффекта, точно из списка.
-      if (tmp_eff >= SPECIAL_EFFECTS_START) {
-        tmp_eff = random8(0, MAX_EFFECT - 1);
-      }
-      str="$18 EF:"+String(tmp_eff+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
-      // Использовать в демо-режиме
-      str+="|UE:"+(tmp_eff == MC_CLOCK
+  // Ширина матрицы
+  if (key == "W")  return str + "W:" + String(WIDTH);
+
+  // Высота матрицы
+  if (key == "H")  return str + "H:" + String(HEIGHT);
+
+  // Текущая яркость
+  if (key == "BR") return str + "BR:" + String(globalBrightness);
+
+  // Ручной / Авто режим
+  if (key == "DM") return str + "DM:" + (manualMode ? "0" : "1");
+
+  // Продолжительность режима в секундах
+  if (key == "PD") return str + "PD:" + String(autoplayTime / 1000); 
+
+  // Время бездействия в секундах
+  if (key == "IT") return str + "IT:" + String(idleTime / 60 / 1000);
+
+  // Сработал будильник 0-нет, 1-да
+  if (key == "AL") return str + "AL:" + (((isAlarming || isPlayAlarmSound) && !isAlarmStopped)  ? "1" : "0"); 
+
+  // Смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
+  if (key == "RM") return str + "RM:" + (useRandomSequence ? "1" : "0");
+
+  // Ограничение по току в миллиамперах
+  if (key == "PW") return str + "PW:" + String(CURRENT_LIMIT);
+  
+#if (USE_WEATHER == 1)                  
+  // Использовать получение погоды с сервераж: 0 - выключено; 1 - включено
+  if (key == "WU") return str + "WU:" + (useWeather ? "1" : "0");
+
+  // Период запроса сведений о погоде в минутах
+  if (key == "WT") return str + "WT:" + String(SYNC_WEATHER_PERIOD);
+
+  // Регион погоды
+  if (key == "WR") return str + "WR:" + String(regionID);
+
+  // Использовать цвет для отображения температуры в дневных часах: 0 - выключено; 1 - включено
+  if (key == "WC") return str + "WC:" + (useTemperatureColor ? "1" : "0");
+
+  // Использовать цвет для отображения температуры в ночных часах: 0 - выключено; 1 - включено
+  if (key == "WN") return str + "WN:" + (useTemperatureColorNight ? "1" : "0");
+#endif  
+
+  // Текущий эффект 
+  if (key == "EF") return str + "EF:" + String(effect+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
+
+  // Использовать в демо-режиме
+  if (key == "UE") return str + "UE:" + (effect == MC_CLOCK
          ? "X":
-         (String((getEffectUsage(tmp_eff) ? "1" : "0"))));
-      // Оверлей бегущей строки
-      str+="|UT:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || tmp_eff == MC_CLOCK
+         (String((getEffectUsage(effect) ? "1" : "0"))));
+
+  // Оверлей бегущей строки
+  if (key == "UЕ") return str + "UT:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_CLOCK
          ? "X":
-         (String(getEffectTextOverlayUsage(tmp_eff) ? "1" : "0")));
-      // Оверлей часов   
-      str+="|UC:"+(tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || tmp_eff == MC_CLOCK
+         (String(getEffectTextOverlayUsage(effect) ? "1" : "0")));
+
+  // Оверлей часов   
+  if (key == "UC") return str + "UC:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_CLOCK
          ? "X" 
-         : (String(getEffectClockOverlayUsage(tmp_eff) ? "1" : "0")));
-      // Настройка скорости
-      str+="|SE:"+(tmp_eff == MC_PACIFICA  || tmp_eff == MC_SHADOWS || tmp_eff == MC_CLOCK || tmp_eff == MC_WATERFALL || tmp_eff == MC_IMAGE
+         : (String(getEffectClockOverlayUsage(effect) ? "1" : "0")));
+
+  // Настройка скорости
+  if (key == "SE") return str + "SE:" + (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE
          ? "X" 
-         : String(255 - constrain(map(getEffectSpeed(tmp_eff), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
-      // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
-      str+="|SS:"+getParamForMode(tmp_eff);
-      str+="|SQ:"+getParam2ForMode(tmp_eff);
-      // Контраст
-      str+="|BE:"+(tmp_eff == MC_PACIFICA || tmp_eff == MC_DAWN_ALARM ||
-                   tmp_eff == MC_MAZE || tmp_eff == MC_SNAKE || tmp_eff == MC_TETRIS || 
-                   tmp_eff == MC_CLOCK || tmp_eff == MC_SDCARD
+         : String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
+
+  // Контраст
+  if (key == "BE") return str + "BE:" + (effect == MC_PACIFICA || effect == MC_DAWN_ALARM || effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || 
+                                         effect == MC_CLOCK || effect == MC_SDCARD
          ? "X" 
-         : String(effectContrast[tmp_eff]));
-      str+=";";
-      break;
-    case 3:  // Настройки бегущей строки
-      c2 = CRGB(globalTextColor);
-      str="$18 TE:" + String(getTextOverlayEnabled()) + 
-             "|TI:" + String(getTextInterval()) + 
-             "|CT:" + String(COLOR_TEXT_MODE) +
-             "|ST:" + String(255 - getTextScrollSpeed()) +
-             "|C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b) +
-             "|OM:" + String(memoryAvail) +
-             "|TS:" + getTextStates() +                 // Строка состояния заполненности строк текста
-             "|TA:" + String(editIdx) +                 // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
-             "|TX:[" + getTextByAZIndex(editIdx) + ']'; // Активная кнопка текста. Должна быть ПЕРЕД строкой текста, т.к сначала приложение должно знать в какую позицию списка помещать строку editIdx - '0'..'9'..'A'..'Z'
-      if (editIdx != '#' && editIdx != '0') {
-        str += "|TY:[" + String(getTextIndex(editIdx)) + ":" + String(editIdx) + " > '" + getTextByAZIndex(editIdx) + "']";      // Исходная строка без обработки
-      }
-      str+=";";
-      break;
-    case 4:  // Настройки часов.
-      c1 = CRGB(globalClockColor);
-      // Часы могут отображаться: 
-      // - вертикальные при высоте матрицы >= 11 и ширине >= 7; 
-      // - горизонтальные при ширене матрицы >= 15 и высоте >= 5
-      // Настройки часов можно отображать только если часы доступны по размерам: - или вертикальные или горизонтальные часы влазят на матрицу
-      // Настройки ориентации имеют смыcл только когда И горизонтальные И вертикальные часы могут быть отображены на матрице; В противном случае - смысла нет, так как выбор очевиден (только один вариант)
-      str="$18 CE:"+(allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X") +
-             "|CC:" + String(COLOR_MODE) + 
-             "|CO:" + (allowVertical && allowHorizontal ? String(CLOCK_ORIENT) : "X") + 
-             "|CK:" + String(CLOCK_SIZE) + 
-             "|NC:" + String(nightClockColor) + 
-             "|SC:" + String(255 - getClockScrollSpeed()) + 
-             "|C1:" + String(c1.r) + "," + String(c1.g) + "," + String(c1.b) +
-             "|DC:" + (showDateInClock ? "1" : "0") +
-             "|DD:" + String(showDateDuration) +
-             "|DI:" + String(showDateInterval) +
-             "|NP:" + (useNtp ? "1" : "0") +
-             "|NT:" + String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset) +
-             "|NS:["+String(ntpServerName)+"]" +
-             "|DW:" + (showWeatherInClock ? "1" : "0") +
-             "|OF:" + (needTurnOffClock ? "1" : "0"); 
-      str+=";";
-      break;
-    case 5:  // Настройки будильника
-      str="$18 AL:"; 
-      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1|AD:"; else str+="0|AD:";
-      str+=String(dawnDuration)+"|AW:";
-      for (int i=0; i<7; i++) {
-         if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
-         if (i<6) str+='.';
-      }
-      for (int i=0; i<7; i++) {      
-            str+="|AT:"+String(i+1)+" "+String(alarmHour[i])+" "+String(alarmMinute[i]);
-      }
-      str+="|AE:" + String(alarmEffect + 1);                   // Индекс в списке в приложении смартфона начинается с 1
-      str+="|MX:" + String(isDfPlayerOk ? "1" : "0");          // 1 - MP3 доступен; 0 - MP3 не доступен
-      #if (USE_MP3 == 1)
-      str+="|MU:" + String(useAlarmSound ? "1" : "0");         // 1 - использовать звук; 0 - MP3 не использовать звук
-      str+="|MD:" + String(alarmDuration); 
-      str+="|MV:" + String(maxAlarmVolume); 
-      if (soundFolder == 0) {      
-        str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
-        str+="|MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
-      } else if (soundFolder == 1) {      
-        str+="|MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
-      } else if (soundFolder == 2) {      
-        str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
-      }
-      str+="|MP:" + String(soundFolder) + '~' + String(soundFile+2); 
-      #endif
-      str+=";";
-      break;
-    case 6:  // Настройки подключения
-      str="$18 AU:"; 
-      if (useSoftAP) str+="1|AN:["; else str+="0|AN:[";
-      str+=String(apName) + "]|AA:[";
-      str+=String(apPass) + "]|NW:[";
-      str+=String(ssid) + "]|NA:[";
-      str+=String(pass) + "]|IP:";
-      if (wifi_connected) str += WiFi.localIP().toString(); 
-      else                str += F("нет подключения");
-      str+=";";
-      break;
-    case 7:  // Настройки режимов автовключения по времени
-      str="$18 AM1T:"+String(AM1_hour)+" "+String(AM1_minute)+"|AM1A:"+String(AM1_effect_id)+
-             "|AM2T:"+String(AM2_hour)+" "+String(AM2_minute)+"|AM2A:"+String(AM2_effect_id)+ 
-             "|AM3T:"+String(AM3_hour)+" "+String(AM3_minute)+"|AM3A:"+String(AM3_effect_id)+ 
-             "|AM4T:"+String(AM4_hour)+" "+String(AM4_minute)+"|AM4A:"+String(AM4_effect_id);
-      str+=";";
-      break;
-    case 92:  // Запрос текста бегущих строк для заполнения списка в программе
-      if (sendTextIdx >= 1 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
-        str="$18 TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > '" + getTextByAZIndex(getAZIndex(sendTextIdx)) + "'];";     // Исходная строка без обработки
-      }
-      break;
+         : String(effectContrast[effect]));
+
+  // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
+  if (key == "SS") return str + "SS:" + getParamForMode(effect);
+
+  // Эффекты не имеющие настройки вариации (параметр #2) отправляют значение "Х" - программа делает ползунок настройки недоступным
+  if (key == "SQ") return str + "SQ:" + getParam2ForMode(effect);
+
+  // Разрешен оверлей бегущей строки
+  if (key == "TE") return str + "TE:" + String(getTextOverlayEnabled());
+
+  // Интервал показа бегущей строки
+  if (key == "TI") return str + "TI:" + String(getTextInterval());
+
+  // Режим цвета отображения бегущей строки
+  if (key == "CT") return str + "CT:" + String(COLOR_TEXT_MODE);
+
+  // Скорость прокрутки текста
+  if (key == "ST") return str + "ST:" + String(255 - getTextScrollSpeed());
+
+  // Цвет режима "монохром" часов
+  if (key == "C1") {
+    CRGB c1 = CRGB(globalClockColor);
+    return str + "C1:" + String(c1.r) + "," + String(c1.g) + "," + String(c1.b);
+  }
+
+  // Цвет режима "монохром" бегущей строки
+  if (key == "C2") {
+    CRGB c2 = CRGB(globalTextColor);
+    return str + "C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b);
+  }
+
+  // Сколько ячеек осталось свободно для хранения строк
+  if (key == "OM") return str + "OM:" + String(memoryAvail);
+
+  // Строка состояния заполненности строк текста
+  if (key == "TS") return str + "TS:" + getTextStates();
+
+  // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
+  if (key == "TA") return str + "TA:" + String(editIdx);                 
+
+  // Активная кнопка текста. Должна быть ПЕРЕД строкой текста, т.к сначала приложение должно знать в какую позицию списка помещать строку editIdx - '0'..'9'..'A'..'Z'
+  if (key == "TX") return str + "TX:[" + getTextByAZIndex(editIdx) + ']'; 
+
+  // // Исходная строка без обработки
+  if (key == "TY" && editIdx != '#' && editIdx != '0') {
+     return str + "TY:[" + String(getTextIndex(editIdx)) + ":" + String(editIdx) + " > '" + getTextByAZIndex(editIdx) + "']";      
+  }
+
+  // Оверлей часов вкл/выкл
+  if (key == "CE") return str + "CE:" + (allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X");
+
+  // Режим цвета часов оверлея
+  if (key == "CC") return str + "CC:" + String(COLOR_MODE);
+
+  // Ориентация часов
+  if (key == "CO") return str + "CO:" + (allowVertical && allowHorizontal ? String(CLOCK_ORIENT) : "X");
+
+  // Размер (режим) горизонтальных часов
+  if (key == "CK") return str + "CK:" + String(CLOCK_SIZE);
+
+  // Код цвета ночных часов
+  if (key == "NC") return str + "NC:" + String(nightClockColor);
+
+  // Скорость смещения (прокрутки) часов оверлея
+  if (key == "SC") return str + "SC:" + String(255 - getClockScrollSpeed());
+
+  // Показывать дату вместе с часами
+  if (key == "DC") return str + "DC:" + (showDateInClock ? "1" : "0");
+
+  // Продолжительность отображения даты в режиме часов (сек)
+  if (key == "DD") return str + "DD:" + String(showDateDuration);
+
+  // Интервал отображения даты часов
+  if (key == "DI") return str + "DI:" + String(showDateInterval);
+
+  // Использовать получение времени с интернета
+  if (key == "NP") return str + "NP:" + (useNtp ? "1" : "0");
+
+  // Период синхронизации NTP в минутах
+  if (key == "NT") return str + "NT:" + String(SYNC_TIME_PERIOD); 
+
+  // Часовой пояс
+  if (key == "NZ") return str + "NZ:" + String(timeZoneOffset);
+
+  // Имя сервера NTP (url)
+  if (key == "NS") return str + "NS:[" + String(ntpServerName)+"]";
+
+  // Показывать температуру вместе с малыми часами 0-нет, 1-да
+  if (key == "DW") return str + "DW:" + (showWeatherInClock ? "1" : "0");
+
+  // Выключать часы TM1637 вместе с лампой 0-нет, 1-да
+  if (key == "OF") return str + "OF:" + (needTurnOffClock ? "1" : "0"); 
+
+  // Продолжительность рассвета, мин
+  if (key == "AD") return str + "AD:" + String(dawnDuration);
+
+  // Битовая маска дней недели будильника
+  if (key == "AW") {
+    str = "AW:";
+    for (int i=0; i<7; i++) {
+       if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
+       if (i<6) str+='.';
+    }
+    return str;
+  }
+
+  // Часы-минуты времени будильника по дням недели
+  if (key == "AT") {
+    for (int i=0; i<7; i++) {      
+      str+="|AT:"+String(i+1)+" "+String(alarmHour[i])+" "+String(alarmMinute[i]);
+    }
+    // Убрать первый '|'
+    return str.substring(1);
+  }
+
+  // Эффект применяемый в рассвете: Индекс в списке в приложении смартфона начинается с 1
+  if (key == "AE") return str + "AE:" + String(alarmEffect + 1);                   
+
+  // Доступность MP3-плеера    
+  if (key == "MX") return str + "MX:" + String(isDfPlayerOk ? "1" : "0");
+      
 #if (USE_MP3 == 1)
-    case 93:  // Запрос списка звуков будильника
-      str="$18 S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
-      break;
-    case 94:  // Запрос списка звуков рассвета
-      str="$18 S2:[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
-      break;
-#endif      
-    case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
-      str = "$18 AL:"; 
-      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1;"; else str+="0;";
-      cmd95 = str;
-      break;
-    case 96:  // Ответ демо-режима звука - сообщение по инициативе сервера
-      #if (USE_MP3 == 1)
-      str ="$18 MP:" + String(soundFolder) + '~' + String(soundFile+2) + ";"; 
-      cmd96 = str;
-      #endif
-      break;
-    case 99:  // Запрос списка эффектов
-      str="$18 LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
-      break;
+  // Использовать звук будильника
+  if (key == "MU") return str + "MU:" + String(useAlarmSound ? "1" : "0"); 
+
+  // Сколько минут звучит будильник, если его не отключили
+  if (key == "MD") return str + "MD:" + String(alarmDuration); 
+
+  // Максимальная громкость будильника
+  if (key == "MV") return str + "MV:" + String(maxAlarmVolume); 
+
+  // Номер файла звука будильника из SD:/01
+  if (key == "MA") return str + "MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+
+  // Номер файла звука рассвета из SD:/02
+  if (key == "MB") return str + "MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+
+  // Номер папки и файла звука который проигрывается
+  if (key == "MP") return str + "MP:" + String(soundFolder) + '~' + String(soundFile+2); 
+
+  // Запрос звуков будильника
+  if (key == "S1") return str + "S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
+
+  // Запрос звуков рассвета
+  if (key == "S2") return str + "S2:[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
+#endif
+
+  // создавать точку доступа
+  if (key == "AU") return str + "AU:" + String(useSoftAP ? "1" : "0");  
+
+  // Имя точки доступа
+  if (key == "AN") return str + "AN:[" + String(apName) +  "]";
+
+  // Пароль точки доступа
+  if (key == "AA") return str + "AA:[" + String(apPass) +  "]";
+
+  // Имя локальной сети (SSID)
+  if (key == "NW") return str + "NW:[" + String(ssid) +  "]";
+
+  // Пароль к сети
+  if (key == "NA") return str + "NA:[" + String(pass) +  "]";
+
+  // IP адрес
+  if (key == "IP") return str + "IP:" + String(wifi_connected ? WiFi.localIP().toString() : F("нет подключения"));  
+
+  // Время Режима №1
+  if (key == "AM1T") return str + "AM1T:"+String(AM1_hour)+" "+String(AM1_minute);
+
+  // Действие Режима №1
+  if (key == "AM1A") return str + "AM1A:"+String(AM1_effect_id);
+
+  // Время Режима №2
+  if (key == "AM2T") return str + "AM2T:"+String(AM2_hour)+" "+String(AM2_minute);
+
+  // Действие Режима №2
+  if (key == "AM2A") return str + "AM2A:"+String(AM2_effect_id); 
+
+  // Время Режима №3
+  if (key == "AM3T") return str + "AM3T:"+String(AM3_hour)+" "+String(AM3_minute);
+
+  // Действие Режима №3
+  if (key == "AM3A") return str + "AM3A:"+String(AM3_effect_id); 
+
+  // Время Режима №4
+  if (key == "AM4T") return str + "AM4T:"+String(AM4_hour)+" "+String(AM4_minute);
+
+  // Действие Режима №4
+  if (key == "AM4A") return str + "AM4A:"+String(AM4_effect_id);
+
+  // Запрос текста бегущих строк для заполнения списка в программе
+  if (key == "TZ" && sendTextIdx >= 1 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
+    return str + "TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > '" + getTextByAZIndex(getAZIndex(sendTextIdx)) + "']";     // Исходная строка без обработки
   }
-  
-  if (str.length() > 0) {
-    // Отправить клиенту запрошенные параметры страницы / режимов
-    str.toCharArray(incomeBuffer, str.length()+1);    
-    udp.beginPacket(udp.remoteIP(), udp.remotePort());
-    udp.write((const uint8_t*) incomeBuffer, str.length()+1);
-    udp.endPacket();
-    Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
-  } else {
-    sendAcknowledge();
-  }
+
+  // Список эффектов прошивки
+  if (key == "LE") return str + "LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
+
+  // Запрошенный ключ не найден - вернуть пустую строку
+  return "";
 }
 
 // Первый параметр эффекта thisMode для отправки на телефон параметра "SS:"
