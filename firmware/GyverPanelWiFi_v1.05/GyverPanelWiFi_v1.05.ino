@@ -7,15 +7,36 @@
 //
 // Дополнительные ссылки для Менеджера плат ESP8266 и ESP32 в Файл -> Настройки
 // http://arduino.esp8266.com/stable/pspackage_esp8266com_index.json
-// https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+// https://raw.githubuserconteenumnt.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.04.2020.1001")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.05.2020.1003")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
+
+// ------------------ MQTT CALLBACK -------------------
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  if (!useMQTT) return;
+  // проверяем из нужного ли нам топика пришли данные
+  Serial.print("MQTT << topic='" + String(topic) + "'");
+  if (strcmp(topic, topic_cmd.c_str()) == 0) {
+    memset(incomeBuffer, 0, BUF_MAX_SIZE);
+    memcpy(incomeBuffer, payload, length);
+    Serial.print("; cmd='" + String(incomeBuffer) + "'");
+    if (queueLength < QSIZE) {
+      queueLength++;
+      cmdQueue[queueWriteIdx++] = String(incomeBuffer);      
+      if (queueWriteIdx >= QSIZE) queueWriteIdx = 0;
+    }
+  }
+  Serial.println();
+}
+
+// ---------------------------------------------------------------
 
 void setup() {
 #if defined(ESP8266)
@@ -40,15 +61,36 @@ void setup() {
 
   loadSettings();
 
-  // Эти два параметра устанавливаются только в прошивке, изменить их из приложения на смартфоне нельзя - там нет соответствующих переключателей,
+  // -----------------------------------------
+  // Эти параметры устанавливаются только в прошивке, изменить их из приложения на смартфоне нельзя - там нет соответствующих переключателей,
   // т.к. объем программы в Thuncable Classic достиг максимума и добавить новые элементы в интерфейс уже нельзя
+  // -----------------------------------------
   /*
   useTemperatureColor = true;
   setUseTemperatureColor(useTemperatureColor);
+
   useTemperatureColorNight = true;
   setUseTemperatureColorNight(useTemperatureColorNight);
-  */
+
+  useMQTT = true;
+  mqtt_port = DEFAULT_MQTT_PORT;
+  mqtt_device_id  = DEVICE_ID;
+
+  strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
+  strcpy(mqtt_user, DEFAULT_MQTT_USER);
+  strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
   
+  setMqttServer(String(mqtt_server));
+  setMqttUser(String(mqtt_user));
+  setMqttPass(String(mqtt_pass));
+
+  setUseMqtt(useMQTT);  
+  setMqttPort(mqtt_port);
+  setMqttDeviceId(mqtt_device_id);
+  */
+  // -----------------------------------------
+  // -----------------------------------------  
+    
   // Настройки ленты
   FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(globalBrightness);
@@ -82,6 +124,18 @@ void setup() {
 
   // Подключение к сети
   connectToNetwork();
+
+  // Настройка соединения с MQTT сервером
+  mqtt.setServer(mqtt_server, mqtt_port);
+  mqtt.setCallback(callback);
+
+  // Приявязка топиков MQTT публикаций к ID устройства
+  String dev_id = String(mqtt_device_id);
+  topic_cmd.replace("$", dev_id);
+  topic_dta.replace("$", dev_id);
+  topic_nfo.replace("$", dev_id);
+  topic_err.replace("$", dev_id);
+  topic_ack.replace("$", dev_id);
 
   // пинаем генератор случайных чисел
 #if defined(ESP8266) && defined(TRUE_RANDOM)
@@ -196,7 +250,35 @@ void setup() {
 }
 
 void loop() {
-  ArduinoOTA.handle();
+  if (wifi_connected) {
+    if (useMQTT && !mqtt.connected()) {
+      if (!mqtt_connecting) {
+        Serial.print(F("\nПодключаемся к MQTT-серверу..."));
+        mqtt_conn_cnt = 30;
+      }
+      if (mqtt.connect((String(F("LedPanelClient-")) + String(DEVICE_ID)).c_str(), mqtt_user, mqtt_pass)) {
+        Serial.println(F("\nПодключение к MQTT-серверу выполнено.\n"));
+        mqtt.subscribe(topic_cmd.c_str());        
+        mqtt_connecting = false;
+        processOutQueue();
+      } else {      
+        if (millis() - mqtt_conn_last > 1000) {
+          mqtt_conn_last = millis();
+          Serial.print(".");
+          mqtt_connecting = true;
+          mqtt_conn_cnt++;
+          if (mqtt_conn_cnt == 80) {
+            mqtt_conn_cnt = 0;
+            Serial.println();
+          }
+        }
+      }
+    }
+    ArduinoOTA.handle();
+    if (mqtt.connected()){
+      mqtt.loop();      
+    }
+  }  
   process();
 }
 
@@ -308,13 +390,6 @@ void startSoftAP() {
 
   if (!ap_connected) 
     Serial.println(F("Не удалось создать WiFi точку доступа."));
-}
-
-void printNtpServerName() {
-  Serial.print(F("NTP-сервер "));
-  Serial.print(ntpServerName);
-  Serial.print(F(" -> "));
-  Serial.println(timeServerIP);
 }
 
 void connectToNetwork() {

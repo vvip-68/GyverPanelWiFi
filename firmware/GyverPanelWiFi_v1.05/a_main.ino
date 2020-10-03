@@ -1,9 +1,11 @@
 
 // ----------------------------------------------------
 
+/*
 // Временно для вывода информации о времени цикла
-// uint32_t last_ms = millis();  
-// char data[100];
+uint32_t last_ms = millis();  
+char data[100];
+*/
 
 void process() {  
 
@@ -27,16 +29,27 @@ void process() {
   }
 
   if (tmpSaveMode != thisMode) {
+
+    DynamicJsonDocument doc(128);
+    String out, effect_name;
+
+    doc["act"] = F("MODE");
+    doc["id"] = thisMode;
+
     switch (thisMode) {
       case MC_CLOCK:
         tmpSaveMode = thisMode;
-        Serial.print(F("Включен эффект "));
-        Serial.println(F("'Часы'"));
+        effect_name = F("'Часы'");
+        doc["name"] = effect_name;
+        serializeJson(doc, out);    
+        NotifyInfo(out);
         break;
       case MC_TEXT:
         tmpSaveMode = thisMode;
-        Serial.print(F("Включен эффект "));
-        Serial.println(F("'Бегущая строка'"));
+        effect_name = F("'Бегущая строка'");
+        doc["name"] = effect_name;
+        serializeJson(doc, out);    
+        NotifyInfo(out);
         break;
       default:
         // Определить какой эффект включился
@@ -46,8 +59,10 @@ void process() {
         uint16_t len2 = s_tmp.length();
         if (len1 > len2) { 
           tmpSaveMode = thisMode;
-          Serial.print(F("Включен эффект "));
-          Serial.println("'" + s_tmp + "'");
+          effect_name = "'" + s_tmp + "'";
+          doc["name"] = effect_name;
+          serializeJson(doc, out);    
+          NotifyInfo(out);
         } else {
           // Если режим отсутствует в списке эффектов - включить случайный
           setRandomMode2(); 
@@ -71,6 +86,15 @@ void process() {
             Serial.println(F("Не удалось установить соединение с NTP сервером."));  
             refresh_time = false;
           }
+          
+          DynamicJsonDocument doc(128);
+          String out;
+          doc["act"] = F("TIME");
+          doc["server_name"] = ntpServerName;
+          doc["server_ip"] = timeServerIP.toString();
+          doc["result"] = F("TIMEOUT");
+          serializeJson(doc, out);      
+          NotifyInfo(out);
         }
         
         bool timeToSync = ntpSyncTimer.isReady();
@@ -99,6 +123,14 @@ void process() {
             if (init_weather && weather_cnt >= 50) {
               Serial.println(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
+              
+              DynamicJsonDocument doc(128);
+              String out;
+              doc["act"] = F("WEATHER");
+              doc["region"] = regionID;
+              doc["result"] = F("TIMEOUT");
+              serializeJson(doc, out);      
+              NotifyInfo(out);
             }
           }
           
@@ -346,6 +378,7 @@ void parsing() {
   byte b_tmp;
   int8_t tmp_eff;
   char c;
+  bool err = false;
 
   byte alarmHourVal;
   byte alarmMinuteVal;
@@ -363,6 +396,9 @@ void parsing() {
         5 - пароль к точке доступа
         6 - настройки будильников
         7 - строка запрашиваемых параметров для процедуры getStateString(), например - "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+        8 - имя сервера MQTT
+        9 - имя пользователя MQTT
+       10 - пароль к MQTT-серверу
     8 - эффект
       - $8 0 N; включить эффект N
       - $8 1 N D; D -> параметр #1 для эффекта N;
@@ -371,6 +407,10 @@ void parsing() {
       - $8 4 N X; вкл/выкл оверлей текста поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 5 N X; вкл/выкл оверлей часов поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 6 N D; D -> контрастность эффекта N;
+    11 - Настройки MQTT-канала
+      - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
+      - $11 2 D;   - порт MQTT
+      - $11 3 D;   - ID устройства, используемое в topic сообщений MQTT
     12 - Настройки погоды
       - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
       - $12 4 X;   - использовать получение погоды с погодного сервера
@@ -446,10 +486,10 @@ void parsing() {
            X - 1 играть 0 - остановить
           NN - номер файла звука рассвета из папки SD:/02
           VV - уровень громкости
-      - $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
+      - $20 5 VV; - установить уровень громкости проигрывания примеров (когда уже играет)
           VV - уровень громкости
     21 - настройки подключения к сети / точке доступа
-      - $21 0 0 - не использовать точку доступа $21 0 1 - использовать точку доступа
+      - $21 0 X - использовать точку доступа: X=0 - не использовать X=1 - использовать
       - $21 1 IP1 IP2 IP3 IP4 - установить статический IP адрес подключения к локальной WiFi сети, пример: $21 1 192 168 0 106
       - $21 2; Выполнить переподключение к сети WiFi
     22 - настройки включения режимов матрицы в указанное время
@@ -511,8 +551,10 @@ void parsing() {
             if (specialMode) specialBrightness = globalBrightness;
             FastLED.setBrightness(globalBrightness);
           }
+          sendAcknowledge(cmdSource);
+        } else {
+          notifyUnknownCommand(incomeBuffer);
         }
-        sendAcknowledge();
         break;
 
       // ----------------------------------------------------
@@ -524,7 +566,10 @@ void parsing() {
       //   4 - имя точки доступа
       //   5 - пароль точки доступа
       //   6 - настройки будильника в формате $6 6|DD EF WD HH1 MM1 HH2 MM2 HH3 MM3 HH4 MM4 HH5 MM5 HH6 MM6 HH7 MM7        
-      //   7 - строка запрашиваемых параметров для процедуры getStateString(), например - "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+      //   7 - строка запрашиваемых параметров для процедуры getStateString(), например - "$6 7|CE CC CO CK NC SC C1 DC DD DI NP NT NZ NS DW OF"
+      //   8 - имя сервера MQTT
+      //   9 - имя пользователя MQTT
+      //  10 - пароль к MQTT-серверу
       // ----------------------------------------------------
 
       case 6:
@@ -620,8 +665,21 @@ void parsing() {
               break;
             case 7:
               // Запрос значений параметров, требуемых приложением вида "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+              // Каждый запрашиваемый приложением параметр - для заполнения соответствующего поля в приложении 
               // Передать строку для формирования, затем отправить параметры в приложение
               str = "$18 " + getStateString(str) + ";";
+              break;
+            case 8:
+              str.toCharArray(mqtt_server, 24);
+              setMqttServer(str);
+              break;
+            case 9:
+              str.toCharArray(mqtt_user, 14);
+              setMqttUser(str);
+              break;
+            case 10:
+              str.toCharArray(mqtt_pass, 14);
+              setMqttPass(str);
               break;
            }
         }
@@ -629,18 +687,22 @@ void parsing() {
         // При сохранении текста бегущей строки (b_tmp == 0) не нужно сразу автоматически сохранять ее в EEPROM - Сохранение будет выполнено по таймеру. 
         // При получении запроса параметров (b_tmp == 7) ничего сохранять не нужно - просто отправить требуемые параметры
         // Остальные полученные строки - сохранять сразу, ибо это настройки сети, будильники и другая критически важная информация
-        if (b_tmp != 0 && b_tmp != 7) {
+        if (b_tmp != 0 && b_tmp != 10) {
           saveSettings();
         }
-        
-        if (b_tmp == 0) 
-          sendPageParams(3);
-        else if (b_tmp == 6) 
-          sendPageParams(4);
-        else if (b_tmp == 7) 
-          sendStringData(str);
-        else
-          sendAcknowledge();
+
+        if (b_tmp >= 0 && b_tmp <= 10) {
+          if (b_tmp == 0) 
+            sendPageParams(3, cmdSource);
+          else if (b_tmp == 6) 
+            sendPageParams(4, cmdSource);
+          else if (b_tmp == 7) 
+            sendStringData(str, cmdSource);
+          else
+            sendAcknowledge(cmdSource);
+        } else {
+          notifyUnknownCommand(incomeBuffer);
+        }        
         break;
 
       // ----------------------------------------------------
@@ -758,10 +820,46 @@ void parsing() {
         } 
 
         // Для "0","2","4","5","6" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
-        if (intData[1] != 1) {
-          sendPageParams(2);
-        } else { 
-          sendAcknowledge();
+        if (intData[1] >= 0 && intData[1] <= 6) {
+          if (intData[1] != 1) {
+            sendPageParams(2, cmdSource);
+          } else { 
+            sendAcknowledge(cmdSource);
+          }
+        } else {
+          notifyUnknownCommand(incomeBuffer);
+        }
+        break;
+
+      // ----------------------------------------------------
+      // 11 - Настройки MQTT-канала
+      // - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
+      // - $11 2 D;   - Порт MQTT
+      // - $11 3 D;   - ID устройства, используемое в topic сообщений MQTT
+      // ----------------------------------------------------
+
+      case 11:
+         switch (intData[1]) {
+           case 1:               // $11 1 X; - Использовать отображение температуры цветом 0 - нет; 1 - да
+             useMQTT = intData[2] == 1;
+             setUseMqtt(useMQTT);
+             break;
+           case 2:               // $11 2 D; - Порт MQTT
+             mqtt_port = intData[2];
+             setMqttPort(mqtt_port);
+             break;
+           case 3:               // $11 3 D; - ID-устройства в топике mqtt-сообщения
+             mqtt_device_id = intData[2];
+             setMqttDeviceId(mqtt_device_id);
+             break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
+        }
+        if (!err) {
+       // sendPageParams(1, cmdSource);
+          sendAcknowledge(cmdSource);
         }
         break;
 
@@ -801,8 +899,14 @@ void parsing() {
              useTemperatureColorNight = intData[2] == 1;
              setUseTemperatureColorNight(useTemperatureColorNight);
              break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
         }
-        sendPageParams(1);
+        if (!err) {
+          sendPageParams(1, cmdSource);
+        }
         break;
       #endif
 
@@ -840,7 +944,7 @@ void parsing() {
            case 3:               // $13 3 I; - Запросить текст бегущей строки с индексом I
              if (intData[2] >= 1 && (intData[2]<(sizeof(textLines) / sizeof(String)))) {
                sendTextIdx = intData[2];
-               sendPageParams(92);
+               sendPageParams(92, cmdSource);
              }
              break;
            case 9:               // $13 9 I; - Периодичность отображения бегущей строки (в секундах)
@@ -866,9 +970,13 @@ void parsing() {
              textOverlayEnabled = intData[2] == 1;
              saveTextOverlayEnabled(textOverlayEnabled);
              break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
         }
-        if (intData[1] != 3) {
-          sendPageParams(3);
+        if (!err && intData[1] != 3) {
+          sendPageParams(3, cmdSource);
         }
         break;
         
@@ -889,14 +997,18 @@ void parsing() {
 
       case 14:
 
-        if (intData[1] == 2) {
-           // Если в строке цвет - "$14 2 00FFAA;" - цвет лампы, сохраняемый в globalColor
-           str = String(incomeBuffer).substring(6,12); // $14 2 00FFAA;
-           globalColor = (uint32_t)HEXtoInt(str);
-           setGlobalColor(globalColor);
+        if (intData[1] < 0 || intData[1] >= MAX_SPEC_EFFECT) {
+          notifyUnknownCommand(incomeBuffer);
+        } else {
+          if (intData[1] == 2) {
+             // Если в строке цвет - "$14 2 00FFAA;" - цвет лампы, сохраняемый в globalColor
+             str = String(incomeBuffer).substring(6,12); // $14 2 00FFAA;
+             globalColor = (uint32_t)HEXtoInt(str);
+             setGlobalColor(globalColor);
+          }        
+          setSpecialMode(intData[1]);
+          sendPageParams(1, cmdSource);
         }
-        setSpecialMode(intData[1]);
-        sendPageParams(1);
         break;
       
       // ----------------------------------------------------
@@ -913,8 +1025,10 @@ void parsing() {
             setGlobalColor(globalColor);
           }
           setTimersForMode(thisMode);           
+          sendAcknowledge(cmdSource);
+        } else {
+          notifyUnknownCommand(incomeBuffer);
         }
-        sendAcknowledge();
         break;
 
       // ----------------------------------------------------
@@ -934,12 +1048,11 @@ void parsing() {
           setCurrentSpecMode(-1);
         }
 
-        sendPageParams(1);
+        sendPageParams(1, cmdSource);
         break;
 
       // ----------------------------------------------------
       // 17 - Время автосмены эффектов и бездействия: $17 сек
-      ;
       // ----------------------------------------------------
 
       case 17: 
@@ -956,7 +1069,7 @@ void parsing() {
         else
           idleTimer.setInterval(idleTime);
         idleTimer.reset();
-        sendAcknowledge();
+        sendAcknowledge(cmdSource);
         break;
 
       // ----------------------------------------------------
@@ -978,9 +1091,9 @@ void parsing() {
 
       case 18: 
         if (intData[1] == 0) { // ping
-          sendAcknowledge();
+          sendAcknowledge(cmdSource);
         } else {                          // запрос параметров страницы приложения
-          sendPageParams(intData[1]);
+          sendPageParams(intData[1], cmdSource);
         }
         break;
 
@@ -1110,11 +1223,17 @@ void parsing() {
              setShowDateDuration(showDateDuration);
              setShowDateInterval(showDateInterval);
              break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
         }
-        if (intData[1] != 8) {
-          sendPageParams(4);
-        } else {
-          sendAcknowledge();
+        if (!err) {
+          if (intData[1] != 8) {
+            sendPageParams(4, cmdSource);
+          } else {
+            sendAcknowledge(cmdSource);
+          }
         }
         break;
 
@@ -1232,15 +1351,21 @@ void parsing() {
             }
             #endif
             break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
         }
-        if (intData[1] == 0) {
-          sendPageParams(4);
-        } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
-          // saveSettings();
-          sendPageParams(4);
-        } else {
-          sendPageParams(96);
-        }        
+        if (!err) {
+          if (intData[1] == 0) {
+            sendPageParams(4, cmdSource);
+          } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
+            // saveSettings();
+            sendPageParams(4, cmdSource);
+          } else {
+            sendPageParams(96);
+          }        
+        }
         break;
 
       // ----------------------------------------------------
@@ -1287,11 +1412,17 @@ void parsing() {
             startWiFi();
             showCurrentIP(true);
             break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
         }
-        if (intData[1] == 0 || intData[1] == 1) {
-          sendAcknowledge();
-        } else {
-          sendPageParams(5);
+        if (!err) {
+          if (intData[1] == 0 || intData[1] == 1) {
+            sendAcknowledge(cmdSource);
+          } else {
+            sendPageParams(5, cmdSource);
+          }
         }
         break;
 
@@ -1345,7 +1476,7 @@ void parsing() {
         setAM4params(AM4_hour, AM4_minute, AM4_effect_id);
 
         saveSettings();
-        sendPageParams(6);
+        sendPageParams(6, cmdSource);
         break;
 
       // ----------------------------------------------------
@@ -1361,10 +1492,20 @@ void parsing() {
             CURRENT_LIMIT = getPowerLimit();
             FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT == 0 ? 100000 : CURRENT_LIMIT);            
             break;
+          default:
+            err = true;
+            notifyUnknownCommand(incomeBuffer);
+            break;
+        }
+        if (!err) {
+          sendAcknowledge(cmdSource);
         }
         break;
 
       // ----------------------------------------------------
+      default:
+        notifyUnknownCommand(incomeBuffer);
+        break;
 
     }
   }
@@ -1373,6 +1514,25 @@ void parsing() {
 
   // Если предыдущий буфер еще не разобран - новых данных из сокета не читаем, продолжаем разбор уже считанного буфера
   haveIncomeData = bufIdx > 0 && bufIdx < packetSize; 
+
+  if (!haveIncomeData) {
+    // Есть ли поступившие по каналу MQTT команды?
+    if (queueLength > 0) {
+      String command = cmdQueue[queueReadIdx++];
+      if (queueReadIdx >= QSIZE) queueReadIdx = 0;
+      queueLength--;
+      
+      cmdSource = MQTT;
+      haveIncomeData = true;
+      bufIdx = 0;
+      packetSize = command.length();
+      memcpy(incomeBuffer, command.c_str(), packetSize);
+
+      Serial.print(F("MQTT пакeт размером "));
+      Serial.println(packetSize);
+    }
+  }
+
   if (!haveIncomeData) {
     packetSize = udp.parsePacket();      
     haveIncomeData = packetSize > 0;      
@@ -1384,25 +1544,29 @@ void parsing() {
         incomeBuffer[len] = 0;
       }
       bufIdx = 0;
+
+      cmdSource = UDP;
       
       delay(0);            // ESP8266 при вызове delay отпрабатывает стек IP протокола, дадим ему поработать        
 
-      Serial.print(F("UDP пакeт размером "));
-      Serial.print(packetSize);
-      Serial.print(F(" от "));
+      Serial.print(F("UDP << ip='"));
       IPAddress remote = udp.remoteIP();
-      for (int i = 0; i < 4; i++) {
-        Serial.print(remote[i], DEC);
-        if (i < 3) {
-          Serial.print(F("."));
-        }
-      }
-      Serial.print(F(", порт "));
-      Serial.println(udp.remotePort());
+      Serial.print(remote.toString());
+      Serial.print(":");
+      Serial.print(udp.remotePort());
+      Serial.print("'");
       if (udp.remotePort() == localPort) {
-        Serial.print(F("Содержимое: "));
-        Serial.println(incomeBuffer);
+        Serial.print(F("; cmd='"));
+        Serial.print(incomeBuffer);
+        Serial.print("'");
       }
+      if (udp.remotePort() == 123) {
+        Serial.print(F("; ntp sync"));
+      }
+      Serial.println();
+
+      Serial.print(F("UDP пакeт размером "));
+      Serial.println(packetSize);
     }
 
     // NTP packet from time server
@@ -1495,10 +1659,15 @@ void parsing() {
 }
 
 void sendPageParams(int page) {
+  sendPageParams(page, BOTH);
+}
+
+void sendPageParams(int page, eSources src) {
 
   String str = "", color, text;
   CRGB c1, c2;
   int8_t tmp_eff = -1;
+  bool err = false;
   
   switch (page) { 
     case 1:  // Настройки
@@ -1536,35 +1705,68 @@ void sendPageParams(int page) {
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
       str = getStateString("AL");
       cmd95 = str;
+      src = BOTH;
       break;
     case 96:  // Ответ демо-режима звука - сообщение по инициативе сервера
       str = getStateString("MP");
       cmd96 = str;
+      src = BOTH;
       break;
     case 99:  // Запрос списка эффектов
       str = getStateString("LE");
       break;
+    default:
+      err = true;
+      DynamicJsonDocument doc(128);
+      String out;
+      doc["message"] = F("unknown page");
+      doc["text"]    = String(F("нет страницы с номером ")) + String(page);
+      serializeJson(doc, out);      
+      NotifyError(out);
+      break;
   }
-  
-  if (str.length() > 0) {
-    // Отправить клиенту запрошенные параметры страницы / режимов
-    str = "$18 " + str + ";";
-    sendStringData(str);
-  } else {
-    sendAcknowledge();
+
+  if (!err) {
+    if (str.length() > 0) {
+      // Отправить клиенту запрошенные параметры страницы / режимов
+      str = "$18 " + str + ";";
+      sendStringData(str, src);
+    } else {
+      sendAcknowledge(cmdSource);
+    }
   }
 }
 
-void sendStringData(String &str) {
-  str.toCharArray(incomeBuffer, str.length()+1);    
-  udp.beginPacket(udp.remoteIP(), udp.remotePort());
-  udp.write((const uint8_t*) incomeBuffer, str.length()+1);
-  udp.endPacket();
-  Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
+void sendStringData(String &str, eSources src) {
+  if (src == MQTT || src == BOTH) {
+    SendMQTT(str);
+  }
+  if (src == UDP || src == BOTH) {
+    str.toCharArray(incomeBuffer, str.length()+1);    
+    udp.beginPacket(udp.remoteIP(), udp.remotePort());
+    udp.write((const uint8_t*) incomeBuffer, str.length()+1);
+    udp.endPacket();
+    Serial.println(String(F("UDP ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
+  }
 }
 
 String getStateString(String keys) {
   String str = "", s_tmp, key;
+
+  // Ключи буквы/цифры, разделенные пробелами или пайпами '|' 
+  // Если строка ключей ограничена квадратными скобками или кавычками - удалить их;
+  // В конце может быть ";" - не требуется - удалить ее (в середине ее быть не может)
+  keys.replace(";","");
+  keys.replace("[","");
+  keys.replace("]","");
+  keys.replace("\"","");
+
+  // Ключи могут быть разделены '|' или пробелами
+  keys.replace(" ","|");
+  keys.replace("/r"," ");
+  keys.replace("/n"," ");
+  keys.trim();
+  
   int16_t pos_start = 0;
   int16_t pos_end = keys.indexOf('|', pos_start);
   int16_t len = keys.length();
@@ -1607,49 +1809,11 @@ String getStateValue(String &key, int8_t effect) {
 
   // W:число     ширина матрицы
   // H:число     высота матрицы
-  // DM:Х        демо режим, где Х = 0 - ручное управление; 1 - авторежим
-  // AP:Х        автосменарежимов, где Х = 0 - выкл; 1 - вкл
-  // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
-  // PD:число    продолжительность режима в секундах
-  // IT:число    время бездействия в секундах
-  // BR:число    яркость
-  // BE:число    контрастность эффекта
-  // EF:число    текущий эффект
-  // SE:число    скорость эффектов
-  // SS:число    параметр #1 эффекта
-  // SQ:спец     параметр #2 эффекта; спец - "L>val>itrm1,item2,..itemN" - список, где val - текущее, далее список; "C>x>title" - чекбокс, где x=0 - выкл, x=1 - вкл; title - текст чекбокса
-  // NP:Х        использовать NTP, где Х = 0 - выкл; 1 - вкл
-  // NT:число    период синхронизации NTP в минутах
-  // NZ:число    часовой пояс -12..+12
-  // NS:[текст]  сервер NTP, ограничители [] обязательны
-  // NС:Х        цвет ночных часов, где Х = 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
-  // OF:X        выключать часы вместе с лампой 0-нет, 1-да
-  // DC:X        показывать дату вместе с часами 0-нет, 1-да
-  // DD:число    время показа даты при отображении часов (в секундах)
-  // DI:число    интервал показа даты при отображении часов (в секундах)
-  // UE:X        использовать эффект в демо-режиме 0-нет, 1-да
-  // UT:X        использовать бегущую строку поверх эффекта 0-нет, 1-да
-  // UC:X        использовать часы поверх эффекта 0-нет, 1-да
-  // LE:[список] список эффектов, разделенный запятыми, ограничители [] обязательны        
-  // AL:X        сработал будильник 0-нет, 1-да
-  // AT: DW HH MM  часы-минуты времени будильника для дня недели DW 1..7 -> например "AT:1 09 15"
-  // AW:число    битовая маска дней недели будильника b6..b0: b0 - пн .. b7 - вс
+  // AA:[текст]  пароль точки доступа
   // AD:число    продолжительность рассвета, мин
   // AE:число    эффект, использующийся для будильника
   // AO:X        включен будильник 0-нет, 1-да
-  // NW:[текст]  SSID сети подключения
-  // NA:[текст]  пароль подключения к сети
-  // AU:X        создавать точку доступа 0-нет, 1-да
-  // AN:[текст]  имя точки доступа
-  // AA:[текст]  пароль точки доступа
-  // MX:X        MP3 плеер доступен для использования 0-нет, 1-да
-  // MU:X        использовать звук в будильнике 0-нет, 1-да
-  // MD:число    сколько минут звучит будильник, если его не отключили
-  // MV:число    максимальная громкость будильника
-  // MA:число    номер файла звука будильника из SD:/01
-  // MB:число    номер файла звука рассвета из SD:/02
-  // MP:папка.файл  номер папки и файла звука который проигрывается
-  // IP:xx.xx.xx.xx Текущий IP адрес WiFi соединения в сети
+  // AL:X        сработал будильник 0-нет, 1-да
   // AM1H:HH     час включения режима 1     00..23
   // AM1M:MM     минуты включения режима 1  00..59
   // AM1E:NN     номер эффекта режима 1:   -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из спписка EFFECT_LIST
@@ -1662,20 +1826,58 @@ String getStateValue(String &key, int8_t effect) {
   // AM4H:HH     час включения режима 2     00..23
   // AM4M:MM     минуты включения режима 2  00..59
   // AM4E:NN     номер эффекта режима 1:   -3 - не используется; -2 - выключить матрицу; -1 - ночные часы;  0 - включить случайный с автосменой; 1 - номер режима из спписка EFFECT_LIST
-  // PW:число    ограничение по току в миллиамперах
-  // CK:X        размер горизонтальных часов, где Х = 0 - авто; 1 - малые 3x5; 2 - большие 5x7 
-  // CE:X        оверлей часов вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать часы в эффектах)
-  // CС:X        режим цвета часов оверлея: 0,1,2
-  // CT:X        режим цвета текстовой строки: 0,1,2
-  // CO:X        ориентация часов: 0 - горизонтально, 1 - вертикально
-  // TE:X        оверлей текста бегущей строки вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать бегущую строку в эффектах)
-  // TI:число    интервал отображения текста бегущей строки
-  // SC:число    скорость смещения часов оверлея
-  // ST:число    скорость смещения бегущей строки
+  // AN:[текст]  имя точки доступа
+  // AP:Х        автосменарежимов, где Х = 0 - выкл; 1 - вкл
+  // AT: DW HH MM  часы-минуты времени будильника для дня недели DW 1..7 -> например "AT:1 09 15"
+  // AU:X        создавать точку доступа 0-нет, 1-да
+  // AW:число    битовая маска дней недели будильника b6..b0: b0 - пн .. b7 - вс
+  // BE:число    контрастность эффекта
+  // BR:число    яркость
   // C1:цвет     цвет режима "монохром" часов оверлея; цвет: 192,96,96 - R,G,B
   // C2:цвет     цвет режима "монохром" бегущей строки; цвет: 192,96,96 - R,G,B
+  // CС:X        режим цвета часов оверлея: 0,1,2
+  // CE:X        оверлей часов вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать часы в эффектах)
+  // CK:X        размер горизонтальных часов, где Х = 0 - авто; 1 - малые 3x5; 2 - большие 5x7 
+  // CO:X        ориентация часов: 0 - горизонтально, 1 - вертикально
+  // CT:X        режим цвета текстовой строки: 0,1,2
+  // DC:X        показывать дату вместе с часами 0-нет, 1-да
+  // DD:число    время показа даты при отображении часов (в секундах)
+  // DI:число    интервал показа даты при отображении часов (в секундах)
+  // DM:Х        демо режим, где Х = 0 - ручное управление; 1 - авторежим
+  // DW:X        показывать температуру вместе с малыми часами 0-нет, 1-да
+  // EF:число    текущий эффект
+  // IP:xx.xx.xx.xx Текущий IP адрес WiFi соединения в сети
+  // IT:число    время бездействия в секундах
+  // LE:[список] список эффектов, разделенный запятыми, ограничители [] обязательны        
+  // MA:число    номер файла звука будильника из SD:/01
+  // MB:число    номер файла звука рассвета из SD:/02
+  // MD:число    сколько минут звучит будильник, если его не отключили
+  // MP:папка.файл  номер папки и файла звука который проигрывается
+  // MU:X        использовать звук в будильнике 0-нет, 1-да
+  // MV:число    максимальная громкость будильника
+  // MX:X        MP3 плеер доступен для использования 0-нет, 1-да
+  // NA:[текст]  пароль подключения к сети
+  // NС:Х        цвет ночных часов, где Х = 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
+  // NP:Х        использовать NTP, где Х = 0 - выкл; 1 - вкл
+  // NS:[текст]  сервер NTP, ограничители [] обязательны
+  // NT:число    период синхронизации NTP в минутах
+  // NW:[текст]  SSID сети подключения
+  // NZ:число    часовой пояс -12..+12
+  // OF:X        выключать часы вместе с лампой 0-нет, 1-да
+  // OM:X        сколько ячеек осталось свободно для хранения строк
+  // PD:число    продолжительность режима в секундах
+  // PW:число    ограничение по току в миллиамперах
+  // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
   // S1:[список] список звуков будильника, разделенный запятыми, ограничители [] обязательны        
   // S2:[список] список звуков рассвета, разделенный запятыми, ограничители [] обязательны        
+  // SC:число    скорость смещения часов оверлея
+  // SE:число    скорость эффектов
+  // SS:число    параметр #1 эффекта
+  // SQ:спец     параметр #2 эффекта; спец - "L>val>itrm1,item2,..itemN" - список, где val - текущее, далее список; "C>x>title" - чекбокс, где x=0 - выкл, x=1 - вкл; title - текст чекбокса
+  // ST:число    скорость смещения бегущей строки
+  // TA:X        активная кнопка, для которой отправляется текст - 0..9,A..Z
+  // TE:X        оверлей текста бегущей строки вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать бегущую строку в эффектах)
+  // TI:число    интервал отображения текста бегущей строки
   // TS:строка   строка состояния кнопок выбора текста из массива строк: 36 символов 0..5, где
   //               0 - серый - пустая
   //               1 - черный - отключена
@@ -1683,17 +1885,19 @@ String getStateValue(String &key, int8_t effect) {
   //               3 - голубой - активна, содержит макросы кроме даты
   //               4 - синий - активная, содержит макрос даты
   //               5 - красный - для строки 0 - это управляющая строка
-  // TA:X        активная кнопка, для которой отправляется текст - 0..9,A..Z
   // TX:[текст]  текст для активной строки. Ограничители [] обязательны
   // TY:[Z:текст] обработанный текст для активной строки, после преобразования макросов, если они есть. Ограничители [] обязательны Z - индекс строки в списке 0..35
   // TZ:[Z:текст] обработанный текст для активной строки, после преобразования макросов, если они есть. Ограничители [] обязательны Z - индекс строки в списке 0..35 (в ответ на получения TZ телефон отправляет запрос на следующую строку, в TY - нет)
-  // OM:X        сколько ячеек осталось свободно для хранения строк
-  // WU:X        Использовать получение погоды с сервераж X: 0 - выключено; 1 - включено
-  // WT:число    Период запроса сведений о погоде в минутах
-  // WR:число    Регион погоды - https://tech.yandex.ru/xml/doc/dg/reference/regions-docpage/
+  // UC:X        использовать часы поверх эффекта 0-нет, 1-да
+  // UE:X        использовать эффект в демо-режиме 0-нет, 1-да
+  // UT:X        использовать бегущую строку поверх эффекта 0-нет, 1-да
+  // W1          текущая погода ('ясно','пасмурно','дождь'и т.д.)
+  // W2          текущая температура
   // WC:X        Использовать цвет для отображения температуры в дневных часах  X: 0 - выключено; 1 - включено
   // WN:X        Использовать цвет для отображения температуры в ночных часах  X: 0 - выключено; 1 - включено
-  // DW:X        показывать температуру вместе с малыми часами 0-нет, 1-да
+  // WR:число    Регион погоды - https://tech.yandex.ru/xml/doc/dg/reference/regions-docpage/
+  // WT:число    Период запроса сведений о погоде в минутах
+  // WU:X        Использовать получение погоды с сервераж X: 0 - выключено; 1 - включено
 
   String str = "";
   
@@ -1739,6 +1943,12 @@ String getStateValue(String &key, int8_t effect) {
 
   // Использовать цвет для отображения температуры в ночных часах: 0 - выключено; 1 - включено
   if (key == "WN") return str + "WN:" + (useTemperatureColorNight ? "1" : "0");
+
+  // Текущая погода
+  if (key == "W1") return str + "W1:[" + weather + ']';
+
+  // Текущая температура
+  if (key == "W2") return str + "W2:" + String(temperature);
 #endif  
 
   // Текущий эффект 
@@ -2065,20 +2275,25 @@ String getParam2ForMode(byte mode) {
  return str;   
 }
 
-void sendAcknowledge() {
-  // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
-  String reply = "";
-  bool isCmd = false; 
-  if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
-  if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
-  reply += "ack" + String(ackCounter++) + ";";  
-  reply.toCharArray(replyBuffer, reply.length()+1);
-  udp.beginPacket(udp.remoteIP(), udp.remotePort());
-  udp.write((const uint8_t*) replyBuffer, reply.length()+1);
-  udp.endPacket();
-  delay(0);
-  if (isCmd) {
-    Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+void sendAcknowledge(eSources src) {
+  if (src == MQTT) {
+    NotifyAck();
+  }  
+  if (src == UDP || src == BOTH) {
+    // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
+    String reply = "";
+    bool isCmd = false; 
+    if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
+    if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
+    reply += "ack" + String(ackCounter++) + ";";  
+    reply.toCharArray(replyBuffer, reply.length()+1);
+    udp.beginPacket(udp.remoteIP(), udp.remotePort());
+    udp.write((const uint8_t*) replyBuffer, reply.length()+1);
+    udp.endPacket();
+    delay(0);
+    if (isCmd) {
+      Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+    }
   }
 }
 
@@ -2223,7 +2438,7 @@ void setRandomMode2() {
   // На SD арте содержится более 40 эффектов плюсом к 40 эффектам, заданных в прошивке
   // Когда эффект следующий выбирается случайным образом, вероятность что выпадет SD-карта достаточно мала.
   // Искуственным образом увеличиваем вероятность эффекта с SD-карты
-  if (getEffectUsage(MC_SDCARD) && (random16(0, 200) % 10 == 0)) {
+  if (getEffectUsage(MC_SDCARD) && isSdCardReady && (random16(0, 200) % 10 == 0)) {
     newMode = MC_SDCARD;
     setEffect(newMode);
     return;
@@ -2234,6 +2449,10 @@ void setRandomMode2() {
     cnt++;
     newMode = random16(0, MAX_EFFECT);
     if (!getEffectUsage(newMode)) continue;
+    
+    #if (USE_SD == 1)  
+    if (newMode == MC_SDCARD && !isSdCardReady) continue;
+    #endif
 
     setEffect(newMode);
     break;

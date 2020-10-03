@@ -84,9 +84,15 @@ void loadSettings() {
   //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
   // 176,177,178,179 - Код региона для получения погоды (4 байта - uint32_t)                                 // getWeatherRegion()             // setWeatherRegion(regionID)
-  //  180 - использовать цвет при показе температуры дневн. часы: 0 - нет; 1 - цвет в зависимости от теммпературы       // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
-  //  181 - использовать цвет при показе температуры ночн. часы: 0 - нет; 1 - цвет в зависимости от теммпературы        // getUseTemperatureColorNight()  // setUseTemperatureColorNight(useTemperatureColorNight)
-  //**182 - не используется
+  //  180 - цвет температуры в дневных часах: 0 - цвет часов; 1 - цвет в зависимости от теммпературы         // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
+  //  181 - цвет температуры в ночных часах:  0 - цвет часов; 1 - цвет в зависимости от теммпературы         // getUseTemperatureColorNight()  // setUseTemperatureColorNight(useTemperatureColorNight)
+  // 182-206 - MQTT сервер (24 симв)                                                                         // getMqttServer().toCharArray(mqtt_server, 24)  // setMqttServer(String(mqtt_server))       // char mqtt_server[25] = ""
+  // 207-221 - MQTT user (14 симв)                                                                           // getMqttUser().toCharArray(mqtt_user, 14)      // setMqttUser(String(mqtt_user))           // char mqtt_user[15] = ""
+  // 222-236 - MQTT pwd (14 симв)                                                                            // getMqttPass().toCharArray(mqtt_pass, 14)      // setMqttPass(String(mqtt_pass))           // char mqtt_pass[15] = ""
+  // 237,238 - MQTT порт                                                                                     // getMqttPort()                  // setMqttPort(mqtt_port)
+  // 239,240 - MQTT device_id - используется как часть топика                                                // getMqttDeviceId()              // setMqttDeviceId(mqtt_device_id)
+  // 241 - использовать MQTT анал управления: 0 - нет 1 - да                                                 // getUseMqtt()                   // setUseMqtt(useMQTT)
+  //**242 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -105,6 +111,9 @@ void loadSettings() {
   strcpy(ssid, NETWORK_SSID);
   strcpy(pass, NETWORK_PASS);
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+  strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
+  strcpy(mqtt_user, DEFAULT_MQTT_USER);
+  strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
 
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
@@ -172,10 +181,19 @@ void loadSettings() {
     getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
     getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
     getNtpServer().toCharArray(ntpServerName, 31);  //  120-149 - имя NTP сервера      (30 байт макс) + 1 байт '\0'
+    getMqttServer().toCharArray(mqtt_server, 25);   //  182-206 - mqtt сервер          (24 байт макс) + 1 байт '\0'
+    getMqttUser().toCharArray(mqtt_user, 15);       //  207-221 - mqtt user            (14 байт макс) + 1 байт '\0'
+    getMqttPass().toCharArray(mqtt_pass, 15);       //  222-236 - mqtt password        (14 байт макс) + 1 байт '\0'
 
     if (strlen(apName) == 0) strcpy(apName, DEFAULT_AP_NAME);
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
     if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
+    if (strlen(mqtt_server) == 0) strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
+    if (strlen(mqtt_user) == 0) strcpy(mqtt_user, DEFAULT_MQTT_USER);
+    if (strlen(mqtt_pass) == 0) strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
+
+    mqtt_port = getMqttPort();
+    mqtt_device_id = getMqttDeviceId();
 
     AM1_hour      = getAM1hour();
     AM1_minute    = getAM1minute();
@@ -313,12 +331,22 @@ void saveDefaults() {
   strcpy(apPass, DEFAULT_AP_PASS);
   strcpy(ssid, NETWORK_SSID);
   strcpy(pass, NETWORK_PASS);
-
+  strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
+  strcpy(mqtt_user, DEFAULT_MQTT_USER);
+  strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
+  
   setSoftAPName(String(apName));
   setSoftAPPass(String(apPass));
   setSsid(String(ssid));
   setPass(String(pass));
-  
+  setMqttServer(String(mqtt_server));
+  setMqttUser(String(mqtt_user));
+  setMqttPass(String(mqtt_pass));
+
+  setMqttPort(mqtt_port);
+  setMqttDeviceId(mqtt_device_id);
+  setUseMqtt(useMQTT);
+
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   setNtpServer(String(ntpServerName));
 
@@ -1435,6 +1463,69 @@ boolean getUseTemperatureColorNight() {
 void setUseTemperatureColorNight(boolean use) {
   if (use != getUseTemperatureColorNight()) {
     EEPROMwrite(181, use ? 1 : 0);
+  }
+}
+
+bool getUseMqtt() {
+  return EEPROMread(241) == 1;
+}
+
+void setUseMqtt(boolean use) {  
+  if (use != getUseMqtt()) {
+    EEPROMwrite(241, use ? 1 : 0);
+  }
+}
+
+uint16_t getMqttPort() {
+  uint16_t val = (uint16_t)EEPROM_int_read(237);
+  return val;
+}
+
+void setMqttPort(uint16_t port) {
+  if (port != getMqttPort()) {
+    EEPROM_int_write(237, port);
+  }  
+}
+
+// Интервал включения режима бегущей строки
+uint16_t getMqttDeviceId() {
+  uint16_t val = (uint16_t)EEPROM_int_read(239);
+  return val;
+}
+
+void setMqttDeviceId(uint16_t id) {
+  if (id != getMqttDeviceId()) {
+    EEPROM_int_write(239, id);
+  }  
+}
+
+String getMqttServer() {
+  return EEPROM_string_read(182, 24);
+}
+
+void setMqttServer(String server) {
+  if (server != getMqttServer()) {
+    EEPROM_string_write(182, server, 24);
+  }
+}
+
+String getMqttUser() {
+  return EEPROM_string_read(207, 24);
+}
+
+void setMqttUser(String user) {
+  if (user != getMqttUser()) {
+    EEPROM_string_write(207, user, 14);
+  }
+}
+
+String getMqttPass() {
+  return EEPROM_string_read(222, 24);
+}
+
+void setMqttPass(String pass) {
+  if (pass != getMqttPass()) {
+    EEPROM_string_write(222, pass, 14);
   }
 }
 

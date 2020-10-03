@@ -264,16 +264,17 @@
   #include <ESPmDNS.h>
 #endif
 
-#include <ArduinoOTA.h>
-#include <WiFiUdp.h>
+#include <PubSubClient.h>        // Библиотека для работы с MQTT
+#include <ArduinoOTA.h>          // Библиотека обновления "по воздуху"
+#include <WiFiUdp.h>             // Библиотека поддержки WiFi
 #include <ArduinoJson.h>         // Библиотека для разбора JSON-ответа от червия Yandex-Погода
-#include <TimeLib.h>
-#include <EEPROM.h>
+#include <TimeLib.h>             // Библиотека поддержки функций времени
+#include <EEPROM.h>              // Библиотека поддержки постоянной памяти
 #include <FastLED.h>             // Установите в менеджере библиотек стандартную библиотеку FastLED
 #include "TM1637Display.h"       // Внимание!!! Библиотека в папке проекта libraries изменена - константы букв и цифр переименованы с вида _1, _A на _1_, _A_ из за ошибок компиляции для ESP32
-#include "timerMinim.h"
-#include "GyverButton.h"
-#include "fonts.h"
+#include "timerMinim.h"          // Библиотека таймеров
+#include "GyverButton.h"         // Библиотека поддержки кнопок
+#include "fonts.h"               // Шрифты, определенные для бегущей строки и часов
 
 #if (USE_MP3 == 1)
 #include <SoftwareSerial.h>      // Установите в менеджере библиотек "EspSoftwareSerial" для ESP8266/ESP32 https://github.com/plerup/espsoftwareserial/

@@ -12,6 +12,11 @@ bool getWeather() {
   // Отправляем запрос
   client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
 
+  DynamicJsonDocument doc(256);
+  String out;
+  doc["act"] = F("WEATHER");
+  doc["region"] = regionID;
+
   // Проверяем статус запроса
   char status[32] = {0};
   client.readBytesUntil('\r', status, sizeof(status));
@@ -19,6 +24,12 @@ bool getWeather() {
   if (strcmp(status + 9, "200 OK") != 0) {
     Serial.print(F("Ошибка сервера погоды: "));
     Serial.println(status);
+    
+    doc["result"] = F("ERROR");
+    doc["status"] = status;
+    serializeJson(doc, out);      
+    NotifyInfo(out);
+    
     return false;
   } 
 
@@ -26,36 +37,57 @@ bool getWeather() {
   char endOfHeaders[] = "\r\n\r\n";                                       // Системные заголовки ответа сервера отделяются от остального содержимого двойным переводом строки
   if (!client.find(endOfHeaders)) {                                       // Отбрасываем системные заголовки ответа сервера
     Serial.println(F("Нераспознанный ответ сервера погоды"));             // Если ответ сервера не содержит системных заголовков, значит что-то пошло не так
+
+    doc["result"] = F("ERROR");
+    doc["status"] = F("unexpected answer");
+    serializeJson(doc, out);      
+    NotifyInfo(out);
+
     return false;                                                         // и пора прекращать всё это дело
   }
 
   const size_t capacity = 750;                                            // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
-  DynamicJsonDocument doc(capacity);
+  DynamicJsonDocument jsn(capacity);
 
   // {"time":1597989853200,"clocks":{"62":{"id":62,"name":"Krasnoyarsk","offset":25200000,"offsetString":"UTC+7:00","showSunriseSunset":true,"sunrise":"05:31","sunset":"20:10","isNight":false,"skyColor":"#57bbfe","weather":{"temp":25,"icon":"bkn-d","link":"https://yandex.ru/pogoda/krasnoyarsk"},"parents":[{"id":11309,"name":"Krasnoyarsk Krai"},{"id":225,"name":"Russia"}]}}}
 
   // Parse JSON object
-  DeserializationError error = deserializeJson(doc, client);
+  DeserializationError error = deserializeJson(jsn, client);
 
   if (error) {
     Serial.print(F("JSON не разобран: "));
     Serial.println(error.c_str());
+    
+    doc["result"] = F("ERROR");
+    doc["status"] = F("json error");
+    serializeJson(doc, out);      
+    NotifyInfo(out);
+
     return false;
   }
 
   client.stop();
 
   String regId = String(regionID);
-  sunriseTime  = doc["clocks"][regId]["sunrise"].as<String>();          // Достаём время восхода - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunrise 
-  sunsetTime   = doc["clocks"][regId]["sunset"].as<String>();           // Достаём время заката - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunset
-  temperature  = doc["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём время заката - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
-  skyColor     = doc["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
-  isNight      = doc["clocks"][regId]["isNight"].as<boolean>();
-  icon         = doc["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+  String town;
   
+  sunriseTime  = jsn["clocks"][regId]["sunrise"].as<String>();          // Достаём время восхода - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunrise 
+  sunsetTime   = jsn["clocks"][regId]["sunset"].as<String>();           // Достаём время заката - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunset
+  temperature  = jsn["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём время заката - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
+  skyColor     = jsn["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
+  isNight      = jsn["clocks"][regId]["isNight"].as<boolean>();
+  icon         = jsn["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+  town         = jsn["clocks"][regId]["name"].as<String>();             // Город
+
   // #57bbfe
   if (skyColor.length() != 7) {
     Serial.print(F("JSON не содержит данных о погоде"));
+
+    doc["result"] = F("ERROR");
+    doc["status"] = F("no data");
+    serializeJson(doc, out);      
+    NotifyInfo(out);
+
     return false;
   }
 
@@ -77,6 +109,16 @@ bool getWeather() {
   Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   Serial.println(dayTime);
   
+  doc["result"] = F("OK");
+  doc["status"] = weather;
+  doc["temp"]   = temperature;
+  doc["night"]  = isNight;
+  doc["icon"]   = icon;
+  doc["sky"]    = skyColor;
+  doc["town"]   = town;
+  serializeJson(doc, out);      
+  NotifyInfo(out);
+
   return true;
 }
 

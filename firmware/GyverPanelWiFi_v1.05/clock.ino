@@ -23,8 +23,7 @@ void sendNTPpacket(IPAddress& address) {
   Serial.print(F("Отправка NTP пакета на сервер "));
   Serial.println(ntpServerName);
   // set all bytes in the buffer to 0
-  // memset(packetBuffer, 0, NTP_PACKET_SIZE);
-  for (byte i=0; i<NTP_PACKET_SIZE; i++) packetBuffer[i] = 0;
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
   
   // Initialize values needed to form NTP request
   // (see URL above for details on the packets)
@@ -60,6 +59,16 @@ void parseNTP() {
   Serial.println(t);
   setTime(t);
   calculateDawnTime();
+
+  DynamicJsonDocument doc(128);
+  String out;
+  doc["act"] = F("TIME");
+  doc["server_name"] = ntpServerName;
+  doc["server_ip"] = timeServerIP.toString();
+  doc["result"] = F("OK");
+  doc["time"] = t;
+  serializeJson(doc, out);      
+  NotifyInfo(out);
 }
 
 void getNTP() {
@@ -77,6 +86,15 @@ void getNTP() {
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
   // wait to see if a reply is available
   ntp_t = millis();  
+
+  DynamicJsonDocument doc(128);
+  String out;
+  doc["act"] = F("TIME");
+  doc["server_name"] = ntpServerName;
+  doc["server_ip"] = timeServerIP.toString();
+  doc["result"] = F("REQUEST");
+  serializeJson(doc, out);      
+  NotifyInfo(out);
 }
 
 String clockCurrentText() {
@@ -492,7 +510,6 @@ void overlayUnwrap() {
   }
 }
 
-
 void overlayWeatherWrap() {
 
   // Погода выводится - правая граница = правой границы часов, ширина вывода = 3 симв 3x5 + 2 пробела между - 11 симв.
@@ -689,6 +706,14 @@ void checkAlarmTime() {
          #endif
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
          Serial.println(String(F("Рассвет ВКЛ в "))+String(h)+ ":" + String(m));
+
+         DynamicJsonDocument doc(128);
+         String out;
+         doc["act"]   = F("ALARM");
+         doc["state"] = F("on");
+         doc["type"]  = F("dawn");
+         serializeJson(doc, out);      
+         NotifyInfo(out);         
        }
     }
     
@@ -708,10 +733,18 @@ void checkAlarmTime() {
       // До окончания таймера индикатор TM1637 будет мигать, лампа гореть ярко белым.
       #if (USE_MP3 == 1)
       if (useAlarmSound) {
-        PlayAlarmSound();
+        PlayAlarmSound();+++2
       }
       #endif
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+
+      DynamicJsonDocument doc(128);
+      String out;
+      doc["act"]   = F("ALARM");
+      doc["state"] = F("on");
+      doc["type"]  = F("alarm");
+      serializeJson(doc, out);      
+      NotifyInfo(out);
     }
 
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
@@ -748,6 +781,14 @@ void checkAlarmTime() {
     }
 
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+
+    DynamicJsonDocument doc(128);
+    String out;
+    doc["act"]   = F("ALARM");
+    doc["state"] = F("off");
+    doc["type"]  = F("auto");
+    serializeJson(doc, out);      
+    NotifyInfo(out);
   }
 
   delay(0); // Для предотвращения ESP8266 Watchdog Timer
@@ -808,9 +849,16 @@ void stopAlarm() {
     } else {
        setEffect(saveMode);
     }
-    
     delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+
+    DynamicJsonDocument doc(128);
+    String out;
+    doc["act"]   = F("ALARM");
+    doc["state"] = F("off");
+    doc["type"]  = F("stop");
+    serializeJson(doc, out);      
+    NotifyInfo(out);
   }
   #endif
 }
@@ -914,14 +962,11 @@ void SetAutoMode(byte amode) {
     case 4:  AM_hour = AM4_hour; AM_minute = AM4_minute; AM_effect_id = AM4_effect_id; break;
     default: return;
   }
-
-  Serial.print(F("Авторежим "));
-  Serial.print(amode);
-  Serial.print(F(" ["));
-  Serial.print(AM_hour);
-  Serial.print(":");
-  Serial.print(AM_minute);
-  Serial.print(F("] - "));
+  
+  bool   no_action = false;
+  
+  String text = F("Авторежим ");
+  text += String(amode) + F(" [") + String(AM_hour) + ":" + String(AM_minute) + F("] - ");
 
   int8_t ef = AM_effect_id;
 
@@ -933,21 +978,22 @@ void SetAutoMode(byte amode) {
 
   // включить указанный режим
   if (ef <= -3 || ef >= MAX_EFFECT) {
-    Serial.print(F("нет действия"));
+    no_action = true;
+    text += F("нет действия");
   } else if (ef == -2) {
 
     // Выключить матрицу (черный экран)
-    Serial.print(F("выключение панели"));
+    text += F("выключение панели");
     setSpecialMode(0);
     
   } else if (ef == -1) {
 
     // Ночные часы
-    Serial.print(F("ночные часы"));
+    text += F("ночные часы");
     setSpecialMode(8);
     
   } else {
-    Serial.print(F("включение режима "));    
+    text += F("включение режима ");    
     // Если режим включения == 0 - случайный режим и автосмена по кругу
     resetModes();  
     setManualModeTo(ef != 0);    
@@ -956,7 +1002,7 @@ void SetAutoMode(byte amode) {
     
     if (ef == 0) {
       // "Случайный" режим и далее автосмена
-      Serial.print(F(" демонcтрации эффектов:"));
+      text += F(" демонcтрации эффектов:");
       uint32_t cnt = CountTokens(s_tmp, ','); 
       ef = random8(0, cnt - 1); 
     } else {
@@ -964,15 +1010,24 @@ void SetAutoMode(byte amode) {
     }
 
     s_tmp = GetToken(s_tmp, ef+1, ',');
-    Serial.print(F(" эффект "));
-    Serial.print("'" + s_tmp + "'");
+    text += F(" эффект ");
+    text += "'" + s_tmp + "'";
 
     // Включить указанный режим из списка доступных эффектов без дальнейшей смены
     // Значение ef может быть 0..N-1 - указанный режим из списка EFFECT_LIST (приведенное к индексу с 0)      
     setEffect(ef);
   }
-  
-  Serial.println();
+
+  if (!no_action) {
+    Serial.println(text);  
+    DynamicJsonDocument doc(128);
+    String out;
+    doc["act"]   = F("AUTO");
+    doc["mode"]  = amode;
+    doc["text"]  = text;
+    serializeJson(doc, out);      
+    NotifyInfo(out);
+  }
 }
 
 byte getByteForDigit(byte digit) {
@@ -1049,4 +1104,11 @@ uint32_t getNightClockColorByIndex(byte idx) {
     case 6: color = 0x020202; break;  // White
   }
   return color;
+}
+
+void printNtpServerName() {
+  Serial.print(F("NTP-сервер "));
+  Serial.print(ntpServerName);
+  Serial.print(F(" -> "));
+  Serial.println(timeServerIP);
 }
