@@ -695,7 +695,7 @@ void parsing() {
           if (b_tmp == 0) 
             sendPageParams(3, cmdSource);
           else if (b_tmp == 6) 
-            sendPageParams(4, cmdSource);
+            sendPageParams(5, cmdSource);
           else if (b_tmp == 7) 
             sendStringData(str, cmdSource);
           else
@@ -1358,10 +1358,10 @@ void parsing() {
         }
         if (!err) {
           if (intData[1] == 0) {
-            sendPageParams(4, cmdSource);
+            sendPageParams(5, cmdSource);
           } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
             // saveSettings();
-            sendPageParams(4, cmdSource);
+            sendPageParams(5, cmdSource);
           } else {
             sendPageParams(96);
           }        
@@ -1421,7 +1421,7 @@ void parsing() {
           if (intData[1] == 0 || intData[1] == 1) {
             sendAcknowledge(cmdSource);
           } else {
-            sendPageParams(5, cmdSource);
+            sendPageParams(6, cmdSource);
           }
         }
         break;
@@ -1476,7 +1476,7 @@ void parsing() {
         setAM4params(AM4_hour, AM4_minute, AM4_effect_id);
 
         saveSettings();
-        sendPageParams(6, cmdSource);
+        sendPageParams(7, cmdSource);
         break;
 
       // ----------------------------------------------------
@@ -1700,6 +1700,11 @@ void sendPageParams(int page, eSources src) {
       break;
     case 94:  // Запрос списка звуков рассвета
       str = getStateString("S2");
+      break;
+#else      
+    case 93:  // Запрос списка звуков будильника
+    case 94:  // Запрос списка звуков рассвета
+      // Если MP3-плеер отключен - просто игнорировать
       break;
 #endif      
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера

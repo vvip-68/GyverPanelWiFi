@@ -7,7 +7,7 @@ void SendMQTT(String &message) {
     mqtt.print(message.c_str());
     mqtt.endPublish();
   } else {
-    putOutQueue(topic_dta, message);
+    putOutQueue(topic_dta.c_str(), message.c_str());
   }  
 }
 
@@ -21,7 +21,7 @@ void NotifyInfo(String &message) {
     mqtt.print(data.c_str());
     mqtt.endPublish();
   } else {
-    putOutQueue(topic_nfo, data);
+    putOutQueue(topic_nfo.c_str(), data.c_str());
   }  
 }
 
@@ -35,7 +35,7 @@ void NotifyError(String &message) {
     mqtt.print(data.c_str());
     mqtt.endPublish();
   } else {
-    putOutQueue(topic_err, data);
+    putOutQueue(topic_err.c_str(), data.c_str());
   }  
 }
 
@@ -57,16 +57,16 @@ void NotifyAck() {
     Serial.println(data); 
     mqtt.publish(topic_ack.c_str(), data.c_str());
   } else {
-    putOutQueue(topic_ack, data);
+    putOutQueue(topic_ack.c_str(), data.c_str());
   }  
 }
 
-void putOutQueue(String &topic, String &message) {
+void putOutQueue(const char* topic, const char* message) {
   if (!useMQTT) return;
   if (outQueueLength < QSIZE) {
     outQueueLength++;
-    tpcQueue[outQueueWriteIdx] = topic;      
-    outQueue[outQueueWriteIdx] = message;      
+    tpcQueue[outQueueWriteIdx] = String(topic);
+    outQueue[outQueueWriteIdx] = String(message);
     outQueueWriteIdx++;
     if (outQueueWriteIdx >= QSIZE) outQueueWriteIdx = 0;
   }

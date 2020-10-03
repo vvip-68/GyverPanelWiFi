@@ -1002,7 +1002,7 @@ void SetAutoMode(byte amode) {
     
     if (ef == 0) {
       // "Случайный" режим и далее автосмена
-      text += F(" демонcтрации эффектов:");
+      text += F("демонcтрации эффектов:");
       uint32_t cnt = CountTokens(s_tmp, ','); 
       ef = random8(0, cnt - 1); 
     } else {
@@ -1020,7 +1020,7 @@ void SetAutoMode(byte amode) {
 
   if (!no_action) {
     Serial.println(text);  
-    DynamicJsonDocument doc(128);
+    DynamicJsonDocument doc(256);
     String out;
     doc["act"]   = F("AUTO");
     doc["mode"]  = amode;
