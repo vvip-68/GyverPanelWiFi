@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.05.2020.1004")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.05.2020.1005")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -65,7 +65,7 @@ void setup() {
   // Эти параметры устанавливаются только в прошивке, изменить их из приложения на смартфоне нельзя - там нет соответствующих переключателей,
   // т.к. объем программы в Thuncable Classic достиг максимума и добавить новые элементы в интерфейс уже нельзя
   // -----------------------------------------
-  
+  /*
   useTemperatureColor = true;
   setUseTemperatureColor(useTemperatureColor);
 
@@ -85,7 +85,7 @@ void setup() {
 
   setUseMqtt(useMQTT);  
   setMqttPort(mqtt_port);
-  
+  */
   // -----------------------------------------
   // -----------------------------------------  
     
@@ -126,6 +126,15 @@ void setup() {
   // Настройка соединения с MQTT сервером
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
+
+  // Если канал управления MQTT разрешен - отправить отметку о старте прошивки
+  if (useMQTT) {
+    DynamicJsonDocument doc(256);
+    String out;
+    doc["act"] = F("START");
+    serializeJson(doc, out);      
+    NotifyInfo(out);
+  }
 
   // пинаем генератор случайных чисел
 #if defined(ESP8266) && defined(TRUE_RANDOM)

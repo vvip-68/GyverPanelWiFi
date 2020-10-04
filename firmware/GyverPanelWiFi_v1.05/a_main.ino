@@ -550,6 +550,8 @@ void parsing() {
             if (specialMode) specialBrightness = globalBrightness;
             FastLED.setBrightness(globalBrightness);
           }
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
           sendAcknowledge(cmdSource);
         } else {
           notifyUnknownCommand(incomeBuffer);
@@ -691,14 +693,25 @@ void parsing() {
         }
 
         if (b_tmp >= 0 && b_tmp <= 10) {
-          if (b_tmp == 0) 
-            sendPageParams(3, cmdSource);
-          else if (b_tmp == 6) 
-            sendPageParams(5, cmdSource);
-          else if (b_tmp == 7) 
-            sendStringData(str, cmdSource);
-          else
-            sendAcknowledge(cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            if (b_tmp == 0) 
+              sendPageParams(3, cmdSource);
+            else if (b_tmp == 6) 
+              sendPageParams(5, cmdSource);
+            else if (b_tmp == 7) 
+              sendStringData(str, cmdSource);
+            else
+              sendAcknowledge(cmdSource);
+          } else {
+            if (b_tmp == 7) 
+              // 7 - запрос значений параметров - отправить их на MQTT-сервер
+              sendStringData(str, cmdSource);
+            else
+              // Другие команды - отправить подтвеждение о выполнении
+              sendAcknowledge(cmdSource);
+          }
         } else {
           notifyUnknownCommand(incomeBuffer);
         }        
@@ -820,9 +833,15 @@ void parsing() {
 
         // Для "0","2","4","5","6" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
         if (intData[1] >= 0 && intData[1] <= 6) {
-          if (intData[1] != 1) {
-            sendPageParams(2, cmdSource);
-          } else { 
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            if (intData[1] != 1) {
+              sendPageParams(2, cmdSource);
+            } else { 
+              sendAcknowledge(cmdSource);
+            }
+          } else {
             sendAcknowledge(cmdSource);
           }
         } else {
@@ -852,7 +871,8 @@ void parsing() {
             break;
         }
         if (!err) {
-       // sendPageParams(1, cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
           sendAcknowledge(cmdSource);
         }
         break;
@@ -899,7 +919,13 @@ void parsing() {
             break;
         }
         if (!err) {
-          sendPageParams(1, cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            sendPageParams(1, cmdSource);
+          } else {
+            sendAcknowledge(cmdSource);
+          }
         }
         break;
       #endif
@@ -969,8 +995,14 @@ void parsing() {
             notifyUnknownCommand(incomeBuffer);
             break;
         }
-        if (!err && intData[1] != 3) {
-          sendPageParams(3, cmdSource);
+        if (!err) {
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP && intData[1] != 3) {
+            sendPageParams(3, cmdSource);
+          } else {
+            sendAcknowledge(cmdSource);
+          }
         }
         break;
         
@@ -990,7 +1022,6 @@ void parsing() {
       // ----------------------------------------------------
 
       case 14:
-
         if (intData[1] < 0 || intData[1] >= MAX_SPEC_EFFECT) {
           notifyUnknownCommand(incomeBuffer);
         } else {
@@ -1001,7 +1032,13 @@ void parsing() {
              setGlobalColor(globalColor);
           }        
           setSpecialMode(intData[1]);
-          sendPageParams(1, cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            sendPageParams(1, cmdSource);
+          } else {
+            sendAcknowledge(cmdSource);
+          }
         }
         break;
       
@@ -1019,6 +1056,8 @@ void parsing() {
             setGlobalColor(globalColor);
           }
           setTimersForMode(thisMode);           
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
           sendAcknowledge(cmdSource);
         } else {
           notifyUnknownCommand(incomeBuffer);
@@ -1041,8 +1080,13 @@ void parsing() {
         if (manualMode) {
           setCurrentSpecMode(-1);
         }
-
-        sendPageParams(1, cmdSource);
+        // Для команд, прешедших от MQTT отправлять только ACK;
+        // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+        if (cmdSource == UDP) {
+          sendPageParams(1, cmdSource);
+        } else {
+          sendAcknowledge(cmdSource);
+        }
         break;
 
       // ----------------------------------------------------
@@ -1063,6 +1107,8 @@ void parsing() {
         else
           idleTimer.setInterval(idleTime);
         idleTimer.reset();
+        // Для команд, прешедших от MQTT отправлять только ACK;
+        // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
         sendAcknowledge(cmdSource);
         break;
 
@@ -1087,7 +1133,13 @@ void parsing() {
         if (intData[1] == 0) { // ping
           sendAcknowledge(cmdSource);
         } else {                          // запрос параметров страницы приложения
-          sendPageParams(intData[1], cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            sendPageParams(intData[1], cmdSource);
+          } else {
+            sendAcknowledge(cmdSource);
+          }
         }
         break;
 
@@ -1223,8 +1275,14 @@ void parsing() {
             break;
         }
         if (!err) {
-          if (intData[1] != 8) {
-            sendPageParams(4, cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            if (intData[1] != 8) {
+              sendPageParams(4, cmdSource);
+            } else {
+              sendAcknowledge(cmdSource);
+            }
           } else {
             sendAcknowledge(cmdSource);
           }
@@ -1351,14 +1409,20 @@ void parsing() {
             break;
         }
         if (!err) {
-          if (intData[1] == 0) {
-            sendPageParams(5, cmdSource);
-          } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
-            // saveSettings();
-            sendPageParams(5, cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            if (intData[1] == 0) {
+              sendPageParams(5, cmdSource);
+            } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
+              // saveSettings();
+              sendPageParams(5, cmdSource);
+            } else {
+              sendPageParams(96);
+            }        
           } else {
-            sendPageParams(96);
-          }        
+            sendAcknowledge(cmdSource);
+          }          
         }
         break;
 
@@ -1412,10 +1476,16 @@ void parsing() {
             break;
         }
         if (!err) {
-          if (intData[1] == 0 || intData[1] == 1) {
-            sendAcknowledge(cmdSource);
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+          if (cmdSource == UDP) {
+            if (intData[1] == 0 || intData[1] == 1) {
+              sendAcknowledge(cmdSource);
+            } else {
+              sendPageParams(6, cmdSource);
+            }
           } else {
-            sendPageParams(6, cmdSource);
+            sendAcknowledge(cmdSource);
           }
         }
         break;
@@ -1470,7 +1540,13 @@ void parsing() {
         setAM4params(AM4_hour, AM4_minute, AM4_effect_id);
 
         saveSettings();
-        sendPageParams(7, cmdSource);
+        // Для команд, прешедших от MQTT отправлять только ACK;
+        // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+        if (cmdSource == UDP) {
+          sendPageParams(7, cmdSource);
+        } else {
+          sendAcknowledge(cmdSource);
+        }
         break;
 
       // ----------------------------------------------------
@@ -1492,6 +1568,8 @@ void parsing() {
             break;
         }
         if (!err) {
+          // Для команд, прешедших от MQTT отправлять только ACK;
+          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
           sendAcknowledge(cmdSource);
         }
         break;
@@ -1867,6 +1945,11 @@ String getStateValue(String &key, int8_t effect) {
   // OF:X        выключать часы вместе с лампой 0-нет, 1-да
   // OM:X        сколько ячеек осталось свободно для хранения строк
   // PD:число    продолжительность режима в секундах
+  // QA:X        использовать MQTT 0-нет, 1-да
+  // QP:число    порт подключения к MQTT серверу
+  // QS:[text]   имя MQTT сервера, например QS:[srv2.clusterfly.ru]
+  // QU:[text]   имя пользователя MQTT соединения, например QU:[user_af7cd12a]
+  // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
   // PW:число    ограничение по току в миллиамперах
   // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
   // S1:[список] список звуков будильника, разделенный запятыми, ограничители [] обязательны        
@@ -2176,6 +2259,21 @@ String getStateValue(String &key, int8_t effect) {
 
   // Список эффектов прошивки
   if (key == "LE") return str + "LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
+
+  // Использовать MQTT 0-нет, 1-да
+  if (key == "QA") return str + "QA:" + String(useMQTT ? "1" : "0");  
+
+  // QP:число    порт подключения к MQTT серверу
+  if (key == "QP") return str + "QP:" + String(mqtt_port);  
+
+  // QS:[text]   имя MQTT сервера, например QS:[srv2.clusterfly.ru]
+  if (key == "QS") return str + "QS:[" + String(mqtt_server) +  "]";
+  
+  // QU:[text]   имя пользователя MQTT соединения, например QU:[user_af7cd12a]
+  if (key == "QU") return str + "QU:[" + String(mqtt_user) +  "]";
+
+  // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
+  if (key == "QW") return str + "QW:[" + String(mqtt_pass) +  "]";
 
   // Запрошенный ключ не найден - вернуть пустую строку
   return "";
