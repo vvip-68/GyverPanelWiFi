@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.05.2020.1003")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.05.2020.1004")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -23,14 +23,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (!useMQTT) return;
   // проверяем из нужного ли нам топика пришли данные
   Serial.print("MQTT << topic='" + String(topic) + "'");
-  if (strcmp(topic, topic_cmd.c_str()) == 0) {
-    memset(incomeBuffer, 0, BUF_MAX_SIZE);
-    memcpy(incomeBuffer, payload, length);
-    Serial.print("; cmd='" + String(incomeBuffer) + "'");
-    if (queueLength < QSIZE) {
+  if (strcmp(topic, mqtt_topic(TOPIC_CMD).c_str()) == 0) {
+    memset(incomeMqttBuffer, 0, BUF_MAX_SIZE);
+    memcpy(incomeMqttBuffer, payload, length);
+    Serial.print("; cmd='" + String(incomeMqttBuffer) + "'");
+    if (queueLength < QSIZE_IN) {
       queueLength++;
-      cmdQueue[queueWriteIdx++] = String(incomeBuffer);      
-      if (queueWriteIdx >= QSIZE) queueWriteIdx = 0;
+      cmdQueue[queueWriteIdx++] = String(incomeMqttBuffer);      
+      if (queueWriteIdx >= QSIZE_IN) queueWriteIdx = 0;
     }
   }
   Serial.println();
@@ -65,7 +65,7 @@ void setup() {
   // Эти параметры устанавливаются только в прошивке, изменить их из приложения на смартфоне нельзя - там нет соответствующих переключателей,
   // т.к. объем программы в Thuncable Classic достиг максимума и добавить новые элементы в интерфейс уже нельзя
   // -----------------------------------------
-  /*
+  
   useTemperatureColor = true;
   setUseTemperatureColor(useTemperatureColor);
 
@@ -74,7 +74,6 @@ void setup() {
 
   useMQTT = true;
   mqtt_port = DEFAULT_MQTT_PORT;
-  mqtt_device_id  = DEVICE_ID;
 
   strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
   strcpy(mqtt_user, DEFAULT_MQTT_USER);
@@ -86,8 +85,7 @@ void setup() {
 
   setUseMqtt(useMQTT);  
   setMqttPort(mqtt_port);
-  setMqttDeviceId(mqtt_device_id);
-  */
+  
   // -----------------------------------------
   // -----------------------------------------  
     
@@ -128,14 +126,6 @@ void setup() {
   // Настройка соединения с MQTT сервером
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
-
-  // Приявязка топиков MQTT публикаций к ID устройства
-  String dev_id = String(mqtt_device_id);
-  topic_cmd.replace("$", dev_id);
-  topic_dta.replace("$", dev_id);
-  topic_nfo.replace("$", dev_id);
-  topic_err.replace("$", dev_id);
-  topic_ack.replace("$", dev_id);
 
   // пинаем генератор случайных чисел
 #if defined(ESP8266) && defined(TRUE_RANDOM)
@@ -251,34 +241,14 @@ void setup() {
 
 void loop() {
   if (wifi_connected) {
-    if (useMQTT && !mqtt.connected()) {
-      if (!mqtt_connecting) {
-        Serial.print(F("\nПодключаемся к MQTT-серверу..."));
-        mqtt_conn_cnt = 30;
-      }
-      if (mqtt.connect((String(F("LedPanelClient-")) + String(DEVICE_ID)).c_str(), mqtt_user, mqtt_pass)) {
-        Serial.println(F("\nПодключение к MQTT-серверу выполнено.\n"));
-        mqtt.subscribe(topic_cmd.c_str());        
-        mqtt_connecting = false;
-        processOutQueue();
-      } else {      
-        if (millis() - mqtt_conn_last > 1000) {
-          mqtt_conn_last = millis();
-          Serial.print(".");
-          mqtt_connecting = true;
-          mqtt_conn_cnt++;
-          if (mqtt_conn_cnt == 80) {
-            mqtt_conn_cnt = 0;
-            Serial.println();
-          }
-        }
-      }
-    }
     ArduinoOTA.handle();
-    if (mqtt.connected()){
-      mqtt.loop();      
+    if (useMQTT) {
+      checkMqttConnection();
+      if (mqtt.connected()) {
+        mqtt.loop();
+      }
     }
-  }  
+  }
   process();
 }
 

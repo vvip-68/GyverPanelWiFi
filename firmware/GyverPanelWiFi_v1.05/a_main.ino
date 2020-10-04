@@ -30,7 +30,7 @@ void process() {
 
   if (tmpSaveMode != thisMode) {
 
-    DynamicJsonDocument doc(128);
+    DynamicJsonDocument doc(256);
     String out, effect_name;
 
     doc["act"] = F("MODE");
@@ -87,7 +87,7 @@ void process() {
             refresh_time = false;
           }
           
-          DynamicJsonDocument doc(128);
+          DynamicJsonDocument doc(256);
           String out;
           doc["act"] = F("TIME");
           doc["server_name"] = ntpServerName;
@@ -124,7 +124,7 @@ void process() {
               Serial.println(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
               
-              DynamicJsonDocument doc(128);
+              DynamicJsonDocument doc(256);
               String out;
               doc["act"] = F("WEATHER");
               doc["region"] = regionID;
@@ -407,16 +407,15 @@ void parsing() {
       - $8 4 N X; вкл/выкл оверлей текста поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 5 N X; вкл/выкл оверлей часов поверх эффекта; N - номер эффекта, X=0 - выкл X=1 - вкл 
       - $8 6 N D; D -> контрастность эффекта N;
-    11 - Настройки MQTT-канала
+    11 - Настройки MQTT-канала (см. также $6 для N=8,9,10)
       - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
       - $11 2 D;   - порт MQTT
-      - $11 3 D;   - ID устройства, используемое в topic сообщений MQTT
     12 - Настройки погоды
       - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
       - $12 4 X;   - использовать получение погоды с погодного сервера
       - $12 5 I С; - интервал получения погоды с сервера в минутах (I) и код региона C
       - $12 6 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в ночных часах
-    13 - Настройки бкгущей cтроки  
+    13 - Настройки бегущей cтроки  
       - $13 0 N; - активация для редактирования строки с номером N - запрос текста строки
       - $13 1 N; - активация прокручивания строки с номером N
       - $13 3 I; - запросить текст бегущей строки с индексом I
@@ -835,7 +834,6 @@ void parsing() {
       // 11 - Настройки MQTT-канала
       // - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
       // - $11 2 D;   - Порт MQTT
-      // - $11 3 D;   - ID устройства, используемое в topic сообщений MQTT
       // ----------------------------------------------------
 
       case 11:
@@ -847,10 +845,6 @@ void parsing() {
            case 2:               // $11 2 D; - Порт MQTT
              mqtt_port = intData[2];
              setMqttPort(mqtt_port);
-             break;
-           case 3:               // $11 3 D; - ID-устройства в топике mqtt-сообщения
-             mqtt_device_id = intData[2];
-             setMqttDeviceId(mqtt_device_id);
              break;
           default:
             err = true;
@@ -1519,7 +1513,7 @@ void parsing() {
     // Есть ли поступившие по каналу MQTT команды?
     if (queueLength > 0) {
       String command = cmdQueue[queueReadIdx++];
-      if (queueReadIdx >= QSIZE) queueReadIdx = 0;
+      if (queueReadIdx >= QSIZE_IN) queueReadIdx = 0;
       queueLength--;
       
       cmdSource = MQTT;
@@ -1722,7 +1716,7 @@ void sendPageParams(int page, eSources src) {
       break;
     default:
       err = true;
-      DynamicJsonDocument doc(128);
+      DynamicJsonDocument doc(256);
       String out;
       doc["message"] = F("unknown page");
       doc["text"]    = String(F("нет страницы с номером ")) + String(page);
@@ -1747,7 +1741,9 @@ void sendStringData(String &str, eSources src) {
     SendMQTT(str);
   }
   if (src == UDP || src == BOTH) {
-    str.toCharArray(incomeBuffer, str.length()+1);    
+    int max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой из EEPROM строки
+    memset(incomeBuffer, '\0', max_text_size);
+    str.toCharArray(incomeBuffer, str.length() + 1);        
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*) incomeBuffer, str.length()+1);
     udp.endPacket();

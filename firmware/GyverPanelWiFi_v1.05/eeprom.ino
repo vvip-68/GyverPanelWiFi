@@ -90,8 +90,7 @@ void loadSettings() {
   // 207-221 - MQTT user (14 симв)                                                                           // getMqttUser().toCharArray(mqtt_user, 14)      // setMqttUser(String(mqtt_user))           // char mqtt_user[15] = ""
   // 222-236 - MQTT pwd (14 симв)                                                                            // getMqttPass().toCharArray(mqtt_pass, 14)      // setMqttPass(String(mqtt_pass))           // char mqtt_pass[15] = ""
   // 237,238 - MQTT порт                                                                                     // getMqttPort()                  // setMqttPort(mqtt_port)
-  // 239,240 - MQTT device_id - используется как часть топика                                                // getMqttDeviceId()              // setMqttDeviceId(mqtt_device_id)
-  // 241 - использовать MQTT анал управления: 0 - нет 1 - да                                                 // getUseMqtt()                   // setUseMqtt(useMQTT)
+  // 239 - использовать MQTT анал управления: 0 - нет 1 - да                                                 // getUseMqtt()                   // setUseMqtt(useMQTT)
   //**242 - не используется
   //  ...
   //**299 - не используется
@@ -193,7 +192,6 @@ void loadSettings() {
     if (strlen(mqtt_pass) == 0) strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
 
     mqtt_port = getMqttPort();
-    mqtt_device_id = getMqttDeviceId();
 
     AM1_hour      = getAM1hour();
     AM1_minute    = getAM1minute();
@@ -344,7 +342,6 @@ void saveDefaults() {
   setMqttPass(String(mqtt_pass));
 
   setMqttPort(mqtt_port);
-  setMqttDeviceId(mqtt_device_id);
   setUseMqtt(useMQTT);
 
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
@@ -1467,12 +1464,12 @@ void setUseTemperatureColorNight(boolean use) {
 }
 
 bool getUseMqtt() {
-  return EEPROMread(241) == 1;
+  return EEPROMread(239) == 1;
 }
 
 void setUseMqtt(boolean use) {  
   if (use != getUseMqtt()) {
-    EEPROMwrite(241, use ? 1 : 0);
+    EEPROMwrite(239, use ? 1 : 0);
   }
 }
 
@@ -1484,18 +1481,6 @@ uint16_t getMqttPort() {
 void setMqttPort(uint16_t port) {
   if (port != getMqttPort()) {
     EEPROM_int_write(237, port);
-  }  
-}
-
-// Интервал включения режима бегущей строки
-uint16_t getMqttDeviceId() {
-  uint16_t val = (uint16_t)EEPROM_int_read(239);
-  return val;
-}
-
-void setMqttDeviceId(uint16_t id) {
-  if (id != getMqttDeviceId()) {
-    EEPROM_int_write(239, id);
   }  
 }
 

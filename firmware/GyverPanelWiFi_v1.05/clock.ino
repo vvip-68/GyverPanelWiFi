@@ -60,7 +60,7 @@ void parseNTP() {
   setTime(t);
   calculateDawnTime();
 
-  DynamicJsonDocument doc(128);
+  DynamicJsonDocument doc(256);
   String out;
   doc["act"] = F("TIME");
   doc["server_name"] = ntpServerName;
@@ -87,7 +87,7 @@ void getNTP() {
   // wait to see if a reply is available
   ntp_t = millis();  
 
-  DynamicJsonDocument doc(128);
+  DynamicJsonDocument doc(256);
   String out;
   doc["act"] = F("TIME");
   doc["server_name"] = ntpServerName;
@@ -707,7 +707,7 @@ void checkAlarmTime() {
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
          Serial.println(String(F("Рассвет ВКЛ в "))+String(h)+ ":" + String(m));
 
-         DynamicJsonDocument doc(128);
+         DynamicJsonDocument doc(256);
          String out;
          doc["act"]   = F("ALARM");
          doc["state"] = F("on");
@@ -738,7 +738,7 @@ void checkAlarmTime() {
       #endif
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
 
-      DynamicJsonDocument doc(128);
+      DynamicJsonDocument doc(256);
       String out;
       doc["act"]   = F("ALARM");
       doc["state"] = F("on");
@@ -782,7 +782,7 @@ void checkAlarmTime() {
 
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
 
-    DynamicJsonDocument doc(128);
+    DynamicJsonDocument doc(256);
     String out;
     doc["act"]   = F("ALARM");
     doc["state"] = F("off");
@@ -852,7 +852,7 @@ void stopAlarm() {
     delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
 
-    DynamicJsonDocument doc(128);
+    DynamicJsonDocument doc(256);
     String out;
     doc["act"]   = F("ALARM");
     doc["state"] = F("off");
