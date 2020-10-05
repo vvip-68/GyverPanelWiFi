@@ -368,7 +368,7 @@ uint32_t CountTokens(String str, char separator) {
   return ++count;
 }
 
-String GetToken(String str, uint32_t index, char separator) {
+String GetToken(String &str, uint32_t index, char separator) {
 
   uint32_t count = CountTokens(str, separator);
 

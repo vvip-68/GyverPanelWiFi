@@ -26,12 +26,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic, mqtt_topic(TOPIC_CMD).c_str()) == 0) {
     memset(incomeMqttBuffer, 0, BUF_MAX_SIZE);
     memcpy(incomeMqttBuffer, payload, length);
-    Serial.print("; cmd='" + String(incomeMqttBuffer) + "'");
-    if (queueLength < QSIZE_IN) {
-      queueLength++;
-      cmdQueue[queueWriteIdx++] = String(incomeMqttBuffer);      
-      if (queueWriteIdx >= QSIZE_IN) queueWriteIdx = 0;
-    }
+    
+    Serial.print(F("; cmd='"));
+    Serial.print(incomeMqttBuffer);
+    Serial.print("'");
+    
+    // В одном сообщении может быть несколько команд. Каждая команда начинается с '$' и заканчивается ';'/ Пробелы между ';' и '$' НЕ допускаются.
+    String command = String(incomeMqttBuffer);    
+    command.replace("\n", "~");
+    command.replace(";$", "\n");
+    uint32_t count = CountTokens(command, '\n');
+    
+    for (uint8_t i=1; i<=count; i++) {
+      String cmd = GetToken(command, i, '\n');
+      cmd.replace('~', '\n');
+      cmd.trim();
+      if (!cmd.startsWith("$")) {
+        cmd = "$" + cmd;
+      }
+      if (!cmd.endsWith(";")) {
+        cmd += ";";
+      }        
+      if (cmd.length() > 0 && queueLength < QSIZE_IN) {
+        queueLength++;
+        cmdQueue[queueWriteIdx++] = cmd;
+        if (queueWriteIdx >= QSIZE_IN) queueWriteIdx = 0;
+      }
+    }    
   }
   Serial.println();
 }
