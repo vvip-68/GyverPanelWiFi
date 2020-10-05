@@ -1,5 +1,5 @@
 ![PROJECT_PHOTO](https://github.com/vvip-68/GyverPanelWiFi/blob/master/proj_img.jpg)
-# Крутая WiFi панель на esp8266 своими руками
+# Крутая WiFi панель / гирлянда на esp8266 своими руками
 * [Описание проекта](#chapter-0)
 * [Папки проекта](#chapter-1)
 * [Схемы подключения](#chapter-2)
