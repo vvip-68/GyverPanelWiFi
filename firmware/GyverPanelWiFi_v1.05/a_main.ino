@@ -1619,7 +1619,7 @@ void parsing() {
 
       cmdSource = UDP;
       
-      delay(0);            // ESP8266 при вызове delay отпрабатывает стек IP протокола, дадим ему поработать        
+      delay(0);            // ESP8266 при вызове delay отрабатывает стек IP протокола, дадим ему поработать        
 
       Serial.print(F("UDP << ip='"));
       IPAddress remote = udp.remoteIP();
