@@ -130,12 +130,29 @@ void sdcardRoutine() {
     Serial.print(F("Загрузка файла эффекта: '"));
     Serial.print(fileName);
 
+    bool error = false;
+    String out;
+    
     fxdata = SD.open(fileName);
     if (fxdata) {
       Serial.println(F("' -> ok"));
     } else {
       Serial.println(F("' -> ошибка"));
+      error = true;
     }
+
+    #if (USE_MQTT == 1)
+      DynamicJsonDocument doc(256);
+      doc["act"] = F("SDCARD");
+      if (error) {
+        doc["result"] = F("ERROR");  
+      } else {
+        doc["result"] = F("OK");
+        doc["file"] = fileName;
+      }
+      serializeJson(doc, out);    
+      NotifyInfo(out);
+    #endif
 
     FastLED.clear();
     loadingFlag = false;
