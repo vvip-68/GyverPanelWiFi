@@ -41,10 +41,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
       String cmd = GetToken(command, i, '\n');
       cmd.replace('~', '\n');
       cmd.trim();
+      // После разделения команд во 2 и далее строке '$' (начало команды) удален - восстановить
       if (!cmd.startsWith("$")) {
         cmd = "$" + cmd;
       }
-      if (!cmd.endsWith(";")) {
+      // После разделения команд во 2 и далее строке ';' (конец команды) удален - восстановить
+      // Команда '$6 ' не может быть в пакете и признак ';' (конец команды) не используется - не восстанавливать
+      if (!cmd.endsWith(";") && !cmd.startsWith(F("$6 "))) {
         cmd += ";";
       }        
       if (cmd.length() > 0 && queueLength < QSIZE_IN) {
