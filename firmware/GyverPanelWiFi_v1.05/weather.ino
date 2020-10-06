@@ -12,11 +12,13 @@ bool getWeather() {
   // Отправляем запрос
   client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
 
+  #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
   String out;
   doc["act"] = F("WEATHER");
   doc["region"] = regionID;
-
+  #endif
+  
   // Проверяем статус запроса
   char status[32] = {0};
   client.readBytesUntil('\r', status, sizeof(status));
@@ -25,11 +27,13 @@ bool getWeather() {
     Serial.print(F("Ошибка сервера погоды: "));
     Serial.println(status);
     
+    #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = status;
     serializeJson(doc, out);      
     NotifyInfo(out);
-    
+    #endif    
+
     return false;
   } 
 
@@ -38,10 +42,12 @@ bool getWeather() {
   if (!client.find(endOfHeaders)) {                                       // Отбрасываем системные заголовки ответа сервера
     Serial.println(F("Нераспознанный ответ сервера погоды"));             // Если ответ сервера не содержит системных заголовков, значит что-то пошло не так
 
+    #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("unexpected answer");
     serializeJson(doc, out);      
     NotifyInfo(out);
+    #endif
 
     return false;                                                         // и пора прекращать всё это дело
   }
@@ -58,11 +64,13 @@ bool getWeather() {
     Serial.print(F("JSON не разобран: "));
     Serial.println(error.c_str());
     
+    #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("json error");
     serializeJson(doc, out);      
     NotifyInfo(out);
-
+    #endif
+    
     return false;
   }
 
@@ -83,10 +91,12 @@ bool getWeather() {
   if (skyColor.length() != 7) {
     Serial.print(F("JSON не содержит данных о погоде"));
 
+    #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("no data");
     serializeJson(doc, out);      
     NotifyInfo(out);
+    #endif
 
     return false;
   }
@@ -109,6 +119,7 @@ bool getWeather() {
   Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   Serial.println(dayTime);
   
+  #if (USE_MQTT == 1)
   doc["result"] = F("OK");
   doc["status"] = weather;
   doc["temp"]   = temperature;
@@ -118,6 +129,7 @@ bool getWeather() {
   doc["town"]   = town;
   serializeJson(doc, out);      
   NotifyInfo(out);
+  #endif
 
   return true;
 }

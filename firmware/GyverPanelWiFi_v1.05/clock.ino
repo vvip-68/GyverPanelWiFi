@@ -60,6 +60,7 @@ void parseNTP() {
   setTime(t);
   calculateDawnTime();
 
+  #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
   String out;
   doc["act"] = F("TIME");
@@ -69,6 +70,7 @@ void parseNTP() {
   doc["time"] = t;
   serializeJson(doc, out);      
   NotifyInfo(out);
+  #endif
 }
 
 void getNTP() {
@@ -87,6 +89,7 @@ void getNTP() {
   // wait to see if a reply is available
   ntp_t = millis();  
 
+  #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
   String out;
   doc["act"] = F("TIME");
@@ -95,6 +98,7 @@ void getNTP() {
   doc["result"] = F("REQUEST");
   serializeJson(doc, out);      
   NotifyInfo(out);
+  #endif
 }
 
 String clockCurrentText() {
@@ -707,13 +711,15 @@ void checkAlarmTime() {
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
          Serial.println(String(F("Рассвет ВКЛ в "))+String(h)+ ":" + String(m));
 
+         #if (USE_MQTT == 1)
          DynamicJsonDocument doc(256);
          String out;
          doc["act"]   = F("ALARM");
          doc["state"] = F("on");
          doc["type"]  = F("dawn");
          serializeJson(doc, out);      
-         NotifyInfo(out);         
+         NotifyInfo(out);
+         #endif
        }
     }
     
@@ -738,6 +744,7 @@ void checkAlarmTime() {
       #endif
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
 
+      #if (USE_MQTT == 1)
       DynamicJsonDocument doc(256);
       String out;
       doc["act"]   = F("ALARM");
@@ -745,6 +752,8 @@ void checkAlarmTime() {
       doc["type"]  = F("alarm");
       serializeJson(doc, out);      
       NotifyInfo(out);
+      #endif
+
     }
 
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
@@ -782,6 +791,7 @@ void checkAlarmTime() {
 
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
 
+    #if (USE_MQTT == 1)
     DynamicJsonDocument doc(256);
     String out;
     doc["act"]   = F("ALARM");
@@ -789,6 +799,8 @@ void checkAlarmTime() {
     doc["type"]  = F("auto");
     serializeJson(doc, out);      
     NotifyInfo(out);
+    #endif
+
   }
 
   delay(0); // Для предотвращения ESP8266 Watchdog Timer
@@ -1020,6 +1032,8 @@ void SetAutoMode(byte amode) {
 
   if (!no_action) {
     Serial.println(text);  
+
+    #if (USE_MQTT == 1)
     DynamicJsonDocument doc(256);
     String out;
     doc["act"]   = F("AUTO");
@@ -1027,6 +1041,7 @@ void SetAutoMode(byte amode) {
     doc["text"]  = text;
     serializeJson(doc, out);      
     NotifyInfo(out);
+    #endif
   }
 }
 

@@ -110,9 +110,12 @@ void loadSettings() {
   strcpy(ssid, NETWORK_SSID);
   strcpy(pass, NETWORK_PASS);
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+
+  #if (USE_MQTT == 1)
   strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
   strcpy(mqtt_user, DEFAULT_MQTT_USER);
   strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
+  #endif
 
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
@@ -180,18 +183,23 @@ void loadSettings() {
     getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
     getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
     getNtpServer().toCharArray(ntpServerName, 31);  //  120-149 - имя NTP сервера      (30 байт макс) + 1 байт '\0'
+
+    #if (USE_MQTT == 1)
     getMqttServer().toCharArray(mqtt_server, 25);   //  182-206 - mqtt сервер          (24 байт макс) + 1 байт '\0'
     getMqttUser().toCharArray(mqtt_user, 15);       //  207-221 - mqtt user            (14 байт макс) + 1 байт '\0'
     getMqttPass().toCharArray(mqtt_pass, 15);       //  222-236 - mqtt password        (14 байт макс) + 1 байт '\0'
-
+    #endif
+    
     if (strlen(apName) == 0) strcpy(apName, DEFAULT_AP_NAME);
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
     if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
+
+    #if (USE_MQTT == 1)
     if (strlen(mqtt_server) == 0) strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
     if (strlen(mqtt_user) == 0) strcpy(mqtt_user, DEFAULT_MQTT_USER);
     if (strlen(mqtt_pass) == 0) strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
-
     mqtt_port = getMqttPort();
+    #endif
 
     AM1_hour      = getAM1hour();
     AM1_minute    = getAM1minute();
@@ -329,20 +337,25 @@ void saveDefaults() {
   strcpy(apPass, DEFAULT_AP_PASS);
   strcpy(ssid, NETWORK_SSID);
   strcpy(pass, NETWORK_PASS);
+
+  #if (USE_MQTT == 1)
   strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
   strcpy(mqtt_user, DEFAULT_MQTT_USER);
   strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
-  
+  #endif  
+
   setSoftAPName(String(apName));
   setSoftAPPass(String(apPass));
   setSsid(String(ssid));
   setPass(String(pass));
+
+  #if (USE_MQTT == 1)
   setMqttServer(String(mqtt_server));
   setMqttUser(String(mqtt_user));
   setMqttPass(String(mqtt_pass));
-
   setMqttPort(mqtt_port);
   setUseMqtt(useMQTT);
+  #endif
 
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   setNtpServer(String(ntpServerName));
@@ -1463,6 +1476,8 @@ void setUseTemperatureColorNight(boolean use) {
   }
 }
 
+#if (USE_MQTT == 1)
+
 bool getUseMqtt() {
   return EEPROMread(239) == 1;
 }
@@ -1513,6 +1528,8 @@ void setMqttPass(String pass) {
     EEPROM_string_write(222, pass, 14);
   }
 }
+
+#endif
 
 // ----------------------------------------------------------
 

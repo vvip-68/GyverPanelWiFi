@@ -30,26 +30,32 @@ void process() {
 
   if (tmpSaveMode != thisMode) {
 
-    DynamicJsonDocument doc(256);
     String out, effect_name;
 
+    #if (USE_MQTT == 1)
+    DynamicJsonDocument doc(256);
     doc["act"] = F("MODE");
     doc["id"] = thisMode;
+    #endif
 
     switch (thisMode) {
       case MC_CLOCK:
         tmpSaveMode = thisMode;
         effect_name = F("'Часы'");
+        #if (USE_MQTT == 1)
         doc["name"] = effect_name;
         serializeJson(doc, out);    
         NotifyInfo(out);
+        #endif
         break;
       case MC_TEXT:
         tmpSaveMode = thisMode;
         effect_name = F("'Бегущая строка'");
+        #if (USE_MQTT == 1)
         doc["name"] = effect_name;
         serializeJson(doc, out);    
         NotifyInfo(out);
+        #endif
         break;
       default:
         // Определить какой эффект включился
@@ -60,9 +66,11 @@ void process() {
         if (len1 > len2) { 
           tmpSaveMode = thisMode;
           effect_name = "'" + s_tmp + "'";
+          #if (USE_MQTT == 1)
           doc["name"] = effect_name;
           serializeJson(doc, out);    
           NotifyInfo(out);
+          #endif
         } else {
           // Если режим отсутствует в списке эффектов - включить случайный
           setRandomMode2(); 
@@ -87,6 +95,7 @@ void process() {
             refresh_time = false;
           }
           
+          #if (USE_MQTT == 1)
           DynamicJsonDocument doc(256);
           String out;
           doc["act"] = F("TIME");
@@ -95,6 +104,7 @@ void process() {
           doc["result"] = F("TIMEOUT");
           serializeJson(doc, out);      
           NotifyInfo(out);
+          #endif
         }
         
         bool timeToSync = ntpSyncTimer.isReady();
@@ -124,6 +134,7 @@ void process() {
               Serial.println(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
               
+              #if (USE_MQTT == 1)
               DynamicJsonDocument doc(256);
               String out;
               doc["act"] = F("WEATHER");
@@ -131,6 +142,7 @@ void process() {
               doc["result"] = F("TIMEOUT");
               serializeJson(doc, out);      
               NotifyInfo(out);
+              #endif
             }
           }
           
@@ -556,7 +568,9 @@ void parsing() {
           // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
           sendAcknowledge(cmdSource);
         } else {
+          #if (USE_MQTT == 1)
           notifyUnknownCommand(incomeBuffer);
+          #endif
         }
         break;
 
@@ -603,6 +617,7 @@ void parsing() {
               }
               saveTexts();
               break;
+
             case 1:
               str.toCharArray(ntpServerName, 30);
               setNtpServer(str);
@@ -610,18 +625,22 @@ void parsing() {
                 refresh_time = true; ntp_t = 0; ntp_cnt = 0;
               }
               break;
+
             case 2:
               str.toCharArray(ssid, 24);
               setSsid(str);
               break;
+
             case 3:
               str.toCharArray(pass, 16);
               setPass(str);
               break;
+
             case 4:
               str.toCharArray(apName, 10);
               setSoftAPName(str);
               break;
+
             case 5:
               str.toCharArray(apPass, 16);
               setSoftAPPass(str);
@@ -629,6 +648,7 @@ void parsing() {
               // После получения пароля - перезапустить создание точки доступа
               if (useSoftAP) startSoftAP();
               break;
+              
             case 6:
               // Настройки будильника в формате $6 6|DD EF WD AD HH1 MM1 HH2 MM2 HH3 MM3 HH4 MM4 HH5 MM5 HH6 MM6 HH7 MM7
               // DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
@@ -672,12 +692,15 @@ void parsing() {
                 calculateDawnTime();            
               }
               break;
+              
             case 7:
               // Запрос значений параметров, требуемых приложением вида "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
               // Каждый запрашиваемый приложением параметр - для заполнения соответствующего поля в приложении 
               // Передать строку для формирования, затем отправить параметры в приложение
               str = "$18 " + getStateString(str) + ";";
               break;
+              
+            #if (USE_MQTT == 1)
             case 8:
               str.toCharArray(mqtt_server, 24);
               setMqttServer(str);
@@ -690,6 +713,7 @@ void parsing() {
               str.toCharArray(mqtt_pass, 14);
               setMqttPass(str);
               break;
+            #endif
            }
         }
 
@@ -721,7 +745,9 @@ void parsing() {
               sendAcknowledge(cmdSource);
           }
         } else {
+          #if (USE_MQTT == 1)
           notifyUnknownCommand(incomeBuffer);
+          #endif
         }        
         break;
 
@@ -853,7 +879,9 @@ void parsing() {
             sendAcknowledge(cmdSource);
           }
         } else {
+          #if (USE_MQTT == 1)
           notifyUnknownCommand(incomeBuffer);
+          #endif
         }
         break;
 
@@ -863,6 +891,7 @@ void parsing() {
       // - $11 2 D;   - Порт MQTT
       // ----------------------------------------------------
 
+      #if (USE_MQTT == 1)
       case 11:
          switch (intData[1]) {
            case 1:               // $11 1 X; - Использовать отображение температуры цветом 0 - нет; 1 - да
@@ -875,7 +904,9 @@ void parsing() {
              break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -884,7 +915,8 @@ void parsing() {
           sendAcknowledge(cmdSource);
         }
         break;
-
+      #endif
+      
       // ----------------------------------------------------
       // 12 - Настройки погоды
       // - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
@@ -923,7 +955,9 @@ void parsing() {
              break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -1007,7 +1041,9 @@ void parsing() {
              break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -1045,7 +1081,9 @@ void parsing() {
 
       case 14:
         if (intData[1] < 0 || intData[1] >= MAX_SPEC_EFFECT) {
+          #if (USE_MQTT == 1)
           notifyUnknownCommand(incomeBuffer);
+          #endif
         } else {
           if (intData[1] == 2) {
              // Если в строке цвет - "$14 2 00FFAA;" - цвет лампы, сохраняемый в globalColor
@@ -1082,7 +1120,9 @@ void parsing() {
           // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
           sendAcknowledge(cmdSource);
         } else {
+          #if (USE_MQTT == 1)
           notifyUnknownCommand(incomeBuffer);
+          #endif
         }
         break;
 
@@ -1289,7 +1329,9 @@ void parsing() {
              break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -1423,7 +1465,9 @@ void parsing() {
             break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -1490,7 +1534,9 @@ void parsing() {
             break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -1582,7 +1628,9 @@ void parsing() {
             break;
           default:
             err = true;
+            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
+            #endif
             break;
         }
         if (!err) {
@@ -1594,7 +1642,9 @@ void parsing() {
 
       // ----------------------------------------------------
       default:
+        #if (USE_MQTT == 1)
         notifyUnknownCommand(incomeBuffer);
+        #endif
         break;
 
     }
@@ -1605,6 +1655,7 @@ void parsing() {
   // Если предыдущий буфер еще не разобран - новых данных из сокета не читаем, продолжаем разбор уже считанного буфера
   haveIncomeData = bufIdx > 0 && bufIdx < packetSize; 
 
+  #if (USE_MQTT == 1)
   if (!haveIncomeData) {
     // Есть ли поступившие по каналу MQTT команды?
     if (queueLength > 0) {
@@ -1622,7 +1673,8 @@ void parsing() {
       Serial.println(packetSize);
     }
   }
-
+  #endif
+  
   if (!haveIncomeData) {
     packetSize = udp.parsePacket();      
     haveIncomeData = packetSize > 0;      
@@ -1815,12 +1867,14 @@ void sendPageParams(int page, eSources src) {
       break;
     default:
       err = true;
+      #if (USE_MQTT == 1)
       DynamicJsonDocument doc(256);
       String out;
       doc["message"] = F("unknown page");
       doc["text"]    = String(F("нет страницы с номером ")) + String(page);
       serializeJson(doc, out);      
       NotifyError(out);
+      #endif
       break;
   }
 
@@ -1836,9 +1890,11 @@ void sendPageParams(int page, eSources src) {
 }
 
 void sendStringData(String &str, eSources src) {
+  #if (USE_MQTT == 1)
   if (src == MQTT || src == BOTH) {
     SendMQTT(str);
   }
+  #endif
   if (src == UDP || src == BOTH) {
     int max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой из EEPROM строки
     memset(incomeBuffer, '\0', max_text_size);
@@ -2280,6 +2336,7 @@ String getStateValue(String &key, int8_t effect) {
   // Список эффектов прошивки
   if (key == "LE") return str + "LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 
+#if (USE_MQTT == 1)
   // Использовать MQTT 0-нет, 1-да
   if (key == "QA") return str + "QA:" + String(useMQTT ? "1" : "0");  
 
@@ -2294,6 +2351,7 @@ String getStateValue(String &key, int8_t effect) {
 
   // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
   if (key == "QW") return str + "QW:[" + String(mqtt_pass) +  "]";
+#endif
 
   // Запрошенный ключ не найден - вернуть пустую строку
   return "";
@@ -2395,9 +2453,11 @@ String getParam2ForMode(byte mode) {
 }
 
 void sendAcknowledge(eSources src) {
+  #if (USE_MQTT == 1)
   if (src == MQTT) {
     NotifyAck();
   }  
+  #endif
   if (src == UDP || src == BOTH) {
     // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
     String reply = "";

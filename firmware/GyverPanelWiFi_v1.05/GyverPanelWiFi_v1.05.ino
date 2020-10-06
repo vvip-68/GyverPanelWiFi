@@ -17,6 +17,8 @@
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
 
+#if (USE_MQTT == 1)
+
 // ------------------ MQTT CALLBACK -------------------
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -60,6 +62,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 }
 
+#endif
+
 // ---------------------------------------------------------------
 
 void setup() {
@@ -96,6 +100,7 @@ void setup() {
   useTemperatureColorNight = true;
   setUseTemperatureColorNight(useTemperatureColorNight);
 
+  #if (USE_MQTT == 1)
   useMQTT = true;
   mqtt_port = DEFAULT_MQTT_PORT;
 
@@ -109,6 +114,8 @@ void setup() {
 
   setUseMqtt(useMQTT);  
   setMqttPort(mqtt_port);
+  #endif
+
   */
   // -----------------------------------------
   // -----------------------------------------  
@@ -147,6 +154,7 @@ void setup() {
   // Подключение к сети
   connectToNetwork();
 
+  #if (USE_MQTT == 1)
   // Настройка соединения с MQTT сервером
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
@@ -159,6 +167,7 @@ void setup() {
     serializeJson(doc, out);      
     NotifyInfo(out);
   }
+  #endif
 
   // пинаем генератор случайных чисел
 #if defined(ESP8266) && defined(TRUE_RANDOM)
@@ -275,12 +284,14 @@ void setup() {
 void loop() {
   if (wifi_connected) {
     ArduinoOTA.handle();
-    if (useMQTT) {
-      checkMqttConnection();
-      if (mqtt.connected()) {
-        mqtt.loop();
+    #if (USE_MQTT == 1)
+      if (useMQTT) {
+        checkMqttConnection();
+        if (mqtt.connected()) {
+          mqtt.loop();
+        }
       }
-    }
+    #endif
   }
   process();
 }

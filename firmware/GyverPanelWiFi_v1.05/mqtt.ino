@@ -1,3 +1,5 @@
+#if (USE_MQTT == 1)
+
 String mqtt_client() {
   return String(MQTT_CLIENT_ID) + "-" + String(DEVICE_ID);
 }
@@ -145,3 +147,5 @@ void processOutQueue() {
     mqtt_send_last = millis();
   }  
 }
+
+#endif
