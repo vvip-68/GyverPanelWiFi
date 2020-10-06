@@ -595,19 +595,14 @@ void parsing() {
         if (tmp_eff > 0) {
            b_tmp = receiveText.substring(0, tmp_eff).toInt();
            str = receiveText.substring(tmp_eff+1, receiveText.length()+1);
-
-           Serial.println("1 -> '"+ receiveText + "'"); // +++
-           
            switch(b_tmp) {
+
             case 0:
               c = str[0];
               str = str.substring(2);
               str.replace('\r', ' ');
               str.replace('\n', ' ');
               str.trim();
-
-           Serial.println("2 -> '"+ str + "'"); // +++              
-
               tmp_eff = getTextIndex(c); // '0'..'9','A'..'Z' -> 0..35
               if (tmp_eff >= 0) {
                 textLines[tmp_eff] = str;                

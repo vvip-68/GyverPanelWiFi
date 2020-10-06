@@ -42,6 +42,7 @@ void doEffectWithOverlay(byte aMode) {
   bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
   bool needStopText = false;
+  String out;
   
   // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
   if (!showTextNow && textOvEn && (ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
@@ -54,6 +55,15 @@ void doEffectWithOverlay(byte aMode) {
       showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
       textCurrentCount = 0;                // Сбросить счетчик количества раз, сколько строка показана на матрице;
       textStartTime = millis();            // Запомнить время начала отображения бегущей строки
+
+      #if (USE_MQTT == 1)
+        DynamicJsonDocument doc(256);
+        doc["act"] = F("TEXT");
+        doc["run"] = true;
+        doc["text"] = currentText;
+        serializeJson(doc, out);    
+        NotifyInfo(out);
+      #endif
     }
 
     // Если указано, что строка должна отображаться на фоне конкретного эффекта - его надо инициализировать    
@@ -114,6 +124,14 @@ void doEffectWithOverlay(byte aMode) {
     // следующая строка начала показываться немедленно, иначе - запомнить время окончания показа строки,
     // от которого отсчитывается когда начинать следующий показ
     textLastTime = nextTextLineIdx >= 0 ? 0 : millis();
+
+    #if (USE_MQTT == 1)
+      DynamicJsonDocument doc(256);
+      doc["act"] = F("TEXT");
+      doc["run"] = false;
+      serializeJson(doc, out);    
+      NotifyInfo(out);
+    #endif
   }
 
   // Нужно сохранять оверлей эффекта до отрисовки часов или бегущей строки поверх эффекта?
