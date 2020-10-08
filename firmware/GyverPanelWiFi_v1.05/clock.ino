@@ -739,7 +739,7 @@ void checkAlarmTime() {
       // До окончания таймера индикатор TM1637 будет мигать, лампа гореть ярко белым.
       #if (USE_MP3 == 1)
       if (useAlarmSound) {
-        PlayAlarmSound();+++2
+        PlayAlarmSound();
       }
       #endif
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
@@ -864,6 +864,7 @@ void stopAlarm() {
     delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
 
+    #if (USE_MQTT == 1)
     DynamicJsonDocument doc(256);
     String out;
     doc["act"]   = F("ALARM");
@@ -871,6 +872,7 @@ void stopAlarm() {
     doc["type"]  = F("stop");
     serializeJson(doc, out);      
     NotifyInfo(out);
+    #endif
   }
   #endif
 }

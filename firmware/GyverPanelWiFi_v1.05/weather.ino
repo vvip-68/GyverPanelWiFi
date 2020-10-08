@@ -113,7 +113,6 @@ bool getWeather() {
   Serial.print(F("Сейчас: "));
   Serial.print(weather + ", "); 
   if (temperature > 0) Serial.print("+"); 
-  if (temperature < 0) Serial.print("-"); 
   Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
   Serial.println(String(F("Код иконки: '")) + icon + "'");
   Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
@@ -380,9 +379,10 @@ void weatherRoutine() {
     byte temp_y = weather_text_y;
 
     byte t = abs(temperature);
+
     byte dec_t = t / 10;
     byte edc_t = t % 10;
-    
+
     // Для правильного позиционирования - рисуем справа налево
     if (temperature == 0) {
       // При температуре = 0 - ресуем маленький значок C
