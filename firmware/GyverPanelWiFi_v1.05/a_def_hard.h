@@ -15,7 +15,7 @@
                               // 1 - часы на кухне
                               // 2 - часы на столе
                               // 3 - панель на стене
-                              // 4 - гирлянда на балконе V2 c SD картой
+                              // 4 - гирлянда на балконе
                               // 5 - часы у Даши
 
 // ================== Тестовый стенд =====================
@@ -48,6 +48,12 @@
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
+/*
+#define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define STX D3                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+*/
 #endif
 #endif
 
@@ -72,7 +78,7 @@
 #define CONNECTION_ANGLE 3    // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
 #define STRIP_DIRECTION 1     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
 #define USE_SD 0              // поставьте 0, если у вас нет SD-card модуля
-#define USE_MP3 0             // поставьте 0, если у вас нет звуковой карты MP3 плеера
+#define USE_MP3 1             // поставьте 0, если у вас нет звуковой карты MP3 плеера
 #define USE_TM1637 0          // поставьте 1, если используется дополнительный индикатор TM1637, 0 если индикатора нет
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
 #define USE_POWER 0           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
@@ -81,8 +87,15 @@
 #define LED_PIN 3             // пин ленты
 #define PIN_BTN 4             // кнопка подключена сюда (PIN --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET
-#define SRX D4                // не используется, но требуется для компиляции скетча
-#define STX D3                // не используется, но требуется для компиляции скетча
+/*
+#define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
+*/
+#define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define STX D3                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+/*
+#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+*/
 #endif
 #endif
 
@@ -116,8 +129,15 @@
 #define LED_PIN 2             // пин ленты
 #define PIN_BTN D6            // кнопка подключена сюда (PIN --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET
-#define SRX D4                // D4 is RX of ESP8266, connect to TX of DFPlayer
-#define STX D3                // D3 is TX of ESP8266, connect to RX of DFPlayer module
+/*
+#define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
+*/
+#define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define STX D3                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+/*
+#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+*/
 #endif
 #endif
 
@@ -150,6 +170,12 @@
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
+/*
+#define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define STX D3                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+*/
 #endif
 #endif
 
@@ -182,6 +208,12 @@
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
+/*
+#define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define STX D3                // не используется, но требуется для компиляции скетча (USE_MP3==1)
+#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+*/
 #endif
 #endif
 
@@ -216,8 +248,15 @@
 #define LED_PIN 2             // пин ленты
 #define PIN_BTN D6            // кнопка подключена сюда (PIN --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET
+/*
+#define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
+*/
 #define SRX D4                // D4 is RX of ESP8266, connect to TX of DFPlayer
 #define STX D3                // D3 is TX of ESP8266, connect to RX of DFPlayer module
+/*
+#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
+*/
 #endif
 #endif
 

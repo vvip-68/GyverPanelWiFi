@@ -452,7 +452,8 @@ void clockTicker() {
   } else if (wifi_print_ip) {
     // Четырехкратное нажатие кнопки запускает отображение по частям текущего IP лампы  
     if (dotFlag  && halfSec) {
-      int value = atoi(GetToken(WiFi.localIP().toString(), wifi_print_idx + 1, '.').c_str()); 
+      String ip = WiFi.localIP().toString();
+      int value = atoi(GetToken(ip, wifi_print_idx + 1, '.').c_str()); 
       display.displayInt(value);
       display.point(false);
       wifi_print_idx++;
