@@ -1808,7 +1808,7 @@ void sendPageParams(int page, eSources src) {
   
   switch (page) { 
     case 1:  // Настройки
-      str = getStateString("W|H|DM|PD|ID|AL|RM|PW|BR|WU|WT|WR|WC|WN");
+      str = getStateString("W|H|DM|PD|IT|AL|RM|PW|BR|WU|WT|WR|WC|WN");
       break;
     case 2:  // Эффекты
       str = getStateString("EF|UE|UT|UC|SE|SS|SQ|BE");

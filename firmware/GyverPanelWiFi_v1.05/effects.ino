@@ -1445,7 +1445,7 @@ void paletteRoutine() {
 
     // Для некоторого количества начальных - установить "За шаг до появления"
     // При первом же проходе состояние переключится на "появление"
-    for (byte i = 0; i<BLOCK_ON_START; i++) {
+    for (byte i = 0; i < BLOCK_ON_START; i++) {
       byte idx = random8(0, num_x*num_y-1);
       byte r = idx / BLOCK_SIZE;
       byte c = idx % BLOCK_SIZE;
