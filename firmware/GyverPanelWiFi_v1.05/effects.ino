@@ -1504,7 +1504,9 @@ void paletteRoutine() {
             CHSV color = CHSV(h, s, bri2);
 
             uint16_t idx = getPixelNumber(block_x + j, block_y + BLOCK_SIZE - i - 1);
-            leds[idx] = color;
+            if (idx >= 0 && idx < NUM_LEDS) {
+              leds[idx] = color;
+            }
           }
         }
 
@@ -1517,8 +1519,7 @@ void paletteRoutine() {
            // Появление / исчезновение закончено
            block_sta[c][r] = block_sta[c][r] == 0 ? 3 : 2; // вкл паузу перед исчезновением после появления или паузу перед появлением после исчезновения
            block_dur[c][r] = random8(90,240);              // Длительность паузы
-        }
-        
+        }        
       }      
     }
   }
