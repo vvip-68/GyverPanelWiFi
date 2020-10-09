@@ -336,7 +336,10 @@ void rainbowDiagonal() {
   hue += 2;
   for (byte x = 0; x < WIDTH; x++) {
     for (byte y = 0; y < HEIGHT; y++) {
-      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / maxDim)), 255, effectBrightness);
+      float dx = (WIDTH>=HEIGHT)
+         ? (float)(WIDTH / HEIGHT * x + y)
+         : (float)(HEIGHT / WIDTH * y + x);
+      CRGB thisColor = CHSV((byte)(hue + dx * (float)(255 / maxDim)), 255, effectBrightness);
       drawPixelXY(x, y, thisColor); 
     }
   }

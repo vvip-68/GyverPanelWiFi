@@ -2125,7 +2125,7 @@ String getStateValue(String &key, int8_t effect) {
          : (String(getEffectClockOverlayUsage(effect) ? "1" : "0")));
 
   // Настройка скорости
-  if (key == "SE") return str + "SE:" + (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE
+  if (key == "SE") return str + "SE:" + (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE || effect == MC_FIRE2
          ? "X" 
          : String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
 
@@ -2378,6 +2378,7 @@ String getParamForMode(byte mode) {
    case MC_PATTERNS:
    case MC_CLOCK:
    case MC_SDCARD:
+   case MC_FIRE2:
      str = "X";
      break;
    default:
