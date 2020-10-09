@@ -1415,14 +1415,11 @@ void shadowsRoutine() {
 // ***************************** ПАЛИТРА *****************************
 
 #define BLOCK_SIZE 4       // Размер квадратика палитры
-#define FADE_IN_STEPS 32   // За сколько шагов плашка появляется на экране    
-#define FADE_OUT_STEPS 64  // За сколько шагов плашка убирается с экрана    
+#define FADE_IN_STEPS 16    // За сколько шагов плашка появляется на экране    
+#define FADE_OUT_STEPS 32  // За сколько шагов плашка убирается с экрана    
 #define BLOCK_ON_START 5   // Сколько блоков сразу появлять в начале эффекта
 
-byte num_x = WIDTH / BLOCK_SIZE;
-byte num_y = HEIGHT / BLOCK_SIZE;
-byte off_x = (WIDTH - BLOCK_SIZE * num_x) / 2;
-byte off_y = (HEIGHT - BLOCK_SIZE * num_y) / 2;
+byte num_x, num_y, off_x, off_y;
 
 byte palette_h[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // Н in CHSV
 byte palette_s[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // S in CHSV
@@ -1432,21 +1429,29 @@ byte block_dur[WIDTH / BLOCK_SIZE][HEIGHT / BLOCK_SIZE]; // время пауз�
 void paletteRoutine() {
 
   if (loadingFlag) {
-    // modeCode = MC_ANALYZER;
+    // modeCode = MC_PALETTE;
     loadingFlag = false;
 
+    num_x = WIDTH / BLOCK_SIZE;
+    num_y = HEIGHT / BLOCK_SIZE;
+    off_x = (WIDTH - BLOCK_SIZE * num_x) / 2;
+    off_y = (HEIGHT - BLOCK_SIZE * num_y) / 2;
+
+    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
+    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
+
     // Для всех блоков определить состояние - "ожидание появления
-    for (byte c=0; c < num_y; c++) {
-      for (byte r=0; r < num_x; r++) {
+    for (byte c = 0; c < num_x; c++) {
+      for (byte r = 0; r < num_y; r++) {
         block_sta[c][r] = 2;                // Состояние - пауза перед появлением
-        block_dur[c][r] = random8(24,96);   // Длительность паузы
+        block_dur[c][r] = random8(25,125);  // Длительность паузы
       }
     }
 
     // Для некоторого количества начальных - установить "За шаг до появления"
     // При первом же проходе состояние переключится на "появление"
-    for (byte i = 0; i < BLOCK_ON_START; i++) {
-      byte idx = random8(0, num_x*num_y-1);
+    for (byte i = 0; i < BLOCK_ON_START * seg_num; i++) {
+      byte idx = random8(0, num_x * num_y - 1);
       byte r = idx / BLOCK_SIZE;
       byte c = idx % BLOCK_SIZE;
       block_dur[c][r] = 1;                  // Счетчик до начала появления
@@ -1456,26 +1461,26 @@ void paletteRoutine() {
   
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
-  for (byte c=0; c < num_y; c++) {
-    byte block_y = off_y + c * BLOCK_SIZE;
-    for (byte r=0; r < num_x; r++) {    
+  for (byte c = 0; c < num_x; c++) {
+    byte block_x = off_x + c * BLOCK_SIZE;
+    for (byte r = 0; r < num_y; r++) {    
       
-      byte block_x = off_x + r * BLOCK_SIZE;
+      byte block_y = off_y + r * BLOCK_SIZE;
       byte h = palette_h[c][r];      
       byte s = palette_s[c][r];
 
       // Проверить состояние блока
       if (block_sta[c][r] > 1) {
         
-        // Одна из пауз - перед появлением или перед исчезновением
+        // Одна из пауз (2 или 3) - пауза перед появлением или перед исчезновением
         // Уменьшить время паузы. Если стало 0 - переключить с паузы на появление / исчезновение
          block_dur[c][r] -= 1;
          if (block_dur[c][r] == 0) {
            block_sta[c][r] -= 2;     // 3->1 - исчезать; 2->0 появлять за указанное количество шагов
            if (block_sta[c][r] == 0) {
-            block_dur[c][r] = FADE_IN_STEPS;    // Количество шагов появления блока
-            palette_h[c][r] = random8(0,255);   // Цвет нового блока
-            palette_s[c][r] = random8(32,255);  // Насыщенность цвета нового блока
+             block_dur[c][r] = FADE_IN_STEPS;    // Количество шагов появления блока
+             palette_h[c][r] = random8(0,255);   // Цвет нового блока
+             palette_s[c][r] = random8(32,196);  // Насыщенность цвета нового блока
            } else { 
              block_dur[c][r] = FADE_OUT_STEPS;  // Кол-во шагов убирания блока
            }  
@@ -1485,9 +1490,9 @@ void paletteRoutine() {
       
       if (block_sta[c][r] < 2) {
 
-        // В процессе появления или исчезновения
+        // В процессе появления или исчезновения (0 или 1)
         // Выполнить один шаг появления / исчезновения блока
-        byte fade_dir = block_sta[c][r];
+        byte fade_dir = block_sta[c][r]; // 0 - появляться, 1 - исчезать
         byte fade_step = block_dur[c][r];
 
         // Яркость блока
@@ -1499,12 +1504,14 @@ void paletteRoutine() {
         for (byte i=0; i<BLOCK_SIZE; i++) {        
           for (byte j=0; j<BLOCK_SIZE; j++) {
             
-            byte k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
-            byte bri2 = (bri > k ? bri - k : 0);
-            CHSV color = CHSV(h, s, bri2);
+            //byte k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
+            //byte bri2 = (bri > k ? bri - k : 0);
+            CHSV color = CHSV(h, s, bri); // bri2
 
-            uint16_t idx = getPixelNumber(block_x + j, block_y + BLOCK_SIZE - i - 1);
-            if (idx >= 0 && idx < NUM_LEDS) {
+            byte xx = block_x + j;
+            byte yy = block_y + BLOCK_SIZE - i - 1;
+            if (xx < WIDTH && yy < HEIGHT) {
+              uint16_t idx = getPixelNumber(xx, yy);
               leds[idx] = color;
             }
           }
@@ -1518,11 +1525,12 @@ void paletteRoutine() {
         if (block_dur[c][r] == 0) {
            // Появление / исчезновение закончено
            block_sta[c][r] = block_sta[c][r] == 0 ? 3 : 2; // вкл паузу перед исчезновением после появления или паузу перед появлением после исчезновения
-           block_dur[c][r] = random8(90,240);              // Длительность паузы
+           block_dur[c][r] = random8(25,125);              // Длительность паузы (циклов обращения палитры)
         }        
       }      
     }
   }
+
 }
 
 // ****************************** ANALYZER *****************************
