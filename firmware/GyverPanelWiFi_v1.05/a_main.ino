@@ -260,6 +260,18 @@ void process() {
       #if (USE_POWER == 1)
         digitalWrite(POWER_PIN, POWER_OFF);
       #endif      
+      //  - длительное нажатие кнопки включает яркий белый свет
+#if (DEVICE_TYPE == 0)
+      if (isButtonHold) {
+        // Включить панель - белый цвет
+        specialBrightness = 255;
+        globalBrightness = 255;
+        globalColor = 0xFFFFFF;
+        isButtonHold = false;
+        setSpecialMode(1);
+        FastLED.setBrightness(globalBrightness);
+      }
+#endif      
     } else {
       // Включить питание матрицы
       #if (USE_POWER == 1)
@@ -283,8 +295,17 @@ void process() {
         setRandomMode();
       }
 
+// Если устройство - ламна
 #if (DEVICE_TYPE == 0)
-      // Четырехкратное нажатие включает режим "Лампа" из любого режима, в т.ч. из сна (обработка - ниже)            
+      // Четверное нажатие - включить белую лампу независимо от того была она выключена или включен любой другой режим
+      if (clicks == 4) {
+        // Включить лампу - белый цвет
+        specialBrightness = 255;
+        globalBrightness = 255;
+        globalColor = 0xFFFFFF;
+        setSpecialMode(1);
+        FastLED.setBrightness(globalBrightness);
+      }      
       // Пятикратное нажатие - показать текущий IP WiFi-соединения            
       else if (clicks == 5) {
         showCurrentIP(false);
@@ -324,29 +345,6 @@ void process() {
         }
       }            
     }
-
-#if (DEVICE_TYPE == 0)
-    // Если устройство - ламна - длительное нажатие кнопки включает яркий белый свет
-    else if (isButtonHold) {
-        // Включить панель - белый цвет
-        specialBrightness = 255;
-        globalBrightness = 255;
-        globalColor = 0xFFFFFF;
-        isButtonHold = false;
-        setSpecialMode(1);
-        FastLED.setBrightness(globalBrightness);
-    }
-
-    // Четверное нажатие - включить белую лампу независимо от того была она выключена или включен любой другой режим
-    if (clicks == 4) {
-      // Включить лампу - белый цвет
-      specialBrightness = 255;
-      globalBrightness = 255;
-      globalColor = 0xFFFFFF;
-      setSpecialMode(1);
-      FastLED.setBrightness(globalBrightness);
-    }      
-#endif
 
     #if (USE_MP3 == 1)
     // Есть ли изменение статуса MP3-плеера?
