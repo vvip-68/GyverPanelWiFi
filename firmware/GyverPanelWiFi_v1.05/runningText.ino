@@ -579,7 +579,7 @@ String processMacrosInText(const String text) {
     idx = textLine.indexOf("{WT}");
     if (idx >= 0) {
       // Подготовить строку текущего времени HH:mm и заменить все вхождения {D} на эту строку
-      String s_temperature = (temperature == 0 ? "" : (temperature > 0 ? "+" : "-")) + String(temperature);
+      String s_temperature = (temperature == 0 ? "" : (temperature > 0 ? "+" : "")) + String(temperature);
       String s_color = "";
 
       if (useTemperatureColor) {
