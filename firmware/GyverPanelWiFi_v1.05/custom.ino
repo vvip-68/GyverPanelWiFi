@@ -57,10 +57,19 @@ void doEffectWithOverlay(byte aMode) {
       textStartTime = millis();            // Запомнить время начала отображения бегущей строки
 
       #if (USE_MQTT == 1)
+        String outText;
         DynamicJsonDocument doc(256);
         doc["act"] = F("TEXT");
         doc["run"] = true;
-        doc["text"] = currentText;
+        if (textHasDateTime) {
+          outText = processDateMacrosInText(currentText);          // Обработать строку, превратив макросы даты в отображаемые значения
+          if (outText.length() == 0) {                            // Если дата еще не инициализирована - вернет другую строку, не требующую даты
+            outText = currentText;
+          }      
+        } else {
+          outText = currentText;
+        }
+        doc["text"] = outText;
         serializeJson(doc, out);    
         NotifyInfo(out);
       #endif
