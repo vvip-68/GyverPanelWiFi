@@ -2,6 +2,7 @@
 
 int8_t patternIdx = -1;
 int8_t lineIdx = 0;
+boolean isWhite = false;
 
 // Заполнение матрицы указанным паттерном
 // ptrn - индекс узора в массив узоров patterns[] в patterns.h
@@ -72,6 +73,16 @@ void patternRoutine() {
       lineIdx = 9;         // Картинка спускается сверху вниз - отрисовка с нижней строки паттерна (паттерн 10x10)
     else 
       lineIdx = 0;         // Картинка поднимается сверху вниз - отрисовка с верхней строки паттерна
+
+    isWhite = false;
+    hue = random8();
+    colorMR[6] = CHSV(hue, 255, 255);
+    colorMR[7] = CHSV(hue + 80, 255, 255);
+    if (random8() % 10 == 0) {
+      colorMR[6] = CHSV(0,0,255);
+      isWhite = true;
+    }
+    /*
     // Цвета с индексом 6 и 7 - случайные, определяются в момент настройки эффекта
     colorMR[6] = CHSV(random8(), 255,255);
     if (random8() % 10 == 0) {
@@ -82,7 +93,13 @@ void patternRoutine() {
         colorMR[7] = CHSV(random8(), 255,255);
       }
     }
+    */
   }  
+
+  hue++;
+  if (!isWhite) colorMR[6] = CHSV(hue, 255, 255);
+  colorMR[7] = CHSV(hue + 80, 255, 255);
+  colorMR[8] = CHSV(hue + 160, 255, 255);
 
   drawPattern(patternIdx, 0, 0, 10, 10, 'd');  
 }
