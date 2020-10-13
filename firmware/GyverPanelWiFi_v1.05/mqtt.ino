@@ -16,7 +16,7 @@ String mqtt_topic(String topic) {
 }
 
 void checkMqttConnection() {
-  if (useMQTT && !mqtt.connected()) {
+  if (useMQTT && !mqtt.connected() && millis() - mqtt_conn_last > 1000) {
     if (!mqtt_connecting) {
       Serial.print(F("\nПодключаемся к MQTT-серверу '"));
       Serial.print(mqtt_server);
@@ -26,20 +26,18 @@ void checkMqttConnection() {
       Serial.print(mqtt_client());
       Serial.print(F("' ..."));
     }
+    mqtt_conn_last = millis();
     if (mqtt.connect(mqtt_client().c_str(), mqtt_user, mqtt_pass)) {
       Serial.println(F("\nПодключение к MQTT-серверу выполнено.\n"));
       mqtt.subscribe(mqtt_topic(TOPIC_CMD).c_str());        
       mqtt_connecting = false;      
     } else {      
-      if (millis() - mqtt_conn_last > 1000) {
-        mqtt_conn_last = millis();
-        Serial.print(".");
-        mqtt_connecting = true;
-        mqtt_conn_cnt++;
-        if (mqtt_conn_cnt == 80) {
-          mqtt_conn_cnt = 0;
-          Serial.println();
-        }
+      Serial.print(".");
+      mqtt_connecting = true;
+      mqtt_conn_cnt++;
+      if (mqtt_conn_cnt == 80) {
+        mqtt_conn_cnt = 0;
+        Serial.println();
       }
     }
   }
