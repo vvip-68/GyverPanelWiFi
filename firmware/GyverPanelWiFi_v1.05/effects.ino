@@ -1726,6 +1726,7 @@ void munchRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     //modeCode = MC_MUNCH;
+    generation = 0;
     dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
     seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
     seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
@@ -1750,7 +1751,7 @@ void munchRoutine() {
   count += dir;
 
   if (count <= 0 || count >= WIDTH / seg_num) {
-    dir = -dir;
+    dir = dir < 0 ? 1 : -1;
   }
 
   if (count <= 0) {
