@@ -2113,7 +2113,7 @@ String getStateValue(String &key, int8_t effect) {
          (String((getEffectUsage(effect) ? "1" : "0"))));
 
   // Оверлей бегущей строки
-  if (key == "UЕ") return str + "UT:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_CLOCK
+  if (key == "UT") return str + "UT:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_CLOCK
          ? "X":
          (String(getEffectTextOverlayUsage(effect) ? "1" : "0")));
 
