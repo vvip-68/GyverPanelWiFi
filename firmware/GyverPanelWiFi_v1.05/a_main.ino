@@ -2644,7 +2644,5 @@ void setManualModeTo(bool isManual) {
     idleTimer.setInterval(idleTime);    
   }
   idleTimer.reset();
-  if (!manualMode) {
-    autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
-  }
+  autoplayTimer = millis();
 }

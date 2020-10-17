@@ -483,11 +483,11 @@ void checkIdleState() {
       bool ok = true;
       if (
          (thisMode == MC_TEXT   && !fullTextFlag) ||   // Эффект "Бегущая строка" (показать IP адрес) не сменится на другой, пока вся строка не будет показана полностью
-      // (showTextNow && !gameOverFlag)           ||   // Если нужно чтобы эффект не менялся, пока не пробежит вся строка оверлеем - раскомментарить эту строку
+      // (showTextNow && !fullTextFlag)           ||   // Если нужно чтобы эффект не менялся, пока не пробежит вся строка оверлеем - раскомментарить эту строку
          (thisMode == MC_MAZE   && !gameOverFlag) ||   // Лабиринт не меняем на другой эффект, пока игра не закончится (не выйдем из лабиринта)
       // (thisMode == MC_SNAKE  && !gameOverFlag) ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
          (thisMode == MC_TETRIS && !gameOverFlag) ||   // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)
-         (showTextNow && (specialTextEffect >= 0)))   // Воспроизводится бегущая строка на фоне указанного эффекта
+         (showTextNow && (specialTextEffect >= 0)))    // Воспроизводится бегущая строка на фоне указанного эффекта
       {        
         // Если бегущая строка или игра не завершены - смены режима не делать
         ok = false;
@@ -503,12 +503,8 @@ void checkIdleState() {
     }
   } else {
     if (idleTimer.isReady()) {      // таймер холостого режима. Если время наступило - включить автосмену режимов 
-      idleState = true;                                     
-      autoplayTimer = millis();
-      loadingFlag = true;
-      manualMode = false;
-      saveAutoplay(true);
-      FastLED.clear();
+      setManualModeTo(false);
+      nextMode();
     }
   }  
 }
