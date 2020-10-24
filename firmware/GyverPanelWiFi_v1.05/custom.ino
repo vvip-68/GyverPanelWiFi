@@ -62,7 +62,7 @@ void doEffectWithOverlay(byte aMode) {
         doc["act"] = F("TEXT");
         doc["run"] = true;
         if (textHasDateTime) {
-          outText = processDateMacrosInText(currentText);          // Обработать строку, превратив макросы даты в отображаемые значения
+          outText = processDateMacrosInText(currentText);         // Обработать строку, превратив макросы даты в отображаемые значения
           if (outText.length() == 0) {                            // Если дата еще не инициализирована - вернет другую строку, не требующую даты
             outText = currentText;
           }      

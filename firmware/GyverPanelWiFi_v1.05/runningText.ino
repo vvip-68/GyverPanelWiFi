@@ -15,16 +15,19 @@ void runningText() {
       text = String(FIRMWARE_VER);
   } else {
     // Вывод текста оверлея бегущей строки
+    textHasDateTime = init_time && (currentText.indexOf("{D") >= 0 || currentText.indexOf("{R") >= 0);  
     if (textHasDateTime) {
       text = processDateMacrosInText(currentText);          // Обработать строку, превратив макросы даты в отображаемые значения
       if (text.length() == 0) {                             // Если дата еще не инициализирована - вернет другую строку, не требующую даты
          fullTextFlag = true;                               // Если нет строк, не зависящих от даты - вернется пустая строка - отображать нечего
          return;
       }      
+      currentText = text;      
     } else {
       text = currentText;                                   // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
     }
   }
+
 
   fillString(text);
 }
