@@ -2561,7 +2561,7 @@ void resetModes() {
 void setEffect(byte eff) {
 
   resetModes();
-  if (eff >= MAX_EFFECT) return;
+  if (eff >= MAX_EFFECT && eff < SPECIAL_EFFECTS_START) return;
   
   if (eff == MC_TEXT)
     loadingTextFlag = true;

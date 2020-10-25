@@ -45,7 +45,7 @@ void doEffectWithOverlay(byte aMode) {
   String out;
   
   // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
-  if (!showTextNow && textOvEn && (ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
+  if (!showTextNow && textOvEn && thisMode != MC_TEXT && (ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
     
     // Обработать следующую строку для отображения, установить параметры; 
     // Если нет строк к отображению - продолжать отображать оверлей часов
@@ -198,7 +198,8 @@ void doEffectWithOverlay(byte aMode) {
   }
   
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
-  if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT) || aMode == MC_CLOCK)) {
+
+  if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT) || aMode == MC_CLOCK)) {    
     overlayDelayed = needOverlay;
     setOverlayColors();
     if (c_size == 1 && showDateInClock && showDateState) {      
@@ -231,7 +232,7 @@ void doEffectWithOverlay(byte aMode) {
         y_overlay_high = y_overlay_low + (c_size == 1 ? (CLOCK_ORIENT == 0 ? 4 : 10) : 6); // Размер оверлея - 5 строк при шрифте 3x5, 7 строк при шрифтк 5х7, 11 строк при малых сасах вертикальной ориентации
         overlayWrap();                                          // Сохранить оверлей эффекта ПОД часами
       }      
-      
+
       drawClock(hrs, mins, dotFlag, CLOCK_XC, CLK_Y);
 
       #if (USE_WEATHER == 1)       

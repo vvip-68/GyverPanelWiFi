@@ -5,7 +5,7 @@ int offset = WIDTH;
 void runningText() {
   String text = "";
   if (thisMode == MC_TEXT) {
-    FastLED.clear();
+    FastLED.clear();    
     // Включен режим (не оверлей!) бегущей строки
     if (wifi_print_ip_text) 
       text = wifi_current_ip;
@@ -27,7 +27,6 @@ void runningText() {
       text = currentText;                                   // Строка не содержит изменяемых во времени компонентов - отобразить ее как есть
     }
   }
-
 
   fillString(text);
 }
