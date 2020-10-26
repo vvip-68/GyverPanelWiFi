@@ -266,7 +266,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
     } else {
 
       // отрисовка часов 5x7
-      byte cx = 0, dx = -1;
+      byte cx = 0;
       if (h10 == 1 && m01 == 1 && X > 0) X += 2;
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
@@ -287,7 +287,6 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
         drawPixelXY(getClockX(X + 12 + cx), Y + 4, clockLED[2]);
         drawPixelXY(getClockX(X + 12 + cx), Y + 5, clockLED[2]);
         if (WIDTH > 25) {
-          dx = 0;
           drawPixelXY(getClockX(X + 13 + cx), Y + 1, clockLED[2]);
           drawPixelXY(getClockX(X + 13 + cx), Y + 2, clockLED[2]);
           drawPixelXY(getClockX(X + 13 + cx), Y + 4, clockLED[2]);
@@ -295,6 +294,9 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
         }
       }
 
+      // Для часов шириной 25 точек (одинарные разделительные точки) смещать вывод минут на одну позицию влево
+      int8_t dx = (WIDTH > 25) ? 0 : -1;
+      
       cx += (m10 == 1 ? -1 : 0);
       drawDigit5x7(m10, X + 15 + cx + dx, Y, clockLED[3]);
 
