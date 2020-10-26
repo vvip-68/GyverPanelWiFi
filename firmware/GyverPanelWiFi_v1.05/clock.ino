@@ -193,8 +193,8 @@ void clockColor() {
 byte getClockSizeType() {
   byte clock_size = CLOCK_SIZE;
   // Если часы авто или большие - определить - а поместятся ли они на матрицу по ширине
-  // Большие часы для шрифта 5x7 требуют 4*5 /цифры/ + 4 /двоеточие/ + 2 /пробел между цифрами часов и минут / = 26 колонки
-  if ((clock_size == 0 || clock_size == 2) && WIDTH < 26) clock_size = 1;
+  // Большие часы для шрифта 5x7 требуют 4*5 /цифры/ + 4 /двоеточие/ + 2 /пробел между цифрами часов и минут / = 25 или 26 колонки (одинарные / двойные точки в часах)
+  if ((clock_size == 0 || clock_size == 2) && WIDTH < 25) clock_size = 1;
   if (clock_size == 0) clock_size = 2;
   return clock_size;
 }
@@ -266,7 +266,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
     } else {
 
       // отрисовка часов 5x7
-      byte cx = 0;
+      byte cx = 0, dx = -1;
       if (h10 == 1 && m01 == 1 && X > 0) X += 2;
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
@@ -278,24 +278,28 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
       cx += (h10 == 1 ? -1 : 0);
       cx += (h10 > 1 && h01 == 1 ? -1 : 0);
       drawDigit5x7(h01, X + 6 + cx, Y, clockLED[1]);      
-
+      
       cx += (h01 == 1 ? -1 : 0);
       if (dots) {
+        // Для ширины матрицы в 25 колонок - рисовать одинарные точки разделения часов/минут, если больше - сдвоенные
         drawPixelXY(getClockX(X + 12 + cx), Y + 1, clockLED[2]);         
-        drawPixelXY(getClockX(X + 13 + cx), Y + 1, clockLED[2]);
         drawPixelXY(getClockX(X + 12 + cx), Y + 2, clockLED[2]);
-        drawPixelXY(getClockX(X + 13 + cx), Y + 2, clockLED[2]);
         drawPixelXY(getClockX(X + 12 + cx), Y + 4, clockLED[2]);
-        drawPixelXY(getClockX(X + 13 + cx), Y + 4, clockLED[2]);
         drawPixelXY(getClockX(X + 12 + cx), Y + 5, clockLED[2]);
-        drawPixelXY(getClockX(X + 13 + cx), Y + 5, clockLED[2]);
+        if (WIDTH > 25) {
+          dx = 0;
+          drawPixelXY(getClockX(X + 13 + cx), Y + 1, clockLED[2]);
+          drawPixelXY(getClockX(X + 13 + cx), Y + 2, clockLED[2]);
+          drawPixelXY(getClockX(X + 13 + cx), Y + 4, clockLED[2]);
+          drawPixelXY(getClockX(X + 13 + cx), Y + 5, clockLED[2]);
+        }
       }
 
       cx += (m10 == 1 ? -1 : 0);
-      drawDigit5x7(m10, X + 15 + cx, Y, clockLED[3]);
+      drawDigit5x7(m10, X + 15 + cx + dx, Y, clockLED[3]);
 
       cx += (m01 == 1 ? -1 : 0) + (m10 == 1 && m01 != 1 ? -1 : 0);
-      drawDigit5x7(m01, X + 21 + cx, Y, clockLED[4]);  // шрифт 5x7 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+      drawDigit5x7(m01, X + 21 + cx + dx, Y, clockLED[4]);  // шрифт 5x7 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
 
     }
   } else { // Вертикальные часы
