@@ -158,3 +158,6 @@
 
 ![Device](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/About/device.jpg)   
 
+Taк выглядит на окне гирлянда из двух линий по 50 диодов - матрица 10x10  
+
+![Device](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/About/window.jpg)   
