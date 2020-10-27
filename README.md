@@ -140,6 +140,8 @@
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_c.jpg)
 ### С корректировкой питания
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_d.jpg)
+### С управлением питанием матрицы через реле
+![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/power-relay.jpg)
 
 Рабочее напряжение микроконтроллера (логические уровни) - 3.3 вольта.  
 Рабочее напряжение матрицы - 4.0 - 5.5 вольт.  
@@ -193,6 +195,7 @@ N-канальный MOSFET IRF3205 обеспечивает ток питани
 - Диоды кремниевые выпрямительные https://ali.onl/1Fmw https://ali.onl/1Fmy
 - MOSFET IRF4905 https://ali.onl/1Fsl https://ali.onl/1Fsm
 - MOSFET IRF3205 https://ali.onl/1Fsn https://ali.onl/1Fso
+- Реле управления питанием https://ali.onl/1HBY https://ali.onl/1HBZ https://ali.onl/1HC0
 
 ## Вам скорее всего пригодится
 * [Всё для пайки (паяльники и примочки)](http://alexgyver.ru/all-for-soldering/)
