@@ -1326,8 +1326,8 @@ void rescanTextEvents() {
   bool     found = false;
   uint8_t  stage = 0;         // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 - секунд ПОСЛЕ; 8 - дни недели
   uint8_t  iDay = 0, iMonth = 0, iHour = 0, iMinute = 0, star_cnt = 0;
-  uint16_t iYear = 0, num = 0;
-  uint32_t iBefore = 60, iAfter = 60;
+  uint16_t iYear = 0;
+  uint32_t iBefore = 60, iAfter = 60, num = 0;
   uint8_t  moment_idx = 0;    // индекс элемента в формируемом массиве
   int8_t   text_idx = -1;     // индекс строки заменителя  
   String   wdays = "1234567"; // Дни недели. Если не указано - все дни пн..вс

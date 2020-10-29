@@ -988,7 +988,7 @@ void SetAutoMode(byte amode) {
   bool   no_action = false;
   
   String text = F("Авторежим ");
-  text += String(amode) + F(" [") + String(AM_hour) + ":" + String(AM_minute) + F("] - ");
+  text += String(amode) + F(" [") + padNum(AM_hour,2) + ":" + padNum(AM_minute,2) + F("] - ");
 
   int8_t ef = AM_effect_id;
 
