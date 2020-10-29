@@ -177,9 +177,10 @@ uint8_t getFont(uint8_t font, uint8_t row) {
 
 // Получить / установить настройки отображения очередного текста бегущей строки
 // Если нет строк, готовых к ротображению (например все строки отключены) - вернуть false - энет готовых строк'
-boolean prepareNextText() {
-  
-  int8_t nextIdx = nextTextLineIdx;
+boolean prepareNextText() {  
+    // Если есть активная строка текущего момента - отображать ее 
+  int8_t nextIdx = momentTextIdx >= 0 ? momentTextIdx : nextTextLineIdx;
+
   textShowTime = -1;              // Если больше нуля - сколько времени отображать бегущую строку в секундах; Если 0 - используется textShowCount; В самой строке спец-макросом может быть указано кол-во секунд
   textShowCount = 1;              // Сколько раз прокручивать текст бегущей строки поверх эффектов; По умолчанию - 1; В самой строке спец-макросом может быть указано число 
   useSpecialTextColor = false;    // В текущей бегущей строке был задан цвет, которым она должна отображаться
@@ -339,7 +340,9 @@ String processMacrosInText(const String text) {
                 если строка замены не указана - просроченная строка не выводится берется следующая строка
 
      "{P01.01.2020#N#B#A}"
-     "{P**.**.**** 7:00#N#B#A#F}"      
+     "{P**.**.**** 7:00#N#B#A#F}"
+     "{P01.01.2020#N#B#A}"
+     "{P7:00#N#B#A#F}"   
        - где после P указана дата и опционально время до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
           X дней X часов X минут X секунд; 
          Если дней не осталось - выводится только X часов X минут; 
@@ -793,10 +796,10 @@ String processDateMacrosInText(const String text) {
       String s_time = s_hour + ":" + s_mins;
       textLine.replace("{D}", s_time);
     }
-  
+
     // {D:F} (где F - форматная строка
     idx = textLine.indexOf("{D:");
-    while (idx >= 0) {
+    if (idx >= 0) {
   
       // Закрывающая скобка
       // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
@@ -849,8 +852,7 @@ String processDateMacrosInText(const String text) {
       //  M    - месяц от 1 до 12
       str = String(amnth);
       sFmtProcess.replace("M", str);
-  
-  
+    
       //  YYYY - год в виде четырехзначного числа
       str = String(ayear);
       sFmtProcess.replace("YYYY", str);
@@ -865,7 +867,6 @@ String processDateMacrosInText(const String text) {
       if (str[0] == '0') str = str.substring(1);
       sFmtProcess.replace("Y", str);
       sFmtProcess.replace("y", str);
-  
       
       //  HH   - час в 23-часовом формате от 00 до 23
       str = String(hrs);
@@ -924,8 +925,6 @@ String processDateMacrosInText(const String text) {
       
       // Есть еще вхождения макроса?
       idx = textLine.indexOf("{D:");
-  
-      break;
     }
 
     // "{R01.01.2021#N}" 
@@ -1105,12 +1104,68 @@ String processDateMacrosInText(const String text) {
           tmp = String(restDays) + WriteDays(restDays);
         
         textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
-                
-        if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0) continue;
       }
     }
 
-    if (textHasMultiColor) {                                // Если при разборе строка помечена как многоцветная - обработать макросы цвета  
+    // "{P01.01.2021#N#B#A#F}" 
+    // "{P7:00#N#B#A#F}" 
+    // "{P**.01.2021 7:00#N#B#A#F}" 
+    idx = textLine.indexOf("{P");
+    if (idx >= 0) {
+      // Строка с событием непрерывной проверки - при старте программы и изменении текста строк и после завершения отображения очередной такой строки формируется массив ближайших событий
+      // Массив содержит время наступления события, сколькоо до и сколько после отображать а так же - индексы отображаемых строк ДО и строки замены ПОСЛЕ события
+      // Если данная строка вызвана для отображения - значит событие уже наступило (#B секунд перед событием - его нужно просто отобразить) 
+      // Строка ПОСЛЕ события не может содержать макроса {P} и в этот блок просто не попадаем
+      // Выкусываем макрос {P} без анализа и отображаем то что осталось с учетом замены макроса на остаток времени
+
+      // Закрывающая скобка
+      // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+      idx2 = textLine.indexOf("}", idx);        
+      if (idx2 < 0) break;
+
+      // удаляем макрос. Позиция idx - точка вставки текста остатка времени      
+      textLine.remove(idx, idx2 - idx + 1);
+      uint16_t insertPoint = idx;
+
+      // Текущее активное событие - momentIdx, который указывает на элемент массива moments[]
+      if (momentIdx >= 0) {
+        // Вычислить сколько до наступления события осталось времени. 
+        // Время события - поле moment структуры Moment элемента массива
+        // Данная строка, содержавшая макрос {P} - всегда ДО события, строка ПОСЛЕ события макроса {P} содержать не может и в этот блок не попадает
+        time_t t_diff = moments[momentIdx].moment - now(); // кол-во секунд до события
+  
+        // Пересчет секунд в дней до события / часов до события / минут до события
+        uint16_t restDays = t_diff / SECS_PER_DAY;
+        uint8_t restHours = (t_diff - (restDays * SECS_PER_DAY)) / SECS_PER_HOUR;
+        uint8_t restMinutes = (t_diff - (restDays * SECS_PER_DAY) - (restHours * SECS_PER_HOUR)) / SECS_PER_MIN;
+        uint8_t restSeconds = (t_diff - (restDays * SECS_PER_DAY) - (restHours * SECS_PER_HOUR) - (restMinutes * SECS_PER_MIN));
+  
+        // Если осталось меньше минуты - отображать секунды
+        // Если осталось меньше часа - отображать только минуты
+        // Если осталось несколько часов - отображать часы и минуты
+        // Если осталось меньше-равно 7 дней - отображать дни и часы
+        // Если осталось больше 7 дней - отображать дни
+  
+        if (restDays == 0 && restHours == 0 && restMinutes == 0)
+          tmp = String(restSeconds) + WriteSeconds(restSeconds);
+        else if (restDays == 0 && restHours == 0 && restMinutes > 0)
+          tmp = String(restMinutes) + WriteMinutes(restMinutes);
+        else if (restDays == 0 && restHours > 0 && restMinutes > 0)
+          tmp = String(restHours) + WriteHours(restHours) + " " + String(restMinutes) + WriteMinutes(restMinutes);
+        else if (restDays > 0 && restDays <= 7 && restHours > 0)
+          tmp = String(restDays) + WriteDays(restDays) + " " + String(restHours) + WriteHours(restHours);
+        else  
+          tmp = String(restDays) + WriteDays(restDays);
+        
+        textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
+      }
+    }
+    
+    // Если в строке еще остались макросы, связанные со временем - обработать их
+    if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0) continue;
+
+    // Если при разборе строка помечена как многоцветная - обработать макросы цвета 
+    if (textHasMultiColor) {                                 
       textLine = processColorMacros(textLine);
     }
     
@@ -1214,7 +1269,7 @@ int8_t getTextIndex(char c) {
 // получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
 char getAZIndex(byte idx) {
   byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
-  char c = 'Z';
+  char c = '-';
   if (idx >= 0 && idx <= 9)             
      c = char('0' + idx);
   else if (idx >= 10 && idx < size)               
@@ -1227,4 +1282,256 @@ String getTextByAZIndex(char c) {
   byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   int8_t idx = getTextIndex(c);
   return (idx < 0 || idx >= size) ? "" : textLines[idx];
+}
+
+// Сканировать массив текстовых строк на наличие событий постоянного отслеживания - макросов {P}
+void rescanTextEvents() {
+/*
+ "{PДД.ММ.ГГГГ#N#B#A#F}"
+   - где после P указаны опционально дата и время до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
+     X дней X часов X минут X секунд; 
+     Если дней не осталось - выводится только X часов X минут; 
+     Если часов тоже уже не осталось - выводится X минут
+     Если минут тоже уже не осталось - выводится X секунд
+
+   Строка с режимом {P не выводится при периодическом переборе строк для отображения - только до/после непосредственно времени события:
+   время наступления события мониторится и за #B секунд до события бегущая строка начинает отображаться на матрице и после события #A секунд отображается строка-заместитель 
+   
+   Для режима P дата может опускаться (означает "каждый день") или ее компоненты могут быть заменены звездочкой '*'
+   **.10.2020 - весь октябрь 2020 года 
+   01.**.**** - каждое первое число месяца любого года
+   **.**.2020 - каждый день 2020 года
+   
+   "{P7:00#N#120#30#12347}"  - каждый пн,вт,ср,чт,вс в 7 утра (за 120 сек до наступления события и 30 секунд после наступления
+
+   - где компоненты даты:
+     ДД - число месяца
+     MM - месяц
+     ГГГГ - год
+     Компоненты даты могут быть заменены * - означает "любой"
+     
+   - где после даты может быть указан
+     - #N - если осталось указанная дата уже наступила - вместо этой строки выводится строка с номером N
+            если строка замены не указана - просроченная строка не выводится берется следующая строка
+     - #B - начинать отображение за указанное количество секунд ДО наступления события (before). Если не указано - 60 секунд по умолчанию
+     - #A - отображать строку-заместитель указанное количество секунд ПОСЛЕ наступления события (after). Если не указано - 60 секунд по умолчанию
+     - #F - дни недели для которых работает эта строка, когда дата не определена 1-пн..7-вс
+            Если указана точная дата и указан день недели, который не соответствует дате - строка выведена не будет
+*/
+  // Предварительная очистка массива постоянно отслеживаемых событий
+  for (uint8_t i = 0; i < MOMENTS_NUM; i++) {
+    moments[i].moment == 0;
+  }
+
+  bool     found = false;
+  uint8_t  stage = 0;         // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 - секунд ПОСЛЕ; 8 - дни недели
+  uint8_t  iDay = 0, iMonth = 0, iHour = 0, iMinute = 0, star_cnt = 0;
+  uint16_t iYear = 0, num = 0;
+  uint32_t iBefore = 60, iAfter = 60;
+  uint8_t  moment_idx = 0;    // индекс элемента в формируемом массиве
+  int8_t   text_idx = -1;     // индекс строки заменителя  
+  String   wdays = "1234567"; // Дни недели. Если не указано - все дни пн..вс
+  
+  for (uint8_t i = 0; i < 36; i++) {
+    
+    String text = textLines[i];
+    int8_t idx = text.indexOf("{P");
+    if (idx < 0) continue;
+
+    int8_t idx2 = text.indexOf("}", idx);        
+    if (idx2 < 0) continue;
+
+    // Вычленяем содержимое макроса "{P}"
+    String str = text.substring(idx+2, idx2);
+    str.trim();
+
+    if (!found) {
+      Serial.println(F("--------------------"));
+      Serial.println(F("Строки с событием {P}"));
+      Serial.println(F("--------------------"));
+      found = true;
+    }
+    Serial.println(String(F("Строка: '")) + text + "'");
+
+    // Сбрасываем переменные перед разбором очередной строки
+    stage = 0; iDay = 0; iMonth = 0; iYear = 0; iHour = 0; iMinute = 0; iBefore = 60; iAfter = 60; star_cnt = 0; num = 0;
+    wdays = "1234567";
+    
+    // Побайтово разбираем строку макроса
+    bool err = false;
+    for (uint16_t ix = 0; ix < str.length(); ix++) {
+      if (err) {
+        Serial.println();
+        Serial.println(String(F("Ошибка в макросе '{P")) + str + String(F("}'")));
+        for(uint8_t n=0; n<ix-1; n++) Serial.print('-');
+        Serial.println('^');
+        break;
+      }      
+      char c = str[ix];
+      switch (c) {
+        // замена элемента даты "любой" - день месяц или год
+        case '*':
+          // только для дня/месяца/года и не более двух звезд для дня/ месяца или четырех для года и  нельзя звезду сочетать с цифрой
+          err = (stage > 2) || (star_cnt == 1 && num != 0) || (stage <= 1 && star_cnt > 2) || (stage == 2 && star_cnt > 4);  
+          if (!err) {
+            star_cnt++;  // счетчик звезд
+            num = 0;     // обнулить число          
+          }
+          break;  
+        // Разделитель даты дня/месяца/года
+        case '.':
+          err = stage > 2;  // точка - разделитель элементов даты и в других стадиях недопустима
+          if (!err) {
+            switch (stage) {
+              case 0: iDay = num;   stage = 1; break; // Следующая стадия - разбор месяца
+              case 1: iMonth = num; stage = 2; break; // Следующая стадия - разбор года
+              case 2: iYear = num; break;
+            }
+            star_cnt = 0; num = 0;
+          }
+          break;  
+        // Разделитель часов и минут  
+        case ':':
+          err = stage != 0 && stage != 3;  // Дата может быть опущена (stagge == 0) и текущая стадия stage == 3 - был разбор часов. Если это не так - ошибка
+          if (!err) {
+            iHour = num;
+            stage = 4;    // следующая стадия - разбор минут
+            num = 0;
+          }
+          break;  
+        // Разделитель строки замены/времени ДО/времени ПОСЛЕ/дней недели  
+        case '#':
+          switch (stage) {
+            case 2: iYear = num;    stage = 5; break;  // Сейчас разбор года - переходим в стадию номера строки заменителя
+            case 4: iMinute = num;  stage = 5; break;  // Сейчас разбор минут времени - переходим в стадию номера строки заменителя
+            case 5: text_idx = num; stage = 6; break;  // Закончен разбор номера строки замены; Следующая стадия - разбор секунд ДО
+            case 6: iBefore = num;  stage = 7; break;  // Закончен разбор номера секунд ДО; Следующая стадия - разбор секунд ПОСЛЕ
+            case 7: iAfter = num;   stage = 8; break;  // Закончен разбор номера секунд ПОСЛЕ; Следующая стадия - разбор дней недели
+            default:
+              err = true;    // В любой другой стадии № не на своем месте - ошибка
+          }          
+          num = 0;  
+          break;  
+        // Разделитель даты и времени  
+        case ' ':
+          err = stage != 2;  // Разделитель даты и времени. Если предыдущая фаза - не разбор года - это ошибка. Пробел в других местах недопустим
+          if (!err) {
+            iYear = num;
+            stage = 3; // следующая стадия - разбор часов
+            num = 0;
+          }
+          break;  
+        default:
+          // Здесь могут быть цифры 0..9 для любой стадии (день/месяц/год/часы/минуты/сек ДО/сек ПОСЛЕ/дни недели/номер строки замены)
+          if (c >= '0' && c <= '9') {
+            err = star_cnt != 0;     // Если число звезд не равно 0 - цифра сочетается со звездой - нельзя
+            if (!err) {
+              num = num * 10 + (c - '0');
+            }
+            break;
+          }
+          // Здесь могут быть буквы A..Z - только для стадии строка замены и при этом буква должна быть только одна
+          if (c >= 'A' && c <= 'Z' && stage == 5 && num == 0) {
+            num = getTextIndex(c);
+            break;
+          }
+          // Любой другой символ - ошибка разбора макроса
+          err = true;
+          break;  
+      }
+
+      // Если случилась стадия 8 - все от текущей позиции до конца строки - дни недели
+      // Просто копируем остаток строки в дни недели и завершаем разбор
+      if (!err && stage == 8) {
+        wdays = str.substring(ix+1);
+        if (wdays.length() == 0) wdays = "1234567";
+        break;
+      }  
+
+      // Это аоследний символ в строке?
+      if (ix == str.length() - 1) {
+        // Если строка кончилась ДО полного разбора даты или времени - ошибка
+        // Остальные параметры могут быть опущены - тогда принимают значения по умолчанию
+        // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 -секунд ПОСЛЕ; 8 - дни недели
+        switch (stage) {
+          case 2:  iYear    = num; break;
+          case 4:  iMinute  = num; break;
+          case 5:  text_idx = num; break;
+          case 6:  iBefore  = num; break;
+          case 7:  iAfter   = num; break;
+          default: err      = true;  break;
+        }                  
+      }
+    }
+
+    // Разбор прошел без ошибки? Добавить элемент в массив отслеживаемых событий
+    if (!err) {
+      // Если день/месяц/год отсутствуют или указаны заменителями - брать текущую   
+
+      bool have_star = false;   
+      if (iDay   == 0) { iDay   = day();   have_star = true; }
+      if (iMonth == 0) { iMonth = month(); have_star = true; }
+      if (iYear  == 0) { iYear  = year();  have_star = true; }
+
+      // Если год меньше текущего - событие в прошлом - его добавлять в отслеживаемые не нужно 
+      if (iYear < year()) continue;
+      
+      // Сформировать ближайшее время события из полученных компонент
+      tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, CalendarYrToTm(iYear)}; 
+      time_t t_event = makeTime(tm);            
+      
+      // Если событие уже прошло - это может быть, когда дата опущена или звездочками, а время указано меньше текущего - брать то же время следующего дня
+      if ((unsigned long)t_event < (unsigned long)now() && have_star) t_event += SECS_PER_DAY; 
+
+      // Если звездочек нет илипосле перехода к следующему дню время всё равно меньше текущего - событие в прошлом - добавлять не нужно
+      if ((unsigned long)t_event < (unsigned long)now()) continue;
+
+      // Полученное время события попадает в разрешенные дни недели? Если нет - добавлять не нужно
+      int8_t weekDay = weekday(t_event) - 1;    // day of the week, Sunday is day 0   
+      if (weekDay == 0) weekDay = 7;            // Sunday is day 7, Monday is day 1;
+
+      char cc = weekDay + '0';            
+      if (wdays.indexOf(cc) < 0) continue;
+      
+      breakTime(t_event, tm);
+      
+      Serial.println(String(F("Событие: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + 
+                     "; before=" + String(iBefore) + "; after=" + String(iAfter) + "; days='" + wdays + "'; replace='" + String(getAZIndex(text_idx)) + "'");
+      
+      // Заполнить текущий элемент массива полученными параметрами
+      moments[moment_idx].moment = t_event;
+      moments[moment_idx].before = iBefore;
+      moments[moment_idx].after = iAfter;
+      moments[moment_idx].index_b = i;
+      moments[moment_idx].index_a = text_idx;
+      
+      // К следующему элементу массива
+      moment_idx++;
+    }
+  }
+  Serial.println(F("--------------------"));  
+}
+
+// Проверить есть ли в настоящий момент активное событие?
+// Возврат - индекс строки текста в массиве текстовых строк или -1, если активного события нет
+void checkMomentText() {
+  momentIdx = -1;                   // Индекс строки в массиве moments для активного текущего непрерывно отслеживаемого события
+  momentTextIdx = -1;               // Индекс строки в массиве textLines для активного текущего непрерывно отслеживаемого события
+  time_t this_moment = now();
+  for (uint8_t i = 0; i < MOMENTS_NUM; i++) {
+    // Не содержит события
+    if (moments[i].moment == 0) break;
+    // Время за #B секунд до наступления события? - отдать index_b
+    if (this_moment >= moments[i].moment - moments[i].before && this_moment < moments[i].moment) {
+      momentIdx = i;
+      momentTextIdx = moments[i].index_b; // before
+      break;
+    }    
+    // Время #А секунд после наступления события? - отдать index_a
+    if (this_moment >= moments[i].moment && this_moment <= moments[i].moment + moments[i].after) {
+      momentIdx = i;
+      momentTextIdx = moments[i].index_a; // after
+      break;
+    }    
+  }
 }

@@ -616,6 +616,7 @@ void parsing() {
                  textLines[0] = "##";
               }
               saveTexts();
+              rescanTextEvents();
               break;
 
             case 1:

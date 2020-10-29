@@ -1732,6 +1732,7 @@ void munchRoutine() {
     seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
     seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
     dir = 1;
+    FastLED.clear();
   }
 
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);

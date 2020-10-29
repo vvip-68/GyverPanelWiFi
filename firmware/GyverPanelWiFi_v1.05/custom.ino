@@ -43,13 +43,35 @@ void doEffectWithOverlay(byte aMode) {
   bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
   bool needStopText = false;
   String out;
-  
-  // Если пришло время отображения очередной бегущей строки поверх эффекта - переключиться в режим бегущей строки оверлеем
-  if (!showTextNow && textOvEn && thisMode != MC_TEXT && (ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
-    
-    // Обработать следующую строку для отображения, установить параметры; 
+
+  // Проверить есть ли активное событие текста? 
+  // Если нет - после проверки  momentTextIdx = -1 и momentIdx = -1
+  // Если есть - momentTextIdx - индекс текста для вывода в зависимости от ДО или ПОСЛЕ события текущее время; momentIdx - активная позиция в массиве событий moments[] 
+  if (init_time) {
+    checkMomentText();
+    if (momentTextIdx >= 0 && currentTextLineIdx != momentTextIdx) {
+      // В момент смены стоки с ДО на ПОСЛЕ - строка ПОСЛЕ извлеченная из массива содержит признак отключенности - '-' в начале или "{-}" в любом месте
+      // Также строка может содержать другие макросы, которые нужно обработать processMacrosInText()
+      // Если передать строку с макросом отключения - processMacrosInText() вернет любую другую строку вместо отключенной
+      // Чтобы это не произошло - нужно удалить признак отключенности
+      currentTextLineIdx = momentTextIdx;
+      String text = textLines[currentTextLineIdx];
+      if (text.length() > 0 && text[0] == '-') text = text.substring(1);
+      while (text.indexOf("{-}") >= 0) text.replace("{-}","");
+      currentText = processMacrosInText(text);
+    }
+  }
+
+  // Если команда отображения текущей строки передана из приложения или
+  // Если есть активная строка, чвязанная с текущим отслеживаемым по времени событием или
+  // Если пришло время отображения очередной бегущей строки поверх эффекта
+  // Переключиться в режим бегущей строки оверлеем
+  if (!showTextNow && textOvEn && thisMode != MC_TEXT && (momentTextIdx >= 0 || ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
+
+    // Обработать следующую строку для отображения, установить параметры;
     // Если нет строк к отображению - продолжать отображать оверлей часов
-    if (prepareNextText()) {  
+    if (prepareNextText()) {
+      moment_active = momentTextIdx >= 0;
       fullTextFlag = false;
       loadingTextFlag = false;
       showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
@@ -92,7 +114,7 @@ void doEffectWithOverlay(byte aMode) {
   
   // Если находимся в режиме бегущей строки и строка полностью "прокручена" или сняли разрешение на отображение бегущей строки - переключиться в режим отображения часов оверлеем
   // С учетом того, показана ли строка нужное количество раз или указанную продолжительность по времени
-  if (showTextNow && fullTextFlag) {  
+  if (showTextNow && fullTextFlag && !moment_active) {  
     if (textShowTime > 0) {
       // Показ строки ограничен по времени
       if ((millis() - textStartTime) > (textShowTime * 1000L)) {
@@ -109,6 +131,13 @@ void doEffectWithOverlay(byte aMode) {
         fullTextFlag = false;
       }
     }
+  }
+
+  // Нет активного события? но влаг что оно отображается стоит
+  if (moment_active && momentTextIdx < 0) {
+    moment_active = false;
+    needStopText = true;
+    rescanTextEvents();
   }
 
   // Нужно прекратить показ текста бегущей строки

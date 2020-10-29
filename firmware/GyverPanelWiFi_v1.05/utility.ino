@@ -586,3 +586,10 @@ void shiftDiag() {
     }
   }
 }
+
+String padNum(int16_t num, byte cnt) {
+  char data[12];
+  String fmt = "%0"+ String(cnt) + "d";
+  sprintf(data, fmt.c_str(), num);
+  return String(data);
+}

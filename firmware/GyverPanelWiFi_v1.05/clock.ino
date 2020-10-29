@@ -59,6 +59,7 @@ void parseNTP() {
   Serial.println(t);
   setTime(t);
   calculateDawnTime();
+  rescanTextEvents();
 
   #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
@@ -663,7 +664,7 @@ void calculateDawnTime() {
 
   // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnHour, dawnMinute, dawnWeekDay);
 
-  Serial.print(String(F("Следующий рассвет в ")) + String(dawnHour)+ F(":") + String(dawnMinute) + ", " + getWeekdayString(dawnWeekDay));
+  Serial.print(String(F("Следующий рассвет в ")) + padNum(dawnHour,2)+ F(":") + padNum(dawnMinute,2) + ", " + getWeekdayString(dawnWeekDay));
 }
 
 // Проверка времени срабатывания будильника
@@ -716,7 +717,7 @@ void checkAlarmTime() {
          if (useAlarmSound) PlayDawnSound();
          #endif
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-         Serial.println(String(F("Рассвет ВКЛ в "))+String(h)+ ":" + String(m));
+         Serial.println(String(F("Рассвет ВКЛ в ")) + padNum(h,2) + ":" + padNum(m,2));
 
          #if (USE_MQTT == 1)
          DynamicJsonDocument doc(256);
@@ -734,7 +735,7 @@ void checkAlarmTime() {
     
     // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов и звук будильника
     if (alrmWeekDay == w && alrmHour == h && alrmMinute == m && isAlarming) {
-      Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
+      Serial.println(String(F("Рассвет Авто-ВЫКЛ в ")) + padNum(h,2) + ":" + padNum(m,2));
       isAlarming = false;
       isAlarmStopped = false;
       isPlayAlarmSound = true;
@@ -781,7 +782,7 @@ void checkAlarmTime() {
     #if (USE_TM1637 == 1)
     display.setBrightness(7);
     #endif
-    Serial.println(String(F("Будильник Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
+    Serial.println(String(F("Будильник Авто-ВЫКЛ в ")) + padNum(h,2)+ ":" + padNum(m,2));
     
     alarmSoundTimer.setInterval(4294967295);
     isPlayAlarmSound = false;
@@ -843,7 +844,7 @@ void checkAlarmTime() {
 void stopAlarm() {
   #if (USE_MP3 == 1)
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
-    Serial.println(String(F("Рассвет ВЫКЛ в ")) + String(hour())+ ":" + String(minute()));
+    Serial.println(String(F("Рассвет ВЫКЛ в ")) + padNum(hour(),2) + ":" + padNum(minute(),2));
     isAlarming = false;
     isAlarmStopped = true;
     isPlayAlarmSound = false;
