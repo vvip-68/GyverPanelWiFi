@@ -38,12 +38,6 @@ void doEffectWithOverlay(byte aMode) {
     } 
   #endif
 
-  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
-  bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
-  bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
-  bool needStopText = false;
-  String out;
-
   // Проверить есть ли активное событие текста? 
   // Если нет - после проверки  momentTextIdx = -1 и momentIdx = -1
   // Если есть - momentTextIdx - индекс текста для вывода в зависимости от ДО или ПОСЛЕ события текущее время; momentIdx - активная позиция в массиве событий moments[] 
@@ -58,9 +52,19 @@ void doEffectWithOverlay(byte aMode) {
       String text = textLines[currentTextLineIdx];
       if (text.length() > 0 && text[0] == '-') text = text.substring(1);
       while (text.indexOf("{-}") >= 0) text.replace("{-}","");
-      currentText = processMacrosInText(text);
+      currentText = processMacrosInText(text);      
+      ignoreTextOverlaySettingforEffect = textOverlayEnabled;
+      loadingTextFlag = true;
     }
   }
+
+  // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
+  bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK;
+  bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
+  bool needStopText = false;
+  String out;
+
+  needStopText = false;
 
   // Если команда отображения текущей строки передана из приложения или
   // Если есть активная строка, чвязанная с текущим отслеживаемым по времени событием или

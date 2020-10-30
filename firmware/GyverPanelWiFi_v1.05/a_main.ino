@@ -1047,6 +1047,10 @@ void parsing() {
            case 18:               // $13 18 X; - сохранить настройку X "Бегущая строка в эффектах"
              textOverlayEnabled = intData[2] == 1;
              saveTextOverlayEnabled(textOverlayEnabled);
+             if (!textOverlayEnabled) {
+               showTextNow = false;
+               ignoreTextOverlaySettingforEffect = false;
+             }
              break;
           default:
             err = true;

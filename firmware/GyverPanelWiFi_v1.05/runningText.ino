@@ -206,12 +206,7 @@ boolean prepareNextText() {
 
   // Если nextIdx >= 0 - значит в предыдущей строке было указано какую строку показывать следующей - показываем ее
   currentTextLineIdx = nextIdx >= 0 ? nextIdx : getNextLine(currentTextLineIdx);
-
-  // Если индекс указанной строки, готовящейся к отображению выходит за рамки массива - брать нулевую/первую строку имеющегося массива строк
-  // Нулевую, если textLines[0] не начинается с '#' - это просто строка, если начинается с '#' - это управляющая последовательность, брать первую строку
-  if (currentTextLineIdx < 0 || currentTextLineIdx >= sizeOfTextsArray) {
-    currentTextLineIdx = textLines[0].charAt(0) == '#' ? 1 : 0;
-  }
+  if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
   
   currentText = currentTextLineIdx < 0 ? "" : processMacrosInText(textLines[currentTextLineIdx]);
 
@@ -248,6 +243,7 @@ int8_t getNextLine(int8_t currentIdx) {
         if (disabled) continue;
         arr[cnt++] = i;
       }
+
       // Выбрать индексы строк, которые не отключены;
       if (cnt == 0)
         nextLineIdx = -1;
@@ -1504,6 +1500,18 @@ void rescanTextEvents() {
       moments[moment_idx].after = iAfter;
       moments[moment_idx].index_b = i;
       moments[moment_idx].index_a = text_idx;
+
+      // Строка-заместитель должна быть отключена, чтобы она не отображалась как регулярная строка
+      if (text_idx >= 0) {
+        String text = textLines[text_idx];        
+        if (text.length() > 0) {
+          bool disabled = (text_idx == 0 && text[0] == '#') || text[0] == '-' || text.indexOf("{-}") >= 0; 
+          if (!disabled) {
+            textLines[text_idx] = "-" + text;
+            saveTexts();
+          }
+        }
+      }
       
       // К следующему элементу массива
       moment_idx++;
