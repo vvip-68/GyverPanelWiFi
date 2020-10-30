@@ -1348,9 +1348,9 @@ void rescanTextEvents() {
     if (!found) {
       Serial.println(F("--------------------"));
       Serial.println(F("Строки с событием {P}"));
-      Serial.println(F("--------------------"));
       found = true;
     }
+    Serial.println(F("--------------------"));
     Serial.println(String(F("Строка: '")) + text + "'");
 
     // Сбрасываем переменные перед разбором очередной строки
@@ -1510,6 +1510,7 @@ void rescanTextEvents() {
     }
   }
   Serial.println(F("--------------------"));  
+  textCheckTime = millis();
 }
 
 // Проверить есть ли в настоящий момент активное событие?
