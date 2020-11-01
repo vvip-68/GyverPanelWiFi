@@ -154,10 +154,10 @@ void next_generation(uint8_t world[][BYTE_WIDTH], uint8_t gener[][BYTE_WIDTH]) {
  */
 void print_generation_num() {
  String str = String(generation_cnt);
- int8_t px = WIDTH - (str.length() * 4 - 1);
+ int8_t px = WIDTH - (str.length() * 4);
  while (px < 0) {
    str = str.substring(1);
-   px = WIDTH - (str.length() * 4 - 1);
+   px = WIDTH - (str.length() * 4);
  }
  for (uint8_t i = 0; i < str.length(); i++) {
    uint8_t val = (uint8_t)(str[i] - '0');
