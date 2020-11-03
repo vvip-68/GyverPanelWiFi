@@ -3,14 +3,23 @@
 
 bool getWeather() {
   
+  // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
+  // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&appid=6a4ba421859c9f4166697758b68d889b
+  
   if (!wifi_connected) return false;  
-  if (!client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
-
+  
   Serial.println();
   Serial.println(F("Запрос текущей погоды"));
-  
-  // Отправляем запрос
-  client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
+
+  #if (WEATHER_SYSTEM == 0)
+    if (!client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
+    // Отправляем запрос
+    client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
+  #else
+    if (!client.connect("api.openweathermap.org",80)) return false;         // Устанавливаем соединение с указанным хостом (Порт 80 для http)
+    // Отправляем запрос    
+    client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID) + String(F("&units=metric&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
+  #endif  
 
   #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
@@ -52,10 +61,8 @@ bool getWeather() {
     return false;                                                         // и пора прекращать всё это дело
   }
 
-  const size_t capacity = 750;                                            // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
+  const size_t capacity = 1500;                                           // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
   DynamicJsonDocument jsn(capacity);
-
-  // {"time":1597989853200,"clocks":{"62":{"id":62,"name":"Krasnoyarsk","offset":25200000,"offsetString":"UTC+7:00","showSunriseSunset":true,"sunrise":"05:31","sunset":"20:10","isNight":false,"skyColor":"#57bbfe","weather":{"temp":25,"icon":"bkn-d","link":"https://yandex.ru/pogoda/krasnoyarsk"},"parents":[{"id":11309,"name":"Krasnoyarsk Krai"},{"id":225,"name":"Russia"}]}}}
 
   // Parse JSON object
   DeserializationError error = deserializeJson(jsn, client);
@@ -78,26 +85,81 @@ bool getWeather() {
 
   String regId = String(regionID);
   String town;
+  bool   weather_ok = true;
   
-  sunriseTime  = jsn["clocks"][regId]["sunrise"].as<String>();          // Достаём время восхода - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunrise 
-  sunsetTime   = jsn["clocks"][regId]["sunset"].as<String>();           // Достаём время заката - Третий уровень вложенности пары ключ/значение clocks -> значение RegionID -> sunset
-  temperature  = jsn["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём время заката - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
-  skyColor     = jsn["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
-  isNight      = jsn["clocks"][regId]["isNight"].as<boolean>();
-  icon         = jsn["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
-  town         = jsn["clocks"][regId]["name"].as<String>();             // Город
+  #if (WEATHER_SYSTEM == 0)  
+    /*
+    Yandex: {"time":1597989853200,
+             "clocks":
+              { "62":
+                { "id":62,
+                   "name":"Krasnoyarsk",
+                   "offset":25200000,
+                   "offsetString":"UTC+7:00",
+                   "showSunriseSunset":true,
+                   "sunrise":"05:31",
+                   "sunset":"20:10",
+                   "isNight":false,
+                   "skyColor":"#57bbfe",
+                   "weather":
+                     {"temp":25,
+                      "icon":"bkn-d",
+                      "link":"https://yandex.ru/pogoda/krasnoyarsk"
+                     },
+                   "parents": [
+                     {"id":11309,
+                      "name":"Krasnoyarsk Krai"
+                     },
+                     {"id":225,
+                      "name":"Russia"
+                     }
+                   ]
+                }
+              }
+            }
+    */            
+    temperature  = jsn["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём температуру - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
+    skyColor     = jsn["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
+    isNight      = jsn["clocks"][regId]["isNight"].as<boolean>();
+    icon         = jsn["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+    town         = jsn["clocks"][regId]["name"].as<String>();             // Город
+    weather_ok   = skyColor.length() == 7;                                // #57bbfe
+  #else 
+  /*
+   OpenWeatherMap: {"coord":{"lon":92.79,"lat":56.01},
+                    "weather":[{"id":620,"main":"Snow","description":"light shower snow","icon":"13n"}],
+                    "base":"stations",
+                    "main":{"temp":1,"feels_like":-4.4,"temp_min":1,"temp_max":1,"pressure":1021,"humidity":97},
+                    "visibility":9000,
+                    "wind":{"speed":5,"deg":280},
+                    "clouds":{"all":75},
+                    "dt":1604335563,
+                    "sys":{"type":1,"id":8957,"country":"RU","sunrise":1604278683,"sunset":1604311599},
+                    "timezone":25200,
+                    "id":1502026,
+                    "name":"Krasnoyarsk",
+                    "cod":200
+                   }
+  */
+    temperature  = jsn["main"]["temp"].as<int8_t>();                      // Температура -> main -> temp
+    icon         = jsn["weather"][0]["icon"].as<String>();                // Достаём иконку -> weather[0] -> icon
+    isNight      = icon.endsWith("n");                                    // Иконка вида "XXn" - ночная "XXd" - дневная
+    town         = jsn["name"].as<String>();                              // Город
+    weather_ok   = icon.length() == 3;                                    // Иконка вида "XXn" - ночная "XXd" - дневная
+    weather      = jsn["weather"][0]["description"].as<String>();         // Строка погодных условий (английский)
+    weather_code = jsn["weather"][0]["id"].as<int16_t>();                 // Уточненный код погодных условий
+  #endif
 
-  // #57bbfe
-  if (skyColor.length() != 7) {
+  if (!weather_ok) {
     Serial.print(F("JSON не содержит данных о погоде"));
-
+  
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("no data");
     serializeJson(doc, out);      
     NotifyInfo(out);
     #endif
-
+  
     return false;
   }
 
@@ -115,8 +177,12 @@ bool getWeather() {
   if (temperature > 0) Serial.print("+"); 
   Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
   Serial.println(String(F("Код иконки: '")) + icon + "'");
-  Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   Serial.println(dayTime);
+  #if (WEATHER_SYSTEM == 0)
+  Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
+  #else
+  Serial.println(String(F("Код погоды: ")) + String(weather_code));
+  #endif
   
   #if (USE_MQTT == 1)
   doc["result"] = F("OK");
@@ -124,8 +190,12 @@ bool getWeather() {
   doc["temp"]   = temperature;
   doc["night"]  = isNight;
   doc["icon"]   = icon;
-  doc["sky"]    = skyColor;
   doc["town"]   = town;
+  #if (WEATHER_SYSTEM == 0)
+  doc["sky"]    = skyColor;
+  #else
+  doc["code"]   = weather_code;
+  #endif
   serializeJson(doc, out);      
   NotifyInfo(out);
   #endif
@@ -133,8 +203,10 @@ bool getWeather() {
   return true;
 }
 
+#if (WEATHER_SYSTEM == 0)
+
 /*
-Код расшифровки иконки. Возможные значения:
+Код расшифровки иконки от Yandex. Возможные значения:
   bkn-minus-ra-d — облачно с прояснениями, небольшой дождь (день)
   bkn-minus-sn-d — облачно с прояснениями, небольшой снег (день)
   bkn-minus-sn-n — облачно с прояснениями, небольшой снег (ночь)
@@ -188,6 +260,79 @@ void decodeWeather(){
 
 #else
 
+void decodeWeather(){  
+  bool hasDay   = icon.endsWith("d");
+  bool hasNight = icon.endsWith("n");
+  
+  if (hasDay)
+    dayTime = F("Светлое время суток");  // Сейчас день
+  else if (hasNight)           
+    dayTime = F("Темное время суток");   // Сейчас ночь
+
+  // https://openweathermap.org/weather-conditions#How-to-get-icon-URL
+  switch (weather_code) {
+    case 200: weather = F("Гроза, небольшой дождь"); break;         // thunderstorm with light rain
+    case 201: weather = F("Дождь с грозой"); break;                 // thunderstorm with rain
+    case 202: weather = F("Гроза, ливни"); break;                   // thunderstorm with heavy rain
+    case 210: weather = F("Небольшая гроза"); break;                // light thunderstorm
+    case 211: weather = F("Гроза"); break;                          // thunderstorm
+    case 212: weather = F("Сильная гроза"); break;                  // heavy thunderstorm
+    case 221: weather = F("Прерывистые грозы"); break;              // ragged thunderstorm
+    case 230: weather = F("Гроза, небольшой дождь"); break;         // thunderstorm with light drizzle
+    case 231: weather = F("Гроза с дождем"); break;                 // thunderstorm with drizzle
+    case 232: weather = F("Гроза с проливным дождем"); break;       // thunderstorm with heavy drizzle
+    case 300: weather = F("Мелкий дождь"); break;                   // light intensity drizzle
+    case 301: weather = F("Моросящий дождь"); break;                // drizzle
+    case 302: weather = F("Сильный дождь"); break;                  // heavy intensity drizzle
+    case 310: weather = F("Небольшой дождь"); break;                // light intensity drizzle rain
+    case 311: weather = F("Моросящий дождь"); break;                // drizzle rain
+    case 312: weather = F("Сильный дождь"); break;                  // heavy intensity drizzle rain
+    case 313: weather = F("Ливень, дождь и морось"); break;         // shower rain and drizzle
+    case 314: weather = F("Сильный ливень, дождь и морось"); break; // heavy shower rain and drizzle
+    case 321: weather = F("Моросящий дождь"); break;                // shower drizzle  
+    case 500: weather = F("Небольшой дождь"); break;                // light rain
+    case 501: weather = F("Умеренный дождь"); break;                // moderate rain
+    case 502: weather = F("Ливень"); break;                         // heavy intensity rain
+    case 503: weather = F("Проливной дождь"); break;                // very heavy rain
+    case 504: weather = F("Проливной дождь"); break;                // extreme rain
+    case 511: weather = F("Ледяной дождь"); break;                  // freezing rain
+    case 520: weather = F("Небольшой дождь"); break;                // light intensity shower rain
+    case 521: weather = F("Моросящий дождь"); break;                // shower rain
+    case 522: weather = F("Сильный дождь"); break;                  // heavy intensity shower rain
+    case 531: weather = F("Временами дождь"); break;                // ragged shower rain
+    case 600: weather = F("Небольшой снег"); break;                 // light snow
+    case 601: weather = F("Снег"); break;                           // Snow
+    case 602: weather = F("Снегопад"); break;                       // Heavy snow
+    case 611: weather = F("Слякоть"); break;                        // Sleet
+    case 612: weather = F("Легкий снег"); break;                    // Light shower sleet
+    case 613: weather = F("Ливень, снег"); break;                   // Shower sleet
+    case 615: weather = F("Небольшой дождь со снегом"); break;      // Light rain and snow
+    case 616: weather = F("Дождь со снегом"); break;                // Rain and snow
+    case 620: weather = F("Небольшой снег"); break;                 // Light shower snow
+    case 621: weather = F("Небольшой снег, метель"); break;         // Shower snow
+    case 622: weather = F("Сильный снегопад"); break;               // Heavy shower snow
+    case 701: weather = F("Туман"); break;                          // mist
+    case 711: weather = F("Дымка"); break;                          // Smoke
+    case 721: weather = F("Легкий туман"); break;                   // Haze
+    case 731: weather = F("Пыльные вихри"); break;                  // sand/ dust whirls
+    case 741: weather = F("Туман"); break;                          // fog
+    case 751: weather = F("Песчаные вихри"); break;                 // sand
+    case 761: weather = F("Пыльные вихри"); break;                  // dust
+    case 762: weather = F("Вулканический пепел"); break;            // volcanic ash
+    case 771: weather = F("Шквалистый ветер"); break;               // squalls
+    case 781: weather = F("Торнадо"); break;                        // tornado
+    case 800: weather = F("Ясно"); break;                           // clear sky
+    case 801: weather = F("Небольшая облачность"); break;           // few clouds: 11-25%
+    case 802: weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
+    case 803: weather = F("Облачно"); break;                        // broken clouds: 51-84%
+    case 804: weather = F("Пасмурно"); break;                       // overcast clouds: 85-100%
+  }
+}
+
+#endif
+
+#else
+
 bool getWeather() {
   return false;
 }
@@ -218,30 +363,100 @@ String getTemperatureColor(int8_t temp) {
   return s_color;
 }
 
-// Получить индекс иконки в мвссиве иконок погоды
+// Получить индекс иконки в массиве иконок погоды
+#if (WEATHER_SYSTEM == 0)
+
 uint8_t getWeatherFrame(String icon) {
-  if (icon == "skc-d") return 0;
-  if (icon == "skc-n") return 1;
-  if (icon == "bkn-d") return 2;
-  if (icon == "bkn-n") return 3;
-  if (icon == "bkn-minus-ra-d") return 4;
-  if (icon == "bkn-minus-ra-n") return 5;
-  if (icon == "bkn-minus-sn-d") return 6;
-  if (icon == "bkn-minus-sn-n") return 7;
-  if (icon == "bkn-ra-d") return 8;
-  if (icon == "bkn-ra-n") return 9;
-  if (icon == "bkn-sn-d") return 10;
-  if (icon == "bkn-sn-n") return 11;
-  if (icon == "bl") return 12;
-  if (icon == "fg-d") return 13;
-  if (icon == "ovc") return 14;
-  if (icon == "ovc-minus-ra") return 15;
-  if (icon == "ovc-minus-sn") return 16;
-  if (icon == "ovc-ra") return 17;
-  if (icon == "ovc-sn") return 18;
-  if (icon == "ovc-ts-ra") return 19;
+  if (icon == "skc-d") return 0;              // Ясно, день
+  if (icon == "skc-n") return 1;              // Ясно, ночь
+  if (icon == "bkn-d") return 2;              // Переменная облачность, день
+  if (icon == "bkn-n") return 3;              // Переменная облачность, ночь
+  if (icon == "bkn-minus-ra-d") return 4;     // Облачно с прояснениями, небольшой дождь, день
+  if (icon == "bkn-minus-ra-n") return 5;     // Облачно с прояснениями, небольшой дождь, ночь
+  if (icon == "bkn-minus-sn-d") return 6;     // Облачно с прояснениями, небольшой снег, день
+  if (icon == "bkn-minus-sn-n") return 7;     // Облачно с прояснениями, небольшой снег, ночь
+  if (icon == "bkn-ra-d") return 8;           // Переменная облачность, дождь, день
+  if (icon == "bkn-ra-n") return 9;           // Переменная облачность, дождь, ночь
+  if (icon == "bkn-sn-d") return 10;          // Переменная облачность, снег, день
+  if (icon == "bkn-sn-n") return 11;          // Переменная облачность, снег, ночь
+  if (icon == "bl") return 12;                // Метель
+  if (icon == "fg-d") return 13;              // Туман
+  if (icon == "ovc") return 14;               // Пасмурно
+  if (icon == "ovc-minus-ra") return 15;      // Пасмурно, временами дождь
+  if (icon == "ovc-minus-sn") return 16;      // Пасмурно, временами снег
+  if (icon == "ovc-ra") return 17;            // Пасмурно, дождь
+  if (icon == "ovc-sn") return 18;            // Пасмурно, снег
+  if (icon == "ovc-ts-ra") return 19;         // Пасмурно, дождь, гроза 
   return random8(0,19);
 }
+
+#else 
+
+uint8_t getWeatherFrame(String icon) {
+  // https://openweathermap.org/weather-conditions#How-to-get-icon-URL
+  bool hasDay   = icon.endsWith("d");
+  bool hasNight = icon.endsWith("n");
+  switch (weather_code) {
+    case 200: return 19;                         // weather = F("Гроза, небольшой дождь"); break;         // thunderstorm with light rain
+    case 201: return 19;                         // weather = F("Дождь с грозой"); break;                 // thunderstorm with rain
+    case 202: return 19;                         // weather = F("Гроза, ливни"); break;                   // thunderstorm with heavy rain
+    case 210: return 19;                         // weather = F("Небольшая гроза"); break;                // light thunderstorm
+    case 211: return 19;                         // weather = F("Гроза"); break;                          // thunderstorm
+    case 212: return 19;                         // weather = F("Сильная гроза"); break;                  // heavy thunderstorm
+    case 221: return 19;                         // weather = F("Прерывистые грозы"); break;              // ragged thunderstorm
+    case 230: return 19;                         // weather = F("Гроза, небольшой дождь"); break;         // thunderstorm with light drizzle
+    case 231: return 19;                         // weather = F("Гроза с дождем"); break;                 // thunderstorm with drizzle
+    case 232: return 19;                         // weather = F("Гроза с проливным дождем"); break;       // thunderstorm with heavy drizzle
+    case 300: return hasDay ? 8 : 9;             // weather = F("Мелкий дождь"); break;                   // light intensity drizzle
+    case 301: return hasDay ? 8 : 9;             // weather = F("Моросящий дождь"); break;                // drizzle
+    case 302: return hasDay ? 8 : 9;             // weather = F("Сильный дождь"); break;                  // heavy intensity drizzle
+    case 310: return hasDay ? 8 : 9;             // weather = F("Небольшой дождь"); break;                // light intensity drizzle rain
+    case 311: return hasDay ? 8 : 9;             // weather = F("Моросящий дождь"); break;                // drizzle rain
+    case 312: return hasDay ? 8 : 9;             // weather = F("Сильный дождь"); break;                  // heavy intensity drizzle rain
+    case 313: return hasDay ? 8 : 9;             // weather = F("Ливень, дождь и морось"); break;         // shower rain and drizzle
+    case 314: return hasDay ? 8 : 9;             // weather = F("Сильный ливень, дождь и морось"); break; // heavy shower rain and drizzle
+    case 321: return hasDay ? 8 : 9;             // weather = F("Моросящий дождь"); break;                // shower drizzle  
+    case 500: return hasDay ? 4 : 5;             // weather = F("Небольшой дождь"); break;                // light rain
+    case 501: return hasDay ? 4 : 5;             // weather = F("Умеренный дождь"); break;                // moderate rain
+    case 502: return hasDay ? 4 : 5;             // weather = F("Ливень"); break;                         // heavy intensity rain
+    case 503: return hasDay ? 4 : 5;             // weather = F("Проливной дождь"); break;                // very heavy rain
+    case 504: return hasDay ? 4 : 5;             // weather = F("Проливной дождь"); break;                // extreme rain
+    case 511: return hasDay ? 10 : 11;           // weather = F("Ледяной дождь"); break;                  // freezing rain
+    case 520: return hasDay ? 8 : 9;             // weather = F("Небольшой дождь"); break;                // light intensity shower rain
+    case 521: return hasDay ? 8 : 9;             // weather = F("Моросящий дождь"); break;                // shower rain
+    case 522: return hasDay ? 8 : 9;             // weather = F("Сильный дождь"); break;                  // heavy intensity shower rain
+    case 531: return hasDay ? 8 : 9;             // weather = F("Временами дождь"); break;                // ragged shower rain
+    case 600: return hasDay ? 6 : 7;             // weather = F("Небольшой снег"); break;                 // light snow
+    case 601: return 16;                         // weather = F("Снег"); break;                           // Snow
+    case 602: return 18;                         // weather = F("Снегопад"); break;                       // Heavy snow
+    case 611: return temperature > 0 ? 15 : 16;  // weather = F("Слякоть"); break;                        // Sleet
+    case 612: return hasDay ? 10 : 11;           // weather = F("Легкий снег"); break;                    // Light shower sleet
+    case 613: return temperature > 0 ? 17 : 18;  // weather = F("Ливень, снег"); break;                   // Shower sleet
+    case 615: return temperature > 0 ? 17 : 18;  // weather = F("Небольшой дождь со снегом"); break;      // Light rain and snow
+    case 616: return temperature > 0 ? 17 : 18;  // weather = F("Дождь со снегом"); break;                // Rain and snow
+    case 620: return 16;                         // weather = F("Небольшой снег"); break;                 // Light shower snow
+    case 621: return 12;                         // weather = F("Небольшой снег, метель"); break;         // Shower snow
+    case 622: return 18;                         // weather = F("Сильный снегопад"); break;               // Heavy shower snow
+    case 701: return 13;                         // weather = F("Туман"); break;                          // mist
+    case 711: return 13;                         // weather = F("Дымка"); break;                          // Smoke
+    case 721: return 13;                         // weather = F("Легкий туман"); break;                   // Haze
+    case 731: return 13;                         // weather = F("Пыльные вихри"); break;                  // sand/ dust whirls
+    case 741: return 13;                         // weather = F("Туман"); break;                          // fog
+    case 751: return 13;                         // weather = F("Песчаные вихри"); break;                 // sand
+    case 761: return 13;                         // weather = F("Пыльные вихри"); break;                  // dust
+    case 762: return 13;                         // weather = F("Вулканический пепел"); break;            // volcanic ash
+    case 771: return 13;                         // weather = F("Шквалистый ветер"); break;               // squalls
+    case 781: return 13;                         // weather = F("Торнадо"); break;                        // tornado
+    case 800: hasDay ? 0 : 1;                    // weather = F("Ясно"); break;                           // clear sky
+    case 801: hasDay ? 2 : 3;                    // weather = F("Небольшая облачность"); break;           // few clouds: 11-25%
+    case 802: hasDay ? 2 : 3;                    // weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
+    case 803: return 14;                         // weather = F("Облачно"); break;                        // broken clouds: 51-84%
+    case 804: return 14;                         // weather = F("Пасмурно"); break;                       // overcast clouds: 85-100%
+    default: return random8(0,19);
+  }  
+}
+
+#endif 
 
 uint8_t fade_weather_phase = 0;        // Плавная смена картинок: 0 - плавное появление; 1 - отображение; 2 - затухание
 uint8_t fade_step = 0;
