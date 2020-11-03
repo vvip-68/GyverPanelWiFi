@@ -526,15 +526,17 @@ void weatherRoutine() {
       pos_y = (HEIGHT - image_desc.frame_height) / 2;
     }
 
+    #if (USE_WEATHER == 0 || !init_weather)
+      weather_frame_num = 0;      
+    #endif
+
     fade_weather_phase = init_weather ? 1 : 0;                         // плавное появление картинки
   }  
 
   // Если погода отключена или еще не получена - просто рисуем картинки по кругу
   // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
-  #if (USE_WEATHER == 1)
-    weather_frame_num = init_weather ? getWeatherFrame(icon) : 0;
-  #else
-    weather_frame_num =  0;      
+  #if (USE_WEATHER == 1 && init_weather)
+    weather_frame_num = getWeatherFrame(icon);
   #endif
 
   // Нарисовать картинку
