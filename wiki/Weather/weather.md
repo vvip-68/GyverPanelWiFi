@@ -64,7 +64,7 @@
 
 ![OpenWeatherMap](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Weather/011.png)
 
-- В файле a_def_soft.h в строке 305 найдите следующее:
+- В файле a_def_soft.h в строке 406 найдите следующее:
 ```
 // API-идентификатор сервиса получения погоды                                                  
 #define WEATHER_API_KEY "6a4ba421859c9f4166697758b68d889b"
