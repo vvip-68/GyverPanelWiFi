@@ -328,7 +328,7 @@ void decodeWeather(){
     case 800: weather = F("Ясно"); break;                           // clear sky
     case 801: weather = F("Небольшая облачность"); break;           // few clouds: 11-25%
     case 802: weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
-    case 803: weather = F("Облачно"); break;                        // broken clouds: 51-84%
+    case 803: weather = F("Облачно с прояснениями"); break;         // broken clouds: 51-84%
     case 804: weather = F("Пасмурно"); break;                       // overcast clouds: 85-100%
   }
 }
