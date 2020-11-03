@@ -451,12 +451,12 @@ uint8_t getWeatherFrame(String icon) {
     case 762: return 13;                         // weather = F("Вулканический пепел"); break;            // volcanic ash
     case 771: return 13;                         // weather = F("Шквалистый ветер"); break;               // squalls
     case 781: return 13;                         // weather = F("Торнадо"); break;                        // tornado
-    case 800: hasDay ? 0 : 1;                    // weather = F("Ясно"); break;                           // clear sky
-    case 801: hasDay ? 2 : 3;                    // weather = F("Небольшая облачность"); break;           // few clouds: 11-25%
-    case 802: hasDay ? 2 : 3;                    // weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
-    case 803: hasDay ? 2 : 3;                    // weather = F("Облачно с прояснениями"); break;         // broken clouds: 51-84%
+    case 800: return hasDay ? 0 : 1;             // weather = F("Ясно"); break;                           // clear sky
+    case 801: return hasDay ? 2 : 3;             // weather = F("Небольшая облачность"); break;           // few clouds: 11-25%
+    case 802: return hasDay ? 2 : 3;             // weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
+    case 803: return hasDay ? 2 : 3;             // weather = F("Облачно с прояснениями"); break;         // broken clouds: 51-84%
     case 804: return 14;                         // weather = F("Пасмурно"); break;                       // overcast clouds: 85-100%
-    default: return random8(0,19);
+    default:  return random8(0,19);
   }  
 }
 
@@ -526,15 +526,16 @@ void weatherRoutine() {
       pos_y = (HEIGHT - image_desc.frame_height) / 2;
     }
 
-    // Если погода отключена или еще не получена - просто рисуем картинки по кругу
-    // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
-    #if (USE_WEATHER == 1)
-      weather_frame_num = init_weather ? getWeatherFrame(icon) : 0;
-    #else
-      weather_frame_num =  0;      
-    #endif
     fade_weather_phase = init_weather ? 1 : 0;                         // плавное появление картинки
   }  
+
+  // Если погода отключена или еще не получена - просто рисуем картинки по кругу
+  // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
+  #if (USE_WEATHER == 1)
+    weather_frame_num = init_weather ? getWeatherFrame(icon) : 0;
+  #else
+    weather_frame_num =  0;      
+  #endif
 
   // Нарисовать картинку
   loadImageFrame(weather_array[weather_frame_num]);
