@@ -501,31 +501,30 @@ void weatherRoutine() {
 
     flip_x = false;
     flip_y = false;
+      
+    // Если режим c отображением температуры - по максимуму картинка погоды - в левом верхнем углу, температура не перекрывая - в правом нижнем
+    // Общая площадь - размер картинки плюс размер отображения погоды
+    // Если полученный размер выходит за границы - сдвигаем позицию погоды вверх/влево, пока она не поместится в размер.
+    // Полученную скорректированную площадь отрисовки размещаем по центру матирицы
+    pos_x = 0;
+    pos_y = HEIGHT - image_desc.frame_height;
+    weather_text_x = image_desc.frame_width + 8; // знак +/- пусть залазит на картинку  - это прая границаемпературы
+    weather_text_y = pos_y - 5;                  // отступ от низа картинки; 5 - высота шрифта
+    
+    while(weather_text_x > 0 && weather_text_x >= WIDTH) weather_text_x--;
+    while(weather_text_y < 0) weather_text_y++;
+
+    // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
+    // Высота картинки + text = oт "weather_text_x" до "pos_y + image_desc.frame_height"; - если матрица выше - центрировать конгломерат по матрице
+    uint8_t offset_x = (WIDTH - (weather_text_x - pos_x)) / 2;
+    uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2;
+
+    pos_x += offset_x;
+    pos_y += offset_y;
+    weather_text_x += offset_x;
+    weather_text_y += offset_y;
 
     if (init_weather) {
-      
-      // Если режим c отображением температуры - по максимуму картинка погоды - в левом верхнем углу, температура не перекрывая - в правом нижнем
-      // Общая площадь - размер картинки плюс размер отображения погоды
-      // Если полученный размер выходит за границы - сдвигаем позицию погоды вверх/влево, пока она не поместится в размер.
-      // Полученную скорректированную площадь отрисовки размещаем по центру матирицы
-      pos_x = 0;
-      pos_y = HEIGHT - image_desc.frame_height;
-      weather_text_x = image_desc.frame_width + 8; // знак +/- пусть залазит на картинку  - это прая границаемпературы
-      weather_text_y = pos_y - 5;                  // отступ от низа картинки; 5 - высота шрифта
-      
-      while(weather_text_x > 0 && weather_text_x >= WIDTH) weather_text_x--;
-      while(weather_text_y < 0) weather_text_y++;
-
-      // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
-      // Высота картинки + text = oт "weather_text_x" до "pos_y + image_desc.frame_height"; - если матрица выше - центрировать конгломерат по матрице
-      uint8_t offset_x = (WIDTH - (weather_text_x - pos_x)) / 2;
-      uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2;
-
-      pos_x += offset_x;
-      pos_y += offset_y;
-      weather_text_x += offset_x;
-      weather_text_y += offset_y;
-
       #if (USE_WEATHER == 1)     
         need_fade_image = useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5);
       #endif   
@@ -614,7 +613,6 @@ void weatherRoutine() {
     // Получить цвет отображения значения температуры
     CRGB color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
     
-    // Если температура - однозначная - сместиться на одно знакоместо
     byte temp_x = weather_text_x;
     byte temp_y = weather_text_y;
 
@@ -625,7 +623,7 @@ void weatherRoutine() {
 
     // Для правильного позиционирования - рисуем справа налево
     if (temperature == 0) {
-      // При температуре = 0 - ресуем маленький значок C
+      // При температуре = 0 - рисуем маленький значок C
       temp_x -= 3;  
       for(int i = 0; i < 3; i++) {
         drawPixelXY(getClockX(temp_x), temp_y + i, color);      
