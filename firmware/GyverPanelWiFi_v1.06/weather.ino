@@ -454,7 +454,7 @@ uint8_t getWeatherFrame(String icon) {
     case 800: hasDay ? 0 : 1;                    // weather = F("Ясно"); break;                           // clear sky
     case 801: hasDay ? 2 : 3;                    // weather = F("Небольшая облачность"); break;           // few clouds: 11-25%
     case 802: hasDay ? 2 : 3;                    // weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
-    case 803: return 14;                         // weather = F("Облачно"); break;                        // broken clouds: 51-84%
+    case 803: hasDay ? 2 : 3;                    // weather = F("Облачно с прояснениями"); break;         // broken clouds: 51-84%
     case 804: return 14;                         // weather = F("Пасмурно"); break;                       // overcast clouds: 85-100%
     default: return random8(0,19);
   }  

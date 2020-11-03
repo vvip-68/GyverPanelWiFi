@@ -44,11 +44,11 @@
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 1            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 1      // 0 - Yandex  1 - OpenWeatherMap
+#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
 
 #define LED_PIN  2            // D2 пин ленты
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
-#define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET; POWER_ON - HIGH, POWER_OFF - LOW
+#define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET / реле; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
 /*
 #define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
