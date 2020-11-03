@@ -4,7 +4,7 @@
 bool getWeather() {
   
   // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
-  // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&appid=6a4ba421859c9f4166697758b68d889b
+  // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&lang=ru&appid=6a4ba421859c9f4166697758b68d889b
   
   if (!wifi_connected) return false;  
   
@@ -242,20 +242,24 @@ void decodeWeather(){
     ico = icon.substring(0, icon.length() - 2);
   }
 
-  if      (ico == F("bkn-minus-ra"))  weather = F("облачно с прояснениями, небольшой дождь");
-  else if (ico == F("bkn-minus-sn"))  weather = F("облачно с прояснениями, небольшой снег");
-  else if (ico == F("bkn"))           weather = F("переменная облачность");
-  else if (ico == F("bkn-ra"))        weather = F("переменная облачность, дождь");
-  else if (ico == F("bkn-sn"))        weather = F("переменная облачность, снег");
-  else if (ico == F("bl"))            weather = F("метель");
-  else if (ico == F("fg"))            weather = F("туман");
-  else if (ico == F("ovc"))           weather = F("пасмурно");
-  else if (ico == F("ovc-minus-ra"))  weather = F("пасмурно, временами дождь");
-  else if (ico == F("ovc-minus-sn"))  weather = F("пасмурно, временами снег");
-  else if (ico == F("ovc-ra"))        weather = F("пасмурно, дождь");
-  else if (ico == F("ovc-sn"))        weather = F("пасмурно, снег");
-  else if (ico == F("ovc-ts-ra"))     weather = F("пасмурно, дождь, гроза");
-  else if (ico == F("skc"))           weather = F("ясно");  
+  if      (ico == F("bkn-minus-ra"))    weather = F("облачно с прояснениями, небольшой дождь");
+  else if (ico == F("bkn-minus-sn"))    weather = F("облачно с прояснениями, небольшой снег");
+  else if (ico == F("bkn-minus-ra-sn")) weather = F("облачно с прояснениями, небольшой снег с дождем");
+  else if (ico == F("bkn"))             weather = F("переменная облачность");
+  else if (ico == F("bkn-ra"))          weather = F("переменная облачность, дождь");
+  else if (ico == F("bkn-sn"))          weather = F("переменная облачность, снег");
+  else if (ico == F("bkn-ra-sn"))       weather = F("переменная облачность, снег с дождем");
+  else if (ico == F("bl"))              weather = F("метель");
+  else if (ico == F("fg"))              weather = F("туман");
+  else if (ico == F("ovc"))             weather = F("пасмурно");
+  else if (ico == F("ovc-minus-ra"))    weather = F("пасмурно, временами дождь");
+  else if (ico == F("ovc-minus-sn"))    weather = F("пасмурно, временами снег");
+  else if (ico == F("ovc-minus-ra-sn")) weather = F("пасмурно, временами снег с дождем");
+  else if (ico == F("ovc-ra"))          weather = F("пасмурно, дождь");
+  else if (ico == F("ovc-ra-sn"))       weather = F("пасмурно, снег с дождем");
+  else if (ico == F("ovc-sn"))          weather = F("пасмурно, снег");
+  else if (ico == F("ovc-ts-ra"))       weather = F("пасмурно, дождь c грозой");
+  else if (ico == F("skc"))             weather = F("ясно");  
 }
 
 #else
@@ -335,14 +339,6 @@ void decodeWeather(){
 
 #endif
 
-#else
-
-bool getWeather() {
-  return false;
-}
-
-#endif
-
 // Строка цвета, соответствующая температуре
 String getTemperatureColor(int8_t temp) {
   String s_color;
@@ -370,33 +366,39 @@ String getTemperatureColor(int8_t temp) {
 // Получить индекс иконки в массиве иконок погоды
 #if (WEATHER_SYSTEM == 0)
 
-uint8_t getWeatherFrame(String icon) {
-  if (icon == "skc-d") return 0;              // Ясно, день
-  if (icon == "skc-n") return 1;              // Ясно, ночь
-  if (icon == "bkn-d") return 2;              // Переменная облачность, день
-  if (icon == "bkn-n") return 3;              // Переменная облачность, ночь
-  if (icon == "bkn-minus-ra-d") return 4;     // Облачно с прояснениями, небольшой дождь, день
-  if (icon == "bkn-minus-ra-n") return 5;     // Облачно с прояснениями, небольшой дождь, ночь
-  if (icon == "bkn-minus-sn-d") return 6;     // Облачно с прояснениями, небольшой снег, день
-  if (icon == "bkn-minus-sn-n") return 7;     // Облачно с прояснениями, небольшой снег, ночь
-  if (icon == "bkn-ra-d") return 8;           // Переменная облачность, дождь, день
-  if (icon == "bkn-ra-n") return 9;           // Переменная облачность, дождь, ночь
-  if (icon == "bkn-sn-d") return 10;          // Переменная облачность, снег, день
-  if (icon == "bkn-sn-n") return 11;          // Переменная облачность, снег, ночь
-  if (icon == "bl") return 12;                // Метель
-  if (icon == "fg-d") return 13;              // Туман
-  if (icon == "ovc") return 14;               // Пасмурно
-  if (icon == "ovc-minus-ra") return 15;      // Пасмурно, временами дождь
-  if (icon == "ovc-minus-sn") return 16;      // Пасмурно, временами снег
-  if (icon == "ovc-ra") return 17;            // Пасмурно, дождь
-  if (icon == "ovc-sn") return 18;            // Пасмурно, снег
-  if (icon == "ovc-ts-ra") return 19;         // Пасмурно, дождь, гроза 
-  return random8(0,19);
+int8_t getWeatherFrame(String icon) {
+  if (icon == "skc-d") return 0;                                    // Ясно, день
+  if (icon == "skc-n") return 1;                                    // Ясно, ночь
+  if (icon == "bkn-d") return 2;                                    // Переменная облачность, день
+  if (icon == "bkn-n") return 3;                                    // Переменная облачность, ночь
+  if (icon == "bkn-minus-ra-d") return 4;                           // Облачно с прояснениями, небольшой дождь, день
+  if (icon == "bkn-minus-ra-n") return 5;                           // Облачно с прояснениями, небольшой дождь, ночь
+  if (icon == "bkn-minus-sn-d") return 6;                           // Облачно с прояснениями, небольшой снег, день
+  if (icon == "bkn-minus-sn-n") return 7;                           // Облачно с прояснениями, небольшой снег, ночь
+  if (icon == "bkn-minus-ra-sn-d") return temperature >= 0 ? 4 : 6; // Облачно с прояснениями, небольшой снег, день
+  if (icon == "bkn-minus-ra-sn-n") return temperature >= 0 ? 5 : 7; // Облачно с прояснениями, небольшой снег, ночь
+  if (icon == "bkn-ra-d") return 8;                                 // Переменная облачность, дождь, день
+  if (icon == "bkn-ra-n") return 9;                                 // Переменная облачность, дождь, ночь
+  if (icon == "bkn-sn-d") return 10;                                // Переменная облачность, снег, день
+  if (icon == "bkn-sn-n") return 11;                                // Переменная облачность, снег, ночь
+  if (icon == "bkn-ra-sn-d") return temperature >= 0 ? 8 : 10;      // Переменная облачность, снег, день
+  if (icon == "bkn-ra-sn-n") return temperature >= 0 ? 9 : 11;      // Переменная облачность, снег, ночь
+  if (icon == "bl") return 12;                                      // Метель
+  if (icon == "fg-d") return 13;                                    // Туман
+  if (icon == "ovc") return 14;                                     // Пасмурно
+  if (icon == "ovc-minus-ra") return 15;                            // Пасмурно, временами дождь
+  if (icon == "ovc-minus-sn") return 16;                            // Пасмурно, временами снег
+  if (icon == "ovc-minus-ra-sn") return temperature >= 0 ? 15 : 16; // Пасмурно, временами снег
+  if (icon == "ovc-ra") return 17;                                  // Пасмурно, дождь
+  if (icon == "ovc-ra-sn") return temperature >= 0 ? 17 : 18;       // Пасмурно, дождь, снег
+  if (icon == "ovc-sn") return 18;                                  // Пасмурно, снег
+  if (icon == "ovc-ts-ra") return 19;                               // Пасмурно, дождь, гроза 
+  return -1;
 }
 
 #else 
 
-uint8_t getWeatherFrame(String icon) {
+int8_t getWeatherFrame(String icon) {
   // https://openweathermap.org/weather-conditions#How-to-get-icon-URL
   bool hasDay   = icon.endsWith("d");
   bool hasNight = icon.endsWith("n");
@@ -456,11 +458,19 @@ uint8_t getWeatherFrame(String icon) {
     case 802: return hasDay ? 2 : 3;             // weather = F("Переменная облачность"); break;          // scattered clouds: 25-50%
     case 803: return hasDay ? 2 : 3;             // weather = F("Облачно с прояснениями"); break;         // broken clouds: 51-84%
     case 804: return 14;                         // weather = F("Пасмурно"); break;                       // overcast clouds: 85-100%
-    default:  return random8(0,19);
+    default:  return -1;
   }  
 }
 
 #endif 
+
+#else
+
+bool getWeather() {
+  return false;
+}
+
+#endif
 
 uint8_t fade_weather_phase = 0;        // Плавная смена картинок: 0 - плавное появление; 1 - отображение; 2 - затухание
 uint8_t fade_step = 0;
@@ -526,7 +536,7 @@ void weatherRoutine() {
       pos_y = (HEIGHT - image_desc.frame_height) / 2;
     }
 
-    #if (USE_WEATHER == 0 || !init_weather)
+    #if (USE_WEATHER == 0)
       weather_frame_num = 0;      
     #endif
 
@@ -535,8 +545,13 @@ void weatherRoutine() {
 
   // Если погода отключена или еще не получена - просто рисуем картинки по кругу
   // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
-  #if (USE_WEATHER == 1 && init_weather)
-    weather_frame_num = getWeatherFrame(icon);
+  #if (USE_WEATHER == 1)
+  if (useWeather && init_weather) {
+    int8_t fr = getWeatherFrame(icon);
+    if (fr >= 0) {
+      weather_frame_num = fr;
+    }
+  }
   #endif
 
   // Нарисовать картинку
@@ -579,10 +594,13 @@ void weatherRoutine() {
       fillAll(CRGB(image_desc.background_color));
       fade_step = 0;
       fade_weather_phase = 0;
+      weather_frame_num = random8(0,19);
+      /*
       weather_frame_num++;
       if (weather_frame_num >= frames_in_image) {
         weather_frame_num = 0;
-      }      
+      } 
+      */     
     } else {  
       fader(fade_step);
     }
