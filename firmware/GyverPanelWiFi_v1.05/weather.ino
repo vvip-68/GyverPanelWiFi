@@ -18,7 +18,7 @@ bool getWeather() {
   #else
     if (!client.connect("api.openweathermap.org",80)) return false;         // Устанавливаем соединение с указанным хостом (Порт 80 для http)
     // Отправляем запрос    
-    client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID) + String(F("&units=metric&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
+    client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID) + String(F("&units=metric&lang=ru&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
   #endif  
 
   #if (USE_MQTT == 1)
@@ -269,6 +269,10 @@ void decodeWeather(){
   else if (hasNight)           
     dayTime = F("Темное время суток");   // Сейчас ночь
 
+  // Расшифровка погоды при указании в запросe "&lang=ru" сразу возвращается на нужном языке и нет
+  // надобности расшифровывать код. Если почему-то расшифровка оказалась пуста - создать ее из кода погодных условия.
+  if (weather.length() > 0) return;
+  
   // https://openweathermap.org/weather-conditions#How-to-get-icon-URL
   switch (weather_code) {
     case 200: weather = F("Гроза, небольшой дождь"); break;         // thunderstorm with light rain
