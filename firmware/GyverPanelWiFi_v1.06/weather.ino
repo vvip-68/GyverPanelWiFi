@@ -303,7 +303,7 @@ void decodeWeather(){
     case 502: weather = F("Ливень"); break;                         // heavy intensity rain
     case 503: weather = F("Проливной дождь"); break;                // very heavy rain
     case 504: weather = F("Проливной дождь"); break;                // extreme rain
-    case 511: weather = F("Ледяной дождь"); break;                  // freezing rain
+    case 511: weather = F("Град"); break;                           // freezing rain
     case 520: weather = F("Небольшой дождь"); break;                // light intensity shower rain
     case 521: weather = F("Моросящий дождь"); break;                // shower rain
     case 522: weather = F("Сильный дождь"); break;                  // heavy intensity shower rain
@@ -314,10 +314,10 @@ void decodeWeather(){
     case 611: weather = F("Слякоть"); break;                        // Sleet
     case 612: weather = F("Легкий снег"); break;                    // Light shower sleet
     case 613: weather = F("Ливень, снег"); break;                   // Shower sleet
-    case 615: weather = F("Небольшой дождь со снегом"); break;      // Light rain and snow
+    case 615: weather = F("Мокрый снег"); break;                    // Light rain and snow
     case 616: weather = F("Дождь со снегом"); break;                // Rain and snow
-    case 620: weather = F("Небольшой снег"); break;                 // Light shower snow
-    case 621: weather = F("Небольшой снег, метель"); break;         // Shower snow
+    case 620: weather = F("Небольшой снегопад"); break;             // Light shower snow
+    case 621: weather = F("Снегопад, метель"); break;               // Shower snow
     case 622: weather = F("Сильный снегопад"); break;               // Heavy shower snow
     case 701: weather = F("Туман"); break;                          // mist
     case 711: weather = F("Дымка"); break;                          // Smoke
