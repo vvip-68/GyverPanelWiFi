@@ -201,8 +201,12 @@ byte getClockSizeType() {
 }
 
 // Вычисление позиции отрисовки пикселя для часов, сдвигающихся по кругу.
-byte getClockX(int8_t x) {
+int8_t getClockX(int8_t x) {
+#if (DEVICE_TYPE == 0)
   return x<0 ? WIDTH + x : x;
+#else
+  return x;
+#endif
 }
 
 // нарисовать часы
@@ -530,7 +534,11 @@ void overlayWeatherWrap() {
   int8_t xx = CLOCK_WX;
   for (int8_t i = xx; i < xx + 11; i++) {
     for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
-      overlayWeather[thisLED] = leds[getPixelNumber(getClockX(i),j)];
+      int8_t ix = getClockX(i);
+      #if (DEVICE_TYPE == 1)
+      if (ix>=0)
+      #endif
+      overlayWeather[thisLED] = leds[getPixelNumber(ix,j)];
       thisLED++;
     }
   }
@@ -543,7 +551,11 @@ void overlayWeatherUnwrap() {
   
   for (int8_t i = xx; i < xx + 11; i++) {
     for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
-      leds[getPixelNumber(getClockX(i), j)] = overlayWeather[thisLED];
+      int8_t ix = getClockX(i);
+      #if (DEVICE_TYPE == 1)
+      if (ix>=0)
+      #endif
+      leds[getPixelNumber(ix, j)] = overlayWeather[thisLED];
       thisLED++; 
     }
   }

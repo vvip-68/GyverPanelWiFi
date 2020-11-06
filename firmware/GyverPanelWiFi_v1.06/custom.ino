@@ -218,10 +218,18 @@ void doEffectWithOverlay(byte aMode) {
        CLOCK_XC--;
        CALENDAR_XC--;
        if (CLOCK_XC < -clock_width) {
+        #if (DEVICE_TYPE == 0)
           CLOCK_XC = WIDTH - clock_width - 1;
+        #else
+          CLOCK_XC = WIDTH - 1;
+        #endif  
        }     
        if (CALENDAR_XC < -calendar_width) {
+        #if (DEVICE_TYPE == 0)
           CALENDAR_XC = WIDTH - calendar_width - 1;
+        #else
+          CALENDAR_XC = WIDTH - 1;
+        #endif  
        }     
     }
   }
@@ -277,7 +285,7 @@ void doEffectWithOverlay(byte aMode) {
           }
         }      
       #endif
-            
+
     }
   } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {   // MC_CLOCK - ночные часы; MC_TEXT - показ IP адреса - всё на черном фоне
     // Нарисоватьоверлеем текст бегущей строки
