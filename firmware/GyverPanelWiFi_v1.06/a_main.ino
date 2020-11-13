@@ -787,12 +787,14 @@ void parsing() {
              }
           } 
           */         
-          // Если в приложении выбраны эффект "Ночные часы", но они недоступны из за размеров матрицы - выключить матрицу
+          // Если в приложении выбраны эффект "Ночные часы" / "Дневные часы", но они недоступны из за размеров матрицы - выключить матрицу
+          // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать другой случайный эффект
           if (tmp_eff == MC_CLOCK){
             if (!(allowHorizontal || allowVertical)) {
-              setSpecialMode(0); // Выключить
+              // setSpecialMode(0);  // Выключить
+              setRandomMode2();
             } else {
-              setSpecialMode(8); 
+              setSpecialMode(10);    // Дневные часы. Для ночных - 8
             }
           } else {
             setManualModeTo(true);        
@@ -2129,9 +2131,12 @@ String getStateValue(String &key, int8_t effect) {
   if (key == "EF") return str + "EF:" + String(effect+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
 
   // Использовать в демо-режиме
+  /*
   if (key == "UE") return str + "UE:" + (effect == MC_CLOCK
          ? "X":
          (String((getEffectUsage(effect) ? "1" : "0"))));
+  */       
+  if (key == "UE") return str + "UE:" + String((getEffectUsage(effect) ? "1" : "0"));
 
   // Оверлей бегущей строки
   if (key == "UT") return str + "UT:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_CLOCK
@@ -2548,6 +2553,7 @@ void setSpecialMode(int spc_mode) {
       tmp_eff = MC_CLOCK;
       setGlobalColor(getGlobalClockColor());                // цвет часов в режиме "Монохром"
       specialClock = true;
+      specialBrightness = globalBrightness;
       break;
   }
   

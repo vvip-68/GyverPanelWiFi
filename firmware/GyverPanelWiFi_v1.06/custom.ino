@@ -287,7 +287,7 @@ void doEffectWithOverlay(byte aMode) {
       #endif
 
     }
-  } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {   // MC_CLOCK - ночные часы; MC_TEXT - показ IP адреса - всё на черном фоне
+  } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {   // MC_CLOCK - ночные/дневные часы; MC_TEXT - показ IP адреса - всё на черном фоне
     // Нарисоватьоверлеем текст бегущей строки
     // Нарисовать текст в текущей позиции
     overlayDelayed = needOverlay;

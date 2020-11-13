@@ -44,7 +44,7 @@
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 1            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 1      // 0 - Yandex  1 - OpenWeatherMap
+#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
 
 #define LED_PIN  2            // D2 пин ленты
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
