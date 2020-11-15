@@ -90,8 +90,9 @@ void loadSettings() {
   // 207-221 - MQTT user (14 симв)                                                                           // getMqttUser().toCharArray(mqtt_user, 14)      // setMqttUser(String(mqtt_user))           // char mqtt_user[15] = ""
   // 222-236 - MQTT pwd (14 симв)                                                                            // getMqttPass().toCharArray(mqtt_pass, 14)      // setMqttPass(String(mqtt_pass))           // char mqtt_pass[15] = ""
   // 237,238 - MQTT порт                                                                                     // getMqttPort()                  // setMqttPort(mqtt_port)
-  // 239 - использовать MQTT анал управления: 0 - нет 1 - да                                                 // getUseMqtt()                   // setUseMqtt(useMQTT)
-  //**242 - не используется
+  // 239 - использовать MQTT канал управления: 0 - нет 1 - да                                                // getUseMqtt()                   // setUseMqtt(useMQTT)  
+  // 240 - яркость ночных часов                                                                              // getNightClockBrightness()      // setNightClockBrightness(nightClockBrightness)
+  //**241 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -142,6 +143,7 @@ void loadSettings() {
     
     useRandomSequence = getRandomMode();
     nightClockColor = getNightClockColor();
+    nightClockBrightness = getNightClockBrightness();
     showDateInClock = getShowDateInClock();  
     showDateDuration = getShowDateDuration();
     showDateInterval = getShowDateInterval();
@@ -279,6 +281,7 @@ void saveDefaults() {
   
   saveRandomMode(useRandomSequence);
   setNightClockColor(nightClockColor);  // Цвет ночных часов: 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
+  setNightClockBrightness(nightClockBrightness);
   setShowDateInClock(showDateInClock);
   setShowDateDuration(showDateDuration);
   setShowDateInterval(showDateInterval);
@@ -1534,6 +1537,19 @@ void setMqttPass(String pass) {
 }
 
 #endif
+
+byte getNightClockBrightness()   {
+  byte br = EEPROMread(240);
+  if (br <= 1) br = 2;
+  return br;
+}
+
+void setNightClockBrightness(byte brightness) {
+  if (brightness <= 1) brightness = 2;
+  if (brightness != getNightClockBrightness()) {
+    EEPROMwrite(240, brightness);
+  }  
+}
 
 // ----------------------------------------------------------
 

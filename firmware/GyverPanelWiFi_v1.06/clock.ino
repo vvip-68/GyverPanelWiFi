@@ -1130,6 +1130,7 @@ void checkClockOrigin() {
 }
 
 uint32_t getNightClockColorByIndex(byte idx) {
+  /*
   uint32_t color = 0x010000;  // Red
   switch (idx) {
     case 0: color = 0x020000; break;  // Red
@@ -1140,6 +1141,19 @@ uint32_t getNightClockColorByIndex(byte idx) {
     case 5: color = 0x020200; break;  // Yellow
     case 6: color = 0x020202; break;  // White
   }
+  */
+  // nightClockBrightness - яркость каждой компоненты цвета ночных часов - R,ПбИ
+  // Нужный свет получаем комбинируя яркость каждого из компонентов RGB цвета
+  uint32_t color = nightClockBrightness << 16;  // Red
+  switch (idx) {
+    case 0: color = nightClockBrightness << 16; break;  // Red
+    case 1: color = nightClockBrightness << 8;  break;  // Green
+    case 2: color = nightClockBrightness;       break;  // Blue
+    case 3: color = nightClockBrightness << 8  | nightClockBrightness; break;  // Cyan
+    case 4: color = nightClockBrightness << 16 | nightClockBrightness; break;  // Magenta
+    case 5: color = nightClockBrightness << 16 | nightClockBrightness << 8; break;  // Yellow
+    case 6: color = nightClockBrightness << 16 | nightClockBrightness << 8 | nightClockBrightness; break;  // White
+  }  
   return color;
 }
 

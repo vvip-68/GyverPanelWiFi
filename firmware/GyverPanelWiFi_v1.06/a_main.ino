@@ -493,6 +493,7 @@ void parsing() {
       - $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
       - $19 9 X; - Показывать температуру вместе с малыми часами 1 - да; 0 - нет
       - $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
+      - $19 11 X; - Яркость ночных часов:  0..255
       - $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
       - $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
       - $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
@@ -1228,6 +1229,7 @@ void parsing() {
       //   $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
       //   $19 9 X; - Показывать температуру вместе с малыми часами 1 - да; 0 - нет
       //   $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
+      //   $19 11 X; - Яркость ночных часов:  0..255
       //   $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
       //   $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
       //   $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
@@ -1302,7 +1304,15 @@ void parsing() {
              setNightClockColor(intData[2]);
              nightClockColor = getNightClockColor();
              if (isNightClock) {
-                specialBrightness = MIN_BRIGHT_FOR_NIGHT;
+                specialBrightness = nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness;
+                FastLED.setBrightness(specialBrightness);
+             }             
+             break;
+           case 11:               // $19 11 X; - Яркость ночных часов:  1..255;
+             setNightClockBrightness(intData[2]);
+             nightClockBrightness = getNightClockBrightness();
+             if (isNightClock) {
+                specialBrightness = nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness;
                 FastLED.setBrightness(specialBrightness);
              }             
              break;
@@ -2028,6 +2038,7 @@ String getStateValue(String &key, int8_t effect) {
   // MV:число    максимальная громкость будильника
   // MX:X        MP3 плеер доступен для использования 0-нет, 1-да
   // NA:[текст]  пароль подключения к сети
+  // NB:Х        яркость цвета ночных часов, где Х = 1..255
   // NС:Х        цвет ночных часов, где Х = 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
   // NP:Х        использовать NTP, где Х = 0 - выкл; 1 - вкл
   // NS:[текст]  сервер NTP, ограничители [] обязательны
@@ -2222,6 +2233,9 @@ String getStateValue(String &key, int8_t effect) {
 
   // Размер (режим) горизонтальных часов
   if (key == "CK") return str + "CK:" + String(CLOCK_SIZE);
+
+  // Яркость цвета ночных часов
+  if (key == "NB") return str + "NB:" + String(nightClockBrightness);
 
   // Код цвета ночных часов
   if (key == "NC") return str + "NC:" + String(nightClockColor);
@@ -2544,7 +2558,7 @@ void setSpecialMode(int spc_mode) {
       tmp_eff = MC_CLOCK;
       specialClock = false;
       isNightClock = true;
-      specialBrightness = MIN_BRIGHT_FOR_NIGHT;
+      specialBrightness = nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness;
       break;
     case 9:  // Палитра;
       tmp_eff = MC_PALETTE;

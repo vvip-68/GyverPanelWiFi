@@ -158,6 +158,7 @@ byte COLOR_MODE = 0;                     // Режим цвета часов
                                          //  3 - заданные цвета (часы, точки, минуты) - HOUR_COLOR, DOT_COLOR, MIN_COLOR в clock.ino
 
 byte    nightClockColor = 0;             // Цвет ночных часов: 0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y;
+byte    nightClockBrightness = 2;        // Яркость отображения ночных часов
 bool    needTurnOffClock = false;        // Выключать индикатор часов TM1637 при выключении устройства (true); если False - при отключении панели индикатор TM1637 продолжает показывать текущее время
 
 boolean showWeatherInClock = true;       // Показывать текущую температуру при отображении малых (неподвижных) часов

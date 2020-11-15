@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.06.2020.1114")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.06.2020.1115")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -93,12 +93,16 @@ void setup() {
   // Эти параметры устанавливаются только в прошивке, изменить их из приложения на смартфоне нельзя - там нет соответствующих переключателей,
   // т.к. объем программы в Thunkable Classic достиг максимума и добавить новые элементы в интерфейс уже нельзя
   // -----------------------------------------
+
   /*
   useTemperatureColor = true;
   setUseTemperatureColor(useTemperatureColor);
 
   useTemperatureColorNight = true;
   setUseTemperatureColorNight(useTemperatureColorNight);
+
+  setNightClockBrightness(2);
+  nightClockBrightness = getNightClockBrightness();
 
   #if (USE_MQTT == 1)
   useMQTT = true;
