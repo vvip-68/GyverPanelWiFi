@@ -1851,7 +1851,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF");
       break;
     case 5:  // Настройки будильника
-      str = getStateString("AL|AW|AT|AE|MX|MU|MD|MV|MA|MB|MP");
+      str = getStateString("AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
       break;
     case 6:  // Настройки подключения
       str = getStateString("AU|AN|AA|NW|NA|IP");
