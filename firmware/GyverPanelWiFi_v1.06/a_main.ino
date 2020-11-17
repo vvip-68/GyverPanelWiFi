@@ -2296,10 +2296,10 @@ String getStateValue(String &key, int8_t effect) {
   if (key == "MP") return str + "MP:" + String(soundFolder) + '~' + String(soundFile+2); 
 
   // Запрос звуков будильника
-  if (key == "S1") return str + "S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
+  if (key == "S1") return str + "S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 
   // Запрос звуков рассвета
-  if (key == "S2") return str + "S2:[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "];"; 
+  if (key == "S2") return str + "S2:[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 #endif
 
   // создавать точку доступа
