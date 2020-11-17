@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.06.2020.1115")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.06.2020.1117")
 
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
@@ -95,9 +95,6 @@ void setup() {
   // -----------------------------------------
 
   /*
-  setNightClockBrightness(2);
-  nightClockBrightness = getNightClockBrightness();
-
   #if (USE_MQTT == 1)
   useMQTT = true;
   mqtt_port = DEFAULT_MQTT_PORT;

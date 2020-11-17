@@ -548,17 +548,22 @@ void parsing() {
 
       // ----------------------------------------------------
       // 4 - яркость - 
-      //  $4 0 value   установить текущий уровень общей яркости
+      //  $4 0 value   установить текущий уровень общей яркости / яркости ночных часов
       // ----------------------------------------------------
       
       case 4:
         if (intData[1] == 0) {
-          if (intData[1] == 0) {
+          // При включенном режиме ночных часов ползунок яркости регулирует только яркость ночных часов
+          // Для прочих режимов - общую яркость системы
+          if (isNightClock) {
+            nightClockBrightness = intData[2];
+            if (nightClockBrightness < 2) nightClockBrightness = 2;
+            setNightClockBrightness(nightClockBrightness);
+            specialBrightness = nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness;
+            FastLED.setBrightness(specialBrightness);
+          } else {
             globalBrightness = intData[2];
             saveMaxBrightness(globalBrightness);
-          }
-
-          if (!isNightClock) {
             if (specialMode) specialBrightness = globalBrightness;
             FastLED.setBrightness(globalBrightness);
           }
@@ -2068,7 +2073,7 @@ String getStateValue(String &key, int8_t effect) {
   if (key == "H")  return str + "H:" + String(HEIGHT);
 
   // Текущая яркость
-  if (key == "BR") return str + "BR:" + String(globalBrightness);
+  if (key == "BR") return str + "BR:" + (isNightClock ? String(nightClockBrightness) : String(globalBrightness));
 
   // Ручной / Авто режим
   if (key == "DM") return str + "DM:" + (manualMode ? "0" : "1");
