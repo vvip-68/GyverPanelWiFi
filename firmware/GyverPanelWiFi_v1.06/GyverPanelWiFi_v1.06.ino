@@ -95,12 +95,6 @@ void setup() {
   // -----------------------------------------
 
   /*
-  useTemperatureColor = true;
-  setUseTemperatureColor(useTemperatureColor);
-
-  useTemperatureColorNight = true;
-  setUseTemperatureColorNight(useTemperatureColorNight);
-
   setNightClockBrightness(2);
   nightClockBrightness = getNightClockBrightness();
 

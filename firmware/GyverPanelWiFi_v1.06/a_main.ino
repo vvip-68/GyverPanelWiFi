@@ -532,26 +532,10 @@ void parsing() {
   if (recievedFlag && intData[0] > 0 && intData[0] <= 23) {
     recievedFlag = false;
 
-    // Режимы 16,17,18  не сбрасывают idleTimer
-    if (intData[0] < 16 || intData[0] > 18) {
+    // Режим 18  не сбрасывают idleTimer
+    if (intData[0] != 18) {
       idleTimer.reset();
       idleState = false;      
-    }
-
-    // Режимы кроме 4 (яркость), 13.3 14 (новый спец-режим) и 18 (запрос параметров страницы),
-    // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) 
-    // 23 (доп.параметры) - сбрасывают спец-режим
-    if (specialMode) {
-        if (intData[0] != 4 && !(intData[0] == 13 && intData[1] == 3) && 
-            intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
-            intData[0] != 20 && intData[0] != 21 && intData[0] != 23) {
-        idleTimer.setInterval(idleTime);
-        idleTimer.reset();
-        specialMode = false;
-        isTurnedOff = false;
-        isNightClock = false;
-        specialModeId = -1;
-      }
     }
 
     // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
@@ -1335,17 +1319,6 @@ void parsing() {
                saveClockOverlayEnabled(clockOverlayEnabled);
              }
              setShowDateInClock(showDateInClock);
-             // ------ временно!
-             // Приложение Thunkable для управления со смартфона достигло своего предела, при котором добавление новых элементов и блоков кода
-             // уже невозможно - программа перестает собираться. По этой причине отображение температуры совместно с малыми часами
-             // управляется синхронно с "Отображать дату в малых часах" - тем же чекбоксом
-             // Когда / Если будет написана отдельная программа управления с телефона не на Thunkable, а на Android SDK - 
-             // тогда для вкл/выкл отображения температуры в часах нужно завести отдельный контрол, который будет вкл/выкл отображение температуры
-             // независимо от настроек даты в часах.
-             // Специальная уоманда  $19 9 X; ужереализована (см. выше)
-             showWeatherInClock = showDateInClock;
-             setShowWeatherInClock(showWeatherInClock);
-             // ------             
              break;
            case 17:               // $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
              showDateDuration = intData[2];
