@@ -794,17 +794,32 @@ void parsing() {
           }
         } else 
         
-        if (intData[1] == 1) {
+        if (intData[1] == 1) {          
           // Параметр #1 эффекта 
-          setScaleForEffect (tmp_eff,   intData[3]);
-          effectScaleParam  [tmp_eff] = intData[3];
-          if (tmp_eff == MC_FILL_COLOR) {  
-            globalColor = getColorInt(CHSV(getEffectSpeed(MC_FILL_COLOR), effectScaleParam[MC_FILL_COLOR], 255));
-            setGlobalColor(globalColor);
-          } else 
-          if (thisMode == tmp_eff && tmp_eff == MC_BALLS) {
-            // При получении параметра эффекта "Шарики" (кол-во шариков) - надо переинициализировать эфект
-            loadingFlag = true;
+          if (tmp_eff == MC_CLOCK){
+             // Параметр "Вариант" меняет цвет часов. 
+             if (isNightClock) {
+               // Для ночных часов - полученное значение -> в Map 0..6
+               setNightClockColor(map(intData[3], 0,255, 0,6));
+               nightClockColor = getNightClockColor();
+               specialBrightness = nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness;
+               FastLED.setBrightness(specialBrightness);
+             } else {
+               // Для дневных часов - меняется цвет часов (параметр HUE цвета, hue < 2 - белый) // +++
+               setScaleForEffect (tmp_eff,   intData[3]);
+               effectScaleParam  [tmp_eff] = intData[3];
+             }
+          } else {
+            setScaleForEffect (tmp_eff,   intData[3]);
+            effectScaleParam  [tmp_eff] = intData[3];
+            if (tmp_eff == MC_FILL_COLOR) {  
+              globalColor = getColorInt(CHSV(getEffectSpeed(MC_FILL_COLOR), effectScaleParam[MC_FILL_COLOR], 255));
+              setGlobalColor(globalColor);
+            } else 
+            if (thisMode == tmp_eff && tmp_eff == MC_BALLS) {
+              // При получении параметра эффекта "Шарики" (кол-во шариков) - надо переинициализировать эфект
+              loadingFlag = true;
+            }
           }
         } else 
         
@@ -2120,11 +2135,6 @@ String getStateValue(String &key, int8_t effect) {
   if (key == "EF") return str + "EF:" + String(effect+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
 
   // Использовать в демо-режиме
-  /*
-  if (key == "UE") return str + "UE:" + (effect == MC_CLOCK
-         ? "X":
-         (String((getEffectUsage(effect) ? "1" : "0"))));
-  */       
   if (key == "UE") return str + "UE:" + String((getEffectUsage(effect) ? "1" : "0"));
 
   // Оверлей бегущей строки
@@ -2392,10 +2402,14 @@ String getParamForMode(byte mode) {
    case MC_WEATHER:
    case MC_LIFE:
    case MC_PATTERNS:
-   case MC_CLOCK:
    case MC_SDCARD:
    case MC_FIRE2:
      str = "X";
+     break;
+   case MC_CLOCK:
+     str = isNightClock 
+       ? String(map(nightClockColor, 0,6, 1,255))
+       : String(effectScaleParam[thisMode]);
      break;
    default:
      str = String(effectScaleParam[thisMode]);

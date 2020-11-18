@@ -161,7 +161,7 @@ void clockColor() {
   }
     
   if (color_idx == -2) {
-    // Цвет поиндексу настроек текущего ночного цвета     
+    // Цвет по индексу настроек текущего ночного цвета     
     CRGB color = getNightClockColorByIndex(nightClockColor);
     for (byte i = 0; i < 5; i++) clockLED[i] = color;
   } else if (color_idx == -1) {     
@@ -172,7 +172,8 @@ void clockColor() {
     for (byte i = 0; i < 5; i++) clockLED[i] = color;  
   } else if (color_idx == 0) {     
     // Монохромные часы  
-    CRGB color = getGlobalClockColor();
+    byte hue = effectScaleParam[MC_CLOCK];
+    CHSV color = hue <= 1 ? CHSV(255, 0, 255): CHSV(hue, 255, 255);
     for (byte i = 0; i < 5; i++) clockLED[i] = color;
   } else if (color_idx == 1) {
     // Каждая цифра своим цветом, плавная смена цвета
