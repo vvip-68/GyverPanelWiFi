@@ -41,12 +41,16 @@ void process() {
     switch (thisMode) {
       case MC_CLOCK:
         tmpSaveMode = thisMode;
-        effect_name = F("'Часы'");
+        if (isNightClock)
+          effect_name = F("'Ночные часы'");
+        else
+          effect_name = F("'Часы'");
         #if (USE_MQTT == 1)
         doc["name"] = effect_name;
         serializeJson(doc, out);    
         NotifyInfo(out);
         #endif
+        Serial.println(String(F("Режим: ")) + effect_name);
         break;
       case MC_TEXT:
         tmpSaveMode = thisMode;
@@ -56,6 +60,7 @@ void process() {
         serializeJson(doc, out);    
         NotifyInfo(out);
         #endif
+        Serial.println(String(F("Режим: ")) + effect_name);
         break;
       default:
         // Определить какой эффект включился
@@ -71,6 +76,7 @@ void process() {
           serializeJson(doc, out);    
           NotifyInfo(out);
           #endif
+          Serial.println(String(F("Режим: ")) + effect_name);
         } else {
           // Если режим отсутствует в списке эффектов - включить случайный
           setRandomMode2(); 
@@ -254,7 +260,9 @@ void process() {
         else {
           saveMode = getCurrentManualMode();
           if (saveMode == 0 && globalColor == 0) globalColor = 0xFFFFFF;
-          Serial.println("Вкл: " + String(saveMode));
+          Serial.println(String(F("Вкл: ")) + String(saveMode));
+          manualMode = getAutoplay();
+          setManualModeTo(manualMode);
           setEffect(saveMode);
         }
       } else {
@@ -262,10 +270,12 @@ void process() {
         saveSpecialMode = specialMode;
         saveSpecialModeId = specialModeId;
         saveMode = thisMode;
+        bool mm = manualMode;
         // Выключить панель - черный экран
         setSpecialMode(0);
         setCurrentManualMode(saveMode);
-        Serial.println("Выкл: " + String(saveMode));
+        saveAutoplay(mm);
+        Serial.println(String(F("Выкл: ")) + String(saveMode));
       }
     }
     
@@ -1852,6 +1862,15 @@ void sendPageParams(int page, eSources src) {
     case 7:  // Настройки режимов автовключения по времени
       str = getStateString("AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A");
       break;
+    case 10:  // Загрузка картинок
+      str = getStateString("W|H|BR");
+      break;
+    case 11:  // Рисование
+      str = getStateString("W|H|BR");
+      break;
+    case 12:  // Игры
+      str = getStateString("W|H|BR");
+      break;
     case 91:  // Запрос текста бегущих строк для заполнения списка в программе
       str = getStateString("TX");
       break;
@@ -1880,6 +1899,9 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("MP");
       cmd96 = str;
       src = BOTH;
+      break;
+    case 98:  // Запрос списка игр
+      str = getStateString("LG");
       break;
     case 99:  // Запрос списка эффектов
       str = getStateString("LE");
@@ -2022,6 +2044,7 @@ String getStateValue(String &key, int8_t effect) {
   // EF:число    текущий эффект
   // IP:xx.xx.xx.xx Текущий IP адрес WiFi соединения в сети
   // IT:число    время бездействия в секундах
+  // LG:[список] список игр, разделенный запятыми, ограничители [] обязательны        
   // LE:[список] список эффектов, разделенный запятыми, ограничители [] обязательны        
   // MA:число    номер файла звука будильника из SD:/01
   // MB:число    номер файла звука рассвета из SD:/02
@@ -2354,6 +2377,9 @@ String getStateValue(String &key, int8_t effect) {
   // Действие Режима №4
   if (key == "AM4A") return str + "AM4A:"+String(AM4_effect_id);
 
+  // Список игр
+  if (key == "LG") return str + "LG:[" + String(GAME_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
+
   // Список эффектов прошивки
   if (key == "LE") return str + "LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 
@@ -2606,8 +2632,11 @@ void setEffect(byte eff) {
   setTimersForMode(thisMode);  
 
   setCurrentSpecMode(-1);
-  if (manualMode)
+  if (manualMode){
     setCurrentManualMode(thisMode);
+  } else {
+    autoplayTimer = millis();
+  }
 
   if (thisMode != MC_DAWN_ALARM)
     FastLED.setBrightness(globalBrightness);      
@@ -2669,7 +2698,7 @@ void setRandomMode2() {
 
 void setManualModeTo(bool isManual) {
   manualMode = isManual;
-  saveAutoplay(!manualMode);
+  saveAutoplay(manualMode);
   idleState = !manualMode;
   if (idleTime == 0 || manualMode || specialMode) {
     idleTimer.setInterval(4294967295);

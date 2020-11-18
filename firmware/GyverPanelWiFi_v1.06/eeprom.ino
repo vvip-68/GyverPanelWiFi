@@ -3,7 +3,7 @@ void loadSettings() {
   // Адреса в EEPROM:
   //    0 - если EEPROM_OK - EEPROM инициализировано, если другое значение - нет                             // EEPROMread(0)                 // EEPROMWrite(0, EEPROM_OK)
   //    1 - максимальная яркость ленты 1-255                                                                 // getMaxBrightness()            // saveMaxBrightness(globalBrightness)
-  //    2 - автосмена режима в демо: вкл/выкл                                                                // getAutoplay();                // saveAutoplay(!manualMode)
+  //    2 - автосмена режима в демо: вкл/выкл                                                                // getAutoplay();                // saveAutoplay(manualMode)
   //    3 - время автосмены режимов в сек                                                                    // getAutoplayTime()             // saveAutoplayTime(autoplayTime / 1000L)     // autoplayTime - мс; в ячейке - в сек
   //    4 - время бездействия до переключения в авторежим в минутах                                          // getIdleTime()                 // saveIdleTime(idleTime / 60L / 1000L)       // idleTime - мс; в ячейке - в мин
   //    5 - использовать синхронизацию времени через NTP                                                     // getUseNtp()                   // saveUseNtp(useNtp)
@@ -133,7 +133,7 @@ void loadSettings() {
     textOverlayEnabled = getTextOverlayEnabled();
 
     SYNC_TIME_PERIOD = getNtpSyncTime();
-    manualMode = !getAutoplay();
+    manualMode = getAutoplay();
     CLOCK_ORIENT = getClockOrientation();
     COLOR_MODE = getClockColor();
     CLOCK_SIZE = getClockSize();
@@ -273,7 +273,7 @@ void saveDefaults() {
   saveTextOverlayEnabled(textOverlayEnabled);
 
   saveNtpSyncTime(SYNC_TIME_PERIOD);
-  saveAutoplay(!manualMode);
+  saveAutoplay(manualMode);
 
   saveClockOrientation(CLOCK_ORIENT);
   setPowerLimit(CURRENT_LIMIT);
