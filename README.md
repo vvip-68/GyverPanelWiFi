@@ -278,27 +278,27 @@ N-канальный MOSFET IRF3205 обеспечивает ток питани
        При таком включении панель стабильно работает при напряжении с блока питания практически от 4.2 до 5.8 вольт  
     3. В основном файле в строках 20-21 раскомментировать следующие определения:  
 ```
-    #define FASTLED_INTERRUPT_RETRY_COUNT 0
-    #define FASTLED_ALLOW_INTERRUPTS 0
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+#define FASTLED_ALLOW_INTERRUPTS 0
 ```
 
    и прочитать размещенный ниже комментарий, в котором сказано, что нужно в используемой библиотеке FastLED найти файл
 
 ```
-   C:\Program Files (x86)\Arduino\libraries\FastLED\platforms\esp\8266\clockless_esp8266.h
+C:\Program Files (x86)\Arduino\libraries\FastLED\platforms\esp\8266\clockless_esp8266.h
 ```
 
    и в строке 19 заменить 
 
 ```
-   template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 50>
+template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 50>
 ```
 
    на
 
 ```
-   template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 5>
-                                                                                                                   ------------^                                                                                                                              
+template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 5>
+                                                                                                              ------------^                                                                                                                              
 ```
 
    С большой долей вероятности это решит проблему "мерцающих" пикселей на матрице
