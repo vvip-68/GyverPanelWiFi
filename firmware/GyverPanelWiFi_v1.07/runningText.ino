@@ -48,7 +48,7 @@ void fillString(String text) {
   // Задан ли специальный цвет отображения строки?
   // Если режим цвета - монохром (0) или задан неверно (>2) - использовать глобальный или специальный цвет
   
-  byte i = 0, j = 0, pos = 0;
+  byte i = 0, j = 0, pos = 0, modif = 0;
   
   while (text[i] != '\0') {
 
@@ -68,9 +68,11 @@ void fillString(String text) {
 
     // Определились с цветом - выводим очередную букву  
     if ((byte)text[i] > 191) {    // работаем с русскими буквами!
+      modif = (byte)text[i];
       i++;
     } else {      
-      drawLetter(j, text[i], offset + j * (LET_WIDTH + SPACE), color);
+      drawLetter(j, text[i], modif, offset + j * (LET_WIDTH + SPACE), color);
+      modif = 0;
       i++;
       j++;
     }
@@ -91,7 +93,7 @@ byte getTextY() {
   return offset_y; 
 }
 
-void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
+void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, uint32_t color) {
   int8_t LH = LET_HEIGHT;
   if (LH > HEIGHT) LH = HEIGHT;
 
@@ -109,8 +111,8 @@ void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
 
   for (byte i = start_pos; i < finish_pos; i++) {
     int thisByte;
-    if (MIRR_V) thisByte = getFont((byte)letter, LET_WIDTH - 1 - i);
-    else thisByte = getFont((byte)letter, i);
+    if (MIRR_V) thisByte = getFont((byte)letter, modif, LET_WIDTH - 1 - i);
+    else thisByte = getFont((byte)letter, modif, i);
 
     for (byte j = 0; j < LH; j++) {
       boolean thisBit;
@@ -163,14 +165,16 @@ String getTextStates() {
 // ------------- СЛУЖЕБНЫЕ ФУНКЦИИ --------------
 
 // интерпретатор кода символа в массиве fontHEX (для Arduino IDE 1.8.* и выше)
-uint8_t getFont(uint8_t font, uint8_t row) {
+uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if (font <= 90) {
+  if (font <= 94) {
     return pgm_read_byte(&(fontHEX[font][row]));     // для английских букв и символов
-  } else if (font >= 112 && font <= 159) {           // и пизд*ц для русских
+  } else if ((modif == 208 || modif == 209) && font >= 112 && font <= 159) {           // и пизд*ц для русских
     return pgm_read_byte(&(fontHEX[font - 17][row]));
-  } else if (font >= 96 && font <= 111) {
+  } else if ((modif == 208 || modif == 209) && font >= 96 && font <= 111) {
     return pgm_read_byte(&(fontHEX[font + 47][row]));
+  } else if ((modif == 194) && font == 144) {                                          // Знак градуса '°'
+    return pgm_read_byte(&(fontHEX[159][row]));
   }
   return 0;
 }
