@@ -16,6 +16,7 @@
 #include <ArduinoJson/Variant/VariantOperators.hpp>
 #include <ArduinoJson/Variant/VariantRef.hpp>
 #include <ArduinoJson/Variant/VariantShortcuts.hpp>
+#include <ArduinoJson/Variant/VariantTag.hpp>
 
 namespace ARDUINOJSON_NAMESPACE {
 
@@ -23,12 +24,9 @@ namespace ARDUINOJSON_NAMESPACE {
 class ArrayRef;
 class ObjectRef;
 
-template <typename, typename>
-class MemberProxy;
-
 // Contains the methods shared by VariantRef and VariantConstRef
 template <typename TData>
-class VariantRefBase {
+class VariantRefBase : public VariantTag {
  public:
   // Tells wether the variant has the specified type.
   // Returns true if the variant has type type T, false otherwise.
@@ -261,9 +259,9 @@ class VariantRef : public VariantRefBase<VariantData>,
     return variantAs<T>(_data, _pool);
   }
 
-  template <typename Visitor>
-  void accept(Visitor &visitor) const {
-    variantAccept(_data, visitor);
+  template <typename TVisitor>
+  typename TVisitor::result_type accept(TVisitor &visitor) const {
+    return variantAccept(_data, visitor);
   }
 
   // Change the type of the variant
@@ -347,9 +345,9 @@ class VariantConstRef : public VariantRefBase<const VariantData>,
   VariantConstRef(const VariantData *data) : base_type(data) {}
   VariantConstRef(VariantRef var) : base_type(var._data) {}
 
-  template <typename Visitor>
-  void accept(Visitor &visitor) const {
-    variantAccept(_data, visitor);
+  template <typename TVisitor>
+  typename TVisitor::result_type accept(TVisitor &visitor) const {
+    return variantAccept(_data, visitor);
   }
 
   template <typename T>

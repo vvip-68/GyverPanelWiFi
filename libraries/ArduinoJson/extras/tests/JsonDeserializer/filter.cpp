@@ -63,6 +63,15 @@ TEST_CASE("Filtering") {
       0
     },
     {
+      // Member is a string, but filter wants an array
+      "{\"example\":\"example\"}",
+      "{\"example\":[true]}",
+      10,
+      DeserializationError::Ok,
+      "{\"example\":null}",
+      JSON_OBJECT_SIZE(1) + 8
+    },
+    {
       // Input is an array, but filter wants an object
       "[\"hello\",\"world\"]",
       "{}",
@@ -209,6 +218,15 @@ TEST_CASE("Filtering") {
     {
       "{\"an_integer\": 0,\"example\":{\"type\":\"int\",\"outcome\":42}}",
       "{\"example\":{\"outcome\":true}}",
+      10,
+      DeserializationError::Ok,
+      "{\"example\":{\"outcome\":42}}",
+      2 * JSON_OBJECT_SIZE(1) + 16
+    },
+    {
+      // wildcard
+      "{\"example\":{\"type\":\"int\",\"outcome\":42}}",
+      "{\"*\":{\"outcome\":true}}",
       10,
       DeserializationError::Ok,
       "{\"example\":{\"outcome\":42}}",

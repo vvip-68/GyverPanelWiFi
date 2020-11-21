@@ -19,10 +19,13 @@ namespace ARDUINOJSON_NAMESPACE {
 template <typename TArray>
 class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
                      public VariantShortcuts<ElementProxy<TArray> >,
-                     public Visitable {
+                     public Visitable,
+                     public VariantTag {
   typedef ElementProxy<TArray> this_type;
 
  public:
+  typedef VariantRef variant_type;
+
   FORCE_INLINE ElementProxy(TArray array, size_t index)
       : _array(array), _index(index) {}
 
@@ -98,8 +101,8 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
     return getOrAddUpstreamElement().set(value);
   }
 
-  template <typename Visitor>
-  void accept(Visitor& visitor) const {
+  template <typename TVisitor>
+  typename TVisitor::result_type accept(TVisitor& visitor) const {
     return getUpstreamElement().accept(visitor);
   }
 
