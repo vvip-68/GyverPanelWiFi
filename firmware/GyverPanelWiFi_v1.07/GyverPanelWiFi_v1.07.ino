@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.07.2020.1121")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.07.2020.1123")
 
 // --------------------------------------------------------
 // Внимание!!! Обязательно читаем комментарий ниже
@@ -38,6 +38,25 @@
 
 // --------------------------------------------------------
 
+// Раскомментируйте строку, содержащую '#define public' ниже, если ваши приватные данные аккаунтов и паролей размешены непосредственно в скетче в файле a_def_soft.h в строках:
+//
+// 291 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+// 295 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+// 299 - DEFAULT_MQTT_PASS   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+// 303 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+// 307 - MQTT_USE_PREFIX     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+// 311 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+// 418 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 и WEATHER_SYSTEM == 
+//
+// Если строка закомментирована - значения для приведенных выше параметров вынесены в отдельный файл 'a_def_pass.h' и переменные при сборке скетча будут браться из него.
+// Данный файл не включен в проект, т.к. содержит приватные данные. 
+// Вам нужно или создать свой файл 'a_def_pass.h', если строка закомментирована или
+// задать ваши значения этих переменных непосредственно в a_def_soft.h в указанных строках
+//
+// #define public
+#ifndef public 
+#include "a_def_pass.h"     // приватные данные и пароли доступа к серверу MQTT
+#endif
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
 
@@ -324,7 +343,7 @@ void loop() {
 
 // -----------------------------------------
 
-void startWiFi() { 
+void startWiFi(unsigned long waitTime) { 
   
   WiFi.disconnect(true);
   wifi_connected = false;
@@ -355,6 +374,7 @@ void startWiFi() {
     unsigned long last_wifi_check = 0;
     int16_t cnt = 0;
     while (!(stop_waiting || wifi_connected)) {
+      delay(0);
       if (millis() - last_wifi_check > 500) {
         last_wifi_check = millis();
         wifi_connected = WiFi.status() == WL_CONNECTED; 
@@ -371,10 +391,11 @@ void startWiFi() {
         Serial.print(".");
         cnt++;
       }
-      if (millis() - start_wifi_check > 180000) {
+      if (millis() - start_wifi_check > waitTime) {
         // Время ожидания подключения к сети вышло
         break;
       }
+      delay(0);
       // Опрос состояния кнопки
       butt.tick();
       if (butt.hasClicks()) {
@@ -403,6 +424,7 @@ void startSoftAP() {
   ap_connected = WiFi.softAP(apName, apPass);
 
   for (int j = 0; j < 10; j++ ) {    
+    ESP.wdtFeed();
     if (ap_connected) {
       Serial.println();
       Serial.print(F("Точка доступа создана. Сеть: '"));
@@ -433,8 +455,8 @@ void startSoftAP() {
 }
 
 void connectToNetwork() {
-  // Подключиться к WiFi сети
-  startWiFi();
+  // Подключиться к WiFi сети? ожидать подключения 180 сек
+  startWiFi(180000);
 
   // Если режим точки доступа не используется и к WiFi сети подключиться не удалось - создать точку доступа
   if (!wifi_connected){

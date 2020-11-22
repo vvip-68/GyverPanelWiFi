@@ -45,19 +45,25 @@ void sendNTPpacket(IPAddress& address) {
 }
 
 void parseNTP() {
+  getNtpInProgress = false;
   Serial.println(F("Разбор пакета NTP"));
   ntp_t = 0; ntp_cnt = 0; init_time = true; refresh_time = false;
   unsigned long highWord = word(incomeBuffer[40], incomeBuffer[41]);
   unsigned long lowWord = word(incomeBuffer[42], incomeBuffer[43]);
   // combine the four bytes (two words) into a long integer
   // this is NTP time (seconds since Jan 1 1900):
-  unsigned long secsSince1900 = highWord << 16 | lowWord;
+  unsigned long secsSince1900 = highWord << 16 | lowWord;    
   // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
   unsigned long seventyYears = 2208988800UL ;
-  time_t t = secsSince1900 - seventyYears + (timeZoneOffset) * 3600;
+  unsigned long t = secsSince1900 - seventyYears + (timeZoneOffset) * 3600UL;
+  String t2 = getDateTimeString(t);
+
   Serial.print(F("Секунд с 1970: "));
   Serial.println(t);
-  setTime(t);
+  Serial.print(F("Текущее время: ")); 
+  Serial.println(t2);
+
+  setTime(t);  
   calculateDawnTime();
   rescanTextEvents();
 
@@ -68,7 +74,8 @@ void parseNTP() {
   doc["server_name"] = ntpServerName;
   doc["server_ip"] = timeServerIP.toString();
   doc["result"] = F("OK");
-  doc["time"] = t;
+  doc["time"] = secsSince1900;
+  doc["s_time2"] = t2;
   serializeJson(doc, out);      
   NotifyInfo(out);
   #endif
@@ -77,15 +84,20 @@ void parseNTP() {
 void getNTP() {
   if (!wifi_connected) return;
   WiFi.hostByName(ntpServerName, timeServerIP);
-  IPAddress ip;
-  ip.fromString(F("0.0.0.0"));
-#if defined(ESP8266)
-  if (!timeServerIP.isSet()) timeServerIP.fromString(F("192.36.143.130"));  // Один из ru.pool.ntp.org // 195.3.254.2
-#endif
-#if defined(ESP32)
-  if (timeServerIP==ip) timeServerIP.fromString(F("192.36.143.130"));  // Один из ru.pool.ntp.org // 195.3.254.2
-#endif
-  printNtpServerName();
+  IPAddress ip1, ip2;
+  ip1.fromString(F("0.0.0.0"));
+  ip2.fromString(F("255.255.255.255"));
+  if (timeServerIP == ip1 || timeServerIP == ip2) {
+    Serial.print(F("Не удалось получить IP aдрес сервера NTP -> "));
+    Serial.print(ntpServerName);
+    Serial.print(F(" -> "));
+    Serial.println(timeServerIP);
+    timeServerIP.fromString(F("85.21.78.91"));  // Один из ru.pool.ntp.org  // 91.207.136.55, 91.207.136.50, 46.17.46.226
+    Serial.print(F("Используем сервер по умолчанию: "));
+    Serial.println(timeServerIP);
+  }
+  getNtpInProgress = true;
+  printNtpServerName();  
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
   // wait to see if a reply is available
   ntp_t = millis();  
@@ -224,14 +236,14 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
     if (c_size == 1) {
 
-      // Часы занимают 4 знакоместав 3x5 + 3 разделительных колонуи, итого 15 точек по горизонтали
-      // Однако реально они могут занимать меньше места, если в часах/минутах есть 11. Эксттремально е значение 1:11 занимает 10 точек и также должнго быть отцентрировано в этих 15 точках
+      // Часы занимают 4 знакоместа в 3x5 + 3 разделительных колонки, итого 15 точек по горизонтали
+      // Однако реально они могут занимать меньше места, если в часах/минутах есть 11. Экстремально е значение 1:11 занимает 10 точек и также должно быть отцентрировано в этих 15 точках
       // Центр композиции - разделительное двоеточие
       // Если десятки часов = 1 - смещаем начала отрисовки на 1 вправо 
       // Если единицы часов = 1 - смещаем начала отрисовки на 1 вправо
       // если десятки часов - 0 - не рисуется, смещаем начало отрисовки на 3 вправо
 
-      // Тут дурь, но не смог правильно бодобрать корректировку для всех вариантов ЧЧ:MM чтобы и центрировались правильно и расстояние между цифрами часов-минут было правильное      
+      // Тут дурь, но не смог правильно подобрать корректировку для всех вариантов ЧЧ:MM чтобы и центрировались правильно и расстояние между цифрами часов-минут было правильное      
       byte w = 15;      
       if (h10 == 1) w--;
       if (m01 == 1) w--;
@@ -329,7 +341,7 @@ void drawTemperature() {
 
   if (weatherOverlayEnabled) {          
 
-    // позиция выводатемпературы по X вычисляется при отрисовке часов и сохраняется в глобальную переменную CLOCK_WX
+    // позиция вывода температуры по X вычисляется при отрисовке часов и сохраняется в глобальную переменную CLOCK_WX
     // При этом рассчитана на символы шириной 3
     // Если десятки градусов = 1 - сместить на колонку вправо
     // Если единицы градусов = 1 - сместить на колонку вправо
@@ -351,7 +363,7 @@ void drawTemperature() {
 
     // Для правильного позиционирования - рисуем справа налево
     if (temperature == 0) {
-      // При температуре = 0 - ресуем маленький значок C
+      // При температуре = 0 - рисуем маленький значок C
       temp_x -= 3;  
       for(int i = 0; i < 3; i++) {
         drawPixelXY(getClockX(temp_x), temp_y + i, color);      
@@ -507,7 +519,7 @@ void clockTicker() {
 }
 
 void overlayWrap() {
-  // В оверлей отправляется полоса от y_low до y_high во всю штрину матрицы  
+  // В оверлей отправляется полоса от y_low до y_high во всю ширину матрицы  
   int16_t thisLED = 0;  
   for (uint8_t i = 0; i < WIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
@@ -724,7 +736,7 @@ void checkAlarmTime() {
          // Реальная продолжительность рассвета
          realDawnDuration = (alrmHour * 60L + alrmMinute) - (dawnHour * 60L + dawnMinute);
          if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
-         // Отключмить таймер автоперехода в демо-режим
+         // Отключить таймер автоперехода в демо-режим
          idleTimer.setInterval(4294967295);
          #if (USE_MP3 == 1)
          if (useAlarmSound) PlayDawnSound();
@@ -906,7 +918,7 @@ void checkAutoMode1Time() {
   hrs = hour();
   mins = minute();
 
-  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  // Режим по времени включен (enable) и настало время активации режима - активировать
   if (!AM1_running && AM1_hour == hrs && AM1_minute == mins) {
     AM1_running = true;
     SetAutoMode(1);
@@ -925,13 +937,13 @@ void checkAutoMode2Time() {
   // Действие отличается от "Нет действия" и время установлено?
   if (AM2_effect_id <= -3 || AM2_effect_id >= MAX_EFFECT || !init_time) return;
 
-  // Если сработал будильник - рассвет - режим не переключать - остаемся в режими обработки будильника
+  // Если сработал будильник - рассвет - режим не переключать - остаемся в режиме обработки будильника
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) return;
 
   hrs = hour();
   mins = minute();
 
-  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  // Режим по времени включен (enable) и настало время активации режима - активировать
   if (!AM2_running && AM2_hour == hrs && AM2_minute == mins) {
     AM2_running = true;
     SetAutoMode(2);
@@ -951,7 +963,7 @@ void checkAutoMode3Time() {
   hrs = hour();
   mins = minute();
 
-  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  // Режим по времени включен (enable) и настало время активации режима - активировать
   if (!AM3_running && AM3_hour == hrs && AM3_minute == mins) {
     AM3_running = true;
     SetAutoMode(3);
@@ -971,7 +983,7 @@ void checkAutoMode4Time() {
   hrs = hour();
   mins = minute();
 
-  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  // Режим по времени включен (enable) и настало время активации режима - активировать
   if (!AM4_running && AM4_hour == hrs && AM4_minute == mins) {
     AM4_running = true;
     SetAutoMode(4);
@@ -1113,14 +1125,14 @@ void checkClockOrigin() {
   byte cw = CLOCK_ORIENT == 0 ? 4*3 + 3*1 : 2*3 + 1; // гориз: 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами) // ширина горизонтальных часов
                                                      // верт:  2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)  // ширина вертикальных часов
   byte ch = CLOCK_ORIENT == 0 ? 1*5 : 2*5 + 1;       // гориз: Одна строка цифр 5 пикс высотой                             // высота горизонтальных часов
-                                                     // верт:  Две строки цифр 5 пикс высотой + 1 пробел между строкми     // высота вертикальных часовв
+                                                     // верт:  Две строки цифр 5 пикс высотой + 1 пробел между строками    // высота вертикальных часов
 
   while (CLOCK_X > 0 && CLOCK_X + cw > WIDTH)  CLOCK_X--;
   while (CLOCK_Y > 0 && CLOCK_Y + ch > HEIGHT) CLOCK_Y--;
 
   if (c_size == 1) {
     cw = 4*3 + 1;                                     // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)          // ширина календаря
-    ch = 2*5 + 1;                                     // Две строки цифр 5 пикс высотой + 1 пробел между строкми             // высота календаря
+    ch = 2*5 + 1;                                     // Две строки цифр 5 пикс высотой + 1 пробел между строками            // высота календаря
     
     while (CALENDAR_X > 0 && CALENDAR_X + cw > WIDTH)  CALENDAR_X--; 
     while (CALENDAR_Y > 0 && CALENDAR_Y + ch > HEIGHT) CALENDAR_Y--;

@@ -121,7 +121,7 @@ bool getWeather() {
                 }
               }
             }
-    */            
+    */        
     temperature  = jsn["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём температуру - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
     skyColor     = jsn["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
     isNight      = jsn["clocks"][regId]["isNight"].as<boolean>();
@@ -155,15 +155,13 @@ bool getWeather() {
   #endif
 
   if (!weather_ok) {
-    Serial.print(F("JSON не содержит данных о погоде"));
-  
+    Serial.print(F("JSON не содержит данных о погоде"));  
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("no data");
     serializeJson(doc, out);      
     NotifyInfo(out);
-    #endif
-  
+    #endif  
     return false;
   }
 
@@ -179,14 +177,14 @@ bool getWeather() {
   Serial.print(F("Сейчас: "));
   Serial.print(weather + ", "); 
   if (temperature > 0) Serial.print("+"); 
-  Serial.println(String(temperature) + "ºC"); // '˚' '◦' 'º'
+  Serial.println(String(temperature) + "ºC"); // 'º'
   Serial.println(String(F("Код иконки: '")) + icon + "'");
-  Serial.println(dayTime);
   #if (WEATHER_SYSTEM == 0)
   Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   #else
   Serial.println(String(F("Код погоды: ")) + String(weather_code));
   #endif
+  Serial.println(dayTime);
   
   #if (USE_MQTT == 1)
   doc["result"] = F("OK");

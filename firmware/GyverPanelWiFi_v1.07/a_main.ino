@@ -125,10 +125,10 @@ void process() {
 
       // Если настройки программы предполагают синхронизацию с NTP сервером и время пришло - выполнить синхронизацию
       if (useNtp) {
-        if (ntp_t > 0 && millis() - ntp_t > 5000) {
+        if ((ntp_t > 0) && getNtpInProgress && (millis() - ntp_t > 5000)) {
           Serial.println(F("Таймаут NTP запроса!"));
-          ntp_t = 0;
           ntp_cnt++;
+          getNtpInProgress = false;
           if (init_time && ntp_cnt >= 10) {
             Serial.println(F("Не удалось установить соединение с NTP сервером."));  
             refresh_time = false;
@@ -148,9 +148,11 @@ void process() {
         
         bool timeToSync = ntpSyncTimer.isReady();
         if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
-        if (timeToSync || (refresh_time && ntp_t == 0 && (ntp_cnt < 100 || !init_time))) {
+        if (timeToSync || (refresh_time && (ntp_t == 0 || (millis() - ntp_t > 60000)) && (ntp_cnt < 10 || !init_time))) {
+          ntp_t = millis();
           getNTP();
-          if (ntp_cnt >= 100) {
+          /*
+          if (ntp_cnt >= 10) {
             if (init_time) {
               udp.flush();
             } else {
@@ -158,25 +160,19 @@ void process() {
               ntp_cnt = 0;
               connectToNetwork();
             }
-          }        
+          } 
+          */       
         }
       }
 
       #if (USE_WEATHER == 1)  
-        // При отсутствии соединения с инетом (локалка подключена, а инета нет) http запрос погоды занимает длительное время ожидания ответа.
-        // В это время loop() не выполняется - матрица тормозит и на команды приложения не откликается
-        // Запрос времени происходит быстрее и не тормозит так выполнение прошивки.
-        // Здесь, если указана синхронизация времени с интернетом и синхронизация не удалась - значит инета нет и запрос погоды делать бесполезно.
-        // Это поможет избежать диких тормозов прошивки.        
-        bool ok_request = !useNtp || (useNtp && init_time);
-        
-        if (ok_request && useWeather) {   
+        if (useWeather) {   
           // Если настройки программы предполагают получение сведений о текущей погоде - выполнить обновление данных с погодного сервера
-          if (weather_t > 0 && millis() - weather_t > 5000) {
+          if ((weather_t > 0) && getWeatherInProgress && (millis() - weather_t > 5000)) {
             Serial.println(F("Таймаут запроса погоды!"));
-            weather_t = 0;
+            getWeatherInProgress = false;
             weather_cnt++;
-            if (init_weather && weather_cnt >= 50) {
+            if (init_weather && weather_cnt >= 10) {
               Serial.println(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
               
@@ -194,10 +190,18 @@ void process() {
           
           bool timeToGetWeather = weatherTimer.isReady(); 
           if (timeToGetWeather) { weather_cnt = 0; weather_t = 0; refresh_weather = true; }
-          if (timeToGetWeather || (refresh_weather && weather_t == 0 && (weather_cnt < 50 || !init_weather))) {            
+          // weather_t - время последней отправки запроса. Запрашивать погоду если weather_t обнулено или если последний (неудачный) запрос произошел не менее чем минуту назад
+          // иначе слишком частые запросы нарушают коммуникацию с приложением - сервер все время блокирующе запрашивает данные с сервера погоды
+          if (timeToGetWeather || (refresh_weather && (weather_t == 0 || (millis() - weather_t > 60000)) && (weather_cnt < 10 || !init_weather))) {            
             weather_t = millis();
+            getWeatherInProgress = true;
             getWeather();
-            if (weather_cnt >= 50) {
+            #if (USE_MQTT == 1)
+              // Запрос погоды сбрасывает подключение к MQTT ерверу (вероятно потому что оба они используют один и тот же единственный канал)
+              // Поэтому после выполнения запроса погоды нужно немедленно восстановить соединение с MQTT сервером
+              mqtt_conn_last = 0;
+            #endif
+            if (weather_cnt >= 10) {
               if (init_weather) {
                 udp.flush();
               } else {
@@ -824,8 +828,8 @@ void parsing() {
               break;
 
             case 1:
-              str.toCharArray(ntpServerName, 30);
               setNtpServer(str);
+              getNtpServer().toCharArray(ntpServerName, 31);
               if (wifi_connected) {
                 refresh_time = true; ntp_t = 0; ntp_cnt = 0;
               }
@@ -1894,7 +1898,7 @@ void parsing() {
             saveSettings();
             delay(10);
             FastLED.clear();
-            startWiFi();
+            startWiFi(5000);     // Время ожидания подключения 5 сек
             showCurrentIP(true);
             break;
           default:

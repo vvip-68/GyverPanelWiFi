@@ -387,6 +387,31 @@ void saveDefaults() {
 #endif
        
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
+
+  textLines[0]  = "##";
+  textLines[1]  = "Все будет хорошо!";
+  textLines[2]  = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.2021#3}{E21}";
+  textLines[3]  = "-С {C#00D0FF}Новым {C#0BFF00}2021 {C#FFFFFF}годом!{E21}";
+  textLines[4]  = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
+  textLines[5]  = "Show must go on!{C#000002}";
+  textLines[6]  = "{C#FF000F}Крибле! {C#000001}Крабле!! {C#00FF00}Бумс!!!{E24}";
+  textLines[7]  = "Крепитесь, люди - скоро {#CFF0300}лето!";
+  textLines[8]  = "Это {#C0081FF}\"ж-ж-ж\"{#CFFFFFF} - неспроста!";
+  textLines[9]  = "Элементарно, Ватсон!";
+  textLines[10]  = "Дело было вечером, делать было нечего...";
+  textLines[11]  = "Ах, какая прелесть!";
+  textLines[12]  = "Это нужно обдумать...";
+  textLines[13]  = "В этом что-то есть...";
+  textLines[14]  = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
+  textLines[15]  = "Вот оно что, {C#FF0000}Михалыч{C#FFFFFF}!..";
+  textLines[16]  = "Сегодня {D:dd MMMM yyyy} года, {D:dddd}";
+  textLines[17]  = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#00FF00}{R01.01.2021#3}{E21}";
+  textLines[18]  = "Лень - двигатель прогресса";
+  textLines[19]  = "Чем бы дитя не тешилось...";
+
+  textLines[34]  = "До {C#0019FF}Нового года{C#FFFFFF} {P01.01.****#Z}";
+  textLines[35]  = "-С {C#0019FF}Новым годом{C#FFFFFF}!{E24}";
+  
   saveTexts();
 
   setCurrentSpecMode(-1);               // Текущий спец-режим - это не спец-режим
@@ -415,7 +440,7 @@ void saveEffectParams(byte effect, int speed, boolean use, boolean use_text_over
   if (use_clock_overlay) value |= 0x04;
   
   EEPROMwrite(addr + effect*5, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта  
-  EEPROMwrite(addr + effect*5 + 1, value);                                                                      // b0 - Вкл/Выкл эффект в демо-режиме; b1 - Вкл/выкл оверлей текста; ; b1 - Вкл/выкл оверлей часов   
+  EEPROMwrite(addr + effect*5 + 1, value);                                                                            // b0 - Вкл/Выкл эффект в демо-режиме; b1 - Вкл/выкл оверлей текста; ; b1 - Вкл/выкл оверлей часов   
   EEPROMwrite(addr + effect*5 + 2, value1);                                                                           // Параметр эффекта #1 
   EEPROMwrite(addr + effect*5 + 3, value2);                                                                           // Параметр эффекта #2 
   EEPROMwrite(addr + effect*5 + 4, contrast);                                                                         // Контраст эффекта 

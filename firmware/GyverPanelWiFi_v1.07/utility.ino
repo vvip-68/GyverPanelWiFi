@@ -633,3 +633,13 @@ String padNum(int16_t num, byte cnt) {
   sprintf(data, fmt.c_str(), num);
   return String(data);
 }
+
+String getDateTimeString(time_t t) {
+  uint8_t hr = hour(t);
+  uint8_t mn = minute(t);
+  uint8_t sc = second(t);
+  uint8_t dy = day(t);
+  uint8_t mh = month(t);
+  uint16_t yr = year(t);
+  return padNum(dy,2) + "." + padNum(mh,2) + "." + padNum(yr,4) + " " + padNum(hr,2) + ":" + padNum(mn,2) + ":" + padNum(sc,2);  
+}

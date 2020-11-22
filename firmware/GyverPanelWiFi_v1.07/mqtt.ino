@@ -16,7 +16,9 @@ String mqtt_topic(String topic) {
 }
 
 void checkMqttConnection() {
-  if (useMQTT && !mqtt.connected() && millis() - mqtt_conn_last > 1000) {
+  // Проверка чаще чем раз в 20 секунд мешает приложению на смартфоне общаться с программой - запрос блокирующий и при неответе MQTT сервера
+  // слишком частые попытки подключения к MQTT серверу не дают передаваться данным из / в приложение - приложение "отваливается"
+  if (useMQTT && !mqtt.connected() && (mqtt_conn_last == 0 || (millis() - mqtt_conn_last > 20000))) {
     if (!mqtt_connecting) {
       Serial.print(F("\nПодключаемся к MQTT-серверу '"));
       Serial.print(mqtt_server);
