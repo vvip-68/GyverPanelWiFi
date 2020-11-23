@@ -287,27 +287,27 @@ PubSubClient mqtt(client);               // Объект соединения с
 // Внимание!!! Если вы меняете эти значения ПОСЛЕ того, как прошивка уже хотя бы раз была загружена в плату и выполнялась,
 // чтобы изменения вступили в силу нужно также изменить значение константы EEPROM_OK в первой строке в файле eeprom.ino 
 
-#ifndef  DEFAULT_MQTT_SERVER
+#ifndef DEFAULT_MQTT_SERVER
 #define  DEFAULT_MQTT_SERVER "srv2.clusterfly.ru" // MQTT сервер
 #endif
 
-#ifndef  DEFAULT_MQTT_USER
+#ifndef DEFAULT_MQTT_USER
 #define  DEFAULT_MQTT_USER "user_af7cd12a"        // Имя mqtt-пользователя    (укажите имя пользователя для вашего соединения)
 #endif
 
-#ifndef  DEFAULT_MQTT_PASS
+#ifndef DEFAULT_MQTT_PASS
 #define  DEFAULT_MQTT_PASS "pass_eb250bf5"        // Пароль mqtt-пользователя (укажите пароль вашего соединения)
 #endif
 
-#ifndef  DEFAULT_MQTT_PORT
+#ifndef DEFAULT_MQTT_PORT
 #define  DEFAULT_MQTT_PORT 9991                   // Порт mqtt-соединения
 #endif
 
-#ifndef  MQTT_USE_PREFIX
+#ifndef MQTT_USE_PREFIX
 #define  MQTT_USE_PREFIX 1                        // 0 - сервер не требует префикса; 1 - имя пользователя используется как префикс к топику
 #endif
 
-#ifndef  MQTT_SEND_DELAY                          // Отправлять сообщение на MQTT-сервер не чаще 1 сообщения в секунду (ограничение бесплатного MQTT сервера);
+#ifndef MQTT_SEND_DELAY                           // Отправлять сообщение на MQTT-сервер не чаще 1 сообщения в секунду (ограничение бесплатного MQTT сервера);
 #define  MQTT_SEND_DELAY 1100                     // Сообщения, отправленные чаще защитного интервала "съедаются" сервером (игнорируются, пропадают); 
 #endif                                            // Если нет ограничений на частоту отправки сообщений - поставьте здесь 0
                                                   
