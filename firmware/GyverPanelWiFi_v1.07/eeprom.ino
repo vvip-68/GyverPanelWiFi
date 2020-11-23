@@ -388,6 +388,7 @@ void saveDefaults() {
        
   saveStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]);
 
+  /*
   textLines[0]  = "##";
   textLines[1]  = "Все будет хорошо!";
   textLines[2]  = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.2021#3}{E21}";
@@ -411,6 +412,7 @@ void saveDefaults() {
 
   textLines[34]  = "До {C#0019FF}Нового года{C#FFFFFF} {P01.01.****#Z}";
   textLines[35]  = "-С {C#0019FF}Новым годом{C#FFFFFF}!{E24}";
+  */
   
   saveTexts();
 
