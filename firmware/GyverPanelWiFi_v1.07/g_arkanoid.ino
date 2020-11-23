@@ -1,4 +1,8 @@
 // игра "arkanoid"
+#if (DEVICE_ID == 4 && defined(ESP8266))
+// На матрице 50x20 для игр не хватает памяти - вылетает на вызове malloc() внутри библиотеки FastLED / ESP8266 / еще где-то...
+void arkanoidRoutine() { }
+#else
 
 // **************** НАСТРОЙКИ ARKAN ****************
 #define SHELF_LENGTH 5    // длина полки
@@ -229,3 +233,4 @@ void shelfLeft() {
     drawPixelXY(shelf_x + SHELF_LENGTH, 0, CRGB::Black);  // нарисовать первую
   }
 }
+#endif

@@ -15,30 +15,8 @@
 #define FIRMWARE_VER F("LED-Panel-WiFi v.1.07.2020.1123")
 
 // --------------------------------------------------------
-// Внимание!!! Обязательно читаем комментарий ниже
-// --------------------------------------------------------
-//#define FASTLED_INTERRUPT_RETRY_COUNT 0
-//#define FASTLED_ALLOW_INTERRUPTS 0
-/*
-  Приведенные выше строчки предположительно улучшают стабильность отображения на матрице при использовании контроллера ESP8266 / ESP32
-  Когда они раскомментированы - пропадают возможные цветные вспышки и дрожание текста на матрице
-  Однако при этом нарушается работа WiFi - сеть часто пропадает и восстанавливается только при перезагрузке контроллера
-  Решение было найдено по следующей ссылке: https://github.com/jasoncoon/esp8266-fastled-webserver/issues/85#issuecomment-481993200
-  
-  > I add #define FASTLED_INTERRUPT_RETRY_COUNT 0 before #include<FastLED.h> and change line 19 https://github.com/FastLED/FastLED/blob/master/platforms/esp/8266/clockless_esp8266.h
-  > from:
-  >   template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 50>
-  > to:
-  >   template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 5>
-  > Then the problem solved...
 
-  Таким образом, если строчки раскомментированы - обязательно должны быть внесены указанные исправления в файл clockless_esp8266.h
-  Если этих исправлений нет - строчки должны быть закомментированы
-*/
-
-// --------------------------------------------------------
-
-// Раскомментируйте строку, содержащую '#define public' ниже, если ваши приватные данные аккаунтов и паролей размешены непосредственно в скетче в файле a_def_soft.h в строках:
+// Раскомментируйте ниже строку, содержащую '#define public', если ваши приватные данные аккаунтов и паролей размешены непосредственно в скетче в файле a_def_soft.h в строках:
 //
 // 291 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
 // 295 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
@@ -46,9 +24,10 @@
 // 303 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
 // 307 - MQTT_USE_PREFIX     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
 // 311 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 418 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 и WEATHER_SYSTEM == 
+// 418 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 и WEATHER_SYSTEM == 1
 //
 // Если строка закомментирована - значения для приведенных выше параметров вынесены в отдельный файл 'a_def_pass.h' и переменные при сборке скетча будут браться из него.
+//
 // Данный файл не включен в проект, т.к. содержит приватные данные. 
 // Вам нужно или создать свой файл 'a_def_pass.h', если строка закомментирована или
 // задать ваши значения этих переменных непосредственно в a_def_soft.h в указанных строках
@@ -57,6 +36,9 @@
 #ifndef public 
 #include "a_def_pass.h"     // приватные данные и пароли доступа к серверу MQTT
 #endif
+
+// --------------------------------------------------------
+
 #include "a_def_hard.h"     // Определение параметров матрицы, пинов подключения и т.п
 #include "a_def_soft.h"     // Определение параметров эффектов, переменных программы и т.п.
 
@@ -162,7 +144,6 @@ void setup() {
   #endif
   */
   
-  // -----------------------------------------
   // -----------------------------------------  
     
   // Настройки ленты
@@ -375,7 +356,7 @@ void startWiFi(unsigned long waitTime) {
     int16_t cnt = 0;
     while (!(stop_waiting || wifi_connected)) {
       delay(0);
-      if (millis() - last_wifi_check > 500) {
+      if (millis() - last_wifi_check > 250) {
         last_wifi_check = millis();
         wifi_connected = WiFi.status() == WL_CONNECTED; 
         if (wifi_connected) {
