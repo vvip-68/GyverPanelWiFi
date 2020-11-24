@@ -16,9 +16,9 @@ String mqtt_topic(String topic) {
 }
 
 void checkMqttConnection() {
-  // Проверка чаще чем раз в 20 секунд мешает приложению на смартфоне общаться с программой - запрос блокирующий и при неответе MQTT сервера
+  // Проверка чаще чем раз в 5 секунд мешает приложению на смартфоне общаться с программой - запрос блокирующий и при неответе MQTT сервера
   // слишком частые попытки подключения к MQTT серверу не дают передаваться данным из / в приложение - приложение "отваливается"
-  if (useMQTT && !mqtt.connected() && (mqtt_conn_last == 0 || (millis() - mqtt_conn_last > 20000))) {
+  if (useMQTT && !mqtt.connected() && (mqtt_conn_last == 0 || (millis() - mqtt_conn_last > 5000))) {
     if (!mqtt_connecting) {
       Serial.print(F("\nПодключаемся к MQTT-серверу '"));
       Serial.print(mqtt_server);
@@ -29,7 +29,7 @@ void checkMqttConnection() {
       Serial.print(F("' ..."));
     }
     mqtt_conn_last = millis();
-    if (mqtt.connect(mqtt_client().c_str(), mqtt_user, mqtt_pass)) {
+    if (mqtt.connect(mqtt_client().c_str(), mqtt_user, mqtt_pass) && mqtt.connected()) {
       Serial.println(F("\nПодключение к MQTT-серверу выполнено.\n"));
       mqtt.subscribe(mqtt_topic(TOPIC_CMD).c_str());        
       mqtt_connecting = false;      
@@ -134,16 +134,31 @@ void processOutQueue() {
     return;
   }
   if (mqtt.connected() && outQueueLength > 0 && millis() - mqtt_send_last > MQTT_SEND_DELAY) {    
+    // Топик и содержимое отправляемого сообщения
     String topic = tpcQueue[outQueueReadIdx];
     String message = outQueue[outQueueReadIdx];
-    outQueueReadIdx++;
-    if (outQueueReadIdx >= QSIZE_OUT) outQueueReadIdx = 0;
-    outQueueLength--;
-    Serial.print(F("MQTT >> ")); 
-    Serial.println(message); 
-    mqtt.beginPublish(topic.c_str(), message.length(), false);
-    mqtt.print(message.c_str());
-    mqtt.endPublish();
+    // Пытаемся отправить. Если инициализация отправки не удалась - возвращается false; Если удалась - true
+    bool ok = mqtt.beginPublish(topic.c_str(), message.length(), false);
+    if (ok) {
+      // Если инициация отправки была успешной - заполняем буфер отправки передаваемой строкой сообщения
+      mqtt.print(message.c_str());
+      // Завершаем отправку. Если пакет был отправлен - возвращается 1, если ошибка отправки - возвращается 0
+      ok = mqtt.endPublish() == 1;
+    }
+    if (ok) {
+      // Отправка прошла успешно
+      Serial.print(F("MQTT >> OK >> ")); 
+      Serial.println(message);
+      // Извлекаем сообщение из очереди
+      outQueueReadIdx++;
+      if (outQueueReadIdx >= QSIZE_OUT) outQueueReadIdx = 0;
+      outQueueLength--;
+    } else {
+      // Отправка не удалась
+      Serial.print(F("MQTT >> FAIL >> ")); 
+      Serial.println(message);
+    }
+    // Запоминаем время отправки. Бесплатный сервер не позволяет отправлять сообщения чаще чем одно сообщение в секунду
     mqtt_send_last = millis();
   }  
 }
