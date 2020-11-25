@@ -12,13 +12,13 @@ bool getWeather() {
   Serial.println(F("Запрос текущей погоды"));
 
   #if (WEATHER_SYSTEM == 0)
-    if (!client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
+    if (!w_client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
     // Отправляем запрос
-    client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
+    w_client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
   #else
-    if (!client.connect("api.openweathermap.org",80)) return false;         // Устанавливаем соединение с указанным хостом (Порт 80 для http)
+    if (!w_client.connect("api.openweathermap.org",80)) return false;         // Устанавливаем соединение с указанным хостом (Порт 80 для http)
     // Отправляем запрос    
-    client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID) + String(F("&units=metric&lang=ru&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
+    w_client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID) + String(F("&units=metric&lang=ru&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
   #endif  
 
   #if (USE_MQTT == 1)
@@ -30,7 +30,7 @@ bool getWeather() {
   
   // Проверяем статус запроса
   char status[32] = {0};
-  client.readBytesUntil('\r', status, sizeof(status));
+  w_client.readBytesUntil('\r', status, sizeof(status));
   // It should be "HTTP/1.0 200 OK" or "HTTP/1.1 200 OK"
   if (strcmp(status + 9, "200 OK") != 0) {
     Serial.print(F("Ошибка сервера погоды: "));
@@ -48,7 +48,7 @@ bool getWeather() {
 
     // Пропускаем заголовки                                                                
   char endOfHeaders[] = "\r\n\r\n";                                       // Системные заголовки ответа сервера отделяются от остального содержимого двойным переводом строки
-  if (!client.find(endOfHeaders)) {                                       // Отбрасываем системные заголовки ответа сервера
+  if (!w_client.find(endOfHeaders)) {                                       // Отбрасываем системные заголовки ответа сервера
     Serial.println(F("Нераспознанный ответ сервера погоды"));             // Если ответ сервера не содержит системных заголовков, значит что-то пошло не так
 
     #if (USE_MQTT == 1)
@@ -69,7 +69,7 @@ bool getWeather() {
   DynamicJsonDocument jsn(capacity);
 
   // Parse JSON object
-  DeserializationError error = deserializeJson(jsn, client);
+  DeserializationError error = deserializeJson(jsn, w_client);
 
   if (error) {
     Serial.print(F("JSON не разобран: "));
@@ -85,7 +85,7 @@ bool getWeather() {
     return false;
   }
 
-  client.stop();
+  w_client.stop();
 
   String regId = String(regionID);
   String town;

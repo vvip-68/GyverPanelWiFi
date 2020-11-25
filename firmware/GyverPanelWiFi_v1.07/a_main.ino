@@ -196,11 +196,6 @@ void process() {
             weather_t = millis();
             getWeatherInProgress = true;
             getWeather();
-            #if (USE_MQTT == 1)
-              // Запрос погоды сбрасывает подключение к MQTT ерверу (вероятно потому что оба они используют один и тот же единственный канал)
-              // Поэтому после выполнения запроса погоды нужно немедленно восстановить соединение с MQTT сервером
-              mqtt_conn_last = 0;
-            #endif
             if (weather_cnt >= 10) {
               if (init_weather) {
                 udp.flush();
