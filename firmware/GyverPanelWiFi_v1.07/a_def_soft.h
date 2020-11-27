@@ -691,7 +691,7 @@ uint16_t   CURRENT_LIMIT = 15000;                // лимит по току в 
 
 #define    NUM_LEDS              WIDTH * HEIGHT
 #define    maxDim                max(WIDTH, HEIGHT)
-#define    OVERLAY_SIZE          WIDTH * 11
+#define    OVERLAY_SIZE          WIDTH * 12      // 11 - макс высота области оферлея - для верт часов или календаря - 11, шрифт с диакрит. символами - 12
 #define    OVERLAY_WEATHER_SIZE  11 * 5          // шрифт 3x5 - 3 симв + 2 пробела между =  11 колонок по 5 строк
 
 CRGBArray<NUM_LEDS> leds;                        // обращение к светодиодам матрицы через этот массив
