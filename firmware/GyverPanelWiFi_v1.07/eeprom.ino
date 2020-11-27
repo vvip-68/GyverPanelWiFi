@@ -232,6 +232,7 @@ void loadSettings() {
 
     // Значения переменных по умолчанию определяются в месте их объявления - в файле a_def_soft.h
     // Здесь выполняются только инициализация массивов и некоторых специальных параметров
+    clearEEPROM();
 
     for (byte i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i]  = 50;  // среднее значение для параметра. Конкретное значение зависит от эффекта
@@ -247,7 +248,6 @@ void loadSettings() {
   // После первой инициализации значений - сохранить их принудительно
   if (!isInitialized) {
     Serial.println(F("Инициализация EEPROM..."));
-    clearEEPROM();
     saveDefaults();
     saveSettings();
     Serial.println();
