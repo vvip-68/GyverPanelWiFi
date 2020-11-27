@@ -121,7 +121,12 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
       else thisBit = thisByte & (1 << (LH - 1 - j));
 
       // рисуем столбец (i - горизонтальная позиция, j - вертикальная)
-      if (thisBit) leds[getPixelNumber(offset + i, offset_y + j)] = letterColor;
+      if (thisBit) {
+        int16_t pn = getPixelNumber(offset + i, offset_y + j);
+        if (pn >= 0 && pn < NUM_LEDS) {
+          leds[pn] = letterColor;
+        }      
+      }
     }
   }
 }
@@ -213,6 +218,7 @@ boolean prepareNextText() {
   if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
   
   currentText = currentTextLineIdx < 0 ? "" : processMacrosInText(textLines[currentTextLineIdx]);
+  if (currentTextLineIdx == 0 && currentText[0] == '#') currentText = "";
 
   return currentText.length() > 0;
 }

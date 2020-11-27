@@ -523,7 +523,10 @@ void overlayWrap() {
   int16_t thisLED = 0;  
   for (uint8_t i = 0; i < WIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
-      overlayLEDs[thisLED] = leds[getPixelNumber(i,j)];
+      int16_t pn = getPixelNumber(i,j);
+      if (pn >= 0 && pn < NUM_LEDS) {
+        overlayLEDs[thisLED] = leds[pn];
+      }
       thisLED++;
     }
   }
@@ -533,7 +536,10 @@ void overlayUnwrap() {
   int16_t thisLED = 0;  
   for (uint8_t i = 0; i < WIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
-      leds[getPixelNumber(i, j)] = overlayLEDs[thisLED];
+      int16_t pn = getPixelNumber(i,j);
+      if (pn >= 0 && pn < NUM_LEDS) {
+        leds[pn] = overlayLEDs[thisLED];
+      }  
       thisLED++; 
     }
   }
@@ -549,9 +555,15 @@ void overlayWeatherWrap() {
     for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
       int8_t ix = getClockX(i);
       #if (DEVICE_TYPE == 1)
-      if (ix>=0)
+      if (ix>=0) {
       #endif
-      overlayWeather[thisLED] = leds[getPixelNumber(ix,j)];
+        int16_t pn = getPixelNumber(ix,j);
+        if (pn >= 0 && pn < NUM_LEDS) {
+          overlayWeather[thisLED] = leds[pn];
+        }
+      #if (DEVICE_TYPE == 1)
+      }
+      #endif
       thisLED++;
     }
   }
@@ -566,9 +578,15 @@ void overlayWeatherUnwrap() {
     for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
       int8_t ix = getClockX(i);
       #if (DEVICE_TYPE == 1)
-      if (ix>=0)
+      if (ix>=0) {
       #endif
-      leds[getPixelNumber(ix, j)] = overlayWeather[thisLED];
+        int16_t pn = getPixelNumber(ix,j);
+        if (pn >= 0 && pn < NUM_LEDS) {
+          leds[pn] = overlayWeather[thisLED];
+        }
+      #if (DEVICE_TYPE == 1)
+      }
+      #endif
       thisLED++; 
     }
   }
