@@ -92,7 +92,9 @@ void loadSettings() {
   // 237,238 - MQTT порт                                                                                     // getMqttPort()                  // setMqttPort(mqtt_port)
   // 239 - использовать MQTT канал управления: 0 - нет 1 - да                                                // getUseMqtt()                   // setUseMqtt(useMQTT)  
   // 240 - яркость ночных часов                                                                              // getNightClockBrightness()      // setNightClockBrightness(nightClockBrightness)
-  //**241 - не используется
+  // 241,242 - задержка отпракии запросов MQTT серверу                                                       // getMqttSendDelay()             // setMqttSendDelay(mqtt_send_delay)
+  // 243 - использовать префикс имя пользователя при формировании топика                                     // getMqttUsePrefix()             // setMqttUsePrefix(nightClockBrightness)
+  //**244 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -185,22 +187,21 @@ void loadSettings() {
     getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
     getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
     getNtpServer().toCharArray(ntpServerName, 31);  //  120-149 - имя NTP сервера      (30 байт макс) + 1 байт '\0'
-
-    #if (USE_MQTT == 1)
-    getMqttServer().toCharArray(mqtt_server, 25);   //  182-206 - mqtt сервер          (24 байт макс) + 1 байт '\0'
-    getMqttUser().toCharArray(mqtt_user, 15);       //  207-221 - mqtt user            (14 байт макс) + 1 байт '\0'
-    getMqttPass().toCharArray(mqtt_pass, 15);       //  222-236 - mqtt password        (14 байт макс) + 1 байт '\0'
-    #endif
     
     if (strlen(apName) == 0) strcpy(apName, DEFAULT_AP_NAME);
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
     if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
 
     #if (USE_MQTT == 1)
+    getMqttServer().toCharArray(mqtt_server, 25);   //  182-206 - mqtt сервер          (24 байт макс) + 1 байт '\0'
+    getMqttUser().toCharArray(mqtt_user, 15);       //  207-221 - mqtt user            (14 байт макс) + 1 байт '\0'
+    getMqttPass().toCharArray(mqtt_pass, 15);       //  222-236 - mqtt password        (14 байт макс) + 1 байт '\0'
     if (strlen(mqtt_server) == 0) strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
     if (strlen(mqtt_user) == 0) strcpy(mqtt_user, DEFAULT_MQTT_USER);
     if (strlen(mqtt_pass) == 0) strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
     mqtt_port = getMqttPort();
+    mqtt_send_delay = getMqttSendDelay();
+    mqtt_use_prefix = getMqttUsePrefix();
     #endif
 
     AM1_hour      = getAM1hour();
@@ -360,6 +361,8 @@ void saveDefaults() {
   setMqttPass(String(mqtt_pass));
   setMqttPort(mqtt_port);
   setUseMqtt(useMQTT);
+  setMqttSendDelay(mqtt_send_delay);
+  setMqttUsePrefix(mqtt_use_prefix);
   #endif
 
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
@@ -1562,6 +1565,27 @@ String getMqttPass() {
 void setMqttPass(String pass) {
   if (pass != getMqttPass()) {
     EEPROM_string_write(222, pass, 14);
+  }
+}
+
+uint16_t getMqttSendDelay() {
+  uint16_t val = (uint16_t)EEPROM_int_read(241);
+  return val;
+}
+
+void setMqttSendDelay(uint16_t port) {
+  if (port != getMqttSendDelay()) {
+    EEPROM_int_write(241, port);
+  }  
+}
+
+bool getMqttUsePrefix() {
+  return EEPROMread(243) == 1;
+}
+
+void setMqttUsePrefix(boolean use) {  
+  if (use != getMqttUsePrefix()) {
+    EEPROMwrite(243, use ? 1 : 0);
   }
 }
 

@@ -9,7 +9,7 @@ String mqtt_topic(String topic) {
   // Если для MQTT сервера НЕ требуется, чтобы топик начинался с user_id - топик MQTT сообщения формируется как MQTT_CLIENT_ID + "-" - DEVICE_ID + "/" + TOPIC_XXX
   // где TOPIC_XXX - один из TOPIC_CMD, TOPIC_DTA, TOPIC_NFO, TOPIC_ERR, TOPIC_ACK
   String ret_topic = "";
-  if (MQTT_USE_PREFIX == 1) {
+  if (mqtt_use_prefix == 1) {
     ret_topic = String(mqtt_user) + "/";
   }
   return ret_topic + mqtt_client() + "/" + topic;
@@ -17,7 +17,7 @@ String mqtt_topic(String topic) {
 
 bool subscribeMqttTopicCmd() {
   bool ok = false;
-  if (mqtt.connected() && millis() - mqtt_send_last > MQTT_SEND_DELAY) {
+  if (mqtt.connected() && millis() - mqtt_send_last > mqtt_send_delay) {
     Serial.print(F("Подписка на topic='cmd' >> "));
     ok = mqtt.subscribe(mqtt_topic(TOPIC_CMD).c_str());
     if (ok) Serial.println(F("OK"));
@@ -123,7 +123,7 @@ void processOutQueue() {
     return;
   }
 
-  if (mqtt.connected() && outQueueLength > 0 && millis() - mqtt_send_last > MQTT_SEND_DELAY) {    
+  if (mqtt.connected() && outQueueLength > 0 && millis() - mqtt_send_last > mqtt_send_delay) {    
     // Топик и содержимое отправляемого сообщения
     String topic = tpcQueue[outQueueReadIdx];
     String message = outQueue[outQueueReadIdx];

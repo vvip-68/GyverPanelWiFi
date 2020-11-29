@@ -327,10 +327,12 @@ PubSubClient mqtt(m_client);             // Объект соединения с
 #define  TOPIC_ERR      "err"            // Топик - отправка уведомлений об ошибке клиенту
 #define  TOPIC_ACK      "ack"            // Топик - отправка уведомлений клиенту
 
-char     mqtt_server[25] = "";           // Имя сервера MQTT
-char     mqtt_user[15]   = "";           // Логин от сервера
-char     mqtt_pass[15]   = "";           // Пароль от сервера
-uint16_t mqtt_port       = DEFAULT_MQTT_PORT;  // Порт для подключения к серверу MQTT
+char     mqtt_server[25] = "";                   // Имя сервера MQTT
+char     mqtt_user[15]   = "";                   // Логин от сервера
+char     mqtt_pass[15]   = "";                   // Пароль от сервера
+uint16_t mqtt_port       = DEFAULT_MQTT_PORT;    // Порт для подключения к серверу MQTT
+uint16_t mqtt_send_delay = MQTT_SEND_DELAY;      // Задержка между последовательными обращениями к MQTT серверу
+bool     mqtt_use_prefix = MQTT_USE_PREFIX == 1; // Флаг - использует ли MQTT сервер префикс - имя пользователя при формировании топика
 
 // Инициализируются в setup() - топики с подстановкой DEVICE_ID 
 String  topic_cmd = TOPIC_CMD;           // Топик получения команд

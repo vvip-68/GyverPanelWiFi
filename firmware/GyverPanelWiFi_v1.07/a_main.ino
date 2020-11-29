@@ -496,6 +496,9 @@ void parsing() {
     11 - Настройки MQTT-канала (см. также $6 для N=8,9,10)
       - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
       - $11 2 D;   - порт MQTT
+      - $11 3 X;   - Флаг - использует ли MQTT сервер префикс - имя пользователя при формировании топика
+      - $11 4 D;   - Задержка между последовательными обращениями к MQTT серверу
+      - $11 5;     - Разорвать подключение к MQTT серверу, чтобы он иог переподключиться с новыми параметрами
     12 - Настройки погоды
       - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
       - $12 4 X;   - использовать получение погоды с погодного сервера
@@ -1247,6 +1250,9 @@ void parsing() {
       // 11 - Настройки MQTT-канала
       // - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
       // - $11 2 D;   - Порт MQTT
+      // - $11 3 X;   - Флаг - использует ли MQTT сервер префикс - имя пользователя при формировании топика
+      // - $11 4 D;   - Задержка между последовательными обращениями к MQTT серверу
+      // - $11 5;     - Разорвать подключение к MQTT серверу, чтобы он иог переподключиться с новыми параметрами
       // ----------------------------------------------------
 
       #if (USE_MQTT == 1)
@@ -1260,11 +1266,21 @@ void parsing() {
              mqtt_port = intData[2];
              setMqttPort(mqtt_port);
              break;
+           case 3:               // $11 3 X; - Флаг - использует ли MQTT сервер префикс - имя пользователя при формировании топика
+             mqtt_use_prefix = intData[2] == 1;
+             setMqttUsePrefix(mqtt_use_prefix);
+             break;
+           case 4:               // $11 4 D; - Задержка между последовательными обращениями к MQTT серверу
+             mqtt_send_delay = intData[2];
+             setMqttSendDelay(mqtt_send_delay);
+             break;
+           case 5:               // $11 5;   - Сохранить изменения ипереподключиться к MQTT серверу
+             saveSettings();
+             mqtt.disconnect();
+             break;
           default:
             err = true;
-            #if (USE_MQTT == 1)
             notifyUnknownCommand(incomeBuffer);
-            #endif
             break;
         }
         if (!err) {
@@ -2192,7 +2208,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
       break;
     case 6:  // Настройки подключения
-      str = getStateString("AU|AN|AA|NW|NA|IP");
+      str = getStateString("AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR");
       break;
     case 7:  // Настройки режимов автовключения по времени
       str = getStateString("AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A");
@@ -2397,10 +2413,13 @@ String getStateValue(String &key, int8_t effect) {
   // OM:X        сколько ячеек осталось свободно для хранения строк
   // PD:число    продолжительность режима в секундах
   // QA:X        использовать MQTT 0-нет, 1-да
+  // QD:число    задержка отправки сообщения MQTT
   // QP:число    порт подключения к MQTT серверу
+  // QR:X        топик использует префикс в виде имени сервера для формирования топика
   // QS:[text]   имя MQTT сервера, например QS:[srv2.clusterfly.ru]
   // QU:[text]   имя пользователя MQTT соединения, например QU:[user_af7cd12a]
   // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
+  // QZ:X        сборка поддерживает MQTT 0-нет, 1-да
   // PW:число    ограничение по току в миллиамперах
   // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
   // S1:[список] список звуков будильника, разделенный запятыми, ограничители [] обязательны        
@@ -2730,6 +2749,9 @@ String getStateValue(String &key, int8_t effect) {
 #endif
 
 #if (USE_MQTT == 1)
+  // Прошивка поддерживает MQTT 0-нет, 1-да
+  if (key == "QZ") return str + "QZ:" + String(USE_MQTT == 1 ? "1" : "0");  
+
   // Использовать MQTT 0-нет, 1-да
   if (key == "QA") return str + "QA:" + String(useMQTT ? "1" : "0");  
 
@@ -2744,7 +2766,14 @@ String getStateValue(String &key, int8_t effect) {
 
   // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
   if (key == "QW") return str + "QW:[" + String(mqtt_pass) +  "]";
+
+  // QD:число    задержка между отправками сообщений к MQTT серверу
+  if (key == "QD") return str + "QD:" + String(mqtt_send_delay);  
+
+  // Используется префикс в виде имени пользователя для формирования топика 0-нет, 1-да
+  if (key == "QR") return str + "QR:" + String(mqtt_use_prefix ? "1" : "0");  
 #endif
+
 
   // Запрошенный ключ не найден - вернуть пустую строку
   return "";

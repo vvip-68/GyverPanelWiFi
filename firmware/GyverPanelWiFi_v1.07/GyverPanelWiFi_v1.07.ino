@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("LED-Panel-WiFi v.1.07.2020.1127")
+#define FIRMWARE_VER F("LED-Panel-WiFi v.1.07.2020.1129")
 
 // --------------------------------------------------------
 
@@ -102,24 +102,6 @@ void setup() {
   // Остальные сместившиеся эффекты можно настроить из приложения
   saveEffectTextOverlayUsage(MC_ARKANOID, false);
   saveEffectClockOverlayUsage(MC_ARKANOID, false);
-
-  /*
-  #if (USE_MQTT == 1)
-  useMQTT = true;
-  mqtt_port = DEFAULT_MQTT_PORT;
-
-  strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
-  strcpy(mqtt_user, DEFAULT_MQTT_USER);
-  strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
-  
-  setMqttServer(String(mqtt_server));
-  setMqttUser(String(mqtt_user));
-  setMqttPass(String(mqtt_pass));
-
-  setUseMqtt(useMQTT);  
-  setMqttPort(mqtt_port);
-  #endif
-  */
   
   // -----------------------------------------  
     
