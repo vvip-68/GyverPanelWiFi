@@ -6,26 +6,26 @@ bool getWeather() {
   // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
   // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&lang=ru&appid=6a4ba421859c9f4166697758b68d889b
   
-  if (!wifi_connected) return false;  
+  if (!wifi_connected || useWeather == 0) return false;  
   
   Serial.println();
   Serial.println(F("Запрос текущей погоды"));
 
-  #if (WEATHER_SYSTEM == 0)
+  if (useWeather == 1) {
     if (!w_client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
     // Отправляем запрос
     w_client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
-  #else
+  } else if (useWeather == 2) {
     if (!w_client.connect("api.openweathermap.org",80)) return false;         // Устанавливаем соединение с указанным хостом (Порт 80 для http)
     // Отправляем запрос    
-    w_client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID) + String(F("&units=metric&lang=ru&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
-  #endif  
+    w_client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID2) + String(F("&units=metric&lang=ru&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
+  }  
 
   #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
   String out;
   doc["act"] = F("WEATHER");
-  doc["region"] = regionID;
+  doc["region"] = useWeather == 1 ? regionID : regionID2;
   #endif
   
   // Проверяем статус запроса
@@ -61,11 +61,7 @@ bool getWeather() {
     return false;                                                         // и пора прекращать всё это дело
   }
 
-#if (WEATHER_SYSTEM == 0)  
-  const size_t capacity = 750;                                            // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
-#else
-  const size_t capacity = 1750;                                           // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
-#endif  
+  const size_t capacity = 1500;                                           // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
   DynamicJsonDocument jsn(capacity);
 
   // Parse JSON object
@@ -87,11 +83,11 @@ bool getWeather() {
 
   w_client.stop();
 
-  String regId = String(regionID);
+  String regId = useWeather == 1 ? String(regionID) : String(regionID2);
   String town;
   bool   weather_ok = true;
   
-  #if (WEATHER_SYSTEM == 0)  
+  if (useWeather == 1) {
     /*
     Yandex: {"time":1597989853200,
              "clocks":
@@ -128,7 +124,7 @@ bool getWeather() {
     icon         = jsn["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
     town         = jsn["clocks"][regId]["name"].as<String>();             // Город
     weather_ok   = skyColor.length() == 7;                                // #57bbfe
-  #else 
+  } else {
   /*
    OpenWeatherMap: {"coord":{"lon":92.79,"lat":56.01},
                     "weather":[{"id":620,"main":"Snow","description":"light shower snow","icon":"13n"}],
@@ -152,7 +148,7 @@ bool getWeather() {
     weather_ok   = icon.length() == 3;                                    // Иконка вида "XXn" - ночная "XXd" - дневная
     weather      = jsn["weather"][0]["description"].as<String>();         // Строка погодных условий (английский)
     weather_code = jsn["weather"][0]["id"].as<int16_t>();                 // Уточненный код погодных условий
-  #endif
+  }
 
   if (!weather_ok) {
     Serial.print(F("JSON не содержит данных о погоде"));  
@@ -165,7 +161,10 @@ bool getWeather() {
     return false;
   }
 
-  decodeWeather();
+  if (useWeather == 1)
+    decodeWeather();        // Yandex
+  else  
+    decodeWeather2();       // OpenWeatherMap
   
   weather_time = millis();  // запомнить время получения погоды с сервера
   init_weather = true;      // Флаг - погода получена
@@ -173,17 +172,20 @@ bool getWeather() {
   weather_t = 0; 
   weather_cnt = 0;
   
-  Serial.println(F("Погода получена:"));
+  Serial.print(F("Погода получена: "));
+  if (useWeather == 1)
+    Serial.println(F("Yandex"));
+  else  
+    Serial.println(F("OpenWeatherMap"));
   Serial.print(F("Сейчас: "));
   Serial.print(weather + ", "); 
   if (temperature > 0) Serial.print("+"); 
   Serial.println(String(temperature) + "ºC"); // 'º'
   Serial.println(String(F("Код иконки: '")) + icon + "'");
-  #if (WEATHER_SYSTEM == 0)
-  Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
-  #else
-  Serial.println(String(F("Код погоды: ")) + String(weather_code));
-  #endif
+  if (useWeather == 1)
+    Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
+  else
+    Serial.println(String(F("Код погоды: ")) + String(weather_code));
   Serial.println(dayTime);
   
   #if (USE_MQTT == 1)
@@ -193,19 +195,16 @@ bool getWeather() {
   doc["night"]  = isNight;
   doc["icon"]   = icon;
   doc["town"]   = town;
-  #if (WEATHER_SYSTEM == 0)
-  doc["sky"]    = skyColor;
-  #else
-  doc["code"]   = weather_code;
-  #endif
+  if (useWeather == 1)
+    doc["sky"]    = skyColor;      // для Yandex
+  else
+    doc["code"]   = weather_code;  // для OpenWeatherMap
   serializeJson(doc, out);      
   NotifyInfo(out);
   #endif
 
   return true;
 }
-
-#if (WEATHER_SYSTEM == 0)
 
 /*
 Код расшифровки иконки от Yandex. Возможные значения:
@@ -264,9 +263,7 @@ void decodeWeather(){
   else if (ico == F("skc"))             weather = F("ясно");  
 }
 
-#else
-
-void decodeWeather(){  
+void decodeWeather2(){  
   bool hasDay   = icon.endsWith("d");
   bool hasNight = icon.endsWith("n");
   
@@ -339,8 +336,6 @@ void decodeWeather(){
   }
 }
 
-#endif
-
 // Строка цвета, соответствующая температуре
 String getTemperatureColor(int8_t temp) {
   String s_color;
@@ -366,8 +361,6 @@ String getTemperatureColor(int8_t temp) {
 }
 
 // Получить индекс иконки в массиве иконок погоды
-#if (WEATHER_SYSTEM == 0)
-
 int8_t getWeatherFrame(String icon) {
   if (icon == "skc-d") return 0;                                    // Ясно, день
   if (icon == "skc-n") return 1;                                    // Ясно, ночь
@@ -398,9 +391,7 @@ int8_t getWeatherFrame(String icon) {
   return -1;
 }
 
-#else 
-
-int8_t getWeatherFrame(String icon) {
+int8_t getWeatherFrame2(String icon) {
   // https://openweathermap.org/weather-conditions#How-to-get-icon-URL
   bool hasDay   = icon.endsWith("d");
   bool hasNight = icon.endsWith("n");
@@ -464,8 +455,6 @@ int8_t getWeatherFrame(String icon) {
   }  
 }
 
-#endif 
-
 #else
 
 bool getWeather() {
@@ -526,16 +515,19 @@ void weatherRoutine() {
     weather_text_x += offset_x;
     weather_text_y += offset_y;
 
-    if (init_weather) {
-      #if (USE_WEATHER == 1)     
-        need_fade_image = useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5);
-      #endif   
-      
-    } else {
+    #if (USE_WEATHER == 1)     
+      if (useWeather > 0 && init_weather) {
+          need_fade_image = useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5);      
+      } else {
+        // Если режим без отображения температуры - рисовать картинки погоды по центру матрицы
+        pos_x = (WIDTH - image_desc.frame_width) / 2;
+        pos_y = (HEIGHT - image_desc.frame_height) / 2;
+      }
+    #else 
       // Если режим без отображения температуры - рисовать картинки погоды по центру матрицы
       pos_x = (WIDTH - image_desc.frame_width) / 2;
       pos_y = (HEIGHT - image_desc.frame_height) / 2;
-    }
+    #endif   
 
     #if (USE_WEATHER == 0)
       weather_frame_num = 0;      
@@ -547,8 +539,8 @@ void weatherRoutine() {
   // Если погода отключена или еще не получена - просто рисуем картинки по кругу
   // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
   #if (USE_WEATHER == 1)
-  if (useWeather && init_weather) {
-    int8_t fr = getWeatherFrame(icon);
+  if (useWeather > 0 && init_weather) {
+    int8_t fr = useWeather == 1 ? getWeatherFrame(icon) : getWeatherFrame2(icon);
     if (fr >= 0) {
       weather_frame_num = fr;
     }
@@ -610,7 +602,7 @@ void weatherRoutine() {
   #if (USE_WEATHER == 1)     
 
   // Если температура известна - нарисовать температуру
-  if (init_weather) {
+  if (useWeather > 0 && init_weather) {
     
     // Получить цвет отображения значения температуры
     CRGB color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;

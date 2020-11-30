@@ -398,12 +398,9 @@ WiFiClient w_client;                     // Объект для работы с 
 boolean  init_weather = false;           // Флаг: true - погода получена; false - погода не получена / не актуальна
 
 #if (USE_WEATHER == 1)
-boolean  useWeather = true;              // Использовать получение текущей погоды с погодного сервера
-#if (WEATHER_SYSTEM == 0)
+uint8_t  useWeather = 1;                 // Использовать получение текущей погоды с погодного сервера 0 - не использовать; 1 - Yandex; 2 - OpenWeatherMap
 uint32_t regionID = 62;                  // Код региона по Yandex
-#else
-uint32_t regionID = 1502026;             // Код региона по OpenWeatherMap
-#endif
+uint32_t regionID2 = 1502026;            // Код региона по OpenWeatherMap
 String   skyColor;                       // Рекомендованный цвет фона погоды
 String   weather;                        // Состояние - "Ясно", "Облачно", "Дождь" и т.д.
 String   dayTime;                        // "Темное время суток" / "Светлое время суток"

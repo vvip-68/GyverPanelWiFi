@@ -81,9 +81,9 @@ void loadSettings() {
   //  171 - Режим цвета оверлея текста X: 0,1,2,3                                                            // getTextColor()                 // setTextColor(COLOR_TEXT_MODE)  
   //  172 - Скорость прокрутки оверлея текста                                                                // getTextScrollSpeed()           // setTextScrollSpeed(speed_value)  
   //  173 - Отображать бегущую строку оверлеем в режимах                                                     // getTextOverlayEnabled()        // saveTextOverlayEnabled(textOverlayEnabled)
-  //  174 - Использовать сервис получения погоды 0- нет, 1 - да                                              // getUseWeather()                // setUseWeather(useWeather)
+  //  174 - Использовать сервис получения погоды 0- нет, 1 - Yandex; 2 - OpenWeatherMap                      // getUseWeather()                // setUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // setWeatherInterval(SYNC_WEATHER_PERIOD)
-  // 176,177,178,179 - Код региона для получения погоды (4 байта - uint32_t)                                 // getWeatherRegion()             // setWeatherRegion(regionID)
+  // 176,177,178,179 - Код региона Yandex для получения погоды (4 байта - uint32_t)                          // getWeatherRegion()             // setWeatherRegion(regionID)
   //  180 - цвет температуры в дневных часах: 0 - цвет часов; 1 - цвет в зависимости от теммпературы         // getUseTemperatureColor()       // setUseTemperatureColor(useTemperatureColor)
   //  181 - цвет температуры в ночных часах:  0 - цвет часов; 1 - цвет в зависимости от теммпературы         // getUseTemperatureColorNight()  // setUseTemperatureColorNight(useTemperatureColorNight)
   // 182-206 - MQTT сервер (24 симв)                                                                         // getMqttServer().toCharArray(mqtt_server, 24)  // setMqttServer(String(mqtt_server))       // char mqtt_server[25] = ""
@@ -94,7 +94,8 @@ void loadSettings() {
   // 240 - яркость ночных часов                                                                              // getNightClockBrightness()      // setNightClockBrightness(nightClockBrightness)
   // 241,242 - задержка отпракии запросов MQTT серверу                                                       // getMqttSendDelay()             // setMqttSendDelay(mqtt_send_delay)
   // 243 - использовать префикс имя пользователя при формировании топика                                     // getMqttUsePrefix()             // setMqttUsePrefix(nightClockBrightness)
-  //**244 - не используется
+  // 244,245,246,247 - Код региона OpenWeatherMap для получения погоды (4 байта - uint32_t)                  // getWeatherRegion2()            // setWeatherRegio2(regionID2)
+  //**248 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -220,10 +221,11 @@ void loadSettings() {
   #if (USE_WEATHER == 1)     
     useWeather =  getUseWeather();
     regionID = getWeatherRegion();
+    regionID2 = getWeatherRegion2();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
     useTemperatureColor = getUseTemperatureColor();
     useTemperatureColorNight = getUseTemperatureColorNight();
-    showWeatherInClock = useWeather && getShowWeatherInClock();
+    showWeatherInClock = useWeather > 0 && getShowWeatherInClock();
   #endif  
 
     loadStaticIP();
@@ -384,6 +386,7 @@ void saveDefaults() {
 #if (USE_WEATHER == 1)       
   setUseWeather(useWeather);
   setWeatherRegion(regionID);
+  setWeatherRegion2(regionID2);
   setWeatherInterval(SYNC_WEATHER_PERIOD);
   setUseTemperatureColor(useTemperatureColor);
   setShowWeatherInClock(showWeatherInClock);
@@ -1461,13 +1464,13 @@ byte getTextScrollSpeed() {
   return clr;
 }
 
-boolean getUseWeather() {
-  return EEPROMread(174) == 1;
+uint8_t getUseWeather() {
+  return EEPROMread(174);
 }
 
-void setUseWeather(boolean use) {
-  if (use != getUseWeather()) {
-    EEPROMwrite(174, use ? 1 : 0);
+void setUseWeather(uint8_t id) {
+  if (id != getUseWeather()) {
+    EEPROMwrite(174, id);
   }
 }
 
@@ -1492,6 +1495,17 @@ uint32_t getWeatherRegion() {
 void setWeatherRegion(uint32_t value) {
   if (value != getWeatherRegion()) {
     EEPROM_long_write(176, value);
+  }
+}
+
+uint32_t getWeatherRegion2() {
+  uint32_t region = EEPROM_long_read(244);  
+  return region;
+}
+
+void setWeatherRegion2(uint32_t value) {
+  if (value != getWeatherRegion2()) {
+    EEPROM_long_write(244, value);
   }
 }
 

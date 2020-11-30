@@ -257,7 +257,7 @@ void doEffectWithOverlay(byte aMode) {
 
       if (needOverlay) {
         #if (USE_WEATHER == 1)       
-          weatherOverlayEnabled = useWeather && init_weather && (c_size == 1) && showWeatherInClock && (CLOCK_ORIENT == 0) && allowVertical && allowHorizontal;  // Нужно 2 строки шрифта 3x5 + один пробел между строками минимум
+          weatherOverlayEnabled = useWeather > 0 && init_weather && (c_size == 1) && showWeatherInClock && (CLOCK_ORIENT == 0) && allowVertical && allowHorizontal;  // Нужно 2 строки шрифта 3x5 + один пробел между строками минимум
           overlayDelayed2 = weatherOverlayEnabled;
           if (weatherOverlayEnabled) {
             CLK_Y += 3;                                            // Сдвинуть позицию часов на 3 строки выше с контролем не выхода за высоту матрицы

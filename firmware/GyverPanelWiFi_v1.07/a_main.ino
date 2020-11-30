@@ -166,7 +166,7 @@ void process() {
       }
 
       #if (USE_WEATHER == 1)  
-        if (useWeather) {   
+        if (useWeather > 0) {   
           // Если настройки программы предполагают получение сведений о текущей погоде - выполнить обновление данных с погодного сервера
           if ((weather_t > 0) && getWeatherInProgress && (millis() - weather_t > 5000)) {
             Serial.println(F("Таймаут запроса погоды!"));
@@ -180,7 +180,7 @@ void process() {
               DynamicJsonDocument doc(256);
               String out;
               doc["act"] = F("WEATHER");
-              doc["region"] = regionID;
+              doc["region"] = useWeather == 1 ? regionID : regionID2;
               doc["result"] = F("TIMEOUT");
               serializeJson(doc, out);      
               NotifyInfo(out);
@@ -502,15 +502,13 @@ void parsing() {
     12 - Настройки погоды
       - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
       - $12 4 X;   - использовать получение погоды с погодного сервера
-      - $12 5 I С; - интервал получения погоды с сервера в минутах (I) и код региона C
+      - $12 5 I С C2; - интервал получения погоды с сервера в минутах (I) и код региона C - Yandex и код региона C2 - OpenWeatherMap
       - $12 6 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в ночных часах
     13 - Настройки бегущей cтроки  
       - $13 0 N; - активация для редактирования строки с номером N - запрос текста строки
       - $13 1 N; - активация прокручивания строки с номером N
       - $13 2 I; - запросить текст бегущей строки с индексом I как есть, без обработки макросов
       - $13 3 I; - запросить текст бегущей строки с индексом I с обработкой макросов
-      - $13 4 X; - использовать получение погоды с погодного сервера
-      - $13 5 I С; - интервал получения погоды с сервера в минутах (I) и код региона C
       - $13 9 I; - сохранить настройку I - интервал в секундах отображения бегущей строки
       - $13 11 X; - Режим цвета бегущей строки X: 0,1,2,           
       - $13 13 X; - скорость прокрутки бегущей строки
@@ -1293,10 +1291,10 @@ void parsing() {
       
       // ----------------------------------------------------
       // 12 - Настройки погоды
-      // - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
-      // - $12 4 X;   - использовать получение погоды с погодного сервера
-      // - $12 5 I С; - интервал получения погоды с сервера в минутах (I) и код региона C
-      // - $12 6 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в ночных часах
+      // - $12 3 X;      - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
+      // - $12 4 X;      - использовать получение погоды с погодного сервера
+      // - $12 5 I С C2; - интервал получения погоды с сервера в минутах (I) и код региона C - Yandex и код региона C2 - OpenWeatherMap
+      // - $12 6 X;      - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в ночных часах
       // ----------------------------------------------------
 
       #if (USE_WEATHER == 1)                  
@@ -1306,18 +1304,21 @@ void parsing() {
              useTemperatureColor = intData[2] == 1;
              setUseTemperatureColor(useTemperatureColor);
              break;
-           case 4:               // $12 4 X; - Использовать получение погоды с сервера 0 - нет; 1 - да
-             useWeather = intData[2] == 1;
-             setUseWeather(useWeather);
+           case 4:               // $12 4 X; - Использовать получение погоды с сервера 0 - нет; 1 - Yandex 2 - OpenWeatherMap
+             useWeather = intData[2];
+             setUseWeather(useWeather);      // При сохранении - проверка на корректность
+             useWeather = getUseWeather();   // Считываем корректные данные
              if (wifi_connected) {
                refresh_weather = true; weather_t = 0; weather_cnt = 0;
              }
              break;
-           case 5:               // $12 5 I C; - Интервал обновления погоды с сервера в минутах и Код региона
+           case 5:               // $12 5 I C C2; - Интервал обновления погоды с сервера в минутах, Код региона Yandex, Код региона OpenWeatherMap 
              SYNC_WEATHER_PERIOD = intData[2];
              regionID = intData[3];
+             regionID2 = intData[4];
              setWeatherInterval(SYNC_WEATHER_PERIOD);
              setWeatherRegion(regionID);
+             setWeatherRegion2(regionID2);
              weatherTimer.setInterval(1000L * 60 * SYNC_WEATHER_PERIOD);
              if (wifi_connected) {
                refresh_weather = true; weather_t = 0; weather_cnt = 0;
@@ -1509,17 +1510,19 @@ void parsing() {
       // ----------------------------------------------------
 
       case 16:
-        if      (intData[1] == 0) setManualModeTo(true);
-        else if (intData[1] == 1) setManualModeTo(false);
+        if      (intData[1] == 0) { resetModes(); setManualModeTo(true);  }
+        else if (intData[1] == 1) { resetModes(); setManualModeTo(false); }
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
         else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
 
         saveRandomMode(useRandomSequence);        
         setCurrentManualMode(manualMode ? (int8_t)thisMode : -1);
+        
         if (manualMode) {
           setCurrentSpecMode(-1);
         }
+        
         // Для команд, пришедших от MQTT отправлять только ACK;
         // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
         if (cmdSource == UDP) {
@@ -2193,7 +2196,7 @@ void sendPageParams(int page, eSources src) {
   
   switch (page) { 
     case 1:  // Настройки
-      str = getStateString("W|H|DM|PD|IT|AL|RM|PW|BR|WU|WT|WR|WC|WN");
+      str = getStateString("W|H|DM|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ");
       break;
     case 2:  // Эффекты
       str = getStateString("EF|UE|UT|UC|SE|SS|SQ|BE");
@@ -2450,9 +2453,11 @@ String getStateValue(String &key, int8_t effect) {
   // W2          текущая температура
   // WC:X        Использовать цвет для отображения температуры в дневных часах  X: 0 - выключено; 1 - включено
   // WN:X        Использовать цвет для отображения температуры в ночных часах  X: 0 - выключено; 1 - включено
-  // WR:число    Регион погоды - https://tech.yandex.ru/xml/doc/dg/reference/regions-docpage/
+  // WR:число    Регион погоды Yandex
+  // WS:число    Регион погоды OpeenWeatherMap
   // WT:число    Период запроса сведений о погоде в минутах
   // WU:X        Использовать получение погоды с сервера: 0 - выключено; 1 - включено
+  // WZ:X        Прошивка поддерживает погоду USE_WEATHER == 1 - 0 - выключено; 1 - включено
 
   String str = "";
   
@@ -2482,16 +2487,22 @@ String getStateValue(String &key, int8_t effect) {
 
   // Ограничение по току в миллиамперах
   if (key == "PW") return str + "PW:" + String(CURRENT_LIMIT);
-  
+
+  // Прошивка поддерживает погоду 
+  if (key == "WZ") return str + "WZ:" + String(USE_WEATHER);
+
 #if (USE_WEATHER == 1)                  
-  // Использовать получение погоды с сервера: 0 - выключено; 1 - включено
-  if (key == "WU") return str + "WU:" + (useWeather ? "1" : "0");
+  // Использовать получение погоды с сервера: 0 - выключено; 1 - Yandex; 2 - OpenWeatherMap
+  if (key == "WU") return str + "WU:" + String(useWeather);
 
   // Период запроса сведений о погоде в минутах
   if (key == "WT") return str + "WT:" + String(SYNC_WEATHER_PERIOD);
 
-  // Регион погоды
+  // Регион погоды Yandex
   if (key == "WR") return str + "WR:" + String(regionID);
+
+  // Регион погоды OpenWeatherMap
+  if (key == "WS") return str + "WS:" + String(regionID2);
 
   // Использовать цвет для отображения температуры в дневных часах: 0 - выключено; 1 - включено
   if (key == "WC") return str + "WC:" + (useTemperatureColor ? "1" : "0");
@@ -2748,9 +2759,10 @@ String getStateValue(String &key, int8_t effect) {
   if (key == "SD") return str + "SD:" + String(isSdCardReady); 
 #endif
 
-#if (USE_MQTT == 1)
   // Прошивка поддерживает MQTT 0-нет, 1-да
   if (key == "QZ") return str + "QZ:" + String(USE_MQTT == 1 ? "1" : "0");  
+
+#if (USE_MQTT == 1)
 
   // Использовать MQTT 0-нет, 1-да
   if (key == "QA") return str + "QA:" + String(useMQTT ? "1" : "0");  

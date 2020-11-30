@@ -22,7 +22,6 @@
 // Внимание!!! 
 // DEVICE_ID == 4 имеет размер матрицы - 1000 светодиодов, что уже довольно много для ESP8266, и в данном варианте прошивки при всех включенных возможностях
 // прошивка начинает "падать" по причине недостатка памяти - функция malloc() не может выделить память. 
-// Также перестает работать MQTT - соединение с сервером устанавливается и тут же разрывается, данные не успевают прийти/уйти по этому каналу управления.
 // Для устройства с этим DEVICE_ID в целях устранения этих проблем в прошивке отключены некоторые возможности - например отключены игры Лабиринт, Змейка, Тетрис, Арканоид.
 // Вполне вероятно, что какие-то возможности тоже [будут] урезаны. Для больших матриц рекомендуется использовать ESP32 у которого памяти значительно больше.
 // Если вы повторяете этот проект для матриц меньшего размера - берите за основу блок для других DEVIVE_ID и настраивайте параметры под себя.
@@ -52,7 +51,17 @@
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET / реле; 0 - не использовать 
 #define USE_MQTT 1            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h     (пароли и ключи доступа как приватные данные в отдельном файле)
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках: (пароли и ключи доступа определены в тексте скетча)
+                              //   293 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   297 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   301 - DEFAULT_MQTT_PASS   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   305 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   309 - MQTT_USE_PREFIX     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   313 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   423 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 для погоды с OpenWeatherMap
+                              // Файл a_def_pass.h в комплект не входит, нужно создать, скопировать туда указанные строки
 
 #define LED_PIN  2            // D2 пин ленты
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
@@ -93,7 +102,10 @@
 #define USE_POWER 0           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 0            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
+                              // Смотри комментарий к блоку DEVICE_ID == 0
 
 #define LED_PIN 3             // пин ленты
 #define PIN_BTN 4             // кнопка подключена сюда (PIN --- КНОПКА --- GND)
@@ -136,7 +148,10 @@
 #define USE_POWER 0           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 0            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
+                              // Смотри комментарий к блоку DEVICE_ID == 0
 
 #define LED_PIN 2             // пин ленты
 #define PIN_BTN D6            // кнопка подключена сюда (PIN --- КНОПКА --- GND)
@@ -177,7 +192,10 @@
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 1            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
+                              // Смотри комментарий к блоку DEVICE_ID == 0
 
 #define LED_PIN 2             // D2 пин ленты
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
@@ -216,7 +234,10 @@
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 0            // 1 - использовать управление по MQTT-каналу; 0 - не использовать (на матрице 50x20 видимо из за нехватки памяти - не работает - соединение постоянно отваливается, команды не принимает)
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
+                              // Смотри комментарий к блоку DEVICE_ID == 0
 
 #define LED_PIN 2             // D2 пин ленты
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
@@ -258,7 +279,10 @@
 #define USE_POWER 0           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 0            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
+                              // Смотри комментарий к блоку DEVICE_ID == 0
 
 #define LED_PIN 2             // пин ленты
 #define PIN_BTN D6            // кнопка подключена сюда (PIN --- КНОПКА --- GND)
@@ -300,7 +324,10 @@
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
 #define USE_MQTT 1            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
-#define WEATHER_SYSTEM 0      // 0 - Yandex  1 - OpenWeatherMap
+
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
+                              // Смотри комментарий к блоку DEVICE_ID == 0
 
 #define LED_PIN (13U)         // пин ленты, физически подключена к пину D13 на плате
 #define PIN_BTN (15U)         // кнопка подключена сюда (PIN --- КНОПКА --- GND)
@@ -330,7 +357,7 @@
 #include <PubSubClient.h>        // Библиотека для работы с MQTT
 #include <ArduinoOTA.h>          // Библиотека обновления "по воздуху"
 #include <WiFiUdp.h>             // Библиотека поддержки WiFi
-#include <ArduinoJson.h>         // Библиотека для разбора JSON-ответа от сервиса Yandex-Погода
+#include <ArduinoJson.h>         // Библиотека для разбора JSON-ответа от сервиса Yandex-Погода / OpenWeatherMap
 #include <TimeLib.h>             // Библиотека поддержки функций времени
 #include <EEPROM.h>              // Библиотека поддержки постоянной памяти
 #include <FastLED.h>             // Установите в менеджере библиотек стандартную библиотеку FastLED
@@ -363,27 +390,6 @@
 
 // =======================================================
 
-// Раскомментируйте ниже строку, содержащую '#define public_project', если ваши приватные данные аккаунтов и паролей размешены непосредственно в скетче в файле a_def_soft.h в строках:
-//
-// 293 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 297 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 301 - DEFAULT_MQTT_PASS   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 305 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 309 - MQTT_USE_PREFIX     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 313 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-// 423 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 и WEATHER_SYSTEM == 1
-//
-// Если строка закомментирована - значения для приведенных выше параметров вынесены в отдельный файл 'a_def_pass.h' и переменные при сборке скетча будут браться из него.
-//
-// Данный файл не включен в проект, т.к. содержит приватные данные. 
-// Вам нужно или создать свой файл 'a_def_pass.h', если строка закомментирована или
-// задать ваши значения этих переменных непосредственно в a_def_soft.h в указанных строках
-
-//#define public_project
-
-#if (USE_MQTT == 1 || (USE_WEATHER == 1 && WEATHER_SYSTEM == 1))
-#ifndef public_project
-// !!! Если здесь ошибка - смотри комментарий в строках 366-380 !!!
-#include "a_def_pass.h"     // приватные данные и пароли доступа к серверу MQTT
-#endif
+#if A_DEF_PASS == 1         
+#include "a_def_pass.h"     // Если здесь ошибка - смотри комментарий к определению A_DEF_PASS выше в блоке с соответствующим DEVICE_ID
 #endif
