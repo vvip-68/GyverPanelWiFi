@@ -377,16 +377,16 @@ uint32_t HEXtoInt(String hexValue) {
   }
 
   byte tens, ones, number1, number2, number3;
-  tens = (hexValue[0] < '9') ? hexValue[0] - '0' : hexValue[0] - '7';
-  ones = (hexValue[1] < '9') ? hexValue[1] - '0' : hexValue[1] - '7';
+  tens = (hexValue[0] <= '9') ? hexValue[0] - '0' : hexValue[0] - '7';
+  ones = (hexValue[1] <= '9') ? hexValue[1] - '0' : hexValue[1] - '7';
   number1 = (16 * tens) + ones;
 
-  tens = (hexValue[2] < '9') ? hexValue[2] - '0' : hexValue[2] - '7';
-  ones = (hexValue[3] < '9') ? hexValue[3] - '0' : hexValue[3] - '7';
+  tens = (hexValue[2] <= '9') ? hexValue[2] - '0' : hexValue[2] - '7';
+  ones = (hexValue[3] <= '9') ? hexValue[3] - '0' : hexValue[3] - '7';
   number2 = (16 * tens) + ones;
 
-  tens = (hexValue[4] < '9') ? hexValue[4] - '0' : hexValue[4] - '7';
-  ones = (hexValue[5] < '9') ? hexValue[5] - '0' : hexValue[5] - '7';
+  tens = (hexValue[4] <= '9') ? hexValue[4] - '0' : hexValue[4] - '7';
+  ones = (hexValue[5] <= '9') ? hexValue[5] - '0' : hexValue[5] - '7';
   number3 = (16 * tens) + ones;
 
   return ((uint32_t)number1 << 16 | (uint32_t)number2 << 8 | number3 << 0);
