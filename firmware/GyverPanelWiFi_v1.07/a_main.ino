@@ -1510,7 +1510,7 @@ void parsing() {
       // ----------------------------------------------------
 
       case 16:
-        if      (intData[1] == 0) { resetModes(); setManualModeTo(true);  }
+        if      (intData[1] == 0) setManualModeTo(true);
         else if (intData[1] == 1) { resetModes(); setManualModeTo(false); }
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
@@ -1521,6 +1521,11 @@ void parsing() {
         
         if (manualMode) {
           setCurrentSpecMode(-1);
+        }
+
+        if (intData[1] == 1 && thisMode == MC_FILL_COLOR && globalColor == 0x000000) {
+          // Было выключено, режим "Лампа" с черным цветом - включить случайный режим
+          setRandomMode2();
         }
         
         // Для команд, пришедших от MQTT отправлять только ACK;
@@ -2997,13 +3002,18 @@ void setSpecialMode(int spc_mode) {
 void resetModes() {
   // Отключение спец-режима перед включением других
   specialMode = false;
+  specialModeId = -1;
   isTurnedOff = false;
   isNightClock = false;
-  specialModeId = -1;
   loadingFlag = false;
   wifi_print_ip = false;
   wifi_print_ip_text = false;
   gamePaused = false;
+  isAlarming = false; 
+  isPlayAlarmSound = false;
+  manualMode = false;
+  autoplayTimer = millis();
+  autoplayTime = getAutoplayTime();  
 }
 
 void setEffect(byte eff) {
