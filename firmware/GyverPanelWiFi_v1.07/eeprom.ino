@@ -128,7 +128,7 @@ void loadSettings() {
     globalBrightness = getMaxBrightness();
 
     autoplayTime = getAutoplayTime();
-    idleTime = getIdleTime();    
+    idleTime = getIdleTime();
 
     useNtp = getUseNtp();
     timeZoneOffset = getTimeZone();
