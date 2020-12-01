@@ -364,7 +364,7 @@ void startSoftAP() {
   ap_connected = WiFi.softAP(apName, apPass);
 
   for (int j = 0; j < 10; j++ ) {    
-    ESP.wdtFeed();
+    delay(0);
     if (ap_connected) {
       Serial.println();
       Serial.print(F("Точка доступа создана. Сеть: '"));
