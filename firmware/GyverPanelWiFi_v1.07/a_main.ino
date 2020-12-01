@@ -1523,9 +1523,14 @@ void parsing() {
           setCurrentSpecMode(-1);
         }
 
-        if (intData[1] == 1 && thisMode == MC_FILL_COLOR && globalColor == 0x000000) {
-          // Было выключено, режим "Лампа" с черным цветом - включить случайный режим
-          setRandomMode2();
+        if (intData[1] == 1) {
+          idleTime = getIdleTime();    
+          idleTimer.setInterval(idleTime);
+          idleTimer.reset();
+          if (thisMode == MC_FILL_COLOR && globalColor == 0x000000) {
+            // Было выключено, режим "Лампа" с черным цветом - включить случайный режим
+            setRandomMode2();
+          }
         }
         
         // Для команд, пришедших от MQTT отправлять только ACK;
@@ -3014,6 +3019,7 @@ void resetModes() {
   manualMode = false;
   autoplayTimer = millis();
   autoplayTime = getAutoplayTime();  
+  idleState = true;
 }
 
 void setEffect(byte eff) {
