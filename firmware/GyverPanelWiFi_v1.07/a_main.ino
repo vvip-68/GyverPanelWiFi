@@ -1130,11 +1130,11 @@ void parsing() {
               setSpecialMode(10);    // Дневные часы. Для ночных - 8
             }
           } else {
-            setManualModeTo(true);
-            loadingFlag = intData[1] == 0;
+            loadingFlag = true;
             setEffect(tmp_eff);
             if (tmp_eff == MC_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
           }
+          setManualModeTo(true);
         } else 
         
         if (intData[1] == 1) {          
@@ -1511,7 +1511,7 @@ void parsing() {
 
       case 16:
         if      (intData[1] == 0) setManualModeTo(true);
-        else if (intData[1] == 1) { resetModes(); setManualModeTo(false); }
+        else if (intData[1] == 1) { resetModesExt(); setManualModeTo(false); }
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
         else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
@@ -3013,6 +3013,10 @@ void resetModes() {
   loadingFlag = false;
   wifi_print_ip = false;
   wifi_print_ip_text = false;
+}
+
+void resetModesExt() {
+  resetModes();
   gamePaused = false;
   isAlarming = false; 
   isPlayAlarmSound = false;
