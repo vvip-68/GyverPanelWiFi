@@ -1473,8 +1473,8 @@ void rescanTextEvents() {
     for (uint16_t ix = 0; ix < str.length(); ix++) {
       if (err) {
         Serial.println();
-        Serial.println(String(F("Ошибка в макросе '{P")) + str + String(F("}'")));
-        for(uint8_t n=0; n<ix-1; n++) Serial.print('-');
+        Serial.print(String(F("Ошибка в макросе\n'{P")) + str + String(F("}'\n  ")));
+        for(uint8_t n=0; n<ix; n++) Serial.print('-');
         Serial.println('^');
         break;
       }      
@@ -1513,13 +1513,14 @@ void rescanTextEvents() {
         // Разделитель строки замены/времени ДО/времени ПОСЛЕ/дней недели  
         case '#':
           switch (stage) {
-            case 2: iYear = num;    stage = 5; break;  // Сейчас разбор года - переходим в стадию номера строки заменителя
-            case 4: iMinute = num;  stage = 5; break;  // Сейчас разбор минут времени - переходим в стадию номера строки заменителя
+            case 2: iYear = num;    stage = 5; star_cnt = 0; num = 0;break;   // Сейчас разбор года - переходим в стадию номера строки заменителя
+            case 4: iMinute = num;  stage = 5; star_cnt = 0; num = 0; break;  // Сейчас разбор минут времени - переходим в стадию номера строки заменителя
             case 5: text_idx = num; stage = 6; break;  // Закончен разбор номера строки замены; Следующая стадия - разбор секунд ДО
             case 6: iBefore = num;  stage = 7; break;  // Закончен разбор номера секунд ДО; Следующая стадия - разбор секунд ПОСЛЕ
             case 7: iAfter = num;   stage = 8; break;  // Закончен разбор номера секунд ПОСЛЕ; Следующая стадия - разбор дней недели
             default:
               err = true;    // В любой другой стадии № не на своем месте - ошибка
+              break;
           }          
           num = 0;  
           break;  
