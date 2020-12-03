@@ -851,7 +851,6 @@ void checkAlarmTime() {
     serializeJson(doc, out);      
     NotifyInfo(out);
     #endif
-
   }
 
   delay(0); // Для предотвращения ESP8266 Watchdog Timer
@@ -885,7 +884,6 @@ void checkAlarmTime() {
 }
 
 void stopAlarm() {
-  #if (USE_MP3 == 1)
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
     Serial.println(String(F("Рассвет ВЫКЛ в ")) + padNum(hour(),2) + ":" + padNum(minute(),2));
     isAlarming = false;
@@ -925,7 +923,6 @@ void stopAlarm() {
     NotifyInfo(out);
     #endif
   }
-  #endif
 }
 
 // Проверка необходимости включения режима 1 по установленному времени

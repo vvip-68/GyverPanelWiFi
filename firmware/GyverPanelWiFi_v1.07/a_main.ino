@@ -307,7 +307,11 @@ void process() {
     if (isTurnedOff) {
       // Выключить питание матрицы
       #if (USE_POWER == 1)
-        digitalWrite(POWER_PIN, POWER_OFF);
+        if (!isAlarming) {
+          digitalWrite(POWER_PIN, POWER_OFF);
+        } else {
+          digitalWrite(POWER_PIN, POWER_ON);
+        }
       #endif      
       //  - длительное нажатие кнопки включает яркий белый свет
 #if (DEVICE_TYPE == 0)
