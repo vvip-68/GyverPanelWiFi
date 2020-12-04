@@ -196,6 +196,10 @@ uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
   if (font <= 94) {
     return pgm_read_byte(&(fontHEX[font][row]));     // для английских букв и символов
+  } else if ((modif == 208) && font == 97) {         // Ё
+    return pgm_read_byte(&(fontHEX[100][row])); 
+  } else if ((modif == 209) && font == 113) {        // ё
+    return pgm_read_byte(&(fontHEX[132][row])); 
   } else if ((modif == 208 || modif == 209) && font >= 112 && font <= 159) {           // и пизд*ц для русских
     return pgm_read_byte(&(fontHEX[font - 17][row]));
   } else if ((modif == 208 || modif == 209) && font >= 96 && font <= 111) {
@@ -229,7 +233,11 @@ uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
 
 uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if (modif == 196 || modif == 197) {                                           // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
+  if ((modif == 208) && font == 97) {                     // Ё
+    return pgm_read_byte(&(diasHEX[5][row])); 
+  } else if ((modif == 209) && font == 113) {             // ё
+    return pgm_read_byte(&(diasHEX[5][row])); 
+  } else if (modif == 196 || modif == 197) {                                           // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
     // 0 - Č - перевернутая крышечка над заглавной буквой Č Ž č ž
     // 1 - Ė - точка над заглавной буквой Ė ė
     // 2 - Ū - надстрочная черта над заглавной буквой Ū ū
@@ -261,7 +269,11 @@ uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
 
 int8_t getDiasOffset(uint8_t font, uint8_t modif) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if (modif == 196 || modif == 197) {            // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
+  if ((modif == 208) && font == 97) {                   // Ё
+    return 3; 
+  } else if ((modif == 209) && font == 113) {           // ё
+    return 1; 
+  } else if (modif == 196 || modif == 197) {            // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
     // Смещение надстрочных заглавных - 3
     // Смещение надстрочных маленьких букв - 0 или 1
     // Смещение подстрочного символа -1
