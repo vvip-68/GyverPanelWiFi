@@ -39,7 +39,7 @@
  * В менеджере плат выбрано NodeMCU v1.0 (ESP-12E)
  */
 #if defined(ESP8266)
-#define WIDTH 48              // ширина матрицы
+#define WIDTH 96              // ширина матрицы
 #define HEIGHT 16             // высота матрицы
 #define DEVICE_TYPE 1         // Использование матрицы: 0 - свернута в трубу для лампы; 1 - плоская матрица в рамке   
 #define MATRIX_TYPE 0         // тип матрицы: 0 - зигзаг, 1 - параллельная
@@ -232,7 +232,7 @@
 #define USE_MP3 0             // поставьте 0, если у вас нет звуковой карты MP3 плеера
 #define USE_TM1637 0          // поставьте 1, если используется дополнительный индикатор TM1637, 0 если индикатора нет
 #define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET; 0 - не использовать 
-#define USE_MQTT 0            // 1 - использовать управление по MQTT-каналу; 0 - не использовать (на матрице 50x20 видимо из за нехватки памяти - не работает - соединение постоянно отваливается, команды не принимает)
+#define USE_MQTT 1            // 1 - использовать управление по MQTT-каналу; 0 - не использовать (на матрице 50x20 видимо из за нехватки памяти - не работает - соединение постоянно отваливается, команды не принимает)
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
 
 #define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
@@ -329,16 +329,18 @@
                               // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках:
                               // Смотри комментарий к блоку DEVICE_ID == 0
 
+// Схема подключения для ESP32 - в папке Schemes, файл 'ESP32+ALL.JPG'
+// Внимание!!! С текущей версией ядра ESP32 (1.0.4) SD-карта работает некорректно - не возвращается список файлов эффектов в папке.  Подробности выясняются...
 #define LED_PIN (13U)         // пин ленты, физически подключена к пину D13 на плате
 #define PIN_BTN (15U)         // кнопка подключена сюда (PIN --- КНОПКА --- GND)
-#define POWER_PIN (2U)        // управляющий пин вкл/выкл матрицы через MOSFET
-#define SD_CS_PIN (8U)        // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
-/*
-#define SRX (16U)             // 16 is RX of ESP32, connect to TX of DFPlayer
-#define STX (17U)             // 17 is TX of ESP32, connect to RX of DFPlayer module
-#define DIO (23U)             // TM1637 display DIO pin
-#define CLK (22U)             // TM1637 display CLK pin
-*/
+#define POWER_PIN (26U)       // G26 управляющий пин вкл/выкл матрицы через MOSFET или реле
+#define SD_CS_PIN (5U)        // G5 пин выбора (ChipSelect) SD карты. Также SD карта использует G18 (CLK), G19 (MISO), G23 (MOSI)
+
+#define SRX (16U)             // G16 RX пин ESP32, подключен в TX пин (3) модуля DFPlayer
+#define STX (17U)             // G17 TX пин ESP32, подключен в RX пин (2) модуля DFPlayer
+#define DIO (33U)             // TM1637 display DIO pin
+#define CLK (32U)             // TM1637 display CLK pin
+
 #endif
 
 // =======================================================
