@@ -375,11 +375,9 @@ void process() {
       // ... и т.д.
       
       // Обработка нажатой и удерживаемой кнопки
-      else if (isButtonHold) {      
+      else if (isButtonHold && butt.isStep() && thisMode != MC_DAWN_ALARM) {      
         // Удержание кнопки повышает / понижает яркость панели (лампы)
-        if (butt.isStep() && thisMode != MC_DAWN_ALARM) {
-          processButtonStep();
-        }
+        processButtonStep();
       }            
     }
 
