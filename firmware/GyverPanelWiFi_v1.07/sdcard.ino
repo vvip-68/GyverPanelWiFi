@@ -125,7 +125,14 @@ void sdcardRoutine() {
       }
     }
     
+    #if defined(ESP8266)
+    // на ESP8266 при загрузке имен файлов с SD-карты возвращается только имя файла внутри выбранной папки -- чтобы получить полное имя вайла для загрузки  нужно к имени файла добавить имя папки
     fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
+    #else
+    // на ESP32 при загрузке имен файлов с SD-карты возвращается полное имя файла от корня SD-карты - имя папки добавлять не нужно
+    fileName = nameFiles[file_idx];
+    #endif
+
     play_file_finished = false;
     Serial.print(F("Загрузка файла эффекта: '"));
     Serial.print(fileName);
