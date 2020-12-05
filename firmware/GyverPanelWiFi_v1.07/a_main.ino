@@ -726,8 +726,8 @@ void parsing() {
           } else {
             globalBrightness = intData[2];
             saveMaxBrightness(globalBrightness);
-            if (specialMode) specialBrightness = globalBrightness;
-            FastLED.setBrightness(globalBrightness);
+            if ( specialMode) specialBrightness = globalBrightness;
+            if (!isTurnedOff) FastLED.setBrightness(globalBrightness);
           }
           // Для команд, пришедших от MQTT отправлять только ACK;
           // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
