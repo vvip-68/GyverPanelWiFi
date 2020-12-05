@@ -707,7 +707,7 @@ void calculateDawnTime() {
 
   // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnHour, dawnMinute, dawnWeekDay);
 
-  Serial.print(String(F("Следующий рассвет в ")) + padNum(dawnHour,2)+ F(":") + padNum(dawnMinute,2) + ", " + getWeekdayString(dawnWeekDay));
+  Serial.println(String(F("Следующий рассвет в ")) + padNum(dawnHour,2)+ F(":") + padNum(dawnMinute,2) + ", " + getWeekdayString(dawnWeekDay));
 }
 
 // Проверка времени срабатывания будильника
