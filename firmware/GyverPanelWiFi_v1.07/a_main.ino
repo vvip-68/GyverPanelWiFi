@@ -253,14 +253,12 @@ void process() {
     
     if (butt.isHolded()) {
       isButtonHold = true;
-      if (!isTurnedOff && thisMode != MC_DAWN_ALARM) {
-        if (globalBrightness == 255)
-          brightDirection = false;
-        else if (globalBrightness == 0)  
-          brightDirection = true;
-        else  
-          brightDirection = !brightDirection;
-      }
+      if (globalBrightness == 255)
+        brightDirection = false;
+      else if (globalBrightness == 0)  
+        brightDirection = true;
+      else  
+        brightDirection = !brightDirection;
     }
 
     if (clicks > 0) {
@@ -391,8 +389,8 @@ void process() {
           }
 
           specialBrightness = globalBrightness;
-        
-          FastLED.setBrightness(globalBrightness);
+
+          if (!isTurnedOff) FastLED.setBrightness(globalBrightness);
           
           saveMaxBrightness(globalBrightness);
         }
