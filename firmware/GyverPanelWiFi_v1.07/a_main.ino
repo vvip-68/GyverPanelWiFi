@@ -322,6 +322,11 @@ void process() {
         setSpecialMode(1);
         FastLED.setBrightness(globalBrightness);
       }
+#else
+      // Удержание кнопки повышает / понижает яркость панели (лампы)
+      if (isButtonHold && butt.isStep()) {
+        processButtonStep();
+      }
 #endif      
     } else {
       // Включить питание матрицы
@@ -370,29 +375,10 @@ void process() {
       // ... и т.д.
       
       // Обработка нажатой и удерживаемой кнопки
-      else {
-
+      else if (isButtonHold) {      
         // Удержание кнопки повышает / понижает яркость панели (лампы)
         if (butt.isStep() && thisMode != MC_DAWN_ALARM) {
-          if (brightDirection) {
-            if (globalBrightness < 10) globalBrightness += 1;
-            else if (globalBrightness < 250) globalBrightness += 5;
-            else {
-              globalBrightness = 255;
-            }
-          } else {
-            if (globalBrightness > 15) globalBrightness -= 5;
-            else if (globalBrightness > 1) globalBrightness -= 1;
-            else {
-              globalBrightness = 1;
-            }
-          }
-
-          specialBrightness = globalBrightness;
-
-          if (!isTurnedOff) FastLED.setBrightness(globalBrightness);
-          
-          saveMaxBrightness(globalBrightness);
+          processButtonStep();
         }
       }            
     }
@@ -428,6 +414,25 @@ void process() {
       saveSettings();
     }
   }
+}
+
+void processButtonStep() {
+  if (brightDirection) {
+    if (globalBrightness < 10) globalBrightness += 1;
+    else if (globalBrightness < 250) globalBrightness += 5;
+    else {
+      globalBrightness = 255;
+    }
+  } else {
+    if (globalBrightness > 15) globalBrightness -= 5;
+    else if (globalBrightness > 1) globalBrightness -= 1;
+    else {
+      globalBrightness = 1;
+    }
+  }
+  specialBrightness = globalBrightness;
+  if (!isTurnedOff) FastLED.setBrightness(globalBrightness);  
+  saveMaxBrightness(globalBrightness);
 }
 
 // ********************* ПРИНИМАЕМ ДАННЫЕ **********************
