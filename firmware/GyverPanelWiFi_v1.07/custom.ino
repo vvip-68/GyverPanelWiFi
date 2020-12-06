@@ -292,8 +292,10 @@ void doEffectWithOverlay(byte aMode) {
     // Нарисовать текст в текущей позиции
     overlayDelayed = needOverlay;
     if (needOverlay) {
-      y_overlay_low  = getTextY();                      // Нижняя строка вывода строки текста
-      y_overlay_high = y_overlay_low + LET_HEIGHT - 1;  // Высота букв
+      y_overlay_low  = getTextY() - 2;                      // Нижняя строка вывода строки текста -2 строки на подстрочные диакритич символы
+      y_overlay_high = y_overlay_low + LET_HEIGHT + 4;      // Высота букв +3 символа на диакритичексие надстрочныесимволы
+      if (y_overlay_low < 0) y_overlay_low = 0;
+      if (y_overlay_high >= HEIGHT) y_overlay_high = HEIGHT - 1;
       overlayWrap();
     }
     runningText();

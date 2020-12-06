@@ -233,6 +233,8 @@ uint32_t textColor[MAX_COLORS+1];        // Цвета в строке
 unsigned long textStartTime = 0;         // Время начала отображения текущей бегущей строки
 unsigned long textLastTime = 0;          // Время завершения отображения последней показанной бегущей строки
 unsigned long textLastSend = 0;          // Время последней отправки очередной строки списка строк в телефон
+unsigned long textAllowBegin = 0;        // Для строк с макросом {S} - время начала допустимого интервала отображения unixTime
+unsigned long textAllowEnd = 4294967295; // Для строк с макросом {S} - время конца допустимого интервала отображения unixTime
 
 boolean loadingTextFlag = false;         // Флаг инициализации показа строки в режиме MC_TEXT (показ IP адреса); для новой строки оверлейного текста используется специальный вызов prepareNextText() в custom.ino
 boolean showTextNow = false;             // флаг: что в настоящий момент нужно отображать оверлеем: true - оверлей бегущей строки; false - оверлей часов;
@@ -287,7 +289,7 @@ WiFiClient m_client;                     // Объект для работы с 
 PubSubClient mqtt(m_client);             // Объект соединения с MQTT сервером
 
 // Внимание!!! Если вы меняете эти значения ПОСЛЕ того, как прошивка уже хотя бы раз была загружена в плату и выполнялась,
-// чтобы изменения вступили в силу нужно также изменить значение константы EEPROM_OK в первой строке в файле eeprom.ino 
+// чтобы изменения вступили в силу нужно также изменить значение константы EEPROM_OK в строке 8 этого файла
 
 #ifndef DEFAULT_MQTT_SERVER
 #define  DEFAULT_MQTT_SERVER "srv1.clusterfly.ru" // MQTT сервер
@@ -690,7 +692,7 @@ uint16_t   CURRENT_LIMIT = 15000;                // лимит по току в 
 
 #define    NUM_LEDS              WIDTH * HEIGHT
 #define    maxDim                max(WIDTH, HEIGHT)
-#define    OVERLAY_SIZE          WIDTH * 12      // 11 - макс высота области оферлея - для верт часов или календаря - 11, шрифт с диакрит. символами - 12
+#define    OVERLAY_SIZE          WIDTH * 13      // 11 - макс высота области оdерлея - для верт часов или календаря - 11, шрифт с диакрит. символами - 13
 #define    OVERLAY_WEATHER_SIZE  11 * 5          // шрифт 3x5 - 3 симв + 2 пробела между =  11 колонок по 5 строк
 
 CRGBArray<NUM_LEDS> leds;                        // обращение к светодиодам матрицы через этот массив

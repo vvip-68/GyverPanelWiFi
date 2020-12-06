@@ -15,7 +15,7 @@ void runningText() {
       text = String(FIRMWARE_VER);
   } else {
     // Вывод текста оверлея бегущей строки
-    textHasDateTime = init_time && (currentText.indexOf("{D") >= 0 || currentText.indexOf("{R") >= 0 || currentText.indexOf("{P") >= 0);  
+    textHasDateTime = init_time && (currentText.indexOf("{D") >= 0 || currentText.indexOf("{R") >= 0 || currentText.indexOf("{P") >= 0 || currentText.indexOf("{S") >= 0);  
     if (textHasDateTime) {
       text = processDateMacrosInText(currentText);          // Обработать строку, превратив макросы даты в отображаемые значения
       if (text.length() == 0) {                             // Если дата еще не инициализирована - вернет другую строку, не требующую даты
@@ -179,9 +179,9 @@ String getTextStates() {
         c = '1';     // статус - отключена
       else if (text.indexOf("{") < 0)
         c = '2';     // статус - текст без макросов
-      else if (text.indexOf("{") >= 0 && text.indexOf("{D") < 0 && text.indexOf("{R") < 0 && text.indexOf("{P") < 0)
+      else if (text.indexOf("{") >= 0 && text.indexOf("{D") < 0 && text.indexOf("{R") < 0 && text.indexOf("{P") < 0 && text.indexOf("{S") < 0)
         c = '3';     // статус - текст с макрросами, но без дато-зависимых макросов
-      else if (text.indexOf("{D") >= 0 || text.indexOf("{R") >= 0 || text.indexOf("{P") >= 0)
+      else if (text.indexOf("{D") >= 0 || text.indexOf("{R") >= 0 || text.indexOf("{P") >= 0 || text.indexOf("{S") >= 0)
         c = '4';     // статус - текст с дато-зависимыми макрросами
     }
     buf[i] = c;
@@ -206,27 +206,6 @@ uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
     return pgm_read_byte(&(fontHEX[font + 47][row]));
   } else if ((modif == 194) && font == 144) {                                          // Знак градуса '°'
     return pgm_read_byte(&(fontHEX[159][row]));
-  } else if (modif == 196 || modif == 197) {                                           // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
-    switch (font) {
-      case 100: return pgm_read_byte(&(fontHEX[33][row])); //Ą 196   100  -     33
-      case 108: return pgm_read_byte(&(fontHEX[35][row])); //Č 196   108  -     35
-      case 120: return pgm_read_byte(&(fontHEX[37][row])); //Ę 196   120  -     37
-      case 118: return pgm_read_byte(&(fontHEX[37][row])); //Ė 196   118  -     37
-      case 142: return pgm_read_byte(&(fontHEX[41][row])); //Į 196   142  -     41
-      case 128: return pgm_read_byte(&(fontHEX[51][row])); //Š 197   128  -     51
-      case 146: return pgm_read_byte(&(fontHEX[53][row])); //Ų 197   146  -     53
-      case 138: return pgm_read_byte(&(fontHEX[53][row])); //Ū 197   138  -     53
-      case 157: return pgm_read_byte(&(fontHEX[58][row])); //Ž 197   157  -     58
-      case 101: return pgm_read_byte(&(fontHEX[65][row])); //ą 196   101  -     65
-      case 109: return pgm_read_byte(&(fontHEX[67][row])); //č 196   109  -     67  
-      case 121: return pgm_read_byte(&(fontHEX[69][row])); //ę 196   121  -     69
-      case 119: return pgm_read_byte(&(fontHEX[69][row])); //ė 196   119  -     69
-      case 143: return pgm_read_byte(&(fontHEX[73][row])); //į 196   143  -     73
-      case 129: return pgm_read_byte(&(fontHEX[83][row])); //š 197   129  -     83
-      case 147: return pgm_read_byte(&(fontHEX[85][row])); //ų 197   147  -     85
-      case 139: return pgm_read_byte(&(fontHEX[85][row])); //ū 197   139  -     85
-      case 158: return pgm_read_byte(&(fontHEX[90][row])); //ž 197   158  -     90
-    }
   }
   return 0;
 }
@@ -234,35 +213,9 @@ uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
 uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
   if ((modif == 208) && font == 97) {                     // Ё
-    return pgm_read_byte(&(diasHEX[5][row])); 
+    return pgm_read_byte(&(diasHEX[0][row])); 
   } else if ((modif == 209) && font == 113) {             // ё
-    return pgm_read_byte(&(diasHEX[5][row])); 
-  } else if (modif == 196 || modif == 197) {                                           // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
-    // 0 - Č - перевернутая крышечка над заглавной буквой Č Ž č ž
-    // 1 - Ė - точка над заглавной буквой Ė ė
-    // 2 - Ū - надстрочная черта над заглавной буквой Ū ū
-    // 3 - Ą - хвостик снизу букв Ą ą Ę ę ų - смещение к правому краю буквы
-    // 4 - Į - хвостик снизу букв Į į Ų     - по центру буквы    
-    switch (font) {
-      case 100: return pgm_read_byte(&(diasHEX[3][row])); //Ą 196   100  -     33
-      case 108: return pgm_read_byte(&(diasHEX[0][row])); //Č 196   108  -     35
-      case 120: return pgm_read_byte(&(diasHEX[3][row])); //Ę 196   120  -     37
-      case 118: return pgm_read_byte(&(diasHEX[1][row])); //Ė 196   118  -     37
-      case 142: return pgm_read_byte(&(diasHEX[4][row])); //Į 196   142  -     41
-      case 128: return pgm_read_byte(&(diasHEX[0][row])); //Š 197   128  -     51
-      case 146: return pgm_read_byte(&(diasHEX[4][row])); //Ų 197   146  -     53
-      case 138: return pgm_read_byte(&(diasHEX[2][row])); //Ū 197   138  -     53
-      case 157: return pgm_read_byte(&(diasHEX[0][row])); //Ž 197   157  -     58
-      case 101: return pgm_read_byte(&(diasHEX[3][row])); //ą 196   101  -     65
-      case 109: return pgm_read_byte(&(diasHEX[0][row])); //č 196   109  -     67  
-      case 121: return pgm_read_byte(&(diasHEX[3][row])); //ę 196   121  -     69
-      case 119: return pgm_read_byte(&(diasHEX[1][row])); //ė 196   119  -     69
-      case 143: return pgm_read_byte(&(diasHEX[4][row])); //į 196   143  -     73
-      case 129: return pgm_read_byte(&(diasHEX[0][row])); //š 197   129  -     83
-      case 147: return pgm_read_byte(&(diasHEX[3][row])); //ų 197   147  -     85
-      case 139: return pgm_read_byte(&(diasHEX[2][row])); //ū 197   139  -     85
-      case 158: return pgm_read_byte(&(diasHEX[0][row])); //ž 197   158  -     90
-    }
+    return pgm_read_byte(&(diasHEX[0][row])); 
   }
   return 0;
 }
@@ -273,30 +226,6 @@ int8_t getDiasOffset(uint8_t font, uint8_t modif) {
     return 3; 
   } else if ((modif == 209) && font == 113) {           // ё
     return 1; 
-  } else if (modif == 196 || modif == 197) {            // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
-    // Смещение надстрочных заглавных - 3
-    // Смещение надстрочных маленьких букв - 0 или 1
-    // Смещение подстрочного символа -1
-    switch (font) {
-      case 100: return -1; //Ą 196   100  -1
-      case 108: return  2; //Č 196   108   3
-      case 120: return -1; //Ę 196   120  -1
-      case 118: return  3; //Ė 196   118   3
-      case 142: return -1; //Į 196   142  -1
-      case 128: return  2; //Š 197   128   3
-      case 146: return -1; //Ų 197   146  -1
-      case 138: return  3; //Ū 197   138   3
-      case 157: return  2; //Ž 197   157   3
-      case 101: return -1; //ą 196   101  -1
-      case 109: return  0; //č 196   109   1  
-      case 121: return -1; //ę 196   121  -1
-      case 119: return  1; //ė 196   119   1
-      case 143: return -1; //į 196   143  -1
-      case 129: return  0; //š 197   129   1
-      case 147: return -1; //ų 197   147  -1
-      case 139: return  1; //ū 197   139   1
-      case 158: return  0; //ž 197   158   1
-    }
   }
   return 0;
 }
@@ -367,14 +296,17 @@ int8_t getNextLine(int8_t currentIdx) {
         // Нулевая строка - строка управления ('#' или '##')?
         // Строки с макросом события {P} не отобрпжаются ро интервалу показа - только сразу до/после события
         bool disabled = (text.length() == 0) || (i == 0 && text[0] == '#') || (text[0] == '-') || (text.indexOf("{-}") >= 0) || (text.indexOf("{P") >= 0);
-        if (disabled) continue;
+        bool wrong_date = (text.indexOf("{S") >= 0) && !forThisDate(text);
+        if (disabled || wrong_date) continue;
         arr[cnt++] = i;
       }
 
       // Выбрать индексы строк, которые не отключены;
-      if (cnt == 0)
+      if (cnt == 0) {
+        // Нет строки для отображения
         nextLineIdx = -1;
-      else {
+        textLastTime = millis();
+      } else {
         byte att = 0;
         byte idx = random8(0,cnt - 1);
         while (arr[idx] == nextLineIdx && att < cnt) {
@@ -490,6 +422,15 @@ String processMacrosInText(const String text) {
          - #A - отображать строку-заместитель указанное количество секунд ПОСЛЕ наступления события (after). Если не указано - 60 секунд по умолчанию
          - #F - дни недели для которых работает эта строка - полезно когда дата не определена 1-пн..7-вс
                 Если указана точная дата и указан день недели, который не соответствует дате - строка выведена не будет
+
+     "{S01.01.2020#01.01.2020}"
+     "{S01.01.2020 7:00#01.01.2020 19:00}"
+     "{S01.01.**** 7:00#01.01.**** 19:00}"
+       - где после S указанаы даты начала и конца периода доступного для олтображения строки.
+       Для режима S элементы даты быть заменены звездочкой '*'
+       **.10.2020 - весь октябрь 2020 года 
+       01.**.**** - каждое первое число месяца
+       **.**.2020 - каждый день 2020 года  
   */
 
   // Выполнять цикл поиска подходящей к отображению строки
@@ -538,9 +479,10 @@ String processMacrosInText(const String text) {
     //    "{D}"  - просто часы вида "21:00" в виде беугщей строки
     //    "{R01.01.2021#N}" 
     //    "{P01.**.2021 8:00#N#B#A#F}" 
+    //    "{S01.01.****}" 
     // -------------------------------------------------------------
 
-    textHasDateTime = textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0;  
+    textHasDateTime = textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0;  
 
     // Если время еще не инициализировано и строка содержит макросы, зависимые от времени -
     // строку отображать нельзя - пропускаем, переходим к поиску следующей строки
@@ -890,6 +832,14 @@ String processDateMacrosInText(const String text) {
          - #F - дни недели для которых работает эта строка, когда дата не определена 1-пн..7-вс
                 Если указана точная дата и указан день недели, который не соответствует дате - строка выведена не будет
           
+     "{S01.01.2020#01.01.2020}"
+     "{S01.01.2020 7:00#01.01.2020 19:00}"
+     "{S01.01.**** 7:00#01.01.**** 19:00}"
+       - где после S указанаы даты начала и конца периода доступного для олтображения строки.
+       Для режима S элементы даты быть заменены звездочкой '*'
+       **.10.2020 - весь октябрь 2020 года 
+       01.**.**** - каждое первое число месяца
+       **.**.2020 - каждый день 2020 года  
      ------------------------------------------------------------- 
   */
 
@@ -1167,7 +1117,7 @@ String processDateMacrosInText(const String text) {
           textLine = processMacrosInText(textLine);
           
           // Строка замены содержит в себе макросы даты? Если да - вычислить всё снова для новой строки                   
-          if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0) continue;
+          if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
 
           // Вернуть текст строки замены, отображаемой после того, как событие прошло
           return textLine;
@@ -1283,9 +1233,27 @@ String processDateMacrosInText(const String text) {
         textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
       }
     }
-    
+
+    // "{S01.01.2020#01.01.2020}"
+    // "{S01.01.2020 7:00#01.01.2020 19:00}"
+    // "{S01.01.**** 7:00#01.01.**** 19:00}"
+    idx = textLine.indexOf("{S");
+    if (idx >= 0) {
+      // Строка с событием проверки текущей даты - выводится только при совпадении текущей даты с указанной (вычисленной по маске)
+      // Проверка строки производится раньше при решении какую строку показывать в getNextLine(). Если сюда попали - значит строка 
+      // пригодна к отображению в текущую дату - просто выкусить макрос
+
+      // Закрывающая скобка
+      // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+      idx2 = textLine.indexOf("}", idx);        
+      if (idx2 < 0) break;
+
+      // удаляем макрос;
+      textLine.remove(idx, idx2 - idx + 1);
+    }
+
     // Если в строке еще остались макросы, связанные со временем - обработать их
-    if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0) continue;
+    if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
 
     // Если при разборе строка помечена как многоцветная - обработать макросы цвета 
     if (textHasMultiColor) {                                 
@@ -1670,5 +1638,259 @@ void checkMomentText() {
       momentTextIdx = moments[i].index_a; // after
       break;
     }    
+  }
+}
+
+// Проверить текст, содержащий макрос {S}
+// Возвращает true - если дата в макросе после расшифровки совпадает с текущей датой - текст можно отображаеть
+// Если дата не совпадает - текст отображать сегодня нельзя - еще не пришло (или уже прошло) время для этого текста
+boolean forThisDate(String text) {
+  /*
+     "{S01.01.2020#01.01.2020}"
+     "{S01.01.2020 7:00#01.01.2020 19:00}"
+     "{S01.01.**** 7:00#01.01.**** 19:00}"
+       - где после S указанаы даты начала и конца периода доступного для олтображения строки.
+       Для режима S элементы даты быть заменены звездочкой '*'
+       **.10.2020 - весь октябрь 2020 года 
+       01.**.**** - каждое первое число месяца
+       **.**.2020 - каждый день 2020 года
+       Если время начала периода отсутствует - считается 00:00:00
+       Если время конца периода отсутствует  - считается 23:59:59
+       Допускается указывать несколько макроыов {S} в строке для определения нескольких разрешенных диапазонов
+  */
+  boolean ok = false;
+  String str;
+  int8_t idx1, idx2;
+  
+  idx = text.indexOf("{S");
+  while (idx >= 0) {
+    // Строка с событием проверки текущей даты - выводится только при совпадении текущей даты с указанной (вычисленной по маске)
+    // Проверка строки производится раньше при решении какую строку показывать в getNextLine(). Если сюда попали - значит строка 
+    // пригодна к отображению в текущую дату - просто выкусить макрос
+
+    // Закрывающая скобка
+    // Если ее нет - ошибка, ничего со строкой не делаем, отдаем как есть
+    idx2 = text.indexOf("}", idx);        
+    if (idx2 < 0) break;
+
+    // Извлечь дату события из макроса
+    str = "";
+    if (idx2 - idx > 1) {
+      str = text.substring(idx+2, idx2);
+      str.trim();
+    }
+
+    // Проверить дату
+    if (str.length() > 0) {
+//      Serial.println(F("--------------------"));
+//      Serial.print(F("Строка: '"));
+//      Serial.println(text + "'");
+
+      time_t now_moment = now();
+      extractMacroSDates(str);
+      ok = now_moment >= textAllowBegin && now_moment <= textAllowEnd;
+      
+//      Serial.println("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
+//      if (ok) Serial.println(F("вывод разрешен"));
+//      else    Serial.println(F("вывод запрещен"));
+    }
+
+    // Дата проверена и совпадает с допустимым диапазоном - строку можно отображать
+    if (ok) break;
+    
+    // удаляем макрос;
+    text.remove(idx, idx2 - idx + 1);
+
+    // Есть ли еще макрос {S} в строке?
+    idx = text.indexOf("{S");
+  }
+  
+//  Serial.println(F("--------------------"));
+
+  return ok;
+}
+
+void extractMacroSDates(String text) {
+
+  textAllowBegin = 0;        // время начала допустимого интервала отображения unixTime
+  textAllowEnd = 0;          // время конца допустимого интервала отображения unixTime
+
+  uint8_t  stage = 0, star_cnt = 0;
+  uint8_t  iDay1 = 0, iMonth1 = 0, iHour1 = 0, iMinute1 = 0;
+  uint8_t  iDay2 = 0, iMonth2 = 0, iHour2 = 0, iMinute2 = 0;
+  uint16_t iYear1 = 0, iYear2 = 0, num = 0;
+
+  int8_t   idx = text.indexOf("#");
+  boolean  hasDate2 =  idx > 0; // В строке есть элементы даты даты2 или времени даты2
+  boolean  hasTime2 = false;    // В строке есть элементы времени даты2
+  String   str;
+  
+  if (idx > 0) {
+    str = text.substring(idx+1); // Выделяем часть, отвечающую за Дату2
+    hasTime2 = str.indexOf(":") > 0;    // Если в оставшейся части есть разделитель часов/минут - время указано
+  }
+
+  // Стадии разбора:
+  //  0 - число дыты 1
+  //  1 - месяц даты 1
+  //  2 - год даты 1
+  //  3 - часы даты 1
+  //  4 - минуты даты 1
+  //  5 - число дыты 2
+  //  6 - месяц даты 2
+  //  7 - год даты 2
+  //  8 - часы даты 2
+  //  9 - минуты даты 2
+  
+  // Побайтово разбираем строку макроса
+  bool err = false;
+  for (uint8_t ix = 0; ix < text.length(); ix++) {
+    if (err) {
+      Serial.println();
+      Serial.print(String(F("Ошибка в макросе\n'{S")) + text + String(F("}'\n  ")));
+      for(uint8_t n=0; n<ix; n++) Serial.print('-');
+      Serial.println('^');
+      break;
+    }      
+    char c = text[ix];
+    switch (c) {
+      // замена элемента даты "любой" - день месяц или год даты 1 и даты 2
+      case '*':
+        // только для дня/месяца/года и не более двух звезд для дня / месяца или четырех для года и нельзя звезду сочетать с цифрой
+        err = (stage == 3) || (stage == 4) || (stage == 8) || (stage == 9) ||           // только для дня/месяца/года и
+              (star_cnt == 1 && num != 0) ||                                               // нельзя звезду сочетать с цифрой и
+              ((stage == 0 || stage == 1 || stage == 5 || stage == 6) && star_cnt > 2) ||  // не более двух звезд для числа/месяца
+              ((stage == 2 || stage == 7) && star_cnt > 4);                                // не более четырех звезд для годв
+        if (!err) {
+          star_cnt++;  // счетчик звезд
+          num = 0;     // обнулить число          
+        }
+        break;  
+      // Разделитель даты дня/месяца/года
+      case '.':
+        err = stage != 0 && stage != 1 && stage != 5 && stage != 6;  // точка - разделитель элементов даты и в других стадиях недопустима
+        if (!err) {
+          switch (stage) {
+            case 0: iDay1 = num;   stage = 1; break; // Следующая стадия - разбор месяца даты 1
+            case 1: iMonth1 = num; stage = 2; break; // Следующая стадия - разбор года даты 1
+            case 2: iYear1 = num; break;
+            case 5: iDay2 = num;   stage = 6; break; // Следующая стадия - разбор месяца даты 2
+            case 6: iMonth2 = num; stage = 7; break; // Следующая стадия - разбор года даты 3
+            case 7: iYear2 = num; break;
+          }
+          star_cnt = 0; num = 0;
+        }
+        break;  
+      // Разделитель часов и минут  
+      case ':':
+        err = stage != 0 && stage != 3 && stage != 5 && stage != 8;  // Дата может быть опущена (stage == 0 для дата1, stage == 5 для дата2) и текущая стадия stage == 3 или stage == 8 - был разбор часов. Если это не так - ошибка
+        if (!err) {
+          if (stage == 0 || stage == 3) {
+            iHour1 = num;
+            stage = 4;    // следующая стадия - разбор минут дата1
+          }
+          if (stage == 5 || stage == 8) {
+            iHour2 = num;
+            stage = 9;    // следующая стадия - разбор минут дата2
+          }
+          num = 0;
+        }
+        break;  
+      // Разделитель даты1 и даты2 
+      case '#':
+        switch (stage) {
+          case 2: iYear1 = num;   stage = 5; break;   // Сейчас разбор года дата 1 - переходим в стадию разбора даты2
+          case 4: iMinute1 = num; stage = 5; break;  // Сейчас разбор минут времени дата1 - переходим в стадию разбора дата2
+          default:
+            err = true;    // В любой другой стадии № не на своем месте - ошибка
+            break;
+        }          
+        num = 0;  
+        star_cnt = 0;
+        break;  
+      // Разделитель даты и времени  
+      case ' ':
+        err = stage != 2 && stage != 7;  // Разделитель даты и времени. Если предыдущая фаза - не разбор года - это ошибка. Пробел в других местах недопустим
+        if (!err) {
+          if (stage == 2) {
+            iYear1 = num;
+            stage = 3; // следующая стадия - разбор часов
+          }
+          if (stage == 7) {
+            iYear2 = num;
+            stage = 8; // следующая стадия - разбор часов
+          }
+          num = 0;
+          star_cnt = 0;
+        }
+        break;  
+      default:
+        // Здесь могут быть цифры 0..9 для любой стадии (день/месяц/год/часы/минуты)
+        if (c >= '0' && c <= '9') {
+          err = star_cnt != 0;     // Если число звезд не равно 0 - цифра сочетается со звездой - нельзя
+          if (!err) {
+            num = num * 10 + (c - '0');
+          }
+          break;
+        }
+        // Любой другой символ - ошибка разбора макроса
+        err = true;
+        break;  
+    }
+
+    // Это последний символ в строке?
+    if (ix == text.length() - 1) {
+      // Если строка кончилась ДО полного разбора даты или времени - ошибка
+      // Остальные параметры могут быть опущены - тогда принимают значения по умолчанию
+      // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 -секунд ПОСЛЕ; 8 - дни недели
+      switch (stage) {
+        case 2:  iYear1    = num; break;
+        case 4:  iMinute1  = num; break;
+        case 7:  iYear2    = num; break;
+        case 9:  iMinute2  = num; break;
+        default: err      = true;  break;
+      }                  
+    }
+  }
+
+  // Разбор прошел без ошибки? Определить дату начала и конца диапазона
+  if (!err) {
+    // Если день/месяц/год даты1 отсутствуют или указаны заменителями - брать текущую
+    // Если день/месяц/год даты2 отсутствуют или указаны заменителями - брать дату1
+
+    if (iDay1   == 0) { iDay1   = day();   }
+    if (iMonth1 == 0) { iMonth1 = month(); }
+    if (iYear1  == 0) { iYear1  = year();  }
+    if (iDay2   == 0) { iDay2 = iDay1;     }
+    if (iMonth2 == 0) { iMonth2 = iMonth1; }
+    if (iYear2  == 0) { iYear2 = iYear1;   }
+
+    // Если время в дата2 пропущены - брать 23:59
+    if (iHour2 == 0 && !hasTime2) { iHour2 = 23; }
+    if (iMinute2 == 0 && !hasTime2) { iMinute2 = 59; }
+
+    // Сформировать ближайшее время события из полученных компонент
+    tmElements_t tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, CalendarYrToTm(iYear1)}; 
+    tmElements_t tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, CalendarYrToTm(iYear2)}; 
+    
+    time_t t_event1 = makeTime(tm1);
+    time_t t_event2 = makeTime(tm2);
+
+    textAllowBegin = t_event1; // время начала допустимого интервала отображения unixTime
+    textAllowEnd   = t_event2; // время конца допустимого интервала отображения unixTime
+          
+    breakTime(t_event1, tm1);
+    breakTime(t_event2, tm2);
+    
+    if (t_event2 < t_event1) {
+      Serial.println(String(F("Интервал показа: ")) + 
+                     padNum(tm1.Day,2) + "." + padNum(tm1.Month,2) + "." + padNum(tmYearToCalendar(tm1.Year),4) + " " + padNum(tm1.Hour,2) + ":" + padNum(tm1.Minute,2) + " -- " +
+                     padNum(tm2.Day,2) + "." + padNum(tm2.Month,2) + "." + padNum(tmYearToCalendar(tm2.Year),4) + " " + padNum(tm2.Hour,2) + ":" + padNum(tm2.Minute,2));
+                   
+      textAllowBegin = 0; // время начала допустимого интервала отображения unixTime
+      textAllowEnd   = 0; // время конца допустимого интервала отображения unixTime
+      Serial.println(F("Ошибка: дата начала больше даты окончания разрешенного интервала"));
+    }
+    
   }
 }
