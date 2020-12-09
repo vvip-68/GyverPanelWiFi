@@ -1,8 +1,3 @@
-// игра змейка!
-#if (DEVICE_ID == 44 && defined(ESP8266))
-// На матрице 50x20 для игр не хватает памяти - вылетает на вызове malloc() внутри библиотеки FastLED / ESP8266 / еще где-то...
-void snakeRoutine() {}
-#else
 
 // **************** НАСТРОЙКИ ЗМЕЙКИ ****************
 #define START_LENGTH 4    // начальная длина змейки
@@ -222,4 +217,3 @@ void newGameSnake() {
   missDelete = false;
   apple_flag = false;
 }
-#endif

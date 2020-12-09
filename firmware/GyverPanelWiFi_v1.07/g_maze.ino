@@ -1,8 +1,3 @@
-// игра лабиринт!
-#if (DEVICE_ID == 44 && defined(ESP8266))
-// На матрице 50x20 для игр не хватает памяти - вылетает на вызове malloc() внутри библиотеки FastLED / ESP8266 / еще где-то...
-void mazeRoutine() { }
-#else
 
 // ***************** НАСТРОЙКИ ГЕНЕРАЦИИ ЛАБИРИНТА *****************
 #define GAMEMODE 0        // режим игры: 0 - видим весь лабиринт, 1 - видим вокруг себя часть
@@ -365,4 +360,3 @@ void SolveMaze(char *maze, int width, int height) {
   maze[(height - 2) * width + (width - 2)] = 2;
   maze[(height - 1) * width + (width - 2)] = 2;
 }
-#endif

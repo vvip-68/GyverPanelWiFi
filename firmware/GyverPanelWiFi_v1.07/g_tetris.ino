@@ -1,8 +1,3 @@
-//игра  тетрис!
-#if (DEVICE_ID == 44 && defined(ESP8266))
-// На матрице 50x20 для игр не хватает памяти - вылетает на вызове malloc() внутри библиотеки FastLED / ESP8266 / еще где-то...
-void tetrisRoutine() { }
-#else
 
 // **************** НАСТРОЙКИ ТЕТРИС ****************
 #define FAST_SPEED 20     // скорость падения при удержании "вниз" (меньше - быстрее)
@@ -420,4 +415,3 @@ void drawFigure(byte figure, byte angle, byte x, byte y, uint32_t color) {
     drawPixelXY(X, Y, color);
   }
 }
-#endif
