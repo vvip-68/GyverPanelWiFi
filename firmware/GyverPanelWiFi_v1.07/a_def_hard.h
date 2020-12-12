@@ -52,7 +52,7 @@
 #define USE_SD 0              // поставьте 0, если у вас нет SD-card модуля
 #define USE_MP3 0             // поставьте 0, если у вас нет звуковой карты MP3 плеера
 #define USE_TM1637 0          // поставьте 1, если используется дополнительный индикатор TM1637, 0 если индикатора нет
-#define USE_POWER 0           // 1 - использовать отключение питания матрицы через MOSFET / реле; 0 - не использовать 
+#define USE_POWER 1           // 1 - использовать отключение питания матрицы через MOSFET / реле; 0 - не использовать 
 #define USE_MQTT 0            // 1 - использовать управление по MQTT-каналу; 0 - не использовать 
 #define USE_WEATHER 1         // 1 - использовать получение информации о текущей погоде; 0 - не использовать 
 
@@ -71,12 +71,11 @@
 #define PIN_BTN D4            // кнопка подключена сюда (D4 --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET / реле; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
-/*
-#define SRX D4                // не используется, но требуется для компиляции скетча (USE_MP3==1)
-#define STX D3                // не используется, но требуется для компиляции скетча (USE_MP3==1)
-#define DIO D5                // D5 TM1637 display DIO pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
-#define CLK D7                // D7 TM1637 display CLK pin - не используется, но требуется для компиляции скетча (USE_TM1637 == 1)
-*/
+#define SRX D4                // к TX MP3 DFPlayer - требуется для компиляции скетча (USE_MP3 == 1)
+#define STX D3                // к RX MP3 DFPlayer - требуется для компиляции скетча (USE_MP3 == 1)
+#define DIO D5                // D5 TM1637 display DIO pin - требуется для компиляции скетча (USE_TM1637 == 1)
+#define CLK D7                // D7 TM1637 display CLK pin - требуется для компиляции скетча (USE_TM1637 == 1)
+
 #endif
 #endif
 
@@ -420,7 +419,7 @@
 #include <EEPROM.h>              // Библиотека поддержки постоянной памяти
 #include <FastLED.h>             // Установите в менеджере библиотек стандартную библиотеку FastLED
 
-#if (USE_WEATHER == 1)
+#if (USE_WEATHER == 1 || USE_MQTT == 1)
 #include <ArduinoJson.h>         // Библиотека для разбора JSON-ответа от сервиса Yandex-Погода / OpenWeatherMap
 #endif
 
