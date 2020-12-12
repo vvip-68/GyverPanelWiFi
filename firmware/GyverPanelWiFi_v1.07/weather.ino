@@ -507,8 +507,8 @@ void weatherRoutine() {
 
     // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
     // Высота картинки + text = oт "weather_text_x" до "pos_y + image_desc.frame_height"; - если матрица выше - центрировать конгломерат по матрице
-    uint8_t offset_x = (WIDTH - (weather_text_x - pos_x)) / 2;
-    uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2;
+    uint8_t offset_x = (WIDTH - (weather_text_x - pos_x)) / 2 + 1;
+    uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2 - 1;
 
     pos_x += offset_x;
     pos_y += offset_y;

@@ -261,7 +261,7 @@ void doEffectWithOverlay(byte aMode) {
           overlayDelayed2 = weatherOverlayEnabled;
           if (weatherOverlayEnabled) {
             CLK_Y += 3;                                            // Сдвинуть позицию часов на 3 строки выше с контролем не выхода за высоту матрицы
-            while (CLK_Y + 5 >= HEIGHT) CLK_Y--;
+            while (CLK_Y + 5 > HEIGHT) CLK_Y--;
             CLOCK_WY = CLK_Y - 7;                                  // Пытаемся сделать две строки отступа между часами и погодой (5 + 2), 5 - высота шрифта
             while (CLOCK_WY < 0) CLOCK_WY++;                       // Поднимаем строку вывода температуры, если она выходит за размер матрицы
     

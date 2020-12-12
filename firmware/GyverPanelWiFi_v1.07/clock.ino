@@ -1095,6 +1095,7 @@ void SetAutoMode(byte amode) {
   }
 }
 
+#if (USE_TM1637 == 1)
 byte getByteForDigit(byte digit) {
   switch (digit) {
     case 0: return _0_;
@@ -1110,6 +1111,7 @@ byte getByteForDigit(byte digit) {
     default: return _empty;
   }
 }
+#endif
 
 void checkClockOrigin() {
 
