@@ -602,18 +602,15 @@ void parsing() {
   if (recievedFlag && intData[0] > 0 && intData[0] <= 23) {
     recievedFlag = false;
 
-    // Режим 18  не сбрасывают idleTimer
-    if (intData[0] != 18) {
-      idleTimer.reset();
-      idleState = false;      
-    }
-
+    // Режимs 18 и 6.7  не сбрасывают idleTimer
+    // Другие режимы сбрасывают таймер бездействия
     // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
-    if (intData[0] != 18) {
+    if (!(intData[0] == 18 || (intData[0] == 6 && intData[1] == 7))) {
+      idleTimer.reset();
       wifi_print_ip = false;
       stopAlarm();
     }
-    
+
     switch (intData[0]) {
 
       // ----------------------------------------------------
