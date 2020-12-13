@@ -1258,7 +1258,7 @@ void parsing() {
       #if (USE_MQTT == 1)
       case 11:
          switch (intData[1]) {
-           case 1:               // $11 1 X; - Использовать отображение температуры цветом 0 - нет; 1 - да
+           case 1:               // $11 1 X; - Использовать канал MQTT: 0 - нет; 1 - да
              useMQTT = intData[2] == 1;
              setUseMqtt(useMQTT);
              break;
