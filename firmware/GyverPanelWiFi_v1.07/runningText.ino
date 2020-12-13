@@ -195,28 +195,28 @@ String getTextStates() {
 uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
   if (font <= 94) {
-    return pgm_read_byte(&(fontHEX[font][row]));     // для английских букв и символов
-  } else if ((modif == 209) && font == 116) {         // є
-    return pgm_read_byte(&(fontHEX[162][row])); 
-  } else if ((modif == 209) && font == 118) {        // і
-    return pgm_read_byte(&(fontHEX[73][row])); 
-  } else if ((modif == 209) && font == 119) {         // ї
-    return pgm_read_byte(&(fontHEX[163][row])); 
-  } else if ((modif == 208) && font == 100) {        // Є
-    return pgm_read_byte(&(fontHEX[160][row])); 
-  } else if ((modif == 208) && font == 102) {         // І
-    return pgm_read_byte(&(fontHEX[41][row])); 
-  } else if ((modif == 208) && font == 103) {        // Ї
+    return pgm_read_byte(&(fontHEX[font][row]));   // для английских букв и символов
+  } else if (modif == 209 && font == 116) {        // є
     return pgm_read_byte(&(fontHEX[161][row])); 
-  } else if ((modif == 208) && font == 97) {         // Ё
-    return pgm_read_byte(&(fontHEX[100][row])); 
-  } else if ((modif == 209) && font == 113) {        // ё
-    return pgm_read_byte(&(fontHEX[132][row])); 
-  } else if ((modif == 208 || modif == 209) && font >= 112 && font <= 159) {           // и пизд*ц для русских
+  } else if (modif == 209 && font == 118) {        // і
+      return pgm_read_byte(&(fontHEX[73][row])); 
+  } else if (modif == 209 && font == 119) {        // ї
+      return pgm_read_byte(&(fontHEX[162][row])); 
+  } else if (modif == 209 && font == 113) {        // ё
+      return pgm_read_byte(&(fontHEX[132][row])); 
+  } else if (modif == 208 && font == 100) {        // Є
+      return pgm_read_byte(&(fontHEX[160][row])); 
+  } else if (modif == 208 && font == 102) {        // І
+    return pgm_read_byte(&(fontHEX[41][row])); 
+  } else if (modif == 208 && font == 103) {        // Ї
+    return pgm_read_byte(&(fontHEX[41][row])); 
+  } else if (modif == 208 && font == 97) {         // Ё
+    return pgm_read_byte(&(fontHEX[100][row]));     
+  } else if ((modif == 208 || modif == 209) && font >= 112 && font <= 159) {              // и пизд*ц для русских
     return pgm_read_byte(&(fontHEX[font - 17][row]));
-  } else if ((modif == 208 || modif == 209) && font >= 96 && font <= 111) {
+  } else if (font >= 96 && font <= 111) {
     return pgm_read_byte(&(fontHEX[font + 47][row]));
-  } else if ((modif == 194) && font == 144) {                                          // Знак градуса '°'
+  } else if ((modif == 208 || modif == 209) && (modif == 194) && font == 144) {      // Знак градуса '°'
     return pgm_read_byte(&(fontHEX[159][row]));
   }
   return 0;
@@ -224,9 +224,11 @@ uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
 
 uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if ((modif == 208) && font == 97) {                     // Ё
+  if ((modif == 208) && font == 97) {              // Ё
     return pgm_read_byte(&(diasHEX[0][row])); 
-  } else if ((modif == 209) && font == 113) {             // ё
+  } else if ((modif == 209) && font == 113) {      // ё
+    return pgm_read_byte(&(diasHEX[0][row])); 
+  } else if ((modif == 208) && font == 103) {      // Ї
     return pgm_read_byte(&(diasHEX[0][row])); 
   }
   return 0;
@@ -234,10 +236,12 @@ uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
 
 int8_t getDiasOffset(uint8_t font, uint8_t modif) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if ((modif == 208) && font == 97) {                   // Ё
+  if ((modif == 208) && font == 97) {              // Ё
     return 3; 
-  } else if ((modif == 209) && font == 113) {           // ё
+  } else if ((modif == 209) && font == 113) {      // ё
     return 1; 
+  } else if ((modif == 208) && font == 103) {      // Ї
+    return 3; 
   }
   return 0;
 }

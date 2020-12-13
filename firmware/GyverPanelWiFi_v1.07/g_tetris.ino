@@ -2,6 +2,7 @@
 // **************** НАСТРОЙКИ ТЕТРИС ****************
 #define FAST_SPEED 20     // скорость падения при удержании "вниз" (меньше - быстрее)
 #define STEER_SPEED 40    // скорость перемещения в бок при удержании кнопки (меньше - быстрее)
+#define FULL_SCREEN 0     // 0 - ширина стакана равна его высоте; 1 - тетрис на всю ширину экрана
 
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
 #define ADD_COLOR 0x010101
@@ -76,8 +77,14 @@ void tetrisRoutine() {
     // modeCode = MC_TETRIS;
     FastLED.clear();
     loadingFlag = false;
-    left_offset = WIDTH > HEIGHT ? ((WIDTH-HEIGHT) / 2) : 0;
-    right_offset = WIDTH > HEIGHT ? WIDTH - ((WIDTH-HEIGHT) / 2) - (WIDTH % 2 == 0 ? 1 : 0) : WIDTH - 1;
+
+    if (FULL_SCREEN == 1) {
+      left_offset = 0;
+      right_offset = WIDTH - 1;
+    } else {
+      left_offset = WIDTH > HEIGHT ? ((WIDTH-HEIGHT) / 2) : 0;
+      right_offset = WIDTH > HEIGHT ? WIDTH - ((WIDTH-HEIGHT) / 2) - (WIDTH % 2 == 0 ? 1 : 0) : WIDTH - 1;
+    }
 
     // -----------------------------------
     // Рисуем стакан
