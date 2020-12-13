@@ -81,7 +81,12 @@
 #define MC_DAWN_ALARM           43
 #define MC_SDCARD               44
 
+#if (USE_SD == 1)
 #define MAX_EFFECT              45         // количество эффектов, определенных в прошивке
+#else
+#define MAX_EFFECT              44         // количество эффектов, определенных в прошивке
+#endif
+
 #define MAX_SPEC_EFFECT         11         // количество эффектов быстрого доступа определенных в прошивке -> 0..10
 #define MAX_IMAGE_NUM            1         // Количество картинок для эффекта "Анимация", определенных в программе (файлы bitmap1.h, .. ,bitmapN.h)
 
