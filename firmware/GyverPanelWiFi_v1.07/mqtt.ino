@@ -104,6 +104,51 @@ void notifyUnknownCommand(const char* text) {
   NotifyError(out);
 }
 
+// Отправка в MQTT канал - текущие значения переменных
+void SendCurrentState() {
+
+/*  
+  if (!useMQTT) return;
+  
+  String out, key, s_tmp, keys = "W|H|DM|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ";
+  
+  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument obj(256);
+
+  doc["act"] = F("STATE");
+
+  JsonArray arr = doc.createNestedArray("state");  
+
+  int16_t pos_start = 0;
+  int16_t pos_end = keys.indexOf('|', pos_start);
+  int16_t len = keys.length();
+  if (pos_end < 0) pos_end = len;
+
+  // Строка keys содержит ключи запрашиваемых данных, разделенных знаком '|', например "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+  while (pos_start < len && pos_end >= pos_start) {
+    if (pos_end > pos_start) {      
+      key = keys.substring(pos_start, pos_end);
+      if (key.length() > 0) {
+        s_tmp = getStateValue(key, thisMode, false);        
+        if (s_tmp.length() > 0) {
+          JsonObject object = obj.to<JsonObject>();        
+          obj[key] = s_tmp;
+          arr.add(obj);
+        }
+      }      
+    }
+    pos_start = pos_end + 1;
+    pos_end = keys.indexOf('|', pos_start);
+    if (pos_end < 0) pos_end = len;
+  }
+
+  serializeJson(doc, out);      
+  String data = "STT:" + out;
+
+  putOutQueue(mqtt_topic(TOPIC_STT).c_str(), data.c_str());
+*/  
+}
+
 void putOutQueue(const char* topic, const char* message) {
   if (!useMQTT) return;
   if (outQueueLength < QSIZE_OUT) {

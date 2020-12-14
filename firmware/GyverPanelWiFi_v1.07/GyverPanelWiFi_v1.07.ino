@@ -151,6 +151,7 @@ void setup() {
     doc["act"] = F("START");
     serializeJson(doc, out);      
     NotifyInfo(out);
+    SendCurrentState();
   }
   #endif
 

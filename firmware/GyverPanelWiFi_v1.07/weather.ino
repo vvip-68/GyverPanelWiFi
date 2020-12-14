@@ -61,10 +61,8 @@ bool getWeather() {
     return false;                                                         // и пора прекращать всё это дело
   }
 
-  const size_t capacity = 1500;                                           // Эта константа определяет размер буфера под содержимое JSON (https://arduinojson.org/v5/assistant/)
-  DynamicJsonDocument jsn(capacity);
-
   // Parse JSON object
+  DynamicJsonDocument jsn(1500);
   DeserializationError error = deserializeJson(jsn, w_client);
 
   if (error) {

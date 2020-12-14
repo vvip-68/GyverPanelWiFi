@@ -212,12 +212,33 @@ uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
     return pgm_read_byte(&(fontHEX[41][row])); 
   } else if (modif == 208 && font == 97) {         // Ё
     return pgm_read_byte(&(fontHEX[100][row]));     
-  } else if ((modif == 208 || modif == 209) && font >= 112 && font <= 159) {              // и пизд*ц для русских
+  } else if ((modif == 208 || modif == 209) && font >= 112 && font <= 159) {         // и пизд*ц для русских
     return pgm_read_byte(&(fontHEX[font - 17][row]));
-  } else if (font >= 96 && font <= 111) {
+  } else if ((modif == 208 || modif == 209) && font >= 96 && font <= 111) {
     return pgm_read_byte(&(fontHEX[font + 47][row]));
-  } else if ((modif == 208 || modif == 209) && (modif == 194) && font == 144) {      // Знак градуса '°'
+  } else if (modif == 194 && font == 144) {                                          // Знак градуса '°'
     return pgm_read_byte(&(fontHEX[159][row]));
+  } else if (modif == 196 || modif == 197) {                                         // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
+    switch (font) {
+      case 100: return pgm_read_byte(&(fontHEX[33][row])); //Ą 196   100  -     33
+      case 108: return pgm_read_byte(&(fontHEX[35][row])); //Č 196   108  -     35
+      case 120: return pgm_read_byte(&(fontHEX[37][row])); //Ę 196   120  -     37
+      case 118: return pgm_read_byte(&(fontHEX[37][row])); //Ė 196   118  -     37
+      case 142: return pgm_read_byte(&(fontHEX[41][row])); //Į 196   142  -     41
+      case 128: return pgm_read_byte(&(fontHEX[51][row])); //Š 197   128  -     51
+      case 146: return pgm_read_byte(&(fontHEX[53][row])); //Ų 197   146  -     53
+      case 138: return pgm_read_byte(&(fontHEX[53][row])); //Ū 197   138  -     53
+      case 157: return pgm_read_byte(&(fontHEX[58][row])); //Ž 197   157  -     58
+      case 101: return pgm_read_byte(&(fontHEX[65][row])); //ą 196   101  -     65
+      case 109: return pgm_read_byte(&(fontHEX[67][row])); //č 196   109  -     67  
+      case 121: return pgm_read_byte(&(fontHEX[69][row])); //ę 196   121  -     69
+      case 119: return pgm_read_byte(&(fontHEX[69][row])); //ė 196   119  -     69
+      case 143: return pgm_read_byte(&(fontHEX[73][row])); //į 196   143  -     73
+      case 129: return pgm_read_byte(&(fontHEX[83][row])); //š 197   129  -     83
+      case 147: return pgm_read_byte(&(fontHEX[85][row])); //ų 197   147  -     85
+      case 139: return pgm_read_byte(&(fontHEX[85][row])); //ū 197   139  -     85
+      case 158: return pgm_read_byte(&(fontHEX[90][row])); //ž 197   158  -     90
+    }
   }
   return 0;
 }
@@ -230,6 +251,32 @@ uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
     return pgm_read_byte(&(diasHEX[0][row])); 
   } else if ((modif == 208) && font == 103) {      // Ї
     return pgm_read_byte(&(diasHEX[0][row])); 
+  } else if (modif == 196 || modif == 197) {                                           // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
+    // 0 - Č - перевернутая крышечка над заглавной буквой Č Ž č ž
+    // 1 - Ė - точка над заглавной буквой Ė ė
+    // 2 - Ū - надстрочная черта над заглавной буквой Ū ū
+    // 3 - Ą - хвостик снизу букв Ą ą Ę ę ų - смещение к правому краю буквы
+    // 4 - Į - хвостик снизу букв Į į Ų     - по центру буквы    
+    switch (font) {
+      case 100: return pgm_read_byte(&(diasHEX[4][row])); //Ą 196   100  -     33
+      case 108: return pgm_read_byte(&(diasHEX[1][row])); //Č 196   108  -     35
+      case 120: return pgm_read_byte(&(diasHEX[4][row])); //Ę 196   120  -     37
+      case 118: return pgm_read_byte(&(diasHEX[2][row])); //Ė 196   118  -     37
+      case 142: return pgm_read_byte(&(diasHEX[5][row])); //Į 196   142  -     41
+      case 128: return pgm_read_byte(&(diasHEX[1][row])); //Š 197   128  -     51
+      case 146: return pgm_read_byte(&(diasHEX[5][row])); //Ų 197   146  -     53
+      case 138: return pgm_read_byte(&(diasHEX[3][row])); //Ū 197   138  -     53
+      case 157: return pgm_read_byte(&(diasHEX[1][row])); //Ž 197   157  -     58
+      case 101: return pgm_read_byte(&(diasHEX[4][row])); //ą 196   101  -     65
+      case 109: return pgm_read_byte(&(diasHEX[1][row])); //č 196   109  -     67  
+      case 121: return pgm_read_byte(&(diasHEX[4][row])); //ę 196   121  -     69
+      case 119: return pgm_read_byte(&(diasHEX[2][row])); //ė 196   119  -     69
+      case 143: return pgm_read_byte(&(diasHEX[5][row])); //į 196   143  -     73
+      case 129: return pgm_read_byte(&(diasHEX[1][row])); //š 197   129  -     83
+      case 147: return pgm_read_byte(&(diasHEX[4][row])); //ų 197   147  -     85
+      case 139: return pgm_read_byte(&(diasHEX[3][row])); //ū 197   139  -     85
+      case 158: return pgm_read_byte(&(diasHEX[1][row])); //ž 197   158  -     90
+    }
   }
   return 0;
 }
@@ -242,6 +289,30 @@ int8_t getDiasOffset(uint8_t font, uint8_t modif) {
     return 1; 
   } else if ((modif == 208) && font == 103) {      // Ї
     return 3; 
+  } else if (modif == 196 || modif == 197) {       // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
+    // Смещение надстрочных заглавных - 3
+    // Смещение надстрочных маленьких букв - 0 или 1
+    // Смещение подстрочного символа -1
+    switch (font) {
+      case 100: return -1; //Ą 196   100  -1
+      case 108: return  2; //Č 196   108   3
+      case 120: return -1; //Ę 196   120  -1
+      case 118: return  3; //Ė 196   118   3
+      case 142: return -1; //Į 196   142  -1
+      case 128: return  2; //Š 197   128   3
+      case 146: return -1; //Ų 197   146  -1
+      case 138: return  3; //Ū 197   138   3
+      case 157: return  2; //Ž 197   157   3
+      case 101: return -1; //ą 196   101  -1
+      case 109: return  0; //č 196   109   1  
+      case 121: return -1; //ę 196   121  -1
+      case 119: return  1; //ė 196   119   1
+      case 143: return -1; //į 196   143  -1
+      case 129: return  0; //š 197   129   1
+      case 147: return -1; //ų 197   147  -1
+      case 139: return  1; //ū 197   139   1
+      case 158: return  0; //ž 197   158   1
+    }
   }
   return 0;
 }

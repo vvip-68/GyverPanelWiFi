@@ -2217,7 +2217,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("TE|TI|CT|ST|C2|OM|TS|TA|TX|TY");
       break;
     case 4:  // Настройки часов
-      str = getStateString("CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF");
+      str = getStateString("CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM");
       break;
     case 5:  // Настройки будильника
       str = getStateString("AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
@@ -2310,62 +2310,7 @@ void sendStringData(String &str, eSources src) {
   }
 }
 
-String getStateString(String keys) {
-  String str = "", s_tmp, key;
-
-  // Ключи буквы/цифры, разделенные пробелами или пайпами '|' 
-  // Если строка ключей ограничена квадратными скобками или кавычками - удалить их;
-  // В конце может быть ";" - не требуется - удалить ее (в середине ее быть не может)
-  keys.replace(";","");
-  keys.replace("[","");
-  keys.replace("]","");
-  keys.replace("\"","");
-
-  // Ключи могут быть разделены '|' или пробелами
-  keys.replace(" ","|");
-  keys.replace("/r"," ");
-  keys.replace("/n"," ");
-  keys.trim();
-  
-  int16_t pos_start = 0;
-  int16_t pos_end = keys.indexOf('|', pos_start);
-  int16_t len = keys.length();
-  if (pos_end < 0) pos_end = len;
-
-  // Некоторые параметры зависят от текущего эффекта
-  // Текущим эффектом может быть эффект, отсутствующий в списке эффектов и включенный как служебный эффект - 
-  // например "Ночные часы" или "IP адрес". 
-  // В этом случае в приложении эффект не будет найден - индекс в списке комбобокса
-  // будет 0 и приложение на телефоне крашится. В этом случае отправляем параметры случайного эффекта, точно из списка.
-  int8_t tmp_eff = thisMode;
-  if (tmp_eff >= SPECIAL_EFFECTS_START) {
-    tmp_eff = random8(0, MAX_EFFECT - 1);
-  }
-
-  // Строка keys содержит ключи запрашиваемых данных, разделенных знаком '|', например "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
-  while (pos_start < len && pos_end >= pos_start) {
-    if (pos_end > pos_start) {      
-      key = keys.substring(pos_start, pos_end);
-      if (key.length() > 0) {
-        s_tmp = getStateValue(key, tmp_eff);
-        if (s_tmp.length() > 0) {
-          str += s_tmp + "|";
-        }
-      }      
-    }
-    pos_start = pos_end + 1;
-    pos_end = keys.indexOf('|', pos_start);
-    if (pos_end < 0) pos_end = len;
-  }
-
-  len = str.length();
-  if (len > 0 && str.charAt(len - 1) == '|') {
-    str = str.substring(0, len - 1);
-  }
-  return str;
-}
-
-String getStateValue(String &key, int8_t effect) {
+String getStateValue(String &key, int8_t effect, bool addKey = true) {
 
   // W:число     ширина матрицы
   // H:число     высота матрицы
@@ -2448,6 +2393,7 @@ String getStateValue(String &key, int8_t effect) {
   // TA:X        активная кнопка, для которой отправляется текст - 0..9,A..Z
   // TE:X        оверлей текста бегущей строки вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать бегущую строку в эффектах)
   // TI:число    интервал отображения текста бегущей строки
+  // TM:X        в системе присутствует индикатор TM1637, где Х = 0 - нет; 1 - есть
   // TS:строка   строка состояния кнопок выбора текста из массива строк: 36 символов 0..5, где
   //               0 - серый - пустая
   //               1 - черный - отключена
@@ -2474,145 +2420,145 @@ String getStateValue(String &key, int8_t effect) {
   String str = "";
   
   // Ширина матрицы
-  if (key == "W")  return str + "W:" + String(WIDTH);
+  if (key == "W")  return str + (addKey ? "W:" : "") + String(WIDTH);
 
   // Высота матрицы
-  if (key == "H")  return str + "H:" + String(HEIGHT);
+  if (key == "H")  return str + (addKey ? "H:" : "") + String(HEIGHT);
 
   // Текущая яркость
-  if (key == "BR") return str + "BR:" + (isNightClock ? String(nightClockBrightness) : String(globalBrightness));
+  if (key == "BR") return str + (addKey ? "BR:" : "") + (isNightClock ? String(nightClockBrightness) : String(globalBrightness));
 
   // Ручной / Авто режим
-  if (key == "DM") return str + "DM:" + (manualMode ? "0" : "1");
+  if (key == "DM") return str + (addKey ? "DM:" : "") + (manualMode ? "0" : "1");
 
   // Продолжительность режима в секундах
-  if (key == "PD") return str + "PD:" + String(autoplayTime / 1000); 
+  if (key == "PD") return str + (addKey ? "PD:" : "") + String(autoplayTime / 1000); 
 
   // Время бездействия в секундах
-  if (key == "IT") return str + "IT:" + String(idleTime / 60 / 1000);
+  if (key == "IT") return str + (addKey ? "IT:" : "") + String(idleTime / 60 / 1000);
 
   // Сработал будильник 0-нет, 1-да
-  if (key == "AL") return str + "AL:" + (((isAlarming || isPlayAlarmSound) && !isAlarmStopped)  ? "1" : "0"); 
+  if (key == "AL") return str + (addKey ? "AL:" : "") + (((isAlarming || isPlayAlarmSound) && !isAlarmStopped)  ? "1" : "0"); 
 
   // Смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
-  if (key == "RM") return str + "RM:" + (useRandomSequence ? "1" : "0");
+  if (key == "RM") return str + (addKey ? "RM:" : "") + (useRandomSequence ? "1" : "0");
 
   // Ограничение по току в миллиамперах
-  if (key == "PW") return str + "PW:" + String(CURRENT_LIMIT);
+  if (key == "PW") return str + (addKey ? "PW:" : "") + String(CURRENT_LIMIT);
 
   // Прошивка поддерживает погоду 
-  if (key == "WZ") return str + "WZ:" + String(USE_WEATHER);
+  if (key == "WZ") return str + (addKey ? "WZ:" : "") + String(USE_WEATHER);
 
 #if (USE_WEATHER == 1)                  
   // Использовать получение погоды с сервера: 0 - выключено; 1 - Yandex; 2 - OpenWeatherMap
-  if (key == "WU") return str + "WU:" + String(useWeather);
+  if (key == "WU") return str + (addKey ? "WU:" : "") + String(useWeather);
 
   // Период запроса сведений о погоде в минутах
-  if (key == "WT") return str + "WT:" + String(SYNC_WEATHER_PERIOD);
+  if (key == "WT") return str + (addKey ? "WT:" : "") + String(SYNC_WEATHER_PERIOD);
 
   // Регион погоды Yandex
-  if (key == "WR") return str + "WR:" + String(regionID);
+  if (key == "WR") return str + (addKey ? "WR:" : "") + String(regionID);
 
   // Регион погоды OpenWeatherMap
-  if (key == "WS") return str + "WS:" + String(regionID2);
+  if (key == "WS") return str + (addKey ? "WS:" : "") + String(regionID2);
 
   // Использовать цвет для отображения температуры в дневных часах: 0 - выключено; 1 - включено
-  if (key == "WC") return str + "WC:" + (useTemperatureColor ? "1" : "0");
+  if (key == "WC") return str + (addKey ? "WC:" : "") + (useTemperatureColor ? "1" : "0");
 
   // Использовать цвет для отображения температуры в ночных часах: 0 - выключено; 1 - включено
-  if (key == "WN") return str + "WN:" + (useTemperatureColorNight ? "1" : "0");
+  if (key == "WN") return str + (addKey ? "WN:" : "") + (useTemperatureColorNight ? "1" : "0");
 
   // Текущая погода
-  if (key == "W1") return str + "W1:[" + weather + ']';
+  if (key == "W1") return str + (addKey ? "W1:" : "") + "[" + weather + ']';
 
   // Текущая температура
-  if (key == "W2") return str + "W2:" + String(temperature);
+  if (key == "W2") return str + (addKey ? "W2:" : "") + String(temperature);
 #endif  
 
   // Текущий эффект 
-  if (key == "EF") return str + "EF:" + String(effect+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
+  if (key == "EF") return str + (addKey ? "EF:" : "") + String(effect+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
 
   // Использовать в демо-режиме
-  if (key == "UE") return str + "UE:" + String((getEffectUsage(effect) ? "1" : "0"));
+  if (key == "UE") return str + (addKey ? "UE:" : "") + String((getEffectUsage(effect) ? "1" : "0"));
 
   // Оверлей бегущей строки
-  if (key == "UT") return str + "UT:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID || effect == MC_CLOCK
+  if (key == "UT") return str + (addKey ? "UT:" : "") + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID || effect == MC_CLOCK
          ? "X":
          (String(getEffectTextOverlayUsage(effect) ? "1" : "0")));
 
   // Оверлей часов   
-  if (key == "UC") return str + "UC:" + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID || effect == MC_CLOCK
+  if (key == "UC") return str + (addKey ? "UC:" : "") + (effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID || effect == MC_CLOCK
          ? "X" 
          : (String(getEffectClockOverlayUsage(effect) ? "1" : "0")));
 
   // Настройка скорости
-  if (key == "SE") return str + "SE:" + (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE || effect == MC_FIRE2
+  if (key == "SE") return str + (addKey ? "SE:" : "") + (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE || effect == MC_FIRE2
          ? "X" 
          : String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
 
   // Контраст
-  if (key == "BE") return str + "BE:" + (effect == MC_PACIFICA || effect == MC_DAWN_ALARM || effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID ||
+  if (key == "BE") return str + (addKey ? "BE:" : "") + (effect == MC_PACIFICA || effect == MC_DAWN_ALARM || effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID ||
                                          effect == MC_CLOCK || effect == MC_SDCARD
          ? "X" 
          : String(effectContrast[effect]));
 
   // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
-  if (key == "SS") return str + "SS:" + getParamForMode(effect);
+  if (key == "SS") return str + (addKey ? "SS:" : "") + getParamForMode(effect);
 
   // Эффекты не имеющие настройки вариации (параметр #2) отправляют значение "Х" - программа делает ползунок настройки недоступным
-  if (key == "SQ") return str + "SQ:" + getParam2ForMode(effect);
+  if (key == "SQ") return str + (addKey ? "SQ:" : "") + getParam2ForMode(effect);
 
   // Разрешен оверлей бегущей строки
-  if (key == "TE") return str + "TE:" + String(getTextOverlayEnabled());
+  if (key == "TE") return str + (addKey ? "TE:" : "") + String(getTextOverlayEnabled());
 
   // Интервал показа бегущей строки
-  if (key == "TI") return str + "TI:" + String(getTextInterval());
+  if (key == "TI") return str + (addKey ? "TI:" : "") + String(getTextInterval());
 
   // Режим цвета отображения бегущей строки
-  if (key == "CT") return str + "CT:" + String(COLOR_TEXT_MODE);
+  if (key == "CT") return str + (addKey ? "CT:" : "") + String(COLOR_TEXT_MODE);
 
   // Скорость прокрутки текста
-  if (key == "ST") return str + "ST:" + String(255 - getTextScrollSpeed());
+  if (key == "ST") return str + (addKey ? "ST:" : "") + String(255 - getTextScrollSpeed());
 
   // Цвет режима "монохром" часов
   if (key == "C1") {
     CRGB c1 = CRGB(globalClockColor);
-    return str + "C1:" + String(c1.r) + "," + String(c1.g) + "," + String(c1.b);
+    return str + (addKey ? "C1:" : "") + String(c1.r) + "," + String(c1.g) + "," + String(c1.b);
   }
 
   // Цвет режима "монохром" бегущей строки
   if (key == "C2") {
     CRGB c2 = CRGB(globalTextColor);
-    return str + "C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b);
+    return str + (addKey ? "C2:" : "") + String(c2.r) + "," + String(c2.g) + "," + String(c2.b);
   }
 
   // Сколько ячеек осталось свободно для хранения строк
-  if (key == "OM") return str + "OM:" + String(memoryAvail);
+  if (key == "OM") return str + (addKey ? "OM:" : "") + String(memoryAvail);
 
   // Строка состояния заполненности строк текста
-  if (key == "TS") return str + "TS:" + getTextStates();
+  if (key == "TS") return str + (addKey ? "TS:" : "") + getTextStates();
 
   // Активная кнопка текста. Должна быть ПОСЛЕ строки статуса, т.к и та и другая устанавливает цвет, но активная должна ставиться ПОСЛЕ
-  if (key == "TA") return str + "TA:" + String(editIdx);                 
+  if (key == "TA") return str + (addKey ? "TA:" : "") + String(editIdx);                 
 
   // Активная кнопка текста. Должна быть ПЕРЕД строкой текста, т.к сначала приложение должно знать в какую позицию списка помещать строку editIdx - '0'..'9'..'A'..'Z'
-  if (key == "TX") return str + "TX:[" + getTextByAZIndex(editIdx) + ']'; 
+  if (key == "TX") return str + (addKey ? "TX:" : "") + "[" + getTextByAZIndex(editIdx) + ']'; 
 
   // Исходная строка без обработки
   if (key == "TY" && editIdx != '#' && editIdx != '0') {
-     return str + "TY:[" + String(getTextIndex(editIdx)) + ":" + String(editIdx) + " > '" + getTextByAZIndex(editIdx) + "']";      
+     return str + (addKey ? "TY:" : "") + "[" + String(getTextIndex(editIdx)) + ":" + String(editIdx) + " > '" + getTextByAZIndex(editIdx) + "']";      
   }
 
   // Запрос текста бегущих строк для заполнения списка в программе
   if (key == "TZ" && sendTextIdx >= 0 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
-    return str + "TZ:[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > '" + getTextByAZIndex(getAZIndex(sendTextIdx)) + "']";     // Исходная строка без обработки
+    return str + (addKey ? "TZ:" : "") + "[" + String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > '" + getTextByAZIndex(getAZIndex(sendTextIdx)) + "']";     // Исходная строка без обработки
   }
 
   // Оверлей часов вкл/выкл
-  if (key == "CE") return str + "CE:" + (allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X");
+  if (key == "CE") return str + (addKey ? "CE:" : "") + (allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X");
 
   // Режим цвета часов оверлея
-  if (key == "CC") return str + "CC:" + String(COLOR_MODE);
+  if (key == "CC") return str + (addKey ? "CC:" : "") + String(COLOR_MODE);
 
   // Цвет рисования
   if (key == "CL") {
@@ -2622,57 +2568,57 @@ String getStateValue(String &key, int8_t effect) {
       sHex = sHex.substring(len - 6);
       sHex.toUpperCase();
     }
-    return str + "CL:" + sHex;
+    return str + (addKey ? "CL:" : "") + sHex;
   }
 
   // Ориентация часов
-  if (key == "CO") return str + "CO:" + (allowVertical && allowHorizontal ? String(CLOCK_ORIENT) : "X");
+  if (key == "CO") return str + (addKey ? "CO:" : "") + (allowVertical && allowHorizontal ? String(CLOCK_ORIENT) : "X");
 
   // Размер (режим) горизонтальных часов
-  if (key == "CK") return str + "CK:" + String(CLOCK_SIZE);
+  if (key == "CK") return str + (addKey ? "CK:" : "") + String(CLOCK_SIZE);
 
   // Яркость цвета ночных часов
-  if (key == "NB") return str + "NB:" + String(nightClockBrightness);
+  if (key == "NB") return str + (addKey ? "NB:" : "") + String(nightClockBrightness);
 
   // Код цвета ночных часов
-  if (key == "NC") return str + "NC:" + String(nightClockColor);
+  if (key == "NC") return str + (addKey ? "NC:" : "") + String(nightClockColor);
 
   // Скорость смещения (прокрутки) часов оверлея
-  if (key == "SC") return str + "SC:" + String(255 - getClockScrollSpeed());
+  if (key == "SC") return str + (addKey ? "SC:" : "") + String(255 - getClockScrollSpeed());
 
   // Показывать дату вместе с часами
-  if (key == "DC") return str + "DC:" + (showDateInClock ? "1" : "0");
+  if (key == "DC") return str + (addKey ? "DC:" : "") + (showDateInClock ? "1" : "0");
 
   // Продолжительность отображения даты в режиме часов (сек)
-  if (key == "DD") return str + "DD:" + String(showDateDuration);
+  if (key == "DD") return str + (addKey ? "DD:" : "") + String(showDateDuration);
 
   // Интервал отображения даты часов
-  if (key == "DI") return str + "DI:" + String(showDateInterval);
+  if (key == "DI") return str + (addKey ? "DI:" : "") + String(showDateInterval);
 
   // Использовать получение времени с интернета
-  if (key == "NP") return str + "NP:" + (useNtp ? "1" : "0");
+  if (key == "NP") return str + (addKey ? "NP:" : "") + (useNtp ? "1" : "0");
 
   // Период синхронизации NTP в минутах
-  if (key == "NT") return str + "NT:" + String(SYNC_TIME_PERIOD); 
+  if (key == "NT") return str + (addKey ? "NT:" : "") + String(SYNC_TIME_PERIOD); 
 
   // Часовой пояс
-  if (key == "NZ") return str + "NZ:" + String(timeZoneOffset);
+  if (key == "NZ") return str + (addKey ? "NZ:" : "") + String(timeZoneOffset);
 
   // Имя сервера NTP (url)
-  if (key == "NS") return str + "NS:[" + String(ntpServerName)+"]";
+  if (key == "NS") return str + (addKey ? "NS:" : "") + "[" + String(ntpServerName)+"]";
 
   // Показывать температуру вместе с малыми часами 0-нет, 1-да
-  if (key == "DW") return str + "DW:" + (showWeatherInClock ? "1" : "0");
+  if (key == "DW") return str + (addKey ? "DW:" : "") + (showWeatherInClock ? "1" : "0");
 
   // Выключать часы TM1637 вместе с лампой 0-нет, 1-да
-  if (key == "OF") return str + "OF:" + (needTurnOffClock ? "1" : "0"); 
+  if (key == "OF") return str + (addKey ? "OF:" : "") + (needTurnOffClock ? "1" : "0"); 
 
   // Продолжительность рассвета, мин
-  if (key == "AD") return str + "AD:" + String(dawnDuration);
+  if (key == "AD") return str + (addKey ? "AD:" : "") + String(dawnDuration);
 
   // Битовая маска дней недели будильника
   if (key == "AW") {
-    str = "AW:";
+    str = (addKey ? "AW:" : "");
     for (int i=0; i<7; i++) {
        if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
        if (i<6) str+='.';
@@ -2683,124 +2629,181 @@ String getStateValue(String &key, int8_t effect) {
   // Часы-минуты времени будильника по дням недели
   if (key == "AT") {
     for (int i=0; i<7; i++) {      
-      str+="|AT:"+String(i+1)+" "+String(alarmHour[i])+" "+String(alarmMinute[i]);
+      str += "|" + String((addKey ? "AT:" : "")) + String(i+1) + " " + String(alarmHour[i]) + " " + String(alarmMinute[i]);
     }
     // Убрать первый '|'
     return str.substring(1);
   }
 
   // Эффект применяемый в рассвете: Индекс в списке в приложении смартфона начинается с 1
-  if (key == "AE") return str + "AE:" + String(alarmEffect + 1);                   
+  if (key == "AE") return str + (addKey ? "AE:" : "") + String(alarmEffect + 1);                   
 
   // Доступность MP3-плеера    
-  if (key == "MX") return str + "MX:" + String(isDfPlayerOk ? "1" : "0");
-      
+  if (key == "MX") return str + (addKey ? "MX:" : "") + String(isDfPlayerOk ? "1" : "0");
+
+  // Наличие индикатора TM1637    
+  if (key == "TM") return str + (addKey ? "TM:" : "") + String(USE_TM1637 == 1 ? "1" : "0");
+
 #if (USE_MP3 == 1)
   // Использовать звук будильника
-  if (key == "MU") return str + "MU:" + String(useAlarmSound ? "1" : "0"); 
+  if (key == "MU") return str + (addKey ? "MU:" : "") + String(useAlarmSound ? "1" : "0"); 
 
   // Сколько минут звучит будильник, если его не отключили
-  if (key == "MD") return str + "MD:" + String(alarmDuration); 
+  if (key == "MD") return str + (addKey ? "MD:" : "") + String(alarmDuration); 
 
   // Максимальная громкость будильника
-  if (key == "MV") return str + "MV:" + String(maxAlarmVolume); 
+  if (key == "MV") return str + (addKey ? "MV:" : "") + String(maxAlarmVolume); 
 
   // Номер файла звука будильника из SD:/01
-  if (key == "MA") return str + "MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+  if (key == "MA") return str + (addKey ? "MA:" : "") + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
 
   // Номер файла звука рассвета из SD:/02
-  if (key == "MB") return str + "MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+  if (key == "MB") return str + (addKey ? "MB:" : "") + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
 
   // Номер папки и файла звука который проигрывается
-  if (key == "MP") return str + "MP:" + String(soundFolder) + '~' + String(soundFile+2); 
+  if (key == "MP") return str + (addKey ? "MP:" : "") + String(soundFolder) + '~' + String(soundFile+2); 
 
   // Запрос звуков будильника
-  if (key == "S1") return str + "S1:[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
+  if (key == "S1") return str + (addKey ? "S1:" : "") + "[" + String(ALARM_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 
   // Запрос звуков рассвета
-  if (key == "S2") return str + "S2:[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
+  if (key == "S2") return str + (addKey ? "S2:" : "") + "[" + String(DAWN_SOUND_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 #endif
 
   // создавать точку доступа
-  if (key == "AU") return str + "AU:" + String(useSoftAP ? "1" : "0");  
+  if (key == "AU") return str + (addKey ? "AU:" : "") + String(useSoftAP ? "1" : "0");  
 
   // Имя точки доступа
-  if (key == "AN") return str + "AN:[" + String(apName) +  "]";
+  if (key == "AN") return str + (addKey ? "AN:" : "") + "[" + String(apName) +  "]";
 
   // Пароль точки доступа
-  if (key == "AA") return str + "AA:[" + String(apPass) +  "]";
+  if (key == "AA") return str + (addKey ? "AA:" : "") + "[" + String(apPass) +  "]";
 
   // Имя локальной сети (SSID)
-  if (key == "NW") return str + "NW:[" + String(ssid) +  "]";
+  if (key == "NW") return str + (addKey ? "NW:" : "") + "[" + String(ssid) +  "]";
 
   // Пароль к сети
-  if (key == "NA") return str + "NA:[" + String(pass) +  "]";
+  if (key == "NA") return str + (addKey ? "NA:" : "") + "[" + String(pass) +  "]";
 
   // IP адрес
-  if (key == "IP") return str + "IP:" + String(wifi_connected ? WiFi.localIP().toString() : F("нет подключения"));  
+  if (key == "IP") return str + (addKey ? "IP:" : "") + String(wifi_connected ? WiFi.localIP().toString() : F("нет подключения"));  
 
   // Время Режима №1
-  if (key == "AM1T") return str + "AM1T:"+String(AM1_hour)+" "+String(AM1_minute);
+  if (key == "AM1T") return str + (addKey ? "AM1T:" : "")+String(AM1_hour)+" "+String(AM1_minute);
 
   // Действие Режима №1
-  if (key == "AM1A") return str + "AM1A:"+String(AM1_effect_id);
+  if (key == "AM1A") return str + (addKey ? "AM1A:" : "")+String(AM1_effect_id);
 
   // Время Режима №2
-  if (key == "AM2T") return str + "AM2T:"+String(AM2_hour)+" "+String(AM2_minute);
+  if (key == "AM2T") return str + (addKey ? "AM2T:" : "")+String(AM2_hour)+" "+String(AM2_minute);
 
   // Действие Режима №2
-  if (key == "AM2A") return str + "AM2A:"+String(AM2_effect_id); 
+  if (key == "AM2A") return str + (addKey ? "AM2A:" : "")+String(AM2_effect_id); 
 
   // Время Режима №3
-  if (key == "AM3T") return str + "AM3T:"+String(AM3_hour)+" "+String(AM3_minute);
+  if (key == "AM3T") return str + (addKey ? "AM3T:" : "")+String(AM3_hour)+" "+String(AM3_minute);
 
   // Действие Режима №3
-  if (key == "AM3A") return str + "AM3A:"+String(AM3_effect_id); 
+  if (key == "AM3A") return str + (addKey ? "AM3A:" : "")+String(AM3_effect_id); 
 
   // Время Режима №4
-  if (key == "AM4T") return str + "AM4T:"+String(AM4_hour)+" "+String(AM4_minute);
+  if (key == "AM4T") return str + (addKey ? "AM4T:" : "")+String(AM4_hour)+" "+String(AM4_minute);
 
   // Действие Режима №4
-  if (key == "AM4A") return str + "AM4A:"+String(AM4_effect_id);
+  if (key == "AM4A") return str + (addKey ? "AM4A:" : "")+String(AM4_effect_id);
 
   // Список эффектов прошивки
-  if (key == "LE") return str + "LE:[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
+  if (key == "LE") return str + (addKey ? "LE:" : "") + "[" + String(EFFECT_LIST).substring(0,BUF_MAX_SIZE-12) + "]"; 
 
 #if (USE_SD == 1)
   // Наличие и доступность SD карты
-  if (key == "SD") return str + "SD:" + String(isSdCardReady); 
+  if (key == "SD") return str + (addKey ? "SD:" : "") + String(isSdCardReady); 
 #endif
 
   // Прошивка поддерживает MQTT 0-нет, 1-да
-  if (key == "QZ") return str + "QZ:" + String(USE_MQTT == 1 ? "1" : "0");  
+  if (key == "QZ") return str + (addKey ? "QZ:" : "") + String(USE_MQTT == 1 ? "1" : "0");  
 
 #if (USE_MQTT == 1)
 
   // Использовать MQTT 0-нет, 1-да
-  if (key == "QA") return str + "QA:" + String(useMQTT ? "1" : "0");  
+  if (key == "QA") return str + (addKey ? "QA:" : "") + String(useMQTT ? "1" : "0");  
 
   // QP:число    порт подключения к MQTT серверу
-  if (key == "QP") return str + "QP:" + String(mqtt_port);  
+  if (key == "QP") return str + (addKey ? "QP:" : "") + String(mqtt_port);  
 
   // QS:[text]   имя MQTT сервера, например QS:[srv2.clusterfly.ru]
-  if (key == "QS") return str + "QS:[" + String(mqtt_server) +  "]";
+  if (key == "QS") return str + (addKey ? "QS:" : "") + "[" + String(mqtt_server) +  "]";
   
   // QU:[text]   имя пользователя MQTT соединения, например QU:[user_af7cd12a]
-  if (key == "QU") return str + "QU:[" + String(mqtt_user) +  "]";
+  if (key == "QU") return str + (addKey ? "QU:" : "") + "[" + String(mqtt_user) +  "]";
 
   // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
-  if (key == "QW") return str + "QW:[" + String(mqtt_pass) +  "]";
+  if (key == "QW") return str + (addKey ? "QW:" : "") + "[" + String(mqtt_pass) +  "]";
 
   // QD:число    задержка между отправками сообщений к MQTT серверу
-  if (key == "QD") return str + "QD:" + String(mqtt_send_delay);  
+  if (key == "QD") return str + (addKey ? "QD:" : "") + String(mqtt_send_delay);  
 
   // Используется префикс в виде имени пользователя для формирования топика 0-нет, 1-да
-  if (key == "QR") return str + "QR:" + String(mqtt_use_prefix ? "1" : "0");  
+  if (key == "QR") return str + (addKey ? "QR:" : "") + String(mqtt_use_prefix ? "1" : "0");  
 #endif
-
 
   // Запрошенный ключ не найден - вернуть пустую строку
   return "";
+}
+
+String getStateString(String keys) {
+  String str = "", s_tmp, key;
+
+  // Ключи буквы/цифры, разделенные пробелами или пайпами '|' 
+  // Если строка ключей ограничена квадратными скобками или кавычками - удалить их;
+  // В конце может быть ";" - не требуется - удалить ее (в середине ее быть не может)
+  keys.replace(";","");
+  keys.replace("[","");
+  keys.replace("]","");
+  keys.replace("\"","");
+
+  // Ключи могут быть разделены '|' или пробелами
+  keys.replace(" ","|");
+  keys.replace("/r"," ");
+  keys.replace("/n"," ");
+  keys.trim();
+  
+  int16_t pos_start = 0;
+  int16_t pos_end = keys.indexOf('|', pos_start);
+  int16_t len = keys.length();
+  if (pos_end < 0) pos_end = len;
+
+  // Некоторые параметры зависят от текущего эффекта
+  // Текущим эффектом может быть эффект, отсутствующий в списке эффектов и включенный как служебный эффект - 
+  // например "Ночные часы" или "IP адрес". 
+  // В этом случае в приложении эффект не будет найден - индекс в списке комбобокса
+  // будет 0 и приложение на телефоне крашится. В этом случае отправляем параметры случайного эффекта, точно из списка.
+  int8_t tmp_eff = thisMode;
+  if (tmp_eff >= SPECIAL_EFFECTS_START) {
+    tmp_eff = random8(0, MAX_EFFECT - 1);
+  }
+
+  // Строка keys содержит ключи запрашиваемых данных, разделенных знаком '|', например "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+  while (pos_start < len && pos_end >= pos_start) {
+    if (pos_end > pos_start) {      
+      key = keys.substring(pos_start, pos_end);
+      if (key.length() > 0) {
+        s_tmp = getStateValue(key, tmp_eff);
+        if (s_tmp.length() > 0) {
+          str += s_tmp + "|";
+        }
+      }      
+    }
+    pos_start = pos_end + 1;
+    pos_end = keys.indexOf('|', pos_start);
+    if (pos_end < 0) pos_end = len;
+  }
+
+  len = str.length();
+  if (len > 0 && str.charAt(len - 1) == '|') {
+    str = str.substring(0, len - 1);
+  }
+  return str;
 }
 
 // Первый параметр эффекта thisMode для отправки на телефон параметра "SS:"

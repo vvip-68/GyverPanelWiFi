@@ -79,9 +79,9 @@
 #define MC_LIFE                 41
 #define MC_PATTERNS             42
 #define MC_DAWN_ALARM           43
-#define MC_SDCARD               44
 
 #if (USE_SD == 1)
+#define MC_SDCARD               44
 #define MAX_EFFECT              45         // количество эффектов, определенных в прошивке
 #else
 #define MAX_EFFECT              44         // количество эффектов, определенных в прошивке
@@ -333,6 +333,7 @@ PubSubClient mqtt(m_client);             // Объект соединения с
 #define  TOPIC_NFO      "nfo"            // Топик - отправка информационных уведомлений клиенту
 #define  TOPIC_ERR      "err"            // Топик - отправка уведомлений об ошибке клиенту
 #define  TOPIC_ACK      "ack"            // Топик - отправка уведомлений клиенту
+#define  TOPIC_STT      "stt"            // Топик - отправка клиенту сообщений о текущем статусе параметров устройства
 
 char     mqtt_server[25] = "";                   // Имя сервера MQTT
 char     mqtt_user[15]   = "";                   // Логин от сервера
@@ -347,6 +348,7 @@ String  topic_dta = TOPIC_DTA;           // Топик отправки запр
 String  topic_nfo = TOPIC_NFO;           // Топик отправки уведомлений
 String  topic_err = TOPIC_ERR;           // Топик отправки сообщений об ошибках
 String  topic_ack = TOPIC_ACK;           // Топик отправки уведомлений, что команда принята и обработана
+String  topic_stt = TOPIC_STT;           // Топик отправки текущего статуса устройства
 
 // Выделение места под массив команд, поступающих от MQTT-сервера
 // Callback на поступление команды от MQTT сервера происходит асинхронно, и если предыдущая
