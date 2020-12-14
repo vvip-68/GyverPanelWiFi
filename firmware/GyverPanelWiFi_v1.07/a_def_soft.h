@@ -79,9 +79,9 @@
 #define MC_LIFE                 41
 #define MC_PATTERNS             42
 #define MC_DAWN_ALARM           43
+#define MC_SDCARD               44
 
 #if (USE_SD == 1)
-#define MC_SDCARD               44
 #define MAX_EFFECT              45         // количество эффектов, определенных в прошивке
 #else
 #define MAX_EFFECT              44         // количество эффектов, определенных в прошивке
