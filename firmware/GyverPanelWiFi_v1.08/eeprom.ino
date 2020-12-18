@@ -262,8 +262,10 @@ void loadSettings() {
     
     Serial.println();
   }  
-  
+
+  #if (USE_MQTT == 1) 
   changed_keys = "";
+  #endif
 }
 
 void clearEEPROM() {

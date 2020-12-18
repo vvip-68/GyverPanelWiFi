@@ -206,6 +206,7 @@ void set_CURRENT_LIMIT(uint16_t value) {
   addKeyToChanged("PW");
 }
 
+#if (USE_WEATHER == 1)
 // WU useWeather
 void set_useWeather(byte value) {
   if (useWeather == value) return;
@@ -267,6 +268,7 @@ void set_temperature(int8_t value) {
   temperature = value;
   addKeyToChanged("W2");
 }
+#endif
 
 // EF thisMode
 // EN thisMode
@@ -703,6 +705,7 @@ void set_isDfPlayerOk(bool value) {
   addKeyToChanged("MX");
 }
 
+#if (USE_MP3 == 1)
 // MU useAlarmSound
 void set_useAlarmSound(bool value) {
   if (useAlarmSound == value) return;  
@@ -760,6 +763,7 @@ void set_soundFile(byte value) {
   soundFile = value;
   addKeyToChanged("MP");
 }
+#endif
 
 // AU useSoftAP
 void set_useSoftAP(bool value) {
@@ -865,13 +869,16 @@ void set_AM4_effect_id(int8_t value) {
   addKeyToChanged("AM4A");
 }
 
+#if (USE_SDCARD == 1)
 // SD isSdCardReady
 void set_isSdCardReady(bool value) {
   if (isSdCardReady == value) return;  
   isSdCardReady = value;
   addKeyToChanged("SD");
 }
+#endif
 
+#if (USE_MQTT == 1)
 // QA useMQTT
 void set_useMQTT(bool value) {
   if (useMQTT == value) return;  
@@ -937,3 +944,4 @@ void set_mqtt_state_packet(bool value) {
   mqtt_state_packet = getSendStateInPacket();
   addKeyToChanged("QK");
 }
+#endif
