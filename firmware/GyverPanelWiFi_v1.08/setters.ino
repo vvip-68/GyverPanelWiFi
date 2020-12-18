@@ -207,7 +207,7 @@ void set_CURRENT_LIMIT(uint16_t value) {
 }
 
 // WU useWeather
-void set_useWeather(bool value) {
+void set_useWeather(byte value) {
   if (useWeather == value) return;
   putUseWeather(value);
   useWeather = getUseWeather();

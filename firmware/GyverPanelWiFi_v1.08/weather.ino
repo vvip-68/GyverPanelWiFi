@@ -200,6 +200,7 @@ bool getWeather() {
   doc["night"]  = isNight;
   doc["icon"]   = icon;
   doc["town"]   = town;
+  doc["server"] = (useWeather == 1 ? String(F("Yandex")) : String(F("OpenWeatherMap")) );
   if (useWeather == 1)
     doc["sky"]    = skyColor;      // для Yandex
   else

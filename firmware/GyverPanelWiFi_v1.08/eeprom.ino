@@ -226,7 +226,7 @@ void loadSettings() {
     AM4_effect_id = getAM4effect();
 
   #if (USE_WEATHER == 1)     
-    useWeather =  getUseWeather();
+    useWeather = getUseWeather();
     regionID = getWeatherRegion();
     regionID2 = getWeatherRegion2();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
