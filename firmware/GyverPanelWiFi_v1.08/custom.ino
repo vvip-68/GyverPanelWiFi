@@ -4,12 +4,6 @@
 byte lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
 unsigned long xxx;
 
-// ************************* СВОЙ СПИСОК РЕЖИМОВ ************************
-// список можно менять, соблюдая его структуру. Можно удалять и добавлять эффекты, ставить их в
-// любой последовательности или вообще оставить ОДИН. Удалив остальные case и break. Cтруктура оч простая:
-// case <номер>: <эффект>;
-//  break;
-
 void customRoutine(byte aMode) {
   doEffectWithOverlay(aMode); 
 }
@@ -390,24 +384,24 @@ void nextModeHandler() {
   }
 
   byte aCnt = 0;
-  byte curMode = thisMode;
+  int8_t curMode = thisMode, newMode = thisMode;
 
   while (aCnt < MAX_EFFECT) {
     // Берем следующий режим по циклу режимов
     aCnt++; 
-    set_thisMode(thisMode + 1);  
-    if (thisMode >= MAX_EFFECT) set_thisMode(0);
-
+    newMode++;    
+    if (newMode >= MAX_EFFECT) newMode = 0;
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
-    if (getEffectUsage(thisMode)) break;
-    
+    if (getEffectUsage(newMode)) break;    
     // Если перебрали все и ни у одного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
     if (aCnt >= MAX_EFFECT) {
-      set_thisMode(curMode++);
-      if (thisMode >= MAX_EFFECT) set_thisMode(0);
+      newMode = curMode++;
+      if (newMode >= MAX_EFFECT) newMode = 0;
       break;
     }
   }
+
+  set_thisMode(newMode);  
   
   loadingFlag = true;
   autoplayTimer = millis();
@@ -425,25 +419,27 @@ void prevModeHandler() {
   }
 
   byte aCnt = 0;
-  byte curMode = thisMode;
+  int8_t curMode = thisMode, newMode = thisMode;
 
   while (aCnt < MAX_EFFECT) {
     // Берем предыдущий режим по циклу режимов
     aCnt++; 
-    set_thisMode(thisMode - 1); 
-    if (thisMode < 0) set_thisMode(MAX_EFFECT - 1);
+    newMode--; 
+    if (newMode < 0) newMode = MAX_EFFECT - 1;
 
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
-    if (getEffectUsage(thisMode)) break;
+    if (getEffectUsage(newMode)) break;
     
     // Если перебрали все и ни у одного нет флага "использовать" - не обращаем внимание на флаг, используем предыдущий
     if (aCnt >= MAX_EFFECT) {
-      set_thisMode(curMode--);
-      if (thisMode < 0) set_thisMode(MAX_EFFECT - 1);
+      newMode = curMode--;
+      if (newMode < 0) newMode = MAX_EFFECT - 1;
       break;
     }
   }
   
+  set_thisMode(newMode);  
+
   loadingFlag = true;
   autoplayTimer = millis();
   setTimersForMode(thisMode);
