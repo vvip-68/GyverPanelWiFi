@@ -290,41 +290,42 @@ unsigned int localPort = 2390;              // локальный порт на 
 // ------------------------ MQTT parameters --------------------
 #if (USE_MQTT == 1)
 
-WiFiClient m_client;                        // Объект для работы с удалёнными хостами - соединение с MQTT-сервером
-PubSubClient mqtt(m_client);                // Объект соединения с MQTT сервером
+WiFiClient m_client;                            // Объект для работы с удалёнными хостами - соединение с MQTT-сервером
+PubSubClient mqtt(m_client);                    // Объект соединения с MQTT сервером
+
+#define MQTT_CLIENT_ID      "WiFiPanel"         // Имя клиента (к нему будет добавляться DEVICE_ID)
 
 // Внимание!!! Если вы меняете эти значения ПОСЛЕ того, как прошивка уже хотя бы раз была загружена в плату и выполнялась,
 // чтобы изменения вступили в силу нужно также изменить значение константы EEPROM_OK в строке 8 этого файла
 
 #ifndef DEFAULT_MQTT_SERVER
-#define  DEFAULT_MQTT_SERVER "srv1.clusterfly.ru" // MQTT сервер
+#define DEFAULT_MQTT_SERVER "srv1.clusterfly.ru" // MQTT сервер
 #endif
 
 #ifndef DEFAULT_MQTT_USER
-#define  DEFAULT_MQTT_USER   "user_af7cd12a"      // Имя mqtt-пользователя    (укажите имя пользователя для вашего соединения)
+#define DEFAULT_MQTT_USER   "user_af7cd12a"      // Имя mqtt-пользователя    (укажите имя пользователя для вашего соединения)
 #endif
 
 #ifndef DEFAULT_MQTT_PASS
-#define  DEFAULT_MQTT_PASS   "pass_eb250bf5"      // Пароль mqtt-пользователя (укажите пароль вашего соединения)
+#define DEFAULT_MQTT_PASS   "pass_eb250bf5"      // Пароль mqtt-пользователя (укажите пароль вашего соединения)
 #endif
 
 #ifndef DEFAULT_MQTT_PORT
-#define  DEFAULT_MQTT_PORT   9123                 // Порт mqtt-соединения
+#define DEFAULT_MQTT_PORT   9123                 // Порт mqtt-соединения
 #endif
 
 #ifndef DEFAULT_MQTT_PREFIX
-#define  DEFAULT_MQTT_PREFIX ""                   // Префикс топика сообщения или пустая строка, если префикс не требуется
+#define DEFAULT_MQTT_PREFIX ""                   // Префикс топика сообщения или пустая строка, если префикс не требуется
 #endif
 
-#ifndef MQTT_SEND_DELAY                           // Отправлять сообщение на MQTT-сервер не чаще 1 сообщения в секунду (ограничение бесплатного MQTT сервера);
-#define  MQTT_SEND_DELAY     0                    // Сообщения, отправленные чаще защитного интервала "съедаются" сервером (игнорируются, пропадают); 
-#endif                                            // Если нет ограничений на частоту отправки сообщений - поставьте здесь 0
+#ifndef MQTT_SEND_DELAY                          // Отправлять сообщение на MQTT-сервер не чаще 1 сообщения в секунду (ограничение бесплатного MQTT сервера);
+#define MQTT_SEND_DELAY     0                    // Сообщения, отправленные чаще защитного интервала "съедаются" сервером (игнорируются, пропадают); 
+#endif                                           // Если нет ограничений на частоту отправки сообщений - поставьте здесь 0
                                                   
 
 // Код работы с MQTT-каналом ориентирован на использование MQTT-брокера mqtt.4api.ru
 // Для управления и отладки можно использовать одну из следующих консолей: client.mqtt.4api.ru, hivemq.com/demos/websocket-client
 
-#define  MQTT_CLIENT_ID "WiFiPanel"              // Имя клиента (к нему будет добавляться DEVICE_ID)
 #define  TOPIC_CMD      "cmd"                    // Топик - получение команды управления от клиента
 #define  TOPIC_DTA      "dta"                    // Топик - отправка запрошенных данных клиенту
 #define  TOPIC_ERR      "err"                    // Топик - отправка уведомлений об ошибке клиенту
