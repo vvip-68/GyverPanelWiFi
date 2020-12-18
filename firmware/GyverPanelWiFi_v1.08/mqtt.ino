@@ -147,7 +147,11 @@ void SendCurrentState(String keys, String topic, bool immediate) {
   if (keys[0] == '|') keys = keys.substring(1);
   if (keys[keys.length() - 1] == '|') keys = keys.substring(0, keys.length()-1);
 
-  int16_t doc_size = immediate ? 128 : (keys == "LF" || keys == "LT" ? 3072 : 2048);
+  // Если строк в textLines очень много (LT) или много файлов эффектов с длинными именами (ДА) - они могут не поместиться в JsonDocument в 2048 байт
+  // Тогда можно увеличить размер документа дл 3072 байт. На ESP32 где много оперативы это пройдет безболезненно, на ESP8266 могут начаться падения 
+  // при нехватке памяти - malloc() не сможет выделить память. Тогда уменьшать количество текста бегущей строки, а  имена файлам эффектов давать короткие
+  //  Менее 2048 бвйт в режиме пакетной отправки состояния параметров выделяьть нельзя - они не влезут в буфер документа
+  int16_t doc_size = mqtt_state_packet || keys == "LF" || keys == "LT" ? 2048 : 128;   
 
   DynamicJsonDocument doc(doc_size);
   DynamicJsonDocument value_doc(128);
