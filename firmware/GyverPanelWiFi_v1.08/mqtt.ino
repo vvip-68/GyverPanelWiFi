@@ -143,11 +143,15 @@ void checkMqttConnection() {
 void SendCurrentState(String keys, String topic, bool immediate) {
 
   if (stopMQTT) return;
-  
-  DynamicJsonDocument doc(2048);
 
   if (keys[0] == '|') keys = keys.substring(1);
   if (keys[keys.length() - 1] == '|') keys = keys.substring(0, keys.length()-1);
+
+  int16_t doc_size = immediate ? 128 : (keys == "LF" || keys == "LT" ? 3072 : 2048);
+
+  DynamicJsonDocument doc(doc_size);
+  DynamicJsonDocument value_doc(128);
+  JsonVariant value;
 
   String out, key, s_tmp;
   int16_t pos_start = 0;
@@ -160,20 +164,27 @@ void SendCurrentState(String keys, String topic, bool immediate) {
     if (pos_end > pos_start) {      
       key = keys.substring(pos_start, pos_end);
       if (key.length() > 0) {
-        s_tmp = getStateValue(key, thisMode, false);        
+        value_doc.clear();
+        value = value_doc.to<JsonVariant>();
+        s_tmp = getStateValue(key, thisMode, &value);                
         if (s_tmp.length() > 0) {
-          doc[key] = s_tmp;
           if (key == "PS") {
             // Изменение параметра программного вкл/выкл панели отправляется дополнительно в отдельный топик
             String pwr_state = isTurnedOff ? "{\"power\":\"offline\",\"type\":\"soft\"}" : "{\"power\":\"online\",\"type\":\"soft\"}";
             putOutQueue(mqtt_topic(TOPIC_PWR), pwr_state, true);
+          } 
+          else if (key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2") {
+            // Получение длинных списков - в value_doc недостаточно места - getStateValue() в value вернет null, но возвращаемое значение - нужная нам строка
+            doc[key] = s_tmp;
           }
           // Если режим отправки сообщений - каждый параметр индивидуально - отправить полученный параметр отдельным сообщением          
-          if (immediate) {
+          else if (immediate) {
             // Топик сообщения - основной топик плюс ключ (имя параметра)
-            out = getKVP(key, s_tmp);
             s_tmp = topic + "/" + key;      
+            out = getKVP(key, value);
             putOutQueue(mqtt_topic(s_tmp), out, true);
+          } else {
+            doc[key] = value;
           }
         }
       }      
@@ -191,7 +202,7 @@ void SendCurrentState(String keys, String topic, bool immediate) {
 }
 
 // Получение строки пары ключ-значение в формате json;
-String getKVP(String &key, String &value) {
+String getKVP(String &key, JsonVariant &value) {
   String out;
   DynamicJsonDocument doc(256);
   doc[key] = value;
@@ -207,20 +218,22 @@ void mqttSendStartState() {
   // Для отправи этих длинных строк используется тот же json-документ, который позже используется для отправки и хранения свойств состояния
   // поэтому отправка этих списков выполняется один раз при старте программы (с флагом retain), далее json-документ используется по назначению
   // Список эффектов
-  SendCurrentState("LE", String(TOPIC_STT) + "/LE", false);  // false - т.к. хотя и один параметр, но обязательно требуется большой буфкр пакета 
+  SendCurrentState("LE", String(TOPIC_STC) + "/LE", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета 
 
   #if (USE_MP3 == 1)  
   // Список звуков будильника
-  SendCurrentState("S1", String(TOPIC_STT) + "/S1", false);  // false - т.к. хотя и один параметр, но обязательно требуется большой буфкр пакета
+  SendCurrentState("S1", String(TOPIC_STC) + "/S1", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   
   // Список звуков рассвета
-  SendCurrentState("S2", String(TOPIC_STT) + "/S2", false);  // false - т.к. хотя и один параметр, но обязательно требуется большой буфкр пакета
+  SendCurrentState("S2", String(TOPIC_STC) + "/S2", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   #endif  
 
   // Отправить список строк
+  SendCurrentState("LT", String(TOPIC_STC) + "/LT", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
 
   #if (USE_SD == 1)  
-  // Отправить список файлов, загруженный с SD-карточки
+    // Отправить список файлов, загруженный с SD-карточки
+    SendCurrentState("LF", String(TOPIC_STC) + "/LF", false);  // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   #endif  
 
   // Список параметров подлежащих отправке на сервер

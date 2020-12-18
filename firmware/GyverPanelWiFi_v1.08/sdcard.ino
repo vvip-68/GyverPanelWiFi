@@ -74,10 +74,14 @@ void loadDirectory() {
       if (fsize > 1024) { fsize /= 1024.0; fs_name = "К"; sz++;}
       if (fsize > 1024) { fsize /= 1024.0; fs_name = "М"; sz++;}
       if (fsize > 1024) { fsize /= 1024.0; fs_name = "Г"; sz++;}
+
+      // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
+      int16_t p = file_name.lastIndexOf("/");
+      if (p>=0) file_name = file_name.substring(p + 1);
             
       Serial.print("  ");
       Serial.print(file_name);
-      Serial.print("\t");
+      Serial.print("\t\t");
       if (sz == 0)
         Serial.print(file_size, DEC);
       else
@@ -124,14 +128,9 @@ void sdcardRoutine() {
         file_idx = currentFile;
       }
     }
-    
-    #if defined(ESP8266)
-    // на ESP8266 при загрузке имен файлов с SD-карты возвращается только имя файла внутри выбранной папки -- чтобы получить полное имя вайла для загрузки  нужно к имени файла добавить имя папки
+       
+    // При загрузке имен файлов с SD-карты в nameFiles только имя файла внутри выбранной папки -- чтобы получить полное имя вайла для загрузки  нужно к имени файла добавить имя папки
     fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
-    #else
-    // на ESP32 при загрузке имен файлов с SD-карты возвращается полное имя файла от корня SD-карты - имя папки добавлять не нужно
-    fileName = nameFiles[file_idx];
-    #endif
 
     play_file_finished = false;
     Serial.print(F("Загрузка файла эффекта: '"));
