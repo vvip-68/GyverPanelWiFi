@@ -869,7 +869,7 @@ void set_AM4_effect_id(int8_t value) {
   addKeyToChanged("AM4A");
 }
 
-#if (USE_SDCARD == 1)
+#if (USE_SD == 1)
 // SD isSdCardReady
 void set_isSdCardReady(bool value) {
   if (isSdCardReady == value) return;  
