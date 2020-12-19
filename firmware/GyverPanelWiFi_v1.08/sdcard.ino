@@ -30,7 +30,7 @@ void loadDirectory() {
     return;
   }
 
-  String file_name;
+  String file_name, fn;
   uint32_t file_size;
   float fsize;
   byte sz = 0;
@@ -49,8 +49,11 @@ void loadDirectory() {
             
       file_name = entry.name();
       file_size = entry.size();
+
+      fn = file_name;
+      fn.toLowerCase();
       
-      if (!file_name.endsWith(".out") || file_size == 0) {
+      if (!fn.endsWith(".out") || file_size == 0) {
         entry.close();
         continue;    
       }
