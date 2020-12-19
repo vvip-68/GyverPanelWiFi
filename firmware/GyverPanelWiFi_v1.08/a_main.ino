@@ -354,18 +354,18 @@ String getEffectName(int8_t mode) {
   switch (mode) {
     case MC_CLOCK:      
       if (isNightClock)
-        ef_name = F("'Ночные часы'");
+        ef_name = F("Ночные часы");
       else
-        ef_name = F("'Часы'");
+        ef_name = F("Часы");
       break;
     case MC_TEXT:
-      ef_name = F("'Бегущая строка'");
+      ef_name = F("Бегущая строка");
       break;
     case MC_LOADIMAGE:
-      ef_name = F("'Загрузка изображения'");
+      ef_name = F("Загрузка изображения");
       break;
     case MC_DRAW:
-      ef_name = F("'Рисование'");
+      ef_name = F("Рисование");
       break;
     case -1:      
       ef_name = "";
@@ -378,7 +378,7 @@ String getEffectName(int8_t mode) {
       uint16_t len2 = s_tmp.length();
       if (len1 > len2) { 
         tmpSaveMode = thisMode;
-        ef_name = "'" + s_tmp + "'";
+        ef_name = s_tmp;
       } else {
         // Если режим отсутствует в списке эффектов - имя не определено
         ef_name = "";
