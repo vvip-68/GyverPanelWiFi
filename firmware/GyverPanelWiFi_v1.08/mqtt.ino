@@ -178,11 +178,13 @@ void SendCurrentState(String keys, String topic, bool immediate) {
         value = value_doc.to<JsonVariant>();
         s_tmp = getStateValue(key, thisMode, &value);                
         if (s_tmp.length() > 0) {
+          /*
           if (key == "PS") {
             // Изменение параметра программного вкл/выкл панели отправляется дополнительно в отдельный топик
             String pwr_state = isTurnedOff ? "{\"power\":\"offline\",\"type\":\"soft\"}" : "{\"power\":\"online\",\"type\":\"soft\"}";
             putOutQueue(mqtt_topic(TOPIC_PWR), pwr_state, true);
           } 
+          */
           // Если режим отправки сообщений - каждый параметр индивидуально - отправить полученный параметр отдельным сообщением          
           if (immediate && !big_size) {
             // Топик сообщения - основной топик плюс ключ (имя параметра)

@@ -2355,10 +2355,10 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Программное вкл/выкл устройства
   if (key == "PS") {
     if (value) {
-      value->set(isTurnedOff);
-      return String(isTurnedOff);
+      value->set(!isTurnedOff);
+      return String(!isTurnedOff);
     }
-    return str + "PS:" + String(isTurnedOff ? 0 : 1);
+    return str + "PS:" + String(!isTurnedOff);
   }
 
   // Текущая яркость
@@ -2373,8 +2373,8 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Ручной / Авто режим
   if (key == "DM") {
     if (value) {
-      value->set(manualMode);
-      return String(manualMode);
+      value->set(!manualMode);
+      return String(!manualMode);
     }
     return str + "DM:" + String(!manualMode);
   }
