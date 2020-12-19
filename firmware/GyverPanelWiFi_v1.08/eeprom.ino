@@ -344,7 +344,7 @@ void saveDefaults() {
 
   byte ball_size = min(WIDTH,HEIGHT) / 4;
   if (ball_size > 5) ball_size = 5;
-  putScaleForEffect(MC_BALL, ball_size );   // Размер кубика по умолчанию
+  putScaleForEffect(MC_BALL, ball_size);    // Размер кубика по умолчанию
   
   putGlobalColor(globalColor);              // Цвет панели в режиме "Лампа"
   putGlobalClockColor(globalClockColor);    // Цвет часов в режиме "Монохром" 

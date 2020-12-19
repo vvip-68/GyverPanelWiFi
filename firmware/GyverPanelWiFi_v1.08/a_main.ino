@@ -25,6 +25,7 @@ void process() {
   // Если включен эффект с кодом большим кол-ва эффектов (но меньшим кода специальных эффектов) - 
   // выбрать случайный эффект, иначе будет отображаться черный экран или застывший предыдущий эффект
   if (thisMode >= MAX_EFFECT && thisMode < SPECIAL_EFFECTS_START) {
+    Serial.println("!!!! - 1"); // +++
     setRandomMode2(); 
   }
 
@@ -3570,7 +3571,10 @@ void resetModesExt() {
 void setEffect(byte eff) {
 
   resetModes();
-  if (eff >= MAX_EFFECT && eff < SPECIAL_EFFECTS_START) return;
+  if (eff >= MAX_EFFECT && eff < SPECIAL_EFFECTS_START) {
+    Serial.println("!!!! - 2"); // +++
+    return;
+  }
   
   if (eff == MC_TEXT)
     loadingTextFlag = true;

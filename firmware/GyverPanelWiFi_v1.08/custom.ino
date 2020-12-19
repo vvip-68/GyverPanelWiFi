@@ -20,7 +20,7 @@ void doEffectWithOverlay(byte aMode) {
 
   // В прошлой итерации часы / текст были наложены с оверлеем?
   // Если да - восстановить пиксели эффекта сохраненные перед наложением часов / текста
-  if (overlayDelayed) {
+  if (overlayDelayed && thisMode != MC_DRAW && thisMode != MC_LOADIMAGE) {
     overlayUnwrap();
     overlayDelayed = false;
   }  
@@ -53,8 +53,8 @@ void doEffectWithOverlay(byte aMode) {
   }
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"
-  bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode != MC_CLOCK && thisMode < MAX_EFFECT;
-  bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode);
+  bool textOvEn  = ((textOverlayEnabled && (getEffectTextOverlayUsage(aMode))) || ignoreTextOverlaySettingforEffect) && !isTurnedOff && !isNightClock && thisMode < MAX_EFFECT && thisMode != MC_CLOCK;
+  bool clockOvEn = clockOverlayEnabled && getEffectClockOverlayUsage(aMode) && thisMode != MC_CLOCK && thisMode != MC_DRAW && thisMode != MC_LOADIMAGE;
   bool needStopText = false;
   String out;
 
@@ -235,7 +235,7 @@ void doEffectWithOverlay(byte aMode) {
   
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
 
-  if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT) || aMode == MC_CLOCK)) {    
+  if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT && thisMode != MC_DRAW && thisMode != MC_LOADIMAGE) || aMode == MC_CLOCK)) {    
     overlayDelayed = needOverlay;
     setOverlayColors();
     if (c_size == 1 && showDateInClock && showDateState) {      

@@ -285,7 +285,7 @@ void set_thisMode(int8_t value) {
   bool valid = (value == -1) || (value >= 0 && value < MAX_EFFECT) || (value >= SPECIAL_EFFECTS_START);
   if (!valid) return;
 
-  valid = value >= 0 && value < MAX_EFFECT;
+  valid = (value >= 0 && value < MAX_EFFECT);
 
   bool old_UE, old_UT, old_UC;
   byte old_SE, old_BE, old_SS, old_SQ;
@@ -301,7 +301,18 @@ void set_thisMode(int8_t value) {
   }
 
   thisMode = value;
-  effect_name = valid ? getEffectName(value) : "";
+  if (valid) {
+    effect_name = getEffectName(value);
+  } else {
+    switch (value) {
+      case MC_DRAW:              effect_name = F("Рисование"); break;
+      case MC_LOADIMAGE:         effect_name = F("Загрузка изображения"); break;
+      case MC_TEXT:              effect_name = F("Бегущая строка"); break;
+      case MC_DAWN_ALARM_SPIRAL: effect_name = F("Рассвет"); break;
+      case MC_DAWN_ALARM_SQUARE: effect_name = F("Рассвет"); break;
+      default:                   effect_name = ""; break;
+    }
+  }
 
   addKeyToChanged("EF");
   addKeyToChanged("EN");
