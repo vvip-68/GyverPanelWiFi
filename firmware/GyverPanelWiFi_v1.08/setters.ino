@@ -718,7 +718,7 @@ void set_useAlarmSound(bool value) {
 }
 
 // MV maxAlarmVolume
-void set_maxAlarmVolume(bool value) {
+void set_maxAlarmVolume(byte value) {
   if (maxAlarmVolume == value) return;  
   bool useAlarmSound = getUseAlarmSound();
   byte alarmSound = getAlarmSound();
@@ -729,7 +729,7 @@ void set_maxAlarmVolume(bool value) {
 }
 
 // MA alarmSound
-void set_alarmSound(bool value) {
+void set_alarmSound(byte value) {
   if (alarmSound == value) return;  
   bool useAlarmSound = getUseAlarmSound();
   byte dawnSound = getDawnSound();
@@ -740,7 +740,7 @@ void set_alarmSound(bool value) {
 }
 
 // MB dawnSound
-void set_dawnSound(bool value) {
+void set_dawnSound(byte value) {
   if (dawnSound == value) return;  
   bool useAlarmSound = getUseAlarmSound();
   byte alarmSound = getAlarmSound();
