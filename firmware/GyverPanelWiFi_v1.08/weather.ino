@@ -22,7 +22,7 @@ bool getWeather() {
   }  
 
   #if (USE_MQTT == 1)
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(384);
   String out;
   doc["act"] = F("WEATHER");
   doc["region"] = useWeather == 1 ? regionID : regionID2;
