@@ -6,16 +6,11 @@
 // Если вам не нужен на стороне MQTT клиента полный перечент параметров - оставьте только те, что вам нужны
 #define STATE_KEYS "|W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|EF|EN|UE|UT|UC|SE|SS|SQ|BE|CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP|AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|TE|TI|TS|CT|C2|OM|ST|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|"
 
-// Получение ID клиента при подключениик серверу
-String mqtt_client() {
-  return String(MQTT_CLIENT_ID) + "-" + String(DEVICE_ID);
-}
-
 // Формирование топика сообщения
 String mqtt_topic(String topic) {
   String ret_topic = mqtt_prefix;
   if (ret_topic.length() > 0 && !ret_topic.endsWith("/")) ret_topic += "/";
-  return ret_topic + mqtt_client() + "/" + topic;
+  return ret_topic + host_name + "/" + topic;
 }
 
 // Поместить сообщения для отправки на сервер в очередь
@@ -97,23 +92,21 @@ void checkMqttConnection() {
       Serial.print(":");
       Serial.print(mqtt_port);
       Serial.print(F("'; ClientID -> '"));
-      Serial.print(mqtt_client());
+      Serial.print(host_name);
       Serial.print(F("' ..."));
     }
     mqtt_topic_subscribed = false;
     mqtt_conn_last = millis();
 
     String topic = mqtt_topic(TOPIC_PWR);
-    String json_offline = "{\"power\":\"offline\",\"type\":\"hard\"}";
-    String json_online = "{\"power\":\"online\",\"type\":\"hard\"}";
 
-    if (mqtt.connect(mqtt_client().c_str(), mqtt_user, mqtt_pass, topic.c_str(), 0, true, json_offline.c_str())) {
+    if (mqtt.connect(host_name.c_str(), mqtt_user, mqtt_pass, topic.c_str(), 0, true, "offline")) {
       Serial.println(F("\nПодключение к MQTT-серверу выполнено."));
       if (outQueueLength > 0) {
         Serial.print(F("Сообщений в очереди отправки: "));  
         Serial.println(outQueueLength);  
       }
-      putOutQueue(topic, json_online, true);
+      putOutQueue(topic, "online", true);
       mqtt_connecting = false;      
     } else {      
       Serial.print(".");
@@ -149,14 +142,14 @@ void SendCurrentState(String keys, String topic, bool immediate) {
 
   // Параметры списков keys == "LE","LF","LT","S1","S2" возвращаюь длинные строки для которых требуется большой буфер, эти ключи могут передаваться 
   // только по одиночке, при передаче в списке они буду проигнорированы, чтобы не переполнять буфер документа
-  bool big_size = mqtt_state_packet || keys == "LE" || keys == "LF" || keys == "LT" || keys == "S1" || keys == "S2";
+  bool big_size = keys == "LE" || keys == "LF" || keys == "LT" || keys == "S1" || keys == "S2";
   
   // Если строк в textLines очень много (LT) или много файлов эффектов с длинными именами (LF) - они могут не поместиться в JsonDocument в 2048 байт
   // Тогда можно увеличить размер документа дл 3072 байт. На ESP32 где много оперативы это пройдет безболезненно, на ESP8266 могут начаться падения 
   // при нехватке памяти - malloc() не сможет выделить память. Тогда уменьшать количество текста бегущей строки, а  имена файлам эффектов давать короткие
   // Менее 2048 бвйт в режиме пакетной отправки состояния параметров выделяьть нельзя - они не влезут в буфер документа
   
-  int16_t doc_size = big_size ? 2048 : 128;   
+  int16_t doc_size = big_size || mqtt_state_packet ? 2048 : 128;   
 
   DynamicJsonDocument doc(doc_size);
   DynamicJsonDocument value_doc(128);
@@ -173,30 +166,18 @@ void SendCurrentState(String keys, String topic, bool immediate) {
     if (pos_end > pos_start) {      
       key = keys.substring(pos_start, pos_end);
       if (key.length() > 0) {
-        if ((key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2") && !big_size) continue;
         value_doc.clear();
         value = value_doc.to<JsonVariant>();
         s_tmp = getStateValue(key, thisMode, &value);                
         if (s_tmp.length() > 0) {
-          /*
-          if (key == "PS") {
-            // Изменение параметра программного вкл/выкл панели отправляется дополнительно в отдельный топик
-            String pwr_state = isTurnedOff ? "{\"power\":\"offline\",\"type\":\"soft\"}" : "{\"power\":\"online\",\"type\":\"soft\"}";
-            putOutQueue(mqtt_topic(TOPIC_PWR), pwr_state, true);
-          } 
-          */
           // Если режим отправки сообщений - каждый параметр индивидуально - отправить полученный параметр отдельным сообщением          
-          if (immediate && !big_size) {
+          if (immediate || big_size) {
             // Топик сообщения - основной топик плюс ключ (имя параметра)
+            out = immediate ? (value.isNull() ? "" : value.as<String>()) : s_tmp;
             s_tmp = topic + "/" + key;      
-            out = getKVP(key, value);
             putOutQueue(mqtt_topic(s_tmp), out, true);
           } else {
-            if (key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2")           
-              // Получение длинных списков (dsit эти ключи фильтруются если флаг big_size не установлен, так что если сюда попали - это точно big_size
-              doc[key] = s_tmp;
-            else  
-              doc[key] = value;                    
+            doc[key] = value;                    
           }
         }
       }      
@@ -207,7 +188,7 @@ void SendCurrentState(String keys, String topic, bool immediate) {
   }
 
   // Если режим отправки состояния пакетами - отправить клиенту сформированный пакет
-  if (!immediate || big_size) {
+  if (!(immediate || big_size)) {
     serializeJson(doc, out);  
     putOutQueue(mqtt_topic(topic), out, true);
   }
@@ -230,22 +211,22 @@ void mqttSendStartState() {
   // Для отправи этих длинных строк используется тот же json-документ, который позже используется для отправки и хранения свойств состояния
   // поэтому отправка этих списков выполняется один раз при старте программы (с флагом retain), далее json-документ используется по назначению
   // Список эффектов
-  SendCurrentState("LE", String(TOPIC_STC) + "/LE", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета 
+  SendCurrentState("LE", TOPIC_STT, false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета 
 
   #if (USE_MP3 == 1)  
   // Список звуков будильника
-  SendCurrentState("S1", String(TOPIC_STC) + "/S1", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
+  SendCurrentState("S1", TOPIC_STT, false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   
   // Список звуков рассвета
-  SendCurrentState("S2", String(TOPIC_STC) + "/S2", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
+  SendCurrentState("S2", TOPIC_STT, false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   #endif  
 
   // Отправить список строк
-  SendCurrentState("LT", String(TOPIC_STC) + "/LT", false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
+  SendCurrentState("LT", TOPIC_STT, false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
 
   #if (USE_SD == 1)  
     // Отправить список файлов, загруженный с SD-карточки
-    SendCurrentState("LF", String(TOPIC_STC) + "/LF", false);  // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
+    SendCurrentState("LF", TOPIC_STT, false);  // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   #endif  
 
   // Список параметров подлежащих отправке на сервер

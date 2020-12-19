@@ -19,7 +19,7 @@ void InitializeDfPlayer1() {
 
 void InitializeDfPlayer2() {    
 #if (USE_MP3 == 1)
-  Serial.print(F("Инициализация MP3 плеера."));
+  Serial.print(F("\nИнициализация MP3 плеера."));
   refreshDfPlayerFiles();    
   Serial.println(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
   Serial.println(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));

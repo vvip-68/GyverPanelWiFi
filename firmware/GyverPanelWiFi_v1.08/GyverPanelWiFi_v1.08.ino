@@ -13,6 +13,7 @@
 // ************************ WIFI ПАНЕЛЬ *************************
 
 #define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1219-beta2")
+#define HOST_NAME    F("WiFiPanel")
 
 // --------------------------------------------------------
 
@@ -84,9 +85,11 @@ void setup() {
   Serial.begin(115200);
   delay(300);
 
-  Serial.println();
+  host_name = String(HOST_NAME) + "-" + String(DEVICE_ID);
+
   Serial.println();
   Serial.println(FIRMWARE_VER);
+  Serial.println("Host: '" + host_name + "'" + String(F(" >> ")) + String(WIDTH) + "x" + String(HEIGHT));
   Serial.println();
 
   loadSettings();
@@ -136,21 +139,35 @@ void setup() {
   butt.setStepTimeout(100);
   butt.setClickTimeout(500);
 
+  // Второй этап инициализации плеера - проверка наличия файлов звуков на SD карте
+  #if (USE_MP3 == 1)
+    InitializeDfPlayer2();
+    if (!isDfPlayerOk) {
+      Serial.println(F("MP3 плеер недоступен."));
+    }
+  #endif
+
   // Подключение к сети
   connectToNetwork();
-
+  
   #if (USE_MQTT == 1)
   // Настройка соединения с MQTT сервером
+  stopMQTT = !useMQTT;
+  changed_keys = "";
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
+  checkMqttConnection();    
+  String msg = F("START");
+  SendMQTT(msg, TOPIC_STA);
+  if (!stopMQTT) mqttSendStartState();
   #endif
 
   // пинаем генератор случайных чисел
-#if defined(ESP8266) && defined(TRUE_RANDOM)
+  #if defined(ESP8266) && defined(TRUE_RANDOM)
   unsigned long seed = (int)RANDOM_REG32;
-#else
+  #else
   unsigned long seed = (int)(analogRead(0) ^ micros());
-#endif
+  #endif
   randomSeed(seed);
   random16_set_seed(seed);
 
@@ -158,7 +175,6 @@ void setup() {
   // ArduinoOTA.setPort(8266);
  
   // Hostname defaults to esp8266-[ChipID]
-  String host_name = String(F("WiFiPanel-")) + String(DEVICE_ID);
   ArduinoOTA.setHostname(host_name.c_str());
  
   // No authentication by default
@@ -221,14 +237,6 @@ void setup() {
   // Таймер рассвета
   dawnTimer.setInterval(4294967295);
   
-  // Второй этап инициализации плеера - проверка наличия файлов звуков на SD карте
-  #if (USE_MP3 == 1)
-    InitializeDfPlayer2();
-    if (!isDfPlayerOk) {
-      Serial.println(F("MP3 плеер недоступен."));
-    }
-  #endif
-
   // Проверить соответствие позиции вывода часов размерам матрицы
   // При необходимости параметры отображения часов корректируются в соответствии с текущими аппаратными возможностями
   checkClockOrigin();
@@ -252,12 +260,6 @@ void setup() {
     }
   }
   autoplayTimer = millis();
-
-  #if (USE_MQTT == 1)
-  // После инициализации параметров состояния отправить текущие значения в канал MQTT
-  stopMQTT = !useMQTT;
-  if (!stopMQTT) mqttSendStartState();
-  #endif
   
   if (manualMode || specialMode) {
     idleTimer.setInterval(4294967295);
