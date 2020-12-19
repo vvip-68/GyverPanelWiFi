@@ -301,8 +301,10 @@ void set_thisMode(int8_t value) {
   }
 
   thisMode = value;
-  if (valid) {
+  if (valid && !isTurnedOff) {
     effect_name = getEffectName(value);
+  } else if (isTurnedOff) {
+    effect_name = F("Выключено");
   } else {
     switch (value) {
       case MC_DRAW:              effect_name = F("Рисование"); break;
