@@ -806,7 +806,7 @@ void set_AM1_minute(byte value) {
 void set_AM1_effect_id(int8_t value) {
   if (AM1_effect_id == value) return;
   putAM1effect(value);
-  AM1_effect_id = getAM1effect();
+  AM1_effect_id = getAM1effect();  
   addKeyToChanged("AM1A");
 }
 

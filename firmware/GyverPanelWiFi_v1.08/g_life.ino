@@ -73,7 +73,7 @@ void init_world(uint8_t world[][BYTE_WIDTH]) {
 void print_world(uint8_t world[][BYTE_WIDTH]) {
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
-  for (uint8_t x = offset_x; x < WIDTH - offset_x; x++) {
+  for (uint8_t x = 0; x < WIDTH; x++) {
     for (uint8_t y = 0; y < HEIGHT; y++) {
       if (x >= offset_x && x < WIDTH - offset_x) {
         CRGB color = getXY(world, x - offset_x, y) ? CRGB(effectBrightness,effectBrightness,effectBrightness) : CRGB::Black; 
@@ -136,7 +136,6 @@ void next_generation(uint8_t world[][BYTE_WIDTH], uint8_t gener[][BYTE_WIDTH]) {
   uint8_t live_nb_cnt;
   bool live;
 
-
   for (uint8_t i = 0; i < WORLD_WIDTH; i++) {
     for (uint8_t j = 0; j < HEIGHT; j++) {          
       live = getXY(gener, i, j);                            // состояние клетки жива / мертва
@@ -158,7 +157,7 @@ void next_generation(uint8_t world[][BYTE_WIDTH], uint8_t gener[][BYTE_WIDTH]) {
  */
 void print_generation_num() {
  String str = String(generation_cnt);
- int8_t px = WIDTH - (str.length() * 4);
+ int8_t px = WIDTH - (str.length() * 4) + 1;
  while (px < 0) {
    str = str.substring(1);
    px = WIDTH - (str.length() * 4);

@@ -934,7 +934,9 @@ void putAM1minute(byte minute) {
 }
 
 int8_t getAM1effect() {
-  return (int8_t)EEPROMread(35);
+  int8_t value = (int8_t)EEPROMread(35);
+  if (value < -3) value = -3;
+  return value;
 }
 
 void putAM1effect(int8_t effect) {
@@ -974,7 +976,9 @@ void putAM2minute(byte minute) {
 }
 
 int8_t getAM2effect() {
-  return (int8_t)EEPROMread(38);
+  int8_t value = (int8_t)EEPROMread(38);
+  if (value < -3) value = -3;
+  return value;
 }
 
 void putAM2effect(int8_t effect) {
@@ -1014,7 +1018,9 @@ void putAM3minute(byte minute) {
 }
 
 int8_t getAM3effect() {
-  return (int8_t)EEPROMread(163);
+  int8_t value = (int8_t)EEPROMread(163);
+  if (value < -3) value = -3;
+  return value;
 }
 
 void putAM3effect(int8_t effect) {
@@ -1054,7 +1060,9 @@ void putAM4minute(byte minute) {
 }
 
 int8_t getAM4effect() {
-  return (int8_t)EEPROMread(166);
+  int8_t value = (int8_t)EEPROMread(166);
+  if (value < -3) value = -3;
+  return value;
 }
 
 void putAM4effect(int8_t effect) {

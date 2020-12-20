@@ -1864,47 +1864,24 @@ void parsing() {
       // ----------------------------------------------------
 
       case 22:
-        AM1_hour = intData[1];
-        AM1_minute = intData[2];
-        AM1_effect_id = intData[3];
-        if (AM1_hour < 0) AM1_hour = 0;
-        if (AM1_hour > 23) AM1_hour = 23;
-        if (AM1_minute < 0) AM1_minute = 0;
-        if (AM1_minute > 59) AM1_minute = 59;
-        if (AM1_effect_id < -3) AM1_effect_id = -3;
-        putAM1params(AM1_hour, AM1_minute, AM1_effect_id);
+        set_AM1_hour(intData[1]);
+        set_AM1_minute(intData[2]);
+        set_AM1_effect_id(intData[3]);
 
-        AM2_hour = intData[4];
-        AM2_minute = intData[5];
-        AM2_effect_id = intData[6];
-        if (AM2_hour < 0) AM2_hour = 0;
-        if (AM2_hour > 23) AM2_hour = 23;
-        if (AM2_minute < 0) AM2_minute = 0;
-        if (AM2_minute > 59) AM2_minute = 59;
-        if (AM2_effect_id < -3) AM2_effect_id = -3;
-        putAM2params(AM2_hour, AM2_minute, AM2_effect_id);
+        set_AM2_hour(intData[4]);
+        set_AM2_minute(intData[5]);
+        set_AM2_effect_id(intData[6]);
 
-        AM3_hour = intData[7];
-        AM3_minute = intData[8];
-        AM3_effect_id = intData[9];
-        if (AM3_hour < 0) AM3_hour = 0;
-        if (AM3_hour > 23) AM3_hour = 23;
-        if (AM3_minute < 0) AM3_minute = 0;
-        if (AM3_minute > 59) AM3_minute = 59;
-        if (AM3_effect_id < -3) AM3_effect_id = -3;
-        putAM3params(AM3_hour, AM3_minute, AM3_effect_id);
+        set_AM3_hour(intData[7]);
+        set_AM3_minute(intData[8]);
+        set_AM3_effect_id(intData[9]);
 
-        AM4_hour = intData[10];
-        AM4_minute = intData[11];
-        AM4_effect_id = intData[12];
-        if (AM4_hour < 0) AM4_hour = 0;
-        if (AM4_hour > 23) AM4_hour = 23;
-        if (AM4_minute < 0) AM4_minute = 0;
-        if (AM4_minute > 59) AM4_minute = 59;
-        if (AM4_effect_id < -3) AM4_effect_id = -3;
-        putAM4params(AM4_hour, AM4_minute, AM4_effect_id);
+        set_AM4_hour(intData[10]);
+        set_AM4_minute(intData[11]);
+        set_AM4_effect_id(intData[12]);
 
         saveSettings();
+        
         // Для команд, пришедших от MQTT отправлять только ACK;
         // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
         if (cmdSource == UDP) {
@@ -2142,7 +2119,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("W|H|BR|SE|SD");
       break;
     case 91:  // Запрос текста бегущей строки для редактирования указанной ячейки или замены строки текста в списке ячейки
-      str = getStateString("TY");
+      str = getStateString("TS|TY");
       addKeyToChanged("TY");       // Отправить также строку в канал MQTT
       addKeyToChanged("TS");       // Тескт в строке мог быть изменен - отправить в канал MQTT состояние строк
       break;
@@ -3175,7 +3152,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // список текстовых строк
   if (key == "LT") {    
     for (byte i=0; i < 36; i++) {
-      tmp += "~" + textLines[i];
+      tmp += "~" + (textLines[i].length()==0 ? " " : textLines[i]);
     }
     if (tmp.length() > 0) tmp = tmp.substring(1);
     if (value) {
