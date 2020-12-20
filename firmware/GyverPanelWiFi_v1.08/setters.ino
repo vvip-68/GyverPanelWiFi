@@ -330,7 +330,7 @@ void set_thisMode(int8_t value) {
 
 // UE
 void set_EffectUsage(byte effect, bool value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   bool old_value = getEffectUsage(effect);
   if (old_value != value) {
@@ -341,7 +341,7 @@ void set_EffectUsage(byte effect, bool value) {
 
 // UT 
 void set_EffectTextOverlayUsage(byte effect, bool value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   bool old_value = getEffectTextOverlayUsage(effect);
   if (old_value != value) {
@@ -352,7 +352,7 @@ void set_EffectTextOverlayUsage(byte effect, bool value) {
 
 // UC
 void set_EffectClockOverlayUsage(byte effect, bool value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   bool old_value = getEffectClockOverlayUsage(effect);
   if (old_value != value) {
@@ -363,7 +363,7 @@ void set_EffectClockOverlayUsage(byte effect, bool value) {
 
 // SE
 void set_EffectSpeed(byte effect, byte value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   byte old_value = getEffectSpeed(effect);
   if (old_value != value) {
@@ -374,7 +374,7 @@ void set_EffectSpeed(byte effect, byte value) {
 
 // BE
 void set_EffectContrast(byte effect, byte value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   byte old_value = effectContrast[effect];
   if (old_value != value) {
@@ -386,7 +386,7 @@ void set_EffectContrast(byte effect, byte value) {
 
 // SS
 void set_EffectScaleParam(byte effect, byte value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   byte old_value = effectScaleParam[effect];
   if (old_value != value) {
@@ -398,7 +398,7 @@ void set_EffectScaleParam(byte effect, byte value) {
 
 // SQ
 void set_EffectScaleParam2(byte effect, byte value) {
-  bool valid = value >= 0 && value < MAX_EFFECT;
+  bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   byte old_value = effectScaleParam2[effect];
   if (old_value != value) {
