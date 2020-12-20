@@ -75,8 +75,12 @@ void print_world(uint8_t world[][BYTE_WIDTH]) {
 
   for (uint8_t x = offset_x; x < WIDTH - offset_x; x++) {
     for (uint8_t y = 0; y < HEIGHT; y++) {
-      CRGB color = getXY(world, x - offset_x, y) ? CRGB(effectBrightness,effectBrightness,effectBrightness) : CRGB::Black; 
-      drawPixelXY(x, y, color);
+      if (x >= offset_x && x < WIDTH - offset_x) {
+        CRGB color = getXY(world, x - offset_x, y) ? CRGB(effectBrightness,effectBrightness,effectBrightness) : CRGB::Black; 
+        drawPixelXY(x, y, color);
+      } else {
+        drawPixelXY(x, y, CRGB::Black);
+      }
     }
   }  
 }

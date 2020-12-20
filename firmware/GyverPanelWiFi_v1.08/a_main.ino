@@ -8,8 +8,7 @@ char data[100];
 */
 
 void process() {  
-
-  /*
+/*
   // Время прохода одного цикла
   uint16_t duration = millis() - last_ms;
   if (duration > 0) {
@@ -17,8 +16,7 @@ void process() {
     Serial.println(data);
   }
   last_ms = millis();
-  */
-
+*/
   // принимаем данные
   parsing();                           
 
