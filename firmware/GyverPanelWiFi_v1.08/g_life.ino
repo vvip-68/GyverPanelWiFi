@@ -161,7 +161,7 @@ void print_generation_num() {
  }
  for (uint8_t i = 0; i < str.length(); i++) {
    uint8_t val = (uint8_t)(str[i] - '0');
-   drawDigit3x5(val, px, 0, GEN_COLOR);
+   drawDigit3x5_s(val, px, 0, GEN_COLOR);
    px += 4;
  }   
 }

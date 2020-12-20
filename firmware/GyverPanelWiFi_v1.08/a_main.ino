@@ -486,7 +486,6 @@ void parsing() {
     13 - Настройки бегущей cтроки  
       - $13 1 N;   - активация прокручивания строки с номером N 0..35
       - $13 2 N;   - запросить текст бегущей строки с индексом N 0..35 как есть, без обработки макросов - ответ TY
-      - $13 3 N;   - запросить текст бегущей строки с индексом N 0..35 как есть, без обработки макросов с последующим запросом следующей строки - ответ TZ
       - $13 9 D;   - сохранить настройку I - интервал в секундах отображения бегущей строки
       - $13 11 X;  - Режим цвета бегущей строки X: 0,1,2,           
       - $13 13 X;  - скорость прокрутки бегущей строки
@@ -1308,7 +1307,6 @@ void parsing() {
       // 13 - Настройки бегущей cтроки  
       // - $13 1 N;   - активация прокручивания строки с номером N 0..35
       // - $13 2 N;   - запросить текст бегущей строки с индексом N 0..35 как есть, без обработки макросов - ответ TY
-      // - $13 3 N;   - запросить текст бегущей строки с индексом N 0..35 как есть, без обработки макросов с последующим запросом следующей строки - ответ TZ
       // - $13 9 D;   - сохранить настройку D - интервал в секундах отображения бегущей строки
       // - $13 11 X;  - Режим цвета бегущей строки X: 0,1,2,           
       // - $13 13 X;  - скорость прокрутки бегущей строки
@@ -1335,12 +1333,6 @@ void parsing() {
              if (intData[2] >= 0 && (intData[2]<(sizeof(textLines) / sizeof(String)))) {
                editIdx = intData[2];          // На время вызова sendPageParams(91) editIdx должен указывать на строку в массиве  
                sendPageParams(91, cmdSource); // Обработать указанную строку
-             }
-             break;
-           case 3:               // $13 3 I; - Запросить текст бегущей строки с индексом I 0..35 с обработкой макросов
-             if (intData[2] >= 0 && (intData[2]<(sizeof(textLines) / sizeof(String)))) {
-               sendTextIdx = intData[2];
-               sendPageParams(92, cmdSource);
              }
              break;
            case 9:               // $13 9 D; - Периодичность отображения бегущей строки (в секундах D)
@@ -2125,7 +2117,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ");
       break;
     case 2:  // Эффекты
-      str = getStateString("EF|EN|UE|UT|UC|SE|SS|SQ|BE");
+      str = getStateString("EF|EN|UE|UT|UC|SE|SS|BE|SQ");
       break;
     case 3:  // Настройки бегущей строки
       str = getStateString("TE|TI|CT|ST|C2|OM|TS");
@@ -2156,22 +2148,19 @@ void sendPageParams(int page, eSources src) {
       addKeyToChanged("TY");       // Отправить также строку в канал MQTT
       addKeyToChanged("TS");       // Тескт в строке мог быть изменен - отправить в канал MQTT состояние строк
       break;
-    case 92:  // Запрос текста бегущих строк для заполнения списка в программе
-      str = getStateString("TZ");
-      break;
-#if (USE_MP3 == 1)
+    #if (USE_MP3 == 1)
     case 93:  // Запрос списка звуков будильника
       str = getStateString("S1");
       break;
     case 94:  // Запрос списка звуков рассвета
       str = getStateString("S2");
       break;
-#else      
+    #else      
     case 93:  // Запрос списка звуков будильника
     case 94:  // Запрос списка звуков рассвета
       // Если MP3-плеер отключен - просто игнорировать
       break;
-#endif      
+    #endif      
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
       str = getStateString("AL");
       cmd95 = str;
@@ -2181,6 +2170,14 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("MP");
       cmd96 = str;
       src = BOTH;
+      break;
+    case 97:  // Запрос списка эффектов с SD-карты
+      #if (USE_SD == 1)
+      str = getStateString("LF");
+      #endif      
+      break;
+    case 98:  // Запрос всех строк текста бегущей строки
+      str = getStateString("LT");
       break;
     case 99:  // Запрос списка эффектов
       str = getStateString("LE");
@@ -2695,16 +2692,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return tmp;
     }
     return str + "TY:" + "[" + tmp + "']";
-  }
-
-  // Запрос текста бегущих строк для заполнения списка в программе
-  if (key == "TZ" && sendTextIdx >= 0 && (sendTextIdx < (sizeof(textLines) / sizeof(String)))) {
-    tmp = String(sendTextIdx) + ":" + String(getAZIndex(sendTextIdx)) + " > '" + getTextByIndex(sendTextIdx);
-    if (value) {
-      value->set(tmp);
-      return tmp;
-    }
-    return str + "TZ:" + "[" + tmp + "']";
   }
 
   // Оверлей часов вкл/выкл
@@ -3396,7 +3383,7 @@ String getParam2ForMode(byte mode) {
    case MC_RAINBOW:
      // Эффект "Радуга" имеет несколько вариантов - список выбора варианта отображения
      // Дополнительный параметр представлен в приложении списком выбора
-     //           Маркер типа - список выбора         0,1,2,3,4               0         1            2              3            4
+     //           Маркер типа - список выбора         0,1,2,3,4               0               1                   2                     3                   4
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Вертикальная радуга,Горизонтальная радуга,Диагональная радуга,Вращающаяся радуга"));
      break;
    case MC_ARROWS:
@@ -3408,21 +3395,17 @@ String getParam2ForMode(byte mode) {
    case MC_PATTERNS:
      // Эффект "Узоры" имеет несколько вариантов - список выбора варианта отображения
      // Дополнительный параметр представлен в приложении списком выбора
-     //           Маркер типа - список выбора         0,1,2,3,4               0               1      2    3    4      5    7      8       9      10     11    12    13       14       15
+     //           Маркер типа - список выбора         0,1,2,3,4               0               1      2    3    4      5    7      8       9      10     11    12    13       14       15       16         17     18    19    20     21     22     23     24     25     26     27     28     29      30      31      32      33
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Зигзаг,Ноты,Ромб,Сердце,Елка,Клетка,Смайлик,Зигзаг,Полосы,Волны,Чешуя,Портьера,Плетенка,Снежинка,Квадратики,Греция,Круги,Рулет,Узор 1,Узор 2,Узор 3,Узор 4,Узор 5,Узор 6,Узор 7,Узор 8,Узор 9,Узор 10,Узор 11,Узор 12,Узор 13,Узор 14"));
      break;
    #if (USE_SD == 1)     
    case MC_SDCARD:
      // Эффект "SD-card" имеет несколько вариантов - список выбора файла эффекта
      // Дополнительный параметр представлен в приложении списком выбора
-     // Весь список и имена файлов могут иметь слишком большую длину, которая не влезет в передаваемую строку (ограничение буфера), поэтому
-     // список формируется просто по номерам - 001.002,003... и так далее
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор"));
-     for (uint8_t i=1; i <= countFiles; i++) {
-       String tmp = "00" + String(i);
-       if (tmp.length() > 3) tmp = tmp.substring(tmp.length() - 3);
-       str += "," + tmp;
-     }
+     for (uint8_t i=0; i < countFiles; i++) {
+       str += "," + nameFiles[i];
+     }     
      break;
      #endif
    case MC_IMAGE:

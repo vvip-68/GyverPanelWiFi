@@ -113,6 +113,7 @@ void drawDigit3x5_s(byte digit, int8_t X, int8_t Y, CRGB color) {
     for (byte y = 0; y < 5; y++) {
       if (y + Y > HEIGHT) continue;
       if (thisByte & (1 << y)) drawPixelXY(getClockX(x + X), y + Y, color);
+      else drawPixelXY(getClockX(x + X), y + Y, 0x00);
     }
   }
 }
