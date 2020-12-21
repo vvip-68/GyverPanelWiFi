@@ -1249,7 +1249,6 @@ void parsing() {
              // mqtt.setServer(mqtt_server, mqtt_port)
              // не срабатывает - соединяемся к прежнему серверу, который был обозначен при старте программы
              // Единственный вариант - программно перезагрузить контроллер. После этого новый сервер подхватывается
-             Serial.println("last='" + last_mqtt_server + "'; new='" + String(mqtt_server) + "'"); // +++
              if (last_mqtt_server != String(mqtt_server) || last_mqtt_port != mqtt_port) {              
                ESP.restart();
              }
@@ -3036,8 +3035,8 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   if (key == "AA") {
     tmp = String(apPass);
     if (value) {
-      value->set(tmp);
-      return tmp;
+      // value->set(tmp);  // Решено пароль по открытому каналу на [публичный] сервер MQTT не отправлять
+      return "";           // tmp;
     }
     return str + "AA:" + "[" + tmp + "]";
   }
@@ -3056,8 +3055,8 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   if (key == "NA") {
     tmp = String(pass);
     if (value) {
-      value->set(tmp);
-      return tmp;
+      // value->set(tmp);  // Решено пароль по открытому каналу на [публичный] сервер MQTT не отправлять
+      return "";           // tmp;
     }
     return str + "NA:" + "[" + tmp + "]";
   }
@@ -3248,8 +3247,8 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   if (key == "QW") {
     tmp = String(mqtt_pass);
     if (value) {
-      value->set(tmp);
-      return tmp;
+      // value->set(tmp);  // Решено пароль по открытому каналу на [публичный] сервер MQTT не отправлять
+      return "";           // tmp;
     }
     return str + "QW:" + "[" + tmp +  "]";
   }
