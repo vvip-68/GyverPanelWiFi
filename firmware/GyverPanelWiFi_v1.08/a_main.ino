@@ -2645,27 +2645,27 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Цвет режима "монохром" часов
   if (key == "C1") {
     c = CRGB(globalClockColor);
-    str = String(c.r) + "," + String(c.g) + "," + String(c.b);
+    tmp = String(c.r) + "," + String(c.g) + "," + String(c.b);
     if (value) {
    // value->set(globalClockColor);
    // return String(globalClockColor);
-      value->set(str);
-      return str;
+      value->set(tmp);
+      return tmp;
     }
-    return str;
+    return str + "C1:" + tmp;
   }
 
   // Цвет режима "монохром" бегущей строки
   if (key == "C2") {
     c = CRGB(globalTextColor);
-    str = String(c.r) + "," + String(c.g) + "," + String(c.b);
+    tmp = String(c.r) + "," + String(c.g) + "," + String(c.b);
     if (value) {
   //  value->set(globalTextColor);
   //  return String(globalTextColor);
-      value->set(str);
-      return str;
+      value->set(tmp);
+      return tmp;
     }
-    return str;
+    return str + "C2:" + tmp;
   }
 
   // Сколько ячеек осталось свободно для хранения строк
