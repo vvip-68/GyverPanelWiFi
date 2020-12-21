@@ -1,22 +1,35 @@
 
 // ----------------------------------------------------
 
-/*
-// Временно для вывода информации о времени цикла
+
+// Контроль времени цикла
 uint32_t last_ms = millis();  
-char data[100];
-*/
+bool last_ms_init = false;
 
 void process() {  
-/*
+
   // Время прохода одного цикла
   uint16_t duration = millis() - last_ms;
+  /*
   if (duration > 0) {
-    sprintf(data, "duration=%d", duration);
-    Serial.println(data);
+    Serial.print(F("duration="));
+    Serial.println(duration);
+  }
+  */
+  // Если библиотека FastLED модифицированя для гирлянд не держащих синхронизацию, начинает периодически отваливаться WiFi. 
+  // При этом попытки получить что-то с интернета (время, погода) или отправить сообщение MQTT начинают приводить к тормозам при которых эффекты замирают. 
+  // Обычное время цикла на самых загруженных эффектах - около 25 мс. На эффектах с полученим данных из интернета - периодами до 1 мс  
+  // Если подключение к интернету установлено и время цикла вырастает до более чем 1000 мс - значит интернет "отвалился".
+  // Восстановить его нормальную работу можно принудительно перезагрузив микроконтроллер.
+  if (wifi_connected && last_ms_init && duration > 1000) {
+    Serial.println();
+    Serial.println(F("ESP.restart()"));
+    Serial.println();
+    ESP.restart();
   }
   last_ms = millis();
-*/
+  last_ms_init = true;
+  
   // принимаем данные
   parsing();                           
 
@@ -1229,8 +1242,17 @@ void parsing() {
              set_mqtt_send_delay(intData[2]);
              break;
            case 5:               // $11 5;   - Сохранить изменения ипереподключиться к MQTT серверу
-             saveSettings();             
+             saveSettings();
              mqtt.disconnect();
+             // Если подключаемся к серверу с другим именем и/или на другом порту - 
+             // простой вызов 
+             // mqtt.setServer(mqtt_server, mqtt_port)
+             // не срабатывает - соединяемся к прежнему серверу, который был обозначен при старте программы
+             // Единственный вариант - программно перезагрузить контроллер. После этого новый сервер подхватывается
+             Serial.println("last='" + last_mqtt_server + "'; new='" + String(mqtt_server) + "'"); // +++
+             if (last_mqtt_server != String(mqtt_server) || last_mqtt_port != mqtt_port) {              
+               ESP.restart();
+             }
              // MQTT сервер мог поменять свои настройки, переключились на другой сервер или другой аккаунт - отправить туда все начальные настройки,
              if (useMQTT) mqttSendStartState();
              break;
@@ -2305,6 +2327,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // WZ:X        Прошивка поддерживает погоду USE_WEATHER == 1 - 0 - выключено; 1 - включено
 
   String str = "", tmp;
+  CRGB c;
   
   // Ширина матрицы
   if (key == "W")  {
@@ -2622,22 +2645,28 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
 
   // Цвет режима "монохром" часов
   if (key == "C1") {
+    c = CRGB(globalClockColor);
+    str = String(c.r) + "," + String(c.g) + "," + String(c.b);
     if (value) {
-      value->set(globalClockColor);
-      return String(globalClockColor);
+   // value->set(globalClockColor);
+   // return String(globalClockColor);
+      value->set(str);
+      return str;
     }
-    CRGB c1 = CRGB(globalClockColor);
-    return str + "C1:" + String(c1.r) + "," + String(c1.g) + "," + String(c1.b);
+    return str;
   }
 
   // Цвет режима "монохром" бегущей строки
   if (key == "C2") {
+    c = CRGB(globalTextColor);
+    str = String(c.r) + "," + String(c.g) + "," + String(c.b);
     if (value) {
-      value->set(globalTextColor);
-      return String(globalTextColor);
+  //  value->set(globalTextColor);
+  //  return String(globalTextColor);
+      value->set(str);
+      return str;
     }
-    CRGB c2 = CRGB(globalTextColor);
-    return str + "C2:" + String(c2.r) + "," + String(c2.g) + "," + String(c2.b);
+    return str;
   }
 
   // Сколько ячеек осталось свободно для хранения строк
@@ -2694,8 +2723,12 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Цвет рисования
   if (key == "CL") {
     if (value) {
-      value->set(drawColor);
-      return String(drawColor);
+      c = CRGB(globalTextColor);
+   // value->set(drawColor);
+   // return String(drawColor); 
+      str = String(c.r) + "," + String(c.g) + "," + String(c.b);
+      value->set(str);
+      return str;
     }
     String sHex = "00000" + String(drawColor, HEX);
     byte len = sHex.length();

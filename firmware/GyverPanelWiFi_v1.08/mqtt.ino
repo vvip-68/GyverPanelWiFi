@@ -73,6 +73,10 @@ bool subscribeMqttTopicCmd() {
 }
 
 void checkMqttConnection() {
+
+  // Ели нет оединения  интернетом - незачем проверять наличие подключения к MQTT-ерверу
+  if (!wifi_connected) return;
+  
   // Проверить - выполнена ли подписка на топик команд, если нет - подписаться
   if (!stopMQTT && !mqtt_topic_subscribed) {
     mqtt_topic_subscribed = subscribeMqttTopicCmd();
