@@ -288,7 +288,8 @@ void set_thisMode(int8_t value) {
   valid = (value >= 0 && value < MAX_EFFECT);
 
   bool old_UE, old_UT, old_UC;
-  byte old_SE, old_BE, old_SS, old_SQ;
+  byte old_SE, old_BE;
+  String old_SQ, old_SS;
 
   if (valid) {
     old_UE = getEffectUsage(thisMode); 
@@ -296,11 +297,12 @@ void set_thisMode(int8_t value) {
     old_UC = getEffectClockOverlayUsage(thisMode);
     old_SE = getEffectSpeed(thisMode);
     old_BE = effectContrast[thisMode];
-    old_SS = effectScaleParam[thisMode];
-    old_SQ = effectScaleParam2[thisMode];
+    old_SS = getParamForMode(thisMode);
+    old_SQ = getParam2ForMode(thisMode);
   }
 
   thisMode = value;
+  
   if (valid && !isTurnedOff) {
     effect_name = getEffectName(value);
   } else if (isTurnedOff) {
@@ -324,8 +326,8 @@ void set_thisMode(int8_t value) {
   if (value < 0 || (valid && old_UC != getEffectClockOverlayUsage(value))) addKeyToChanged("UC");
   if (value < 0 || (valid && old_SE != getEffectSpeed(value)))             addKeyToChanged("SE");
   if (value < 0 || (valid && old_BE != effectContrast[value]))             addKeyToChanged("BE");
-  if (value < 0 || (valid && old_SS != effectScaleParam[value]))           addKeyToChanged("SS");
-  if (value < 0 || (valid && old_SQ != effectScaleParam2[value]))          addKeyToChanged("SQ");
+  if (value < 0 || (valid && old_SS != getParamForMode(value)))            addKeyToChanged("SS");
+  if (value < 0 || (valid && old_SQ != getParam2ForMode(value)))           addKeyToChanged("SQ");
 }
 
 // UE
@@ -389,10 +391,11 @@ void set_EffectScaleParam(byte effect, byte value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   byte old_value = effectScaleParam[effect];
+  String old_s_value = getParamForMode(effect);
   if (old_value != value) {
     effectScaleParam[effect] = value;
     putScaleForEffect(effect, value);
-    if (effect == thisMode) addKeyToChanged("SS");
+    if (effect == thisMode && old_s_value != getParamForMode(effect)) addKeyToChanged("SS");
   }
 }
 
@@ -401,10 +404,11 @@ void set_EffectScaleParam2(byte effect, byte value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   byte old_value = effectScaleParam2[effect];
+  String old_s_value = getParam2ForMode(effect);
   if (old_value != value) {
     effectScaleParam2[effect] = value;
     putScaleForEffect2(effect, value);
-    if (effect == thisMode) addKeyToChanged("SQ");
+    if (effect == thisMode && old_s_value != getParam2ForMode(effect)) addKeyToChanged("SQ");
   }
 }
 

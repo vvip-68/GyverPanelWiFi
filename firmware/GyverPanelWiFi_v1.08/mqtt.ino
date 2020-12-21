@@ -121,6 +121,9 @@ void checkMqttConnection() {
 
   // Проверить необходимость отправки сообщения об изменении состояния клиенту MQTT
   if (!stopMQTT && mqtt.connected() && changed_keys.length() > 1) {
+    // Если пакетная отправка - нужно отправлять весь пакет, т.к сообщение статуса имеет флаг retain v всегда должно содержать полный набор параметров.
+    // Если отправлять только изменившиеся - они заместят топик и он не будет содержать весь набор
+    if (mqtt_state_packet) changed_keys = STATE_KEYS;
     // Удалить первый '|' и последний '|' и отправить значения по сформированному списку
     if (changed_keys[0] == '|') changed_keys = changed_keys.substring(1);
     if (changed_keys[changed_keys.length() - 1] == '|') changed_keys = changed_keys.substring(0, changed_keys.length()-1);
@@ -139,23 +142,19 @@ void SendCurrentState(String keys, String topic, bool immediate) {
 
   if (keys[0] == '|') keys = keys.substring(1);
   if (keys[keys.length() - 1] == '|') keys = keys.substring(0, keys.length()-1);
-
-  // Параметры списков keys == "LE","LF","LT","S1","S2" возвращаюь длинные строки для которых требуется большой буфер, эти ключи могут передаваться 
-  // только по одиночке, при передаче в списке они буду проигнорированы, чтобы не переполнять буфер документа
-  bool big_size = keys == "LE" || keys == "LF" || keys == "LT" || keys == "S1" || keys == "S2";
   
   // Если строк в textLines очень много (LT) или много файлов эффектов с длинными именами (LF) - они могут не поместиться в JsonDocument в 2048 байт
   // Тогда можно увеличить размер документа дл 3072 байт. На ESP32 где много оперативы это пройдет безболезненно, на ESP8266 могут начаться падения 
   // при нехватке памяти - malloc() не сможет выделить память. Тогда уменьшать количество текста бегущей строки, а  имена файлам эффектов давать короткие
   // Менее 2048 бвйт в режиме пакетной отправки состояния параметров выделяьть нельзя - они не влезут в буфер документа
-  
-  int16_t doc_size = big_size || mqtt_state_packet ? 2048 : 128;   
+  int16_t doc_size = !immediate || mqtt_state_packet ? 2048 : 128;   
 
   DynamicJsonDocument doc(doc_size);
   DynamicJsonDocument value_doc(128);
   JsonVariant value;
 
   String out, key, s_tmp;
+  bool big_size_key;
   int16_t pos_start = 0;
   int16_t pos_end = keys.indexOf('|', pos_start);
   int16_t len = keys.length();
@@ -170,14 +169,24 @@ void SendCurrentState(String keys, String topic, bool immediate) {
         value = value_doc.to<JsonVariant>();
         s_tmp = getStateValue(key, thisMode, &value);                
         if (s_tmp.length() > 0) {
-          // Если режим отправки сообщений - каждый параметр индивидуально - отправить полученный параметр отдельным сообщением          
-          if (immediate || big_size) {
+          // Если режим отправки сообщений - каждый параметр индивидуально или ключ имеет значение большой длины - отправить полученный параметр отдельным сообщением          
+          big_size_key = key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2" || key == "SQ";
+          if (immediate) {
             // Топик сообщения - основной топик плюс ключ (имя параметра)
-            out = immediate ? (value.isNull() ? "" : value.as<String>()) : s_tmp;
+            if (big_size_key) 
+              out =  s_tmp;
+            else  
+              out = value.isNull() ? "" : value.as<String>();
             s_tmp = topic + "/" + key;      
             putOutQueue(mqtt_topic(s_tmp), out, true);
           } else {
-            doc[key] = value;                    
+            if (big_size_key) {
+              out = "{\"" + key + "\":\"" + s_tmp + "\"}";
+              s_tmp = topic + "/" + key;
+              putOutQueue(mqtt_topic(s_tmp), out, true);              
+            } else {
+              doc[key] = value;
+            }
           }
         }
       }      
@@ -188,7 +197,8 @@ void SendCurrentState(String keys, String topic, bool immediate) {
   }
 
   // Если режим отправки состояния пакетами - отправить клиенту сформированный пакет
-  if (!(immediate || big_size)) {
+  if (!immediate && !doc.isNull()) {
+    out = "";
     serializeJson(doc, out);  
     putOutQueue(mqtt_topic(topic), out, true);
   }

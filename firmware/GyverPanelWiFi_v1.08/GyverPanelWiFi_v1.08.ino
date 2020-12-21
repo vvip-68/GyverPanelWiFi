@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1220-beta5")
+#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1221-beta6")
 #define HOST_NAME    F("WiFiPanel")
 
 // --------------------------------------------------------
@@ -159,7 +159,6 @@ void setup() {
   checkMqttConnection();    
   String msg = F("START");
   SendMQTT(msg, TOPIC_STA);
-  if (!stopMQTT) mqttSendStartState();
   #endif
 
   // пинаем генератор случайных чисел
@@ -260,6 +259,10 @@ void setup() {
     }
   }
   autoplayTimer = millis();
+
+  #if (USE_MQTT == 1)
+  if (!stopMQTT) mqttSendStartState();
+  #endif
   
   if (manualMode || specialMode) {
     idleTimer.setInterval(4294967295);
