@@ -287,16 +287,15 @@ void set_thisMode(int8_t value) {
 
   valid = (value >= 0 && value < MAX_EFFECT);
 
-  bool old_UE, old_UT, old_UC;
-  byte old_SE, old_BE;
-  String old_SQ, old_SS;
+  bool old_UE;
+  String keySE = "SE", keyBE = "BE", keyUT = "UT", keyUC = "UC", old_SQ, old_SS, old_SE, old_BE, old_UT, old_UC;
 
   if (valid) {
     old_UE = getEffectUsage(thisMode); 
-    old_UT = getEffectTextOverlayUsage(thisMode);
-    old_UC = getEffectClockOverlayUsage(thisMode);
-    old_SE = getEffectSpeed(thisMode);
-    old_BE = effectContrast[thisMode];
+    old_UT = getStateValue(keyUT, thisMode);
+    old_UC = getStateValue(keyUC, thisMode);
+    old_SE = getStateValue(keySE, thisMode);
+    old_BE = getStateValue(keyBE, thisMode);
     old_SS = getParamForMode(thisMode);
     old_SQ = getParam2ForMode(thisMode);
   }
@@ -321,13 +320,13 @@ void set_thisMode(int8_t value) {
   addKeyToChanged("EF");
   addKeyToChanged("EN");
 
-  if (value < 0 || (valid && old_UE != getEffectUsage(value)))             addKeyToChanged("UE");
-  if (value < 0 || (valid && old_UT != getEffectTextOverlayUsage(value)))  addKeyToChanged("UT");
-  if (value < 0 || (valid && old_UC != getEffectClockOverlayUsage(value))) addKeyToChanged("UC");
-  if (value < 0 || (valid && old_SE != getEffectSpeed(value)))             addKeyToChanged("SE");
-  if (value < 0 || (valid && old_BE != effectContrast[value]))             addKeyToChanged("BE");
-  if (value < 0 || (valid && old_SS != getParamForMode(value)))            addKeyToChanged("SS");
-  if (value < 0 || (valid && old_SQ != getParam2ForMode(value)))           addKeyToChanged("SQ");
+  if (value < 0 || (valid && old_UE != getEffectUsage(value)))        addKeyToChanged("UE");
+  if (value < 0 || (valid && old_UT != getStateValue(keyUT, value)))  addKeyToChanged("UT");
+  if (value < 0 || (valid && old_UC != getStateValue(keyUC, value)))  addKeyToChanged("UC");
+  if (value < 0 || (valid && old_SE != getStateValue(keySE, value)))  addKeyToChanged("SE");
+  if (value < 0 || (valid && old_BE != getStateValue(keyBE, value)))  addKeyToChanged("BE");
+  if (value < 0 || (valid && old_SS != getParamForMode(value)))       addKeyToChanged("SS");
+  if (value < 0 || (valid && old_SQ != getParam2ForMode(value)))      addKeyToChanged("SQ");
 }
 
 // UE
@@ -345,10 +344,12 @@ void set_EffectUsage(byte effect, bool value) {
 void set_EffectTextOverlayUsage(byte effect, bool value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
+  String key = "UT";
   bool old_value = getEffectTextOverlayUsage(effect);
+  String old_s_value = getStateValue(key, effect);
   if (old_value != value) {
     putEffectTextOverlayUsage(effect, value);
-    if (effect == thisMode) addKeyToChanged("UT");
+    if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("UT");
   }
 }
 
@@ -356,10 +357,12 @@ void set_EffectTextOverlayUsage(byte effect, bool value) {
 void set_EffectClockOverlayUsage(byte effect, bool value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
+  String key = "UC";
   bool old_value = getEffectClockOverlayUsage(effect);
+  String old_s_value = getStateValue(key, effect);
   if (old_value != value) {
     putEffectClockOverlayUsage(effect, value);
-    if (effect == thisMode) addKeyToChanged("UC");
+    if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("UC");
   }
 }
 
@@ -367,23 +370,27 @@ void set_EffectClockOverlayUsage(byte effect, bool value) {
 void set_EffectSpeed(byte effect, byte value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
+  String key = "SE";
   byte old_value = getEffectSpeed(effect);
+  String old_s_value = getStateValue(key, effect);
   if (old_value != value) {
     putEffectSpeed(effect, value);
-    if (effect == thisMode) addKeyToChanged("SE");
   }
+  if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("SE");
 }
 
 // BE
 void set_EffectContrast(byte effect, byte value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
+  String key = "BE";
   byte old_value = effectContrast[effect];
+  String old_s_value = getStateValue(key, effect);
   if (old_value != value) {
     effectContrast[effect] = value;
     putEffectContrast(effect, value);
-    if (effect == thisMode) addKeyToChanged("BE");
   }
+  if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("BE");
 }
 
 // SS
@@ -476,10 +483,14 @@ void set_memoryAvail(uint16_t value) {
 
 // CE clockOverlayEnabled
 void set_clockOverlayEnabled(bool value) {
-  if (clockOverlayEnabled == value) return;
-  putClockOverlayEnabled(value);
-  clockOverlayEnabled = getClockOverlayEnabled();
-  addKeyToChanged("CE");
+  String key = "CE";
+  bool old_value = clockOverlayEnabled;
+  String old_s_value = getStateValue(key, thisMode);
+  if (old_value != value) {
+    putClockOverlayEnabled(value);
+    clockOverlayEnabled = getClockOverlayEnabled();
+  }
+  if (old_s_value != getStateValue(key, thisMode)) addKeyToChanged("CE");
 }
 
 // CC COLOR_MODE
@@ -499,10 +510,14 @@ void set_drawColor(uint32_t value) {
 
 // CO CLOCK_ORIENT
 void set_CLOCK_ORIENT(byte value) {
-  if (CLOCK_ORIENT == value) return;
-  putClockOrientation(value);
-  CLOCK_ORIENT = getClockOrientation();
-  addKeyToChanged("CO");
+  String key = "CO";
+  byte old_value = CLOCK_ORIENT;
+  String old_s_value = getStateValue(key, thisMode);
+  if (old_value != value) {
+    putClockOrientation(value);
+    CLOCK_ORIENT = getClockOrientation();
+  }
+  if (old_s_value != getStateValue(key, thisMode)) addKeyToChanged("CO");
 }
 
 // CK CLOCK_SIZE
