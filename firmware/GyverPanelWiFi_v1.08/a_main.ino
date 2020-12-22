@@ -1445,8 +1445,7 @@ void parsing() {
       case 15: 
         if (intData[2] == 0) {
           if (intData[1] == 255) intData[1] = 254;
-          effectSpeed = 255 - intData[1]; 
-          putEffectSpeed(thisMode, effectSpeed);
+          set_EffectSpeed(thisMode,255 - intData[1]); 
           if (thisMode == MC_FILL_COLOR) { 
             set_globalColor(getColorInt(CHSV(effectSpeed, effectScaleParam[MC_FILL_COLOR], 255)));
           }
