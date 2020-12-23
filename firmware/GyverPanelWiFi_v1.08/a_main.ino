@@ -1788,7 +1788,6 @@ void parsing() {
             if (intData[1] == 0) {
               sendPageParams(5, cmdSource);
             } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
-              // saveSettings();
               sendPageParams(5, cmdSource);
             } else {
               sendPageParams(96);
@@ -3518,6 +3517,11 @@ void setSpecialMode(int spc_mode) {
   setManualModeTo(true);
   putCurrentSpecMode(spc_mode);
   putCurrentManualMode(-1);
+
+  // Если команда выключения лампы - сразу сохранить состояние без ожидания 15 секундной задержки
+  if (specialMode && spc_mode == 0) {
+    saveSettings();
+  }
 }
 
 void resetModes() {

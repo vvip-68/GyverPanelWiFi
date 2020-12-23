@@ -439,9 +439,9 @@ void saveDefaults() {
 
   textLines[34]  = "До {C#0019FF}Нового года{C#FFFFFF} {P01.01.****#Z}";
   textLines[35]  = "-С {C#0019FF}Новым годом{C#FFFFFF}!{E24}";
-  */
   
   saveTexts();
+  */
 
   putCurrentSpecMode(-1);               // Текущий спец-режим - это не спец-режим
   putCurrentManualMode(-1);             // Текущий вручную включенный режим

@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1221-beta6")
+#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1223-beta7")
 #define HOST_NAME    F("WiFiPanel")
 
 // --------------------------------------------------------
@@ -98,7 +98,6 @@ void setup() {
   // В этом блоке можно принудительно устанавливать параметры, которые должны быть установлены при старте микроконтроллера
   // -----------------------------------------
 
-   
   // -----------------------------------------  
     
   // Настройки ленты
@@ -243,8 +242,8 @@ void setup() {
 
   if (spc_mode >= 0 && spc_mode < MAX_SPEC_EFFECT) {
     setSpecialMode(spc_mode);
-    set_isTurnedOff(spc_mode == 0);   // setter
-    set_isNightClock(spc_mode == 8);  // setter
+    set_isTurnedOff(spc_mode == 0);
+    set_isNightClock(spc_mode == 8);
   } else {
     set_thisMode(getCurrentManualMode());
     if (thisMode < 0 || thisMode == MC_TEXT || thisMode >= SPECIAL_EFFECTS_START) {
