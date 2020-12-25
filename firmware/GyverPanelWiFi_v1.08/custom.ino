@@ -168,6 +168,12 @@ void doEffectWithOverlay(byte aMode) {
       serializeJson(doc, out);    
       SendMQTT(out, TOPIC_TXT);
     #endif
+
+    // Если показ завершен и к отображению задана следующая строка - не нужно рисовать эффекты и все прочее - иначе экран мелькает
+    // Завершить обработку - на следующем цикле будет выполнен показ следующей строки
+    if (nextTextLineIdx >= 0) {
+      return;
+    }
   }
 
   // Нужно сохранять оверлей эффекта до отрисовки часов или бегущей строки поверх эффекта?
@@ -185,6 +191,8 @@ void doEffectWithOverlay(byte aMode) {
       } else if (useSpecialBackColor) {
         // Задана отрисовка строки поверх однотонной заливки указанным цветом
         fillAll(specialBackColor);
+        overlayDelayed = false;
+        overlayDelayed2 = false;
       } else {
         // Отобразить текущий эффект, поверх которого будет нарисована строка
         processEffect(aMode);
@@ -228,13 +236,10 @@ void doEffectWithOverlay(byte aMode) {
     }
   }
 
-  // Пришло время отобразить дату (календарь) в малых часах?
-  if (c_size == 1) {
-    checkCalendarState();
-  }
+  // Пришло время отобразить дату (календарь) в часах?
+  checkCalendarState();
   
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
-
   if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT && thisMode != MC_DRAW && thisMode != MC_LOADIMAGE) || aMode == MC_CLOCK)) {    
     overlayDelayed = needOverlay;
     setOverlayColors();

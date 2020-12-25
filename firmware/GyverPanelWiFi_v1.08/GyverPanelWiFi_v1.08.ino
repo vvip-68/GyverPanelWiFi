@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1223-beta7")
+#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1226-beta8")
 #define HOST_NAME    F("WiFiPanel")
 
 // --------------------------------------------------------

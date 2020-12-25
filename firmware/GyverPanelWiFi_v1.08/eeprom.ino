@@ -1241,7 +1241,7 @@ void loadTexts() {
   if (addr == TEXT_EEPROM + 1) {
     Serial.println(F("Нет сохраненных строк"));
   } else {
-    Serial.print(F("Загрузка строк выполнена.\nИпользованы адреса EEPROM "));
+    Serial.print(F("Загрузка строк выполнена.\nИспользованы адреса EEPROM "));
     Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
   }
   if (addr >= EEPROM_MAX) {
