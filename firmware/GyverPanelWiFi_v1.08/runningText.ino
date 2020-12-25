@@ -349,8 +349,18 @@ boolean prepareNextText() {
   // Если nextIdx >= 0 - значит в предыдущей строке было указано какую строку показывать следующей - показываем ее
   currentTextLineIdx = nextIdx >= 0 ? nextIdx : getNextLine(currentTextLineIdx);
   if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
-  
-  currentText = currentTextLineIdx < 0 ? "" : processMacrosInText(textLines[currentTextLineIdx]);
+
+  currentText = "";
+  if (currentTextLineIdx >= 0) {
+    currentText = textLines[currentTextLineIdx];
+    // Если выбрана строка для принудительного показа - игнорировать запрет по '-' в начале строки или по макросу {-}
+    if (nextIdx >= 0) {
+      if (currentText[0] == '-') currentText[0] = ' ';
+      currentText.replace("{-}", "");
+    }
+    currentText = processMacrosInText(currentText);
+  }
+
   if (currentTextLineIdx == 0 && currentText[0] == '#') currentText = "";
 
   return currentText.length() > 0;
@@ -359,10 +369,10 @@ boolean prepareNextText() {
 // Получить индекс строки для отображения
 // -1 - если показывать нечего
 int8_t getNextLine(int8_t currentIdx) {
-  // Если не задана следующая строка - брать следующую из массива? в соответствии с правилом
+  // Если не задана следующая строка - брать следующую из массива в соответствии с правилом
   // sequenceIdx < 0 - просто брать следующую строку
   // sequenceIdx > 0 - строка textLines[0] содержит последовательность отображения строк, например "#12345ZYX"
-  //                   в этом случае sequenceIdx = 1..textLines[0].length() и показывает на символ в строке, содержащий индек следующей строки к отображению
+  //                   в этом случае sequenceIdx = 1..textLines[0].length() и показывает на символ в строке, содержащий индекc следующей строки к отображению
   //                   Если извлеченный символ - '#' - брать случайную строку из массива
   int8_t nextLineIdx = currentIdx;
   if (sequenceIdx < 1) {
@@ -373,22 +383,28 @@ int8_t getNextLine(int8_t currentIdx) {
     }
     char c = textLines[0].charAt(sequenceIdx);
     if (c == '#') {
+      // textLines[0] == "##", sequenceIdx всегда 1; textLines[0].charAt(1) == '#';
+      // Это значит надо выбрать случайную строку из тех, что заполнены
       byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
       byte arr[size], cnt = 0;
       memset(arr, '\0', size + 1);
+      // Перебрать весь массив строк, выбрать только заполнненные, у заполненных проверить, что они не отключены, не содержат макроса {P},
+      // а если содержат макрос {S}, то текущая дата попадает в диапазон разрешенных дат.
       for (int i = 0; i < size; i++) {
         String text = textLines[i];
         // Строка пустая? 
         // Отключена - в первом символе или наличие макроса {-}?
         // Нулевая строка - строка управления ('#' или '##')?
-        // Строки с макросом события {P} не отобрпжаются ро интервалу показа - только сразу до/после события
+        // Строки с макросом события {P} не отобрпжаются по интервалу показа - только сразу до/после события
+        // Если строка содержит макрос {S} - текущая дата должна попадать в диапазон доступных для показа дат
         bool disabled = (text.length() == 0) || (i == 0 && text[0] == '#') || (text[0] == '-') || (text.indexOf("{-}") >= 0) || (text.indexOf("{P") >= 0);
         bool wrong_date = (text.indexOf("{S") >= 0) && !forThisDate(text);
         if (disabled || wrong_date) continue;
         arr[cnt++] = i;
       }
 
-      // Выбрать индексы строк, которые не отключены;
+      // Массив arr содержит индексы строк, которые доступны к отображению.
+      // Если массив пустой - cnt == 0 - нет строки для отображения, ничего не показывать
       if (cnt == 0) {
         // Нет строки для отображения
         nextLineIdx = -1;
@@ -396,6 +412,8 @@ int8_t getNextLine(int8_t currentIdx) {
       } else {
         byte att = 0;
         byte idx = random8(0,cnt - 1);
+        // Выбрать случайную строку. Если выбранная совпадает с текущей - выбрать другую.
+        // Если другой нет (в массиве одна строка) - показать её
         while (arr[idx] == nextLineIdx && att < cnt) {
           att++; idx++;
           if (idx >= cnt) idx = 0;
@@ -403,8 +421,41 @@ int8_t getNextLine(int8_t currentIdx) {
         nextLineIdx = arr[idx];
       }
     } else {
-      nextLineIdx = getTextIndex(c);
-      sequenceIdx++;
+      // Последовательное отображение строк как указано в последовательности в textLines[0] - '#12345'
+      // здесь 'c' - char - индекс, выдернутый из указанной последовательности в очередной позиции
+      nextLineIdx = getTextIndex(c); 
+      byte c_idx = sequenceIdx;
+      bool found = false;
+      while (!found) {
+        // Проверить - доступен ли текст в указанной строке к отображению?
+        String text = textLines[nextLineIdx];
+        // Строка должа быть не пустая,
+        // Не отключена - в первом символе или наличие макроса {-}?
+        // Строки с макросом события {P} не отобрпжаются по интервалу показа - только сразу до/после события
+        // Если строка содержит макрос {S} - текущая дата должна попадать в диапазон доступных для показа дат
+        bool disabled = (text.length() == 0) || (nextLineIdx == 0 && text[0] == '#') || (text[0] == '-') || (text.indexOf("{-}") >= 0) || (text.indexOf("{P") >= 0);
+        bool wrong_date = (text.indexOf("{S") >= 0) && !forThisDate(text);
+        // Если строка не отключена и доступна к отображению - брать ее
+        if (!(disabled || wrong_date)) {
+          found = true;
+          break;
+        }
+        // Строка недоступна - брать следующий номер в последовательности
+        sequenceIdx++;
+        if (sequenceIdx >= textLines[0].length()) {
+          sequenceIdx = 1;  // перемотать на начало последовательности
+        }
+        if (c_idx == sequenceIdx) break;
+        // Если после перемотки вернулись в позицию с которой начали - строк доступных к показу нет
+        c = textLines[0].charAt(sequenceIdx);
+        nextLineIdx = getTextIndex(c); 
+      }
+      if (found) {
+        sequenceIdx++;
+      } else {
+        nextLineIdx = -1;
+        textLastTime = millis();
+      }
     }
   }
   
@@ -463,7 +514,7 @@ String processMacrosInText(const String text) {
                 tt   - Указатель am/pm
         
         Если формат не указан - используется формат H:mm        
-        пример: "Красноярское время {DHH:mm}" - бегущая строка "Красноярское время 07:15"  
+        пример: "Красноярское время {D:HH:mm}" - бегущая строка "Красноярское время 07:15"  
                 "Сегодня {D:DD MMMM YYYY} года" - бегущая строка "Сегодня 26 июля 2020 года"
 
      "{D}"                         - просто часы вида "21:00" в виде беугщей строки
@@ -562,7 +613,7 @@ String processMacrosInText(const String text) {
     // Эти форматы содержат строку, зависящую от текущего времени.
     // Оставить эти форматы как есть в строке - они будут обрабатываться на каждом проходе, подставляя текeщее время
     // Сейчас просто выставить флаг, что строка содержит макросы, зависимые от даты
-    //    "{DF}" - где F - один из форматов даты / времени если формата даты нет - аналогично {D}
+    //    "{D:F}" - где F - один из форматов даты / времени если формата даты нет - аналогично {D}
     //    "{D}"  - просто часы вида "21:00" в виде беугщей строки
     //    "{R01.01.2021#N}" 
     //    "{P01.**.2021 8:00#N#B#A#F}" 
@@ -935,7 +986,7 @@ String processDateMacrosInText(const String text) {
   uint8_t  aday = day();
   uint8_t  amnth = month();
   uint16_t ayear = year();
-  uint8_t  hrs = hour();
+  uint8_t  hrs = hour(), hrs_t;
   uint8_t  mins = minute();
   uint8_t  secs = second();
   bool     am = isAM();
@@ -1038,14 +1089,15 @@ String processDateMacrosInText(const String text) {
       sFmtProcess.replace("H", str);
   
       //  hh   - час в 12-часовом формате от 01 до 12
-      if (hrs > 12) hrs = hrs - 12;
-      if (hrs == 0) hrs = 12;
-      str = String(hrs);
+      hrs_t = hrs;
+      if (hrs_t > 12) hrs_t = hrs_t - 12;
+      if (hrs_t == 0) hrs_t = 12;
+      str = String(hrs_t);
       if (str.length() < 2) str = "0" + str;    
       sFmtProcess.replace("hh", str);
   
       //  h    - час в 12-часовом формате от 1 до 12
-      str = String(hrs);
+      str = String(hrs_t);
       sFmtProcess.replace("h", str);
       
       //  mm   - минуты в диапазоне от 00 до 59
@@ -1204,7 +1256,7 @@ String processDateMacrosInText(const String text) {
           textLine = processMacrosInText(textLine);
           
           // Строка замены содержит в себе макросы даты? Если да - вычислить всё снова для новой строки                   
-          if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
+          if (textLine.indexOf("{D}") >= 0 || textLine.indexOf("{D:") >= 0 ||textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
 
           // Вернуть текст строки замены, отображаемой после того, как событие прошло
           return textLine;
@@ -1340,7 +1392,7 @@ String processDateMacrosInText(const String text) {
     }
 
     // Если в строке еще остались макросы, связанные со временем - обработать их
-    if (textLine.indexOf("{D") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
+    if (textLine.indexOf("{D}") >= 0 || textLine.indexOf("{D:") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
 
     // Если при разборе строка помечена как многоцветная - обработать макросы цвета 
     if (textHasMultiColor) {                                 
@@ -1775,17 +1827,19 @@ boolean forThisDate(String text) {
 
     // Проверить дату
     if (str.length() > 0) {
-//      Serial.println(F("--------------------"));
-//      Serial.print(F("Строка: '"));
-//      Serial.println(text + "'");
-
+      /*
+      Serial.println(F("--------------------")); 
+      Serial.print(F("Строка: '"));
+      Serial.println(text + "'");
+      */
       time_t now_moment = now();
       extractMacroSDates(str);
       ok = now_moment >= textAllowBegin && now_moment <= textAllowEnd;
-      
-//      Serial.println("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
-//      if (ok) Serial.println(F("вывод разрешен"));
-//      else    Serial.println(F("вывод запрещен"));
+      /*
+      Serial.println("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
+      if (ok) Serial.println(F("вывод разрешен"));
+      else    Serial.println(F("вывод запрещен"));
+      */
     }
 
     // Дата проверена и совпадает с допустимым диапазоном - строку можно отображать

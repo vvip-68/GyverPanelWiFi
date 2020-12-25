@@ -2366,7 +2366,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     return str + "PD:" + String(autoplayTime / 1000); 
   }
 
-  // Время бездействия в секундах
+  // Время бездействия в минутах
   if (key == "IT") {
     if (value) {
       value->set(idleTime / 60 / 1000);
