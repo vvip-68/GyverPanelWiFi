@@ -888,8 +888,8 @@ void parsing() {
                   pos_end = str.indexOf('|', pos_start);
                   if (pos_end < 0) pos_end = len;
                 }
+                #endif
               }
-              #endif
               break;
               
             #if (USE_MQTT == 1)
