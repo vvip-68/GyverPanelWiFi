@@ -157,8 +157,8 @@ void sdcardRoutine() {
         doc["result"] = F("ERROR");  
       } else {
         doc["result"] = F("OK");
-        doc["file"] = fileName;
       }
+      doc["file"] = fileName;
       serializeJson(doc, out);    
       SendMQTT(out, TOPIC_SDC);
     #endif

@@ -408,7 +408,7 @@ void saveDefaults() {
 
   /*
   textLines[0]  = "##";
-  textLines[1]  = "Все будет хорошо!";
+  textLines[1]  = "Всё будет хорошо!";
   textLines[2]  = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.2021#3}{E21}";
   textLines[3]  = "-С {C#00D0FF}Новым {C#0BFF00}2021 {C#FFFFFF}годом!{E21}";
   textLines[4]  = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
@@ -429,7 +429,7 @@ void saveDefaults() {
   textLines[19]  = "Чем бы дитя не тешилось...";
   textLines[20]  = "С Рождеством!{S07.01.****}";
   textLines[21]  = "С днем Победы!{S09.05.**** 7:00#09.05.**** 21:30}";
-  textLines[22]  = "Сегодня {D:dddd dd MMMM}, на улице {WS}, {WT}{E25}";
+  textLines[22]  = "Сегодня {D:dddd dd MMMM}, на улице {WS}, {WT}°C{E25}";
   textLines[23]  = "С праздником, соседи!";
   textLines[24]  = "Не скучайте!";
   textLines[25]  = "Счастья всем! И пусть никто не уйдет обиженным.";

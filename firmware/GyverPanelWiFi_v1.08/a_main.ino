@@ -864,10 +864,32 @@ void parsing() {
               break;
               
             case 7:
-              // Запрос значений параметров, требуемых приложением вида "CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
+              // Запрос значений параметров, требуемых приложением вида str="CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF"
               // Каждый запрашиваемый приложением параметр - для заполнения соответствующего поля в приложении 
               // Передать строку для формирования, затем отправить параметры в приложение
-              str = "$18 " + getStateString(str) + ";";
+              if (cmdSource == UDP) {
+                str = "$18 " + getStateString(str) + ";";
+              } else {
+                #if (USE_MQTT == 1)
+                // Если ключи разделены пробелом - заменить на пайпы '|'
+                // Затем добавить в строку измененных параметров changed_keys
+                // На следующей итерации параметры из строки changed_keys будут отправлены в канал MQTT
+                str.replace(" ","|");
+                int16_t pos_start = 0;
+                int16_t pos_end = str.indexOf('|', pos_start);
+                int16_t len = str.length();
+                if (pos_end < 0) pos_end = len;
+                while (pos_start < len && pos_end >= pos_start) {
+                  if (pos_end > pos_start) {      
+                    String key = str.substring(pos_start, pos_end);
+                    if (key.length() > 0) addKeyToChanged(key);
+                  }
+                  pos_start = pos_end + 1;
+                  pos_end = str.indexOf('|', pos_start);
+                  if (pos_end < 0) pos_end = len;
+                }
+              }
+              #endif
               break;
               
             #if (USE_MQTT == 1)
@@ -1040,10 +1062,7 @@ void parsing() {
             else
               sendAcknowledge(cmdSource);
           } else {
-            if (b_tmp == 7) 
-              // 7 - запрос значений параметров - отправить их на MQTT-сервер
-              sendStringData(str, cmdSource);
-            else if (b_tmp == 11) 
+            if (b_tmp == 11) 
               sendStringData(str, cmdSource);
             else if (b_tmp == 12) 
               sendStringData(str, cmdSource);
@@ -2270,7 +2289,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // QD:число    задержка отправки сообщения MQTT
   // QP:число    порт подключения к MQTT серверу
   // QK:X        пакетная отправка состояний в MQTT-канал 0 - каждое состояние отправляется индивидуално в свой топик, соответствующий названию параметра, 1 - состояние отправляется сборными пакетами 
-  // QR:X        топик использует префикс в виде имени сервера для формирования топика
+  // QR:X        префикс для формирования топика
   // QS:[text]   имя MQTT сервера, например QS:[srv2.clusterfly.ru]
   // QU:[text]   имя пользователя MQTT соединения, например QU:[user_af7cd12a]
   // QW:[text]   пароль MQTT соединения, например QW:[pass_eb250bf5]
