@@ -318,11 +318,11 @@ PubSubClient mqtt(m_client);                    // Объект соединен
 #endif
 
 #ifndef DEFAULT_MQTT_PORT
-#define DEFAULT_MQTT_PORT   9123                 // Порт mqtt-соединения
+#define DEFAULT_MQTT_PORT   9124                 // Порт mqtt-соединения
 #endif
 
 #ifndef DEFAULT_MQTT_PREFIX
-#define DEFAULT_MQTT_PREFIX ""                   // Префикс топика сообщения или пустая строка, если префикс не требуется
+#define DEFAULT_MQTT_PREFIX "user_af7cd12a"      // Префикс топика сообщения или пустая строка, если префикс не требуется
 #endif
 
 #ifndef MQTT_SEND_DELAY                          // Отправлять сообщение на MQTT-сервер не чаще 1 сообщения в секунду (ограничение бесплатного MQTT сервера);

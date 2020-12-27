@@ -210,8 +210,8 @@ user_eada9d0d/WiFiPanel-0/stt/AU >> false
 user_eada9d0d/WiFiPanel-0/stt/EF >> 22
 user_eada9d0d/WiFiPanel-0/stt/EN >> Водоворот
 user_eada9d0d/WiFiPanel-0/stt/SQ >> C>1>Сегменты
-
 ```
+
 Для бесплатных публичных MQTT-брокеров возможно наличие ограничений, например - сообщение должны следовать не чаще 1 раза в секунду,
 сообщения следующие чаще могут игнорироваться сервером. Для обеспечения данного ограничения 
 в [настройках подключения к MQTT серверу](https://github.com/vvip-68/GyverPanelWiFi/wiki/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0-%D0%BF%D0%BE%D0%B4%D0%BA%D0%BB%D1%8E%D1%87%D0%B5%D0%BD%D0%B8%D1%8F-%D0%BA-MQTT-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D1%83) 
