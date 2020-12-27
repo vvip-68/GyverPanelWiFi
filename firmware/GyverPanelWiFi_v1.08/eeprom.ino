@@ -98,7 +98,8 @@ void loadSettings() {
   //**248 - не используется
   // 249 - отправка параметров состояния в MQTT 0 - индивидуально, 1 - пакетами                              // getSendStateInPacket()         // putSendStateInPacket(mqtt_state_packet)  
   // 250-279 - префикс топика сообщения (30 симв)                                                            // getMqttPrefix()                // putMqttPrefix(mqtt_prefix)
-  //**280 - не используется
+  // 280,281 - интервал отправки значения uptime на MQTT-сервер                                              // getUpTimeSendInterval()        // putUpTimeSendInterval(upTimeSendInterval)
+  //**282 - не используется
   //  ...
   //**299 - не используется
   //  300 - 300+(Nэфф*5)   - скорость эффекта
@@ -210,6 +211,7 @@ void loadSettings() {
     if (strlen(mqtt_prefix) == 0) strcpy(mqtt_prefix, DEFAULT_MQTT_PREFIX);
     mqtt_port = getMqttPort();
     mqtt_send_delay = getMqttSendDelay();
+    upTimeSendInterval = getUpTimeSendInterval();
     #endif
 
     AM1_hour      = getAM1hour();
@@ -377,6 +379,7 @@ void saveDefaults() {
   putUseMqtt(useMQTT);
   putSendStateInPacket(mqtt_state_packet);
   putMqttSendDelay(mqtt_send_delay);
+  putUpTimeSendInterval(upTimeSendInterval);
   #endif
 
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
@@ -623,6 +626,16 @@ long getAutoplayTime() {
 void putIdleTime(long value) {
   if (value != getIdleTime()) {
     EEPROMwrite(4, constrain(value / 60L / 1000L, 0, 255));
+  }
+}
+
+uint16_t getUpTimeSendInterval() {
+  return EEPROM_int_read(280);
+}
+
+void putUpTimeSendInterval(uint16_t value) {
+  if (value != getUpTimeSendInterval()) {
+    EEPROM_int_write(280, value);
   }
 }
 

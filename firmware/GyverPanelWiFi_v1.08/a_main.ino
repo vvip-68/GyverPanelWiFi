@@ -475,6 +475,7 @@ void parsing() {
       - $11 4 D;   - Задержка между последовательными обращениями к MQTT серверу
       - $11 5;     - Разорвать подключение к MQTT серверу, чтобы он иог переподключиться с новыми параметрами
       - $11 6 X;   - Флаг - отправка состояний 0 - индивидуально 1 - пакетом
+      - $11 7 D;   - интервал отправки uptime на MQTT сервер в секундах или 0, если отключено
     12 - Настройки погоды
       - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
       - $12 4 X;   - использовать получение погоды с погодного сервера
@@ -1229,6 +1230,7 @@ void parsing() {
       // - $11 4 D;   - Задержка между последовательными обращениями к MQTT серверу
       // - $11 5;     - Разорвать подключение к MQTT серверу, чтобы он иог переподключиться с новыми параметрами
       // - $11 6 X;   - Флаг - отправка состояний 0 - индивидуально 1 - пакетом
+      // - $11 7 D;   - интервал отправки uptime на MQTT сервер в секундах или 0, если отключено
       // ----------------------------------------------------
 
       #if (USE_MQTT == 1)
@@ -1262,6 +1264,9 @@ void parsing() {
              break;
            case 6:               // $11 6 X; - Отправка параметров состояния в MQTT: 0 - индивидуально; 1 - пакетом
              set_mqtt_state_packet(intData[2] == 1);
+             break;
+           case 7:               // $11 7 D; - Интервал отправки uptime на сервер MQTT
+             set_upTimeSendInterval(intData[2]);
              break;
           default:
             err = true;
@@ -2128,7 +2133,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
       break;
     case 6:  // Настройки подключения
-      str = getStateString("AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK");
+      str = getStateString("AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK|UI");
       break;
     case 7:  // Настройки режимов автовключения по времени
       str = getStateString("AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A");
@@ -2317,6 +2322,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // TZ:[Z:текст] То же, что 'TY". Служит для фоновой загрузки всего массива сохраненных строк в смартфон для формирования элементов списка выбора строки. Получив этот ответ приложение на смартфоне берет следующий индекс и отправляет команду `'$13 3 I;'` для получения следующей строки.
   // UC:X        использовать часы поверх эффекта 0-нет, 1-да
   // UE:X        использовать эффект в демо-режиме 0-нет, 1-да
+  // UP:число    uptime системы в секундах
   // UT:X        использовать бегущую строку поверх эффекта 0-нет, 1-да
   // W1          текущая погода ('ясно','пасмурно','дождь'и т.д.)
   // W2          текущая температура
@@ -3014,6 +3020,28 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     return str + "S2:" + "[" + tmp.substring(0,BUF_MAX_SIZE-12) + "]"; 
   }
 #endif
+
+  // uptime - время работы системы в секундах
+  if (key == "UP") {
+    uint32_t upt = upTime;
+    if (upt > 0) {
+      upt = ((uint32_t)now()) - upt;
+    }
+    if (value) {
+      value->set(upt);
+      return String(upt);  
+    }
+    return str + "UP:" + String(upt);
+  }
+
+  // Интервал отправки uptime на cервер в секундах
+  if (key == "UI") {
+    if (value) {
+      value->set(upTimeSendInterval);
+      return String(upTimeSendInterval);  
+    }
+    return str + "UI:" + String(upTimeSendInterval);
+  }
 
   // создавать точку доступа
   if (key == "AU") {

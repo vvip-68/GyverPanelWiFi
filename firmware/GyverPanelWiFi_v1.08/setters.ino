@@ -2,106 +2,6 @@
 // По этой причмне нельзя напрямую присваивать новое значение переменной, нужно выполнить дополнительный действия,
 // чтобы зафиксировать изменение значения. Для этой цели данная страница содержит функции - сеттеры, 
 // устанавливающие значения переменных.
-// Ниже представлена таблица списка параметров состояния и какие переменные оказывают вдияние
-
-/*
-// Константы - не изменяются во время работы скетча
-W  byte     WIDTH
-H  byte     HEIGHT 
-WZ bool     USE_WEATHER
-TM bool     USE_TM1637
-QZ bool     USE_MQTT
-S1 String   ALARM_SOUND_LIST
-S2 String   DAWN_SOUND_LIST
-LE String   EFFECT_LIST
-
-PS bool     isTurnedOff
-BR byte     isNightClock, nightClockBrightness, globalBrightness
-DM bool     manualMode
-PD uint32_t autoplayTime
-IT uint32_t idleTime
-AL bool     isAlarming, isPlayAlarmSound, isAlarmStopped
-RM bool     useRandomSequence
-PW uint16_t CURRENT_LIMIT
-WU byte     useWeather
-WT uint16_t SYNC_WEATHER_PERIOD
-WR uint32_t regionID
-WS uint32_t regionID2
-WC bool     useTemperatureColor
-WN bool     useTemperatureColorNight
-W1 String   weather
-W2 int8_t   temperature
-
-EN int8_t   effect, effect_name
-UE bool     effect, getEffectUsage(effect) 
-UT String   effect, getEffectTextOverlayUsage(effect)
-UC String   effect, getEffectClockOverlayUsage(effect)
-SE String   effect, getEffectSpeed(effect)
-BE String   effect, effectContrast[effect]
-SS String   effect, getParamForMode(effect)
-SQ String   effect, getParam2ForMode(effect)
-
-TE bool     textOverlayEnabled
-TI int16_t  TEXT_INTERVAL
-CT byte     COLOR_TEXT_MODE
-ST byte     textScrollSpeed
-C1 String   globalClockColor
-C2 String   globalTextColor
-OM uint16_t memoryAvail
-TS String   textLines[] 
-
-CE bool     clockOverlayEnabled
-CC byte     COLOR_MODE
-CL uint32_t drawColor
-CO byte     CLOCK_ORIENT
-CK byte     CLOCK_SIZE
-NB byte     nightClockBrightness
-NC byte     nightClockColor
-SC byte     clockScrollSpeed
-DC bool     showDateInClock
-DD byte     showDateDuration
-DI byte     showDateInterval
-NP bool     useNtp
-NT uint16_t SYNC_TIME_PERIOD
-NZ int8_t   timeZoneOffset
-NS String   ntpServerName
-DW bool     showWeatherInClock
-OF bool     needTurnOffClock
-AD byte     dawnDuration
-AW byte     alarmWeekDay
-AT String   alarmHour[] alarmMinute[]
-AE byte     alarmEffect
-MX bool     isDfPlayerOk
-MU bool     useAlarmSound
-MD byte     alarmDuration
-MV byte     maxAlarmVolume
-MA int8_t   alarmSound
-MB int8_t   dawnSoun
-MP String   soundFolder, soundFile
-AU bool     useSoftAP
-AN String   apName
-AA String   apPass
-NW String   ssid
-NA String   pass
-IP String   wifi_connected, IP_STA[]
-AM1T String AM1_hour, AM1_minute
-AM1A int8_t AM1_effect_id
-AM2T String AM2_hour, AM2_minute
-AM2A int8_t AM2_effect_id
-AM3T String AM3_hour, AM3_minute
-AM3A int8_t AM3_effect_id
-AM4T String AM4_hour, AM4_minute
-AM4A int8_t AM4_effect_id
-SD bool     isSdCardReady
-QA bool     useMQTT
-QP String   mqtt_port
-QS String   mqtt_server
-QU String   mqtt_user
-QW String   mqtt_pass
-QD uint16_t mqtt_send_delay
-QR String   mqtt_prefix
-QK bool     mqtt_state_packet
-*/
 
 // Добавление ключа (параметра) в список изменившихся параметров, чьи новые значения необходимо отправить на сервер
 void addKeyToChanged(String key) {
@@ -976,4 +876,13 @@ void set_mqtt_state_packet(bool value) {
   mqtt_state_packet = getSendStateInPacket();
   addKeyToChanged("QK");
 }
+
+// UI upTimeSendInterval
+void set_upTimeSendInterval(uint16_t value) {
+  if (upTimeSendInterval == value) return;;
+  putUpTimeSendInterval(value);
+  upTimeSendInterval = getUpTimeSendInterval();
+  addKeyToChanged("UI");
+}
+
 #endif

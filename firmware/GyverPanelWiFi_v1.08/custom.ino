@@ -50,6 +50,14 @@ void doEffectWithOverlay(byte aMode) {
       ignoreTextOverlaySettingforEffect = textOverlayEnabled;
       loadingTextFlag = true;
     }
+
+    #if (USE_MQTT == 1)
+    // Если подошло время отправки uptime на MQTT-сервер - отправить
+    if (init_time && upTime > 0 && upTimeSendInterval > 0 && (millis() - uptime_send_last > upTimeSendInterval * 1000L )) {
+      addKeyToChanged("UP");
+      uptime_send_last = millis();
+    }    
+    #endif    
   }
 
   // Оверлей нужен для всех эффектов, иначе при малой скорости эффекта и большой скорости часов поверх эффекта буквы-цифры "смазываются"

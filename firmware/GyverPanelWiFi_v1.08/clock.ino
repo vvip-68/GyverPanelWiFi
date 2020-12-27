@@ -67,6 +67,11 @@ void parseNTP() {
   calculateDawnTime();
   rescanTextEvents();
 
+  // Если время запуска еще не определено - инициализировать его
+  if (upTime == 0) {
+    upTime = t - millis() / 1000L;
+  }
+
   #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);
   String out;

@@ -4,7 +4,7 @@
 // STATE_KEYS начинается с '|' и заканчивается на '|' для удобства поиска / проверки наличия ключа в строке,
 // которые должны быть удалены перед использованием далее для перебора ключей
 // Если вам не нужен на стороне MQTT клиента полный перечент параметров - оставьте только те, что вам нужны
-#define STATE_KEYS "|W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|EF|EN|UE|UT|UC|SE|SS|SQ|BE|CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP|AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|TE|TI|TS|CT|C2|OM|ST|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|"
+#define STATE_KEYS "|W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|EF|EN|UE|UT|UC|SE|SS|SQ|BE|CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP|AU|AN|NW|IP|QZ|QA|QP|QS|QU|QD|QR|TE|TI|TS|CT|C2|OM|ST|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|UI|UP|"
 
 // Формирование топика сообщения
 String mqtt_topic(String topic) {
@@ -158,7 +158,7 @@ void SendCurrentState(String keys, String topic, bool immediate) {
   JsonVariant value;
 
   String out, key, s_tmp;
-  bool big_size_key;
+  bool big_size_key, retain;
   int16_t pos_start = 0;
   int16_t pos_end = keys.indexOf('|', pos_start);
   int16_t len = keys.length();
@@ -168,6 +168,8 @@ void SendCurrentState(String keys, String topic, bool immediate) {
   while (pos_start < len && pos_end >= pos_start) {
     if (pos_end > pos_start) {      
       key = keys.substring(pos_start, pos_end);
+      // Все значения состояния кроме UpTime (UP) отправляются с retain == true;
+      retain = key != "UP";
       if (key.length() > 0) {
         value_doc.clear();
         value = value_doc.to<JsonVariant>();
@@ -181,13 +183,13 @@ void SendCurrentState(String keys, String topic, bool immediate) {
               out =  s_tmp;
             else  
               out = value.isNull() ? "" : value.as<String>();
-            s_tmp = topic + "/" + key;      
-            putOutQueue(mqtt_topic(s_tmp), out, true);
+            s_tmp = topic + "/" + key;             
+            putOutQueue(mqtt_topic(s_tmp), out, retain);
           } else {
             if (big_size_key) {
               out = "{\"" + key + "\":\"" + s_tmp + "\"}";
               s_tmp = topic + "/" + key;
-              putOutQueue(mqtt_topic(s_tmp), out, true);              
+              putOutQueue(mqtt_topic(s_tmp), out, retain);              
             } else {
               doc[key] = value;
             }
