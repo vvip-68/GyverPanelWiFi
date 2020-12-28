@@ -385,7 +385,7 @@
 
 // Схема подключения для ESP32 - в папке Schemes, файл 'ESP32+ALL.JPG'
  
-#define LED_PIN (2U) // (13U)м // пин ленты, физически подключена к пину D13 на плате
+#define LED_PIN (2U) //       // пин ленты
 #define PIN_BTN (15U)         // кнопка подключена сюда (PIN --- КНОПКА --- GND)
 #define POWER_PIN (26U)       // G26 управляющий пин вкл/выкл матрицы через MOSFET или реле
 #define SD_CS_PIN (5U)        // G5 пин выбора (ChipSelect) SD карты. Также SD карта использует G18 (CLK), G19 (MISO), G23 (MOSI) // на SD-shild: D8 (CS), D5 (CLK), D6 (MISO), D7 (MOSI)

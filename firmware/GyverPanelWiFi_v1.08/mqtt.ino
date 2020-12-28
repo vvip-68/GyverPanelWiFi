@@ -127,7 +127,8 @@ void checkMqttConnection() {
   if (!stopMQTT && mqtt.connected() && changed_keys.length() > 1) {
     // Если пакетная отправка - нужно отправлять весь пакет, т.к сообщение статуса имеет флаг retain v всегда должно содержать полный набор параметров.
     // Если отправлять только изменившиеся - они заместят топик и он не будет содержать весь набор
-    if (mqtt_state_packet) changed_keys = STATE_KEYS;
+    // Однако, если запрос оттправки состоит только из одного параметра - "UP" - отправлять только его, а не все ключи пакетом
+    if (mqtt_state_packet && changed_keys != "|UP|") changed_keys = STATE_KEYS;
     // Удалить первый '|' и последний '|' и отправить значения по сформированному списку
     if (changed_keys[0] == '|') changed_keys = changed_keys.substring(1);
     if (changed_keys[changed_keys.length() - 1] == '|') changed_keys = changed_keys.substring(0, changed_keys.length()-1);
@@ -168,16 +169,17 @@ void SendCurrentState(String keys, String topic, bool immediate) {
   while (pos_start < len && pos_end >= pos_start) {
     if (pos_end > pos_start) {      
       key = keys.substring(pos_start, pos_end);
-      // Все значения состояния кроме UpTime (UP) отправляются с retain == true;
+      // Все значения состояния кроме UpTime ("UP") отправляются с retain == true;
       retain = key != "UP";
       if (key.length() > 0) {
         value_doc.clear();
         value = value_doc.to<JsonVariant>();
         s_tmp = getStateValue(key, thisMode, &value);                
         if (s_tmp.length() > 0) {
-          // Если режим отправки сообщений - каждый параметр индивидуально или ключ имеет значение большой длины - отправить полученный параметр отдельным сообщением          
+          // Если режим отправки сообщений - каждый параметр индивидуально или ключ имеет значение большой длины - отправить полученный параметр отдельным сообщением  
+          // Параметр "UP" также всегда отправляется отдельным сообщением
           big_size_key = key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2" || key == "SQ";
-          if (immediate) {
+          if (immediate || key == "UP") {
             // Топик сообщения - основной топик плюс ключ (имя параметра)
             if (big_size_key) 
               out =  s_tmp;

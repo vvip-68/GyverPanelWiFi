@@ -1609,7 +1609,7 @@ void parsing() {
                if (CLOCK_ORIENT == 1 && !allowVertical) set_CLOCK_ORIENT(0);              
              } else {
                set_clockOverlayEnabled(false);
-             }
+             }             
              // Центрируем часы по горизонтали/вертикали по ширине / высоте матрицы
              checkClockOrigin();
              break;

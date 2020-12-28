@@ -139,7 +139,7 @@ void doEffectWithOverlay(byte aMode) {
     }
   }
 
-  // Нет активного события? но влаг что оно отображается стоит
+  // Нет активного события? но флаг что оно отображается стоит
   if (moment_active && momentTextIdx < 0) {
     moment_active = false;
     needStopText = true;
@@ -244,27 +244,48 @@ void doEffectWithOverlay(byte aMode) {
     }
   }
 
-  // Пришло время отобразить дату (календарь) в часах?
+  // Пришло время отобразить дату (календарь) в малых часах или температуру / календарь в больших?
   checkCalendarState();
   
   // Если время инициализировали и пришло время его показать - нарисовать часы поверх эффекта
   if (init_time && ((clockOvEn && !showTextNow && aMode != MC_TEXT && thisMode != MC_DRAW && thisMode != MC_LOADIMAGE) || aMode == MC_CLOCK)) {    
     overlayDelayed = needOverlay;
     setOverlayColors();
-    if (c_size == 1 && showDateInClock && showDateState) {      
-      if (needOverlay) {
-        y_overlay_low  = CALENDAR_Y;
-        y_overlay_high = y_overlay_low + 10;    // Малые часы - вертикальные или календарь занимает 11 строк - 2 строки шрифта 3x5 плюс пробел между строками
-        overlayWrap();
-      }      
-      drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+    if (needOverlay) {
+      y_overlay_low  = min(CALENDAR_Y, CLOCK_Y);
+      y_overlay_high = y_overlay_low + max(CALENDAR_H, CLOCK_H) - 1;
+      overlayWrap();
+    }      
+
+    if (showDateState && (showDateInClock || init_weather && showWeatherInClock && showWeatherState)) {      
+      if ((c_size == 1) && showDateInClock && showDateState) {
+        // Календарь в малых часах
+        drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+      } else {
+        // Календарь в больших часах чередуется с показом температуры при установленном флаге showWeatherInClock
+        // Температура в больших часах - только при горизонтальной ориентации часов
+        #if (USE_WEATHER == 1)       
+          if (init_weather && showWeatherInClock && showWeatherState && showDateState && CLOCK_ORIENT == 0) {
+            drawTemperature();
+          } else if (showDateState) {   
+            // Если показ календаря в часах включен - показать кадлендарь, иначе - вместо календаря снова показать темпераьуру, если она включена         
+            if (showDateInClock)
+              drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CLOCK_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
+            else if (showWeatherInClock) {
+              drawTemperature();  
+            }
+          }
+        #else
+          drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CLOCK_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы
+        #endif
+      }
     } else {
       weatherOverlayEnabled = false;
       byte CLK_Y = CLOCK_Y;
 
       if (needOverlay) {
         #if (USE_WEATHER == 1)       
-          weatherOverlayEnabled = useWeather > 0 && init_weather && (c_size == 1) && showWeatherInClock && (CLOCK_ORIENT == 0) && allowVertical && allowHorizontal;  // Нужно 2 строки шрифта 3x5 + один пробел между строками минимум
+          weatherOverlayEnabled = useWeather > 0 && init_weather && c_size == 1 && showWeatherInClock && (CLOCK_ORIENT == 0) && allowVertical && allowHorizontal;  // Нужно 2 строки шрифта 3x5 + один пробел между строками минимум
           overlayDelayed2 = weatherOverlayEnabled;
           if (weatherOverlayEnabled) {
             CLK_Y += 3;                                            // Сдвинуть позицию часов на 3 строки выше с контролем не выхода за высоту матрицы
@@ -276,10 +297,6 @@ void doEffectWithOverlay(byte aMode) {
             yw_overlay_high = yw_overlay_low + 4;                  // Размер - 5 строк при шрифте 3x5            
           }
         #endif
-
-        y_overlay_low  = CLK_Y;                                 // Низ оверлея часов - строка вывода часов
-        y_overlay_high = y_overlay_low + (c_size == 1 ? (CLOCK_ORIENT == 0 ? 4 : 10) : 6); // Размер оверлея - 5 строк при шрифте 3x5, 7 строк при шрифте 5х7, 11 строк при малых часах вертикальной ориентации
-        overlayWrap();                                          // Сохранить оверлей эффекта ПОД часами
       }      
 
       drawClock(hrs, mins, dotFlag, CLOCK_XC, CLK_Y);
@@ -292,8 +309,8 @@ void doEffectWithOverlay(byte aMode) {
           }
         }      
       #endif
-
     }
+    
   } else if (showTextNow && aMode != MC_CLOCK && aMode != MC_TEXT) {   // MC_CLOCK - ночные/дневные часы; MC_TEXT - показ IP адреса - всё на черном фоне
     // Нарисовать оверлеем текст бегущей строки
     // Нарисовать текст в текущей позиции
