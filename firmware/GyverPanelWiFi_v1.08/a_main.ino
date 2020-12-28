@@ -3034,15 +3034,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     return str + "UP:" + String(upt);
   }
 
-  // Интервал отправки uptime на cервер в секундах
-  if (key == "UI") {
-    if (value) {
-      value->set(upTimeSendInterval);
-      return String(upTimeSendInterval);  
-    }
-    return str + "UI:" + String(upTimeSendInterval);
-  }
-
   // создавать точку доступа
   if (key == "AU") {
     if (value) {
@@ -3310,6 +3301,15 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return String(mqtt_state_packet);  
     }
     return str + "QK:" + String(mqtt_state_packet);
+  }
+
+  // Интервал отправки uptime на cервер в секундах
+  if (key == "UI") {
+    if (value) {
+      value->set(upTimeSendInterval);
+      return String(upTimeSendInterval);  
+    }
+    return str + "UI:" + String(upTimeSendInterval);
   }
 #endif
 
