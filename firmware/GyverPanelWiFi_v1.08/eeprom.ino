@@ -413,7 +413,7 @@ void saveDefaults() {
   textLines[0]  = "##";
   textLines[1]  = "Всё будет хорошо!";
   textLines[2]  = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.2021#3}{E21}";
-  textLines[3]  = "-С {C#00D0FF}Новым {C#0BFF00}2021 {C#FFFFFF}годом!{E21}";
+  textLines[3]  = "-С {C#00D0FF}Новым {C#0BFF00}{D:yyyy} {C#FFFFFF}годом!{E21}";
   textLines[4]  = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
   textLines[5]  = "Show must go on!{C#000002}";
   textLines[6]  = "{C#FF000F}Крибле! {C#000001}Крабле!! {C#00FF00}Бумс!!!{E24}";
@@ -445,7 +445,7 @@ void saveDefaults() {
   textLines[33]  = "";  
 
   textLines[34]  = "До {C#0019FF}Нового года{C#FFFFFF} {P01.01.****#Z}";
-  textLines[35]  = "-С {C#0019FF}Новым годом{C#FFFFFF}!{E24}";
+  textLines[35]  = "-С {C#0019FF}Новым {D:yyyy} годом{C#FFFFFF}!{E24}";
   
   saveTexts();
   */

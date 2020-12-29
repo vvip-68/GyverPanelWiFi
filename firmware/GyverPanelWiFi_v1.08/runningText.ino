@@ -982,7 +982,6 @@ String processDateMacrosInText(const String text) {
   */
 
   String   str, tmp, s_time, outText;
-  uint8_t  idx, idx2;
   uint8_t  aday = day();
   uint8_t  amnth = month();
   uint16_t ayear = year();
@@ -991,6 +990,7 @@ String processDateMacrosInText(const String text) {
   uint8_t  secs = second();
   bool     am = isAM();
   bool     pm = isPM();
+  int8_t   idx, idx2;
 
   int8_t   wd = weekday()-1;  // day of the week, Sunday is day 0   
   if (wd == 0) wd = 7;        // Sunday is day 7, Monday is day 1;
@@ -1314,7 +1314,7 @@ String processDateMacrosInText(const String text) {
           tmp = String(restDays) + WriteDays(restDays) + " " + String(restHours) + WriteHours(restHours);
         else  
           tmp = String(restDays) + WriteDays(restDays);
-        
+
         textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
       }
     }
@@ -1324,6 +1324,7 @@ String processDateMacrosInText(const String text) {
     // "{P**.01.2021 7:00#N#B#A#F}" 
     idx = textLine.indexOf("{P");
     if (idx >= 0) {
+
       // Строка с событием непрерывной проверки - при старте программы и изменении текста строк и после завершения отображения очередной такой строки формируется массив ближайших событий
       // Массив содержит время наступления события, сколькоо до и сколько после отображать а так же - индексы отображаемых строк ДО и строки замены ПОСЛЕ события
       // Если данная строка вызвана для отображения - значит событие уже наступило (#B секунд перед событием - его нужно просто отобразить) 
@@ -1656,6 +1657,7 @@ void rescanTextEvents() {
             iYear = num;
             stage = 3; // следующая стадия - разбор часов
             num = 0;
+            star_cnt = 0;
           }
           break;  
         default:
@@ -1705,10 +1707,10 @@ void rescanTextEvents() {
     if (!err) {
       // Если день/месяц/год отсутствуют или указаны заменителями - брать текущую   
 
-      bool have_star = false;   
-      if (iDay   == 0) { iDay   = day();   have_star = true; }
-      if (iMonth == 0) { iMonth = month(); have_star = true; }
-      if (iYear  == 0) { iYear  = year();  have_star = true; }
+      bool star_day = false, star_month = false, star_year = false;
+      if (iDay   == 0) { iDay   = day();   star_day   = true; }
+      if (iMonth == 0) { iMonth = month(); star_month = true; }
+      if (iYear  == 0) { iYear  = year();  star_year  = true; }
 
       // Если год меньше текущего - событие в прошлом - его добавлять в отслеживаемые не нужно 
       if (iYear < year()) continue;
@@ -1717,10 +1719,45 @@ void rescanTextEvents() {
       tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, CalendarYrToTm(iYear)}; 
       time_t t_event = makeTime(tm);            
       
-      // Если событие уже прошло - это может быть, когда дата опущена или звездочками, а время указано меньше текущего - брать то же время следующего дня
-      if ((unsigned long)t_event < (unsigned long)now() && have_star) t_event += SECS_PER_DAY; 
+      // Если событие уже прошло - это может быть, когда дата опущена или звездочками, а время указано меньше текущего - брать то же время следующего дня/месяца/года
+      ulong add_part = 0;
+      const uint8_t monthDays[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
-      // Если звездочек нет илипосле перехода к следующему дню время всё равно меньше текущего - событие в прошлом - добавлять не нужно
+      while ((unsigned long)t_event < (unsigned long)now() && (star_day || star_month || star_year)) {
+        if (star_day) {
+          iDay++;
+          byte daysInMonth = monthDays[iMonth-1];
+          if (daysInMonth == 28) daysInMonth += byte(LEAP_YEAR(iYear - 1970));
+          if (iDay>daysInMonth) {
+            iDay = 1;
+            if (star_month) {
+              iMonth++;
+              if (iMonth>12) {
+                iMonth=1;
+                if (star_year) iYear++;
+                else break;
+              }
+            } else {
+              break;
+            }
+          }
+        }
+        else if (star_month) {
+          iMonth++;
+          if (iMonth>12) {
+            iMonth=1;
+            if (star_year) iYear++;
+            else break;
+          }
+        }
+        else if (star_year) {
+          iYear++;          
+        }        
+        tm = {0, iMinute, iHour, 0, iDay, iMonth, CalendarYrToTm(iYear)};
+        t_event = makeTime(tm);        
+      }
+      
+      // Если звездочек нет или после перехода к следующему дню время всё равно меньше текущего - событие в прошлом - добавлять не нужно
       if ((unsigned long)t_event < (unsigned long)now()) continue;
 
       // Полученное время события попадает в разрешенные дни недели? Если нет - добавлять не нужно
@@ -1733,7 +1770,7 @@ void rescanTextEvents() {
       breakTime(t_event, tm);
       
       Serial.println(String(F("Событие: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + 
-                     "; before=" + String(iBefore) + "; after=" + String(iAfter) + "; days='" + wdays + "'; replace='" + String(getAZIndex(text_idx)) + "'");
+                     String(F("; before=")) + String(iBefore) + String(F("; after=")) + String(iAfter) + String(F("; days='")) + wdays + String(F("'; replace='")) + String(getAZIndex(text_idx)) + "'");
       
       // Заполнить текущий элемент массива полученными параметрами
       moments[moment_idx].moment = t_event;

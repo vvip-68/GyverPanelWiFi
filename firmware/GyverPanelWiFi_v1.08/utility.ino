@@ -643,3 +643,8 @@ String getDateTimeString(time_t t) {
   uint16_t yr = year(t);
   return padNum(dy,2) + "." + padNum(mh,2) + "." + padNum(yr,4) + " " + padNum(hr,2) + ":" + padNum(mn,2) + ":" + padNum(sc,2);  
 }
+
+// leap year calulator expects year argument as years offset from 1970
+bool LEAP_YEAR(uint16_t Y) {
+  return ((1970+(Y))>0) && !((1970+(Y))%4) && ( ((1970+(Y))%100) || !((1970+(Y))%400) );
+}
