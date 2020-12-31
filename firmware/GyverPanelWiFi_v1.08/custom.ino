@@ -76,7 +76,7 @@ void doEffectWithOverlay(byte aMode) {
 
     // Обработать следующую строку для отображения, установить параметры;
     // Если нет строк к отображению - продолжать отображать оверлей часов
-    if (prepareNextText()) {
+    if (prepareNextText(currentText)) {
       moment_active = momentTextIdx >= 0;
       fullTextFlag = false;
       loadingTextFlag = false;
@@ -149,6 +149,7 @@ void doEffectWithOverlay(byte aMode) {
   // Нужно прекратить показ текста бегущей строки
   if (needStopText) {    
     showTextNow = false; 
+    currentText = "";
     ignoreTextOverlaySettingforEffect = nextTextLineIdx >= 0;
     specialTextEffectParam = -1;
 

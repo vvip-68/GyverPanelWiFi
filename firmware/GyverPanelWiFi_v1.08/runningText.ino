@@ -319,8 +319,8 @@ int8_t getDiasOffset(uint8_t font, uint8_t modif) {
 
 // Получить / установить настройки отображения очередного текста бегущей строки
 // Если нет строк, готовых к ротображению (например все строки отключены) - вернуть false - энет готовых строк'
-boolean prepareNextText() {  
-    // Если есть активная строка текущего момента - отображать ее 
+boolean prepareNextText(String text) {  
+  // Если есть активная строка текущего момента - отображать ее 
   int8_t nextIdx = momentTextIdx >= 0 ? momentTextIdx : nextTextLineIdx;
 
   textShowTime = -1;              // Если больше нуля - сколько времени отображать бегущую строку в секундах; Если 0 - используется textShowCount; В самой строке спец-макросом может быть указано кол-во секунд
@@ -329,7 +329,7 @@ boolean prepareNextText() {
   specialTextColor = 0xffffff;    // Цвет отображения бегущей строки, может быть указан макросом в строке. Если не указан - используются глобальные настройки цвета бегущей строки
   specialTextEffect = -1;         // Эффект, который нужно включить при начале отображения строки текста, может быть указан макросом в строке.  
   specialTextEffectParam = -1;    // Параметр для эффекта (см. выше). Например эффект MC_SDCARD имеет более 40 подэффектов. Номер подэффекта хранится в этой переменной, извлекается из макроса {E}
-  nextTextLineIdx = -1;           // Какую следующую строку показыват, может быть указан макросом в строке. Если указан - интервал отображения игнорируется, строка показывается сразу;
+  nextTextLineIdx = -1;           // Какую следующую строку показывать, может быть указан макросом в строке. Если указан - интервал отображения игнорируется, строка показывается сразу;
   textHasDateTime = false;        // Строка имеет макрос отображения текущего времени - ее нужно пересчитывать каждый раз при отрисовкеж Если макроса времени нет - рассчитать текст строки один раз на этапе инициализации  
   textHasMultiColor = false;      // Строк имеет множественное определение цвета - многоцветная строка
   currentText  = "";              // Текст текущей отображаемаой строки
@@ -343,15 +343,16 @@ boolean prepareNextText() {
 
   offset = WIDTH;   // перемотка новой строки в правый край
 
-  // Размер массива строк
-  byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
-
-  // Если nextIdx >= 0 - значит в предыдущей строке было указано какую строку показывать следующей - показываем ее
-  currentTextLineIdx = nextIdx >= 0 ? nextIdx : getNextLine(currentTextLineIdx);
-  if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
-
-  currentText = "";
-  if (currentTextLineIdx >= 0) {
+  if (text.length() != 0) {
+    currentText = processMacrosInText(text);
+  } else if (currentTextLineIdx >= 0) {
+    // Размер массива строк
+    byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  
+    // Если nextIdx >= 0 - значит в предыдущей строке было указано какую строку показывать следующей - показываем ее
+    currentTextLineIdx = nextIdx >= 0 ? nextIdx : getNextLine(currentTextLineIdx);
+    if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
+  
     currentText = textLines[currentTextLineIdx];
     // Если выбрана строка для принудительного показа - игнорировать запрет по '-' в начале строки или по макросу {-}
     if (nextIdx >= 0) {
@@ -361,7 +362,7 @@ boolean prepareNextText() {
     currentText = processMacrosInText(currentText);
   }
 
-  if (currentTextLineIdx == 0 && currentText[0] == '#') currentText = "";
+  if (text.length() == 0 && currentTextLineIdx == 0 && currentText[0] == '#') currentText = "";
 
   return currentText.length() > 0;
 }
