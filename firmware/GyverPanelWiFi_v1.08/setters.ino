@@ -550,7 +550,6 @@ void set_wifi_connected(bool value) {
 
 // IP IP_STA[]
 void set_StaticIP(byte p1, byte p2, byte p3, byte p4) {
-  if (IP_STA[0] == p1 && IP_STA[1] == p2 && IP_STA[2] == p3 &&IP_STA[3] == p4) return;
   IP_STA[0] = p1; 
   IP_STA[1] = p2; 
   IP_STA[2] = p3; 

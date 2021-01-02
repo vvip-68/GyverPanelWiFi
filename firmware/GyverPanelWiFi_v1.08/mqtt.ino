@@ -178,7 +178,7 @@ void SendCurrentState(String keys, String topic, bool immediate) {
         if (s_tmp.length() > 0) {
           // Если режим отправки сообщений - каждый параметр индивидуально или ключ имеет значение большой длины - отправить полученный параметр отдельным сообщением  
           // Параметр "UP" также всегда отправляется отдельным сообщением
-          big_size_key = key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2" || key == "SQ";
+          big_size_key = key == "LE" || key == "LF" || key == "LT" || key == "S1" || key == "S2" || key == "S3" || key == "SQ";
           if (immediate || key == "UP") {
             // Топик сообщения - основной топик плюс ключ (имя параметра)
             if (big_size_key) 
@@ -237,6 +237,9 @@ void mqttSendStartState() {
   
   // Список звуков рассвета
   SendCurrentState("S2", TOPIC_STT, false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
+
+  // Список звуков бегущей строки
+  SendCurrentState("S3", TOPIC_STT, false);    // false - т.к. хотя и один параметр, но обязательно требуется большой буфер пакета
   #endif  
 
   // Отправить список строк

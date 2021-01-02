@@ -327,12 +327,20 @@ void process() {
         set_isDfPlayerOk(false);
         alarmSoundsCount = 0;
         dawnSoundsCount = 0;
+        noteSoundsCount = 0;
         Serial.println(F("MP3 плеер недоступен."));
       } else if (msg_type == DFPlayerCardOnline || msg_type == DFPlayerCardInserted) {
         // Плеер распознал карту - переинициализировать стадию 2
         InitializeDfPlayer2();
         if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
+      } else if (msg_type == DFPlayerPlayFinished) {
+        // Почему-то в звуках бегущей строки повтор через enableLoop не спабатывает
+        // Перезапустить заук, если установлен его повтор
+        if (runTextSound > 0 && runTextSoundRepeat) {
+          dfPlayer.playFolder(3, runTextSound);
+        }
       }
+          
     }
     #endif
     
@@ -1548,7 +1556,7 @@ void parsing() {
       //    page 11:  // Рисование
       //    page 12:  // Игры
       //    page 91:  // Запрос текста бегущих строк как есть без обработки макросов
-      //    page 92:  // Запрос текста бегущих строк с обработкой макросов для заполнения списка в программе
+      //    page 92:  // Запрос списков звуков бегущей строки - макрос {A}
       //    page 93:  // Запрос списка звуков будильника
       //    page 94:  // Запрос списка звуков рассвета
       //    page 95:  // Ответ состояния будильника - сообщение по инициативе сервера
@@ -2161,13 +2169,17 @@ void sendPageParams(int page, eSources src) {
       addKeyToChanged("TS");       // Тескт в строке мог быть изменен - отправить в канал MQTT состояние строк
       break;
     #if (USE_MP3 == 1)
+    case 92:  // Запрос списка звуков бегущей строки
+      str = getStateString("S3");
+      break;
     case 93:  // Запрос списка звуков будильника
       str = getStateString("S1");
       break;
     case 94:  // Запрос списка звуков рассвета
       str = getStateString("S2");
       break;
-    #else      
+    #else   
+    case 92:  // Запрос списка звуков бегущей строки
     case 93:  // Запрос списка звуков будильника
     case 94:  // Запрос списка звуков рассвета
       // Если MP3-плеер отключен - просто игнорировать
@@ -2310,6 +2322,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
   // S1:[список] список звуков будильника, разделенный запятыми, ограничители [] обязательны        
   // S2:[список] список звуков рассвета, разделенный запятыми, ограничители [] обязательны        
+  // S3:[список] список звуков для макроса {A} бегущей строки, ограничители [] обязательны        
   // SC:число    скорость смещения часов оверлея
   // SD:X        наличие и доступность SD карты: Х = 0 - нат SD карты; 1 - SD карта доступна
   // SE:число    скорость эффектов
@@ -3026,6 +3039,16 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return tmp;
     }
     return str + "S2:" + "[" + tmp.substring(0,BUF_MAX_SIZE-12) + "]"; 
+  }
+
+  // Запрос звуков бегкщей строки
+  if (key == "S3") {
+    tmp = String(NOTIFY_SOUND_LIST);
+    if (value) {
+      value->set(tmp);
+      return tmp;
+    }
+    return str + "S3:" + "[" + tmp.substring(0,BUF_MAX_SIZE-12) + "]"; 
   }
 #endif
 

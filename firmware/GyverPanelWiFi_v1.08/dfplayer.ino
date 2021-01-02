@@ -23,7 +23,8 @@ void InitializeDfPlayer2() {
   refreshDfPlayerFiles();    
   Serial.println(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
   Serial.println(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));
-  set_isDfPlayerOk(alarmSoundsCount + dawnSoundsCount > 0);
+  Serial.println(String(F("Звуков сообщений найдено: ")) + String(noteSoundsCount));
+  set_isDfPlayerOk(alarmSoundsCount + dawnSoundsCount + noteSoundsCount > 0);
 #else  
   set_isDfPlayerOk(false);
 #endif  
@@ -57,7 +58,7 @@ void printDetail(uint8_t type, int value){
       Serial.print(F("Номер: "));
       Serial.print(value);
       Serial.println(F(". Завершено."));
-      if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0) {
+      if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
         dfPlayer.stop();
       }
       break;
@@ -121,6 +122,19 @@ void refreshDfPlayerFiles() {
     Serial.print(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
   dawnSoundsCount = val < 0 ? 0 : val;
+
+  // Папка с файлами для звуков в бегущей строке
+  cnt = 0, val = 0, new_val = 0; 
+  do {
+    val = dfPlayer.readFileCountsInFolder(3);     delay(10);
+    new_val = dfPlayer.readFileCountsInFolder(3); delay(10);     
+    if (val == new_val && val != 0) break;
+    cnt++;
+    delay(100);
+    Serial.print(F("."));
+  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
+  noteSoundsCount = val < 0 ? 0 : val;
+
   Serial.println();  
 }
 #endif
@@ -138,13 +152,13 @@ void PlayAlarmSound() {
   // Установлен корректный звук?
   if (sound > 0) {
     dfPlayer.stop();
-    delay(100);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
+    delay(10);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
     dfPlayer.volume(constrain(maxAlarmVolume,1,30));
-    delay(100);
+    delay(10);
     dfPlayer.playFolder(1, sound);
-    delay(100);
+    delay(10);
     dfPlayer.enableLoop();
-    delay(100);    
+    delay(10);    
     alarmSoundTimer.setInterval(alarmDuration * 60L * 1000L);
     alarmSoundTimer.reset();
     set_isPlayAlarmSound(true);
@@ -168,13 +182,13 @@ void PlayDawnSound() {
   // Установлен корректный звук?
   if (sound > 0) {
     dfPlayer.stop();
-    delay(100);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
+    delay(10);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
     dfPlayer.volume(1);
-    delay(100);
+    delay(10);
     dfPlayer.playFolder(2, sound);
-    delay(100);
+    delay(10);
     dfPlayer.enableLoop();
-    delay(100);
+    delay(10);
     // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
     fadeSoundDirection = 1;   
     fadeSoundStepCounter = maxAlarmVolume;

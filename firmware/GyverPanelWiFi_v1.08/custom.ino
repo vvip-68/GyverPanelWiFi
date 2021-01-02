@@ -101,6 +101,26 @@ void doEffectWithOverlay(byte aMode) {
         serializeJson(doc, out);    
         SendMQTT(out, TOPIC_TXT);
       #endif
+
+      #if (USE_MP3 == 1)
+      if (runTextSound >= 0) {
+        if (isDfPlayerOk && noteSoundsCount > 0) {
+          dfPlayer.stop();
+          delay(10);
+          dfPlayer.volume(constrain(maxAlarmVolume,1,30));
+          dfPlayer.playFolder(3, runTextSound);
+          /*
+          if (runTextSoundRepeat)
+            dfPlayer.enableLoop(); // Не срабатывае т :( Повтор перенесен на событие "Проигрывание файла завершено)
+          else    
+            dfPlayer.disableLoop();
+          */  
+        } else {
+          runTextSound = -1;
+          runTextSoundRepeat = false;
+        }
+      }        
+      #endif      
     }
 
     // Если указано, что строка должна отображаться на фоне конкретного эффекта - его надо инициализировать    
@@ -169,6 +189,15 @@ void doEffectWithOverlay(byte aMode) {
     // следующая строка начала показываться немедленно, иначе - запомнить время окончания показа строки,
     // от которого отсчитывается когда начинать следующий показ
     textLastTime = nextTextLineIdx >= 0 ? 0 : millis();
+
+    #if (USE_MP3 == 1)
+      // Если воспроизводился звук указанный для строки - остановить его
+      if (runTextSound >= 0) {
+        runTextSound = -1;
+        runTextSoundRepeat = false;
+        dfPlayer.stop();
+      }
+    #endif
 
     #if (USE_MQTT == 1)
       DynamicJsonDocument doc(256);

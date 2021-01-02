@@ -301,6 +301,14 @@ void startWiFi(unsigned long waitTime) {
                   IPAddress(255, 255, 255, 0),                            // Mask
                   IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], 1),          // DNS1 192.168.0.1
                   IPAddress(8, 8, 8, 8));                                 // DNS2 8.8.8.8                  
+      Serial.print(F(" -> "));
+      Serial.print(IP_STA[0]);
+      Serial.print(".");
+      Serial.print(IP_STA[1]);
+      Serial.print(".");
+      Serial.print(IP_STA[2]);
+      Serial.print(".");
+      Serial.print(IP_STA[3]);                  
     }              
     WiFi.begin(ssid, pass);
   
