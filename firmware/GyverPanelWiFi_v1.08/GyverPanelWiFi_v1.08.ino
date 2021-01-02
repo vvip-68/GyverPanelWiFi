@@ -2,7 +2,7 @@
 // Гайд по постройке матрицы: https://alexgyver.ru/matrix_guide/
 // Страница проекта на GitHub: https://github.com/vvip-68/GyverPanelWiFi
 // Автор: AlexGyver Technologies, 2019
-// Дальнейшее развитие: vvip, 2019,2020
+// Дальнейшее развитие: vvip, 2019-2021
 // https://AlexGyver.ru/
 //
 // Дополнительные ссылки для Менеджера плат ESP8266 и ESP32 в Файл -> Настройки
@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.08.2020.1231")
+#define FIRMWARE_VER F("WiFiPanel-v.1.08.2021.0102")
 
 // --------------------------------------------------------
 

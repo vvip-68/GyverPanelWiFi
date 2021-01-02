@@ -342,10 +342,9 @@ boolean prepareNextText(String text) {
   // Если зависимостей от даты нет - вычисленная строка просто отображается пока не будет затребована новая строка
 
   offset = WIDTH;   // перемотка новой строки в правый край
-
   if (text.length() != 0) {
     currentText = processMacrosInText(text);
-  } else if (currentTextLineIdx >= 0) {
+  } else {
     // Размер массива строк
     byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   
@@ -353,7 +352,7 @@ boolean prepareNextText(String text) {
     currentTextLineIdx = nextIdx >= 0 ? nextIdx : getNextLine(currentTextLineIdx);
     if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
   
-    currentText = textLines[currentTextLineIdx];
+    currentText = currentTextLineIdx < 0 ? "" : textLines[currentTextLineIdx];
     // Если выбрана строка для принудительного показа - игнорировать запрет по '-' в начале строки или по макросу {-}
     if (nextIdx >= 0) {
       if (currentText[0] == '-') currentText[0] = ' ';
