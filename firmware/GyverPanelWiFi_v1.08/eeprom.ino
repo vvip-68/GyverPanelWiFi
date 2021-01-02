@@ -10,7 +10,7 @@ void loadSettings() {
   //  6,7 - период синхронизации NTP (int16_t - 2 байта) в минутах                                           // getNtpSyncTime()              // putNtpSyncTime(SYNC_TIME_PERIOD)
   //    8 - time zone UTC+X                                                                                  // getTimeZone();                // putTimeZone(timeZoneOffset)
   //    9 - выключать индикатор часов при выключении лампы true - выключать / false - не выключать           // getTurnOffClockOnLampOff()    // putTurnOffClockOnLampOff(needTurnOffClock)
-  //   10 - IP[0]                                                                                            // getStaticIP()                // putStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3])
+  //   10 - IP[0]                                                                                            // getStaticIP()                 // putStaticIP(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3])
   //   11 - IP[1]                                                                                            // - " -                         // - " -
   //   12 - IP[2]                                                                                            // - " -                         // - " -
   //   13 - IP[3]                                                                                            // - " -                         // - " -
@@ -237,8 +237,8 @@ void loadSettings() {
     showWeatherInClock = getShowWeatherInClock();
   #endif  
 
-    getStaticIP();
     loadTexts();
+    getStaticIP();
     
   } else {
 
@@ -417,7 +417,7 @@ void saveDefaults() {
   textLines[5]  = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
   textLines[6]  = "Show must go on!{C#000002}";
   textLines[7]  = "{C#FF000F}Крибле! {C#000001}Крабле!! {C#00FF00}Бумс!!!{E24}";
-  textLines[8]  = "Крепитесь, люди - скоро {C#FF0300}лето!{S15.12.****#S10.04.****}";
+  textLines[8]  = "Крепитесь, люди - скоро {C#FF0300}лето!{S15.12.****#10.04.****}";
   textLines[9]  = "Это {C#0081FF}\"ж-ж-ж\"{C#FFFFFF} - неспроста!";
   textLines[10]  = "Элементарно, Ватсон!";
   textLines[11]  = "Дело было вечером, делать было нечего...";
@@ -439,7 +439,7 @@ void saveDefaults() {
   textLines[27]  = "Почему? Потому!";
   textLines[28]  = "Время принимать решения!";
   textLines[29]  = "Время делать выводы!";
-  textLines[30]  = "Лето, ах лето!{S15.05.****#S01.09.****}";
+  textLines[30]  = "Лето, ах лето!{S15.05.****#01.09.****}";
   textLines[31]  = "Нет предела совершенству!";
   textLines[32]  = "Чего изволите, ваша светлость?";
   textLines[33]  = "Курочка по зёрнышку, копеечка к копеечке!";  
@@ -1096,6 +1096,7 @@ void putCurrentManualMode(int8_t mode) {
     EEPROMwrite(29, (byte)mode);
   }
 }
+
 void getStaticIP() {
   IP_STA[0] = EEPROMread(10);
   IP_STA[1] = EEPROMread(11);
@@ -1104,12 +1105,10 @@ void getStaticIP() {
 }
 
 void putStaticIP(byte p1, byte p2, byte p3, byte p4) {
-  if (IP_STA[0] != p1 || IP_STA[1] != p2 || IP_STA[2] != p3 || IP_STA[3] != p4) {
-    EEPROMwrite(10, p1);
-    EEPROMwrite(11, p2);
-    EEPROMwrite(12, p3);
-    EEPROMwrite(13, p4);
-  }
+  EEPROMwrite(10, p1);
+  EEPROMwrite(11, p2);
+  EEPROMwrite(12, p3);
+  EEPROMwrite(13, p4);
 }
 
 uint32_t getGlobalColor() {
