@@ -634,9 +634,12 @@ void checkIdleState() {
       // (thisMode == MC_SNAKE    && !gameOverFlag) ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
          (thisMode == MC_TETRIS   && !gameOverFlag) ||   // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)
       // (thisMode == MC_ARKANOID && !gameOverFlag) ||   // Арканоид долгая игра - не нужно дожидаться окончания, можно прервать
-         (showTextNow && (specialTextEffect >= 0))  ||   // Воспроизводится бегущая строка на фоне указанного эффекта
+         (showTextNow && (specialTextEffect >= 0))       // Воспроизводится бегущая строка на фоне указанного эффекта
+         #if (USE_SD == 1)
          // Для файла с SD-карты - если указан режим ожидания проигрывания aaqkf до концв, а файл еще не проигрался - не менять эффект
-         (thisMode == MC_SDCARD && wait_play_file_finished && !play_file_finished))
+         || (thisMode == MC_SDCARD && wait_play_file_finished && !play_file_finished)
+         #endif
+      )
       {        
         // Если бегущая строка или игра не завершены - смены режима не делать
         ok = false;
