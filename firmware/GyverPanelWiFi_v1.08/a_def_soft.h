@@ -550,11 +550,14 @@ int8_t   AM4_effect_id = -3;                // Режим 4 по времени 
 #if (USE_SD == 1)
 
 #define MAX_FILES 128
+#define WAIT_PLAY_FILE_FINISHED 1           // 1 - переключаться на следующий эффект только когда весь файл показан; 0 - прерывать показ файла с SD-карты по истечении времени эффекта
 
+String  nameFiles[MAX_FILES];               // Список имен файлов, найденных в папке на SD-карте
 bool    isSdCardReady = false;              // Флаг - SD карта инициализирована корректно
 bool    play_file_finished = false;         // Флаг - воспроизведение эффекта завершено
-String  nameFiles[MAX_FILES];               // Список имен файлов, найденных в папке на SD-карте
-uint8_t countFiles = 0;                     // Количество найденных файлов эффектов
+bool    wait_play_file_finished = (WAIT_PLAY_FILE_FINISHED == 1);     // Флаг - true - переключаться на следующий эффект только когда весь файл показан; false - прерывать показ по истечении времени эффекта
+uint8_t countFiles = 0;                     // Количество найденных файлов эффектов, найденных на SD-карте
+int8_t  sf_file_idx = -1;                   // Эффект, проигрываемый с SD-карты - индекс в массиве nameFiles
 
 #endif
 

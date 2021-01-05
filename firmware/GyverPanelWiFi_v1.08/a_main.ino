@@ -1196,12 +1196,15 @@ void parsing() {
             // При получении параметра 2 эффекта "Узоры" -  вид - надо переинициализировать эффект
             // Если установлен узор - "случайный" - продолжаем показывать тот что был
             loadingFlag = effectScaleParam2[tmp_eff] != 0;
-          } else
+          } 
+          #if (USE_SD == 1)
+          else
           if (thisMode == tmp_eff && tmp_eff == MC_SDCARD) {
             // При получении параметра 2 эффекта "SD-карта" -  вид - надо переинициализировать эффект
             // Если установлен эффект - "случайный" - продолжаем показывать тот что был
-            loadingFlag = effectScaleParam2[tmp_eff] != 0;
+            loadingFlag = effectScaleParam2[tmp_eff] != 0;  // effectScaleParam2[tmp_eff]: 0 - случайно; 1 - последовательно; 2 и далее - привести к индексу массива списка файлов 
           }          
+          #endif
         } else
 
         if (intData[1] == 4) {
@@ -3471,7 +3474,7 @@ String getParam2ForMode(byte mode) {
    case MC_SDCARD:
      // Эффект "SD-card" имеет несколько вариантов - список выбора файла эффекта
      // Дополнительный параметр представлен в приложении списком выбора
-     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор"));
+     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Последовательно"));
      for (uint8_t i=0; i < countFiles; i++) {
        str += "," + nameFiles[i];
      }     
@@ -3684,6 +3687,16 @@ void setRandomMode2() {
   // Искусственным образом увеличиваем вероятность эффекта с SD-карты
   if (getEffectUsage(MC_SDCARD) && isSdCardReady && (random16(0, 200) % 10 == 0)) {
     newMode = MC_SDCARD;
+    // effectScaleParam2[MC_SDCARD]: 0 - случайный файл; 1 - последовательный перебор; 2 - привести к индексу в массиве файлов SD-карты
+    int8_t file_idx;
+    if (effectScaleParam2[MC_SDCARD] == 0) {
+      sf_file_idx = random16(0,countFiles);
+    } else if (effectScaleParam2[MC_SDCARD] == 1) {
+      sf_file_idx++;
+      if (sf_file_idx >= countFiles) sf_file_idx = 0;
+    } else {
+      sf_file_idx = effectScaleParam2[MC_SDCARD] - 2;
+    }
     setEffect(newMode);
     return;
   }   

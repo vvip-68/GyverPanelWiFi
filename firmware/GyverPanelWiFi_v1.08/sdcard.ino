@@ -114,17 +114,36 @@ void sdcardRoutine() {
    }
 
    // Выбор другого файла - только если установлен loadingFlag
-   // Если сюда попали по play_file_finished - просто вернуться к началу проигранного файла и воспроизвести его еще раз.
+   // Если сюда попали по play_file_finished - блоск if (loading) не выполняется - file_idx остается прежним - просто вернуться к началу проигранного файла и воспроизвести его еще раз.
    // Это позволит длительное время "играть" эффект использую зацикленные короткие фрагменты 
+   // effectScaleParam2[MC_SDCARD]: 0 - случайный файл; 1 - последовательный перебор; 2 и далее - привести к индексы в массиве nameFiles
+   
    if (loadingFlag) {
-     int8_t currentFile = (specialTextEffectParam >= 0) ? (specialTextEffectParam - 1) : (effectScaleParam2[MC_SDCARD] - 1);
-        
+
+     int8_t currentFile = -1;
+     // Указан специальный эффект для бегущей строки? - брать его 
+     if (specialTextEffectParam >= 0)
+       currentFile = specialTextEffectParam - 1;
+     // Указано случайное воспроизведение файлов с карты?
+     else if (effectScaleParam2[MC_SDCARD] == 0)
+       currentFile = -2;                               // Случайный порядок
+     else if (effectScaleParam2[MC_SDCARD] == 1)
+       currentFile = -1;                               // Последоватедбное воспроизведение
+     else
+       currentFile = effectScaleParam2[MC_SDCARD] - 2; // Указанный выбранный файл эффектов
+
      if (currentFile < 0 || currentFile >= countFiles) {
         if (countFiles == 1) {
           file_idx = 0;
         } else if (countFiles == 2) {
           file_idx = (file_idx != 1) ? 0 : 1;
+        } else if (currentFile == -1) {  
+          // Последовательный перебор файлов с SD-карты
+          if (sf_file_idx < 0) sf_file_idx = countFiles - 1;
+          if (sf_file_idx >= countFiles) sf_file_idx = 0;
+          file_idx = sf_file_idx;
         } else {
+          // Случайный с SD-карты
           file_idx = random16(0,countFiles);
         }
       } else {

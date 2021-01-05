@@ -448,8 +448,23 @@ void nextModeHandler() {
 
   while (aCnt < MAX_EFFECT) {
     // Берем следующий режим по циклу режимов
-    aCnt++; 
-    newMode++;    
+    // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать следующий файл с SD-карты
+    #if (USE_SD == 1)
+      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
+        sf_file_idx++;
+        if (sf_file_idx >= countFiles) {
+          aCnt++;
+          newMode++;
+          sf_file_idx = -1;
+        }
+      } else {
+        aCnt++;
+        newMode++;
+      }
+    #else
+      aCnt++;
+      newMode++;
+    #endif
     if (newMode >= MAX_EFFECT) newMode = 0;
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
     if (getEffectUsage(newMode)) break;    
@@ -483,13 +498,26 @@ void prevModeHandler() {
 
   while (aCnt < MAX_EFFECT) {
     // Берем предыдущий режим по циклу режимов
-    aCnt++; 
-    newMode--; 
+    // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать предыдущий файл с SD-карты
+    #if (USE_SD == 1)
+      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
+        sf_file_idx--;
+        if (sf_file_idx < 0) {
+          aCnt++;
+          newMode--;
+          sf_file_idx = countFiles - 1;
+        }
+      } else {
+        aCnt++;
+        newMode--;
+      }
+    #else
+      aCnt++;
+      newMode--;
+    #endif
     if (newMode < 0) newMode = MAX_EFFECT - 1;
-
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
-    if (getEffectUsage(newMode)) break;
-    
+    if (getEffectUsage(newMode)) break;    
     // Если перебрали все и ни у одного нет флага "использовать" - не обращаем внимание на флаг, используем предыдущий
     if (aCnt >= MAX_EFFECT) {
       newMode = curMode--;
@@ -604,7 +632,9 @@ void checkIdleState() {
       // (thisMode == MC_SNAKE    && !gameOverFlag) ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
          (thisMode == MC_TETRIS   && !gameOverFlag) ||   // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)
       // (thisMode == MC_ARKANOID && !gameOverFlag) ||   // Арканоид долгая игра - не нужно дожидаться окончания, можно прервать
-         (showTextNow && (specialTextEffect >= 0)))      // Воспроизводится бегущая строка на фоне указанного эффекта
+         (showTextNow && (specialTextEffect >= 0))  ||   // Воспроизводится бегущая строка на фоне указанного эффекта
+         // Для файла с SD-карты - если указан режим ожидания проигрывания aaqkf до концв, а файл еще не проигрался - не менять эффект
+         (thisMode == MC_SDCARD && wait_play_file_finished && !play_file_finished))
       {        
         // Если бегущая строка или игра не завершены - смены режима не делать
         ok = false;
