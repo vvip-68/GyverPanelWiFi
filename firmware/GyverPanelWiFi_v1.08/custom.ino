@@ -452,12 +452,11 @@ void nextModeHandler() {
     // Берем следующий режим по циклу режимов
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать следующий файл с SD-карты
     #if (USE_SD == 1)
-      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
+      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {        
         sf_file_idx++;
         if (sf_file_idx >= countFiles) {
           aCnt++;
           newMode++;
-          sf_file_idx = -1;
         }
       } else {
         aCnt++;
@@ -507,7 +506,6 @@ void prevModeHandler() {
         if (sf_file_idx < 0) {
           aCnt++;
           newMode--;
-          sf_file_idx = countFiles - 1;
         }
       } else {
         aCnt++;

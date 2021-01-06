@@ -139,8 +139,8 @@ void sdcardRoutine() {
           file_idx = (file_idx != 1) ? 0 : 1;
         } else if (currentFile == -1) {  
           // Последовательный перебор файлов с SD-карты
-          if (sf_file_idx < 0) sf_file_idx = countFiles - 1;
-          if (sf_file_idx >= countFiles) sf_file_idx = 0;
+          if (sf_file_idx < 0) sf_file_idx = 0;
+          if (sf_file_idx >= countFiles) sf_file_idx = countFiles - 1;
           file_idx = sf_file_idx;
         } else {
           // Случайный с SD-карты

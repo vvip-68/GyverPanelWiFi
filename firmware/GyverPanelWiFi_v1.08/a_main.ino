@@ -147,7 +147,7 @@ void process() {
     // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
     // поэтому отображать эффект "ночные часы"
     byte br = specialMode ? specialBrightness : globalBrightness;
-    if (br == 1 && !(loadingFlag || isAlarming || thisMode == MC_TEXT)) {
+    if (br == 1 && !(loadingFlag || isAlarming || thisMode == MC_TEXT || thisMode == MC_DRAW || thisMode == MC_LOADIMAGE)) {
       customRoutine(MC_CLOCK);    
     } else {    
       customRoutine(thisMode);
@@ -701,6 +701,9 @@ void parsing() {
             set_globalBrightness(intData[2]);
             if ( specialMode) set_specialBrightness(globalBrightness);
             if (!isTurnedOff) FastLED.setBrightness(globalBrightness);
+            if (thisMode == MC_DRAW || thisMode == MC_LOADIMAGE) {
+              FastLED.show();
+            }
           }
           // Для команд, пришедших от MQTT отправлять только ACK;
           // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
