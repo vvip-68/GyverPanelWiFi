@@ -452,21 +452,29 @@ void nextModeHandler() {
     // Берем следующий режим по циклу режимов
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать следующий файл с SD-карты
     #if (USE_SD == 1)
-      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {        
-        sf_file_idx++;
+      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
+        if (sf_file_idx == -2 || sf_file_idx == 127) sf_file_idx = 0;
+        else sf_file_idx++;
         if (sf_file_idx >= countFiles) {
+          sf_file_idx = 127;
           aCnt++;
           newMode++;
         }
       } else {
         aCnt++;
         newMode++;
+        if (newMode >= MAX_EFFECT) newMode = 0;  
+        if (newMode == MC_SDCARD && getEffectUsage(newMode) && effectScaleParam2[MC_SDCARD] == 1) {
+          if (sf_file_idx == -2 || sf_file_idx == 127) sf_file_idx = 0;
+          else sf_file_idx++;
+          if (sf_file_idx >= countFiles) sf_file_idx = 0;
+        }        
       }
     #else
       aCnt++;
       newMode++;
     #endif
-    if (newMode >= MAX_EFFECT) newMode = 0;
+    if (newMode >= MAX_EFFECT) newMode = 0;    
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
     if (getEffectUsage(newMode)) break;    
     // Если перебрали все и ни у одного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
@@ -502,14 +510,22 @@ void prevModeHandler() {
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать предыдущий файл с SD-карты
     #if (USE_SD == 1)
       if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
-        sf_file_idx--;
+        if (sf_file_idx == -2 || sf_file_idx == 127) sf_file_idx = countFiles - 1;
+        else sf_file_idx--;
         if (sf_file_idx < 0) {
+          sf_file_idx = -2;
           aCnt++;
           newMode--;
         }
       } else {
         aCnt++;
         newMode--;
+        if (newMode < 0) newMode = MAX_EFFECT - 1;
+        if (newMode == MC_SDCARD && getEffectUsage(newMode) && effectScaleParam2[MC_SDCARD] == 1) {
+          if (sf_file_idx == -2 || sf_file_idx == 127) sf_file_idx = countFiles - 1;
+          else sf_file_idx--;
+          if (sf_file_idx < 0) sf_file_idx = countFiles - 1;
+        }        
       }
     #else
       aCnt++;
