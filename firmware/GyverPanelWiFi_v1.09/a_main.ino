@@ -3855,6 +3855,7 @@ void sendImageLine() {
       // Отправка по строкам
       imageLine = "$18 IR:" + String(sendImageRow) + "~";
       for (byte i=0; i<WIDTH; i++) {
+        delay(0);
         imageLine += IntToHex(gammaCorrectionBack(getPixColorXY(i, sendImageRow))) + " ";
       }
       sendImageRow++;
@@ -3863,6 +3864,7 @@ void sendImageLine() {
       // Отправка по колонкам
       imageLine = "$18 IC:" + String(sendImageCol) + "~";
       for (byte i=0; i<HEIGHT; i++) {
+        delay(0);
         imageLine += IntToHex(gammaCorrectionBack(getPixColorXY(sendImageCol, i))) + " ";
       }
       sendImageCol++;
