@@ -2101,12 +2101,14 @@ void extractMacroSDates(String text) {
     // Если день/месяц/год даты1 отсутствуют или указаны заменителями - брать текущую
     // Если день/месяц/год даты2 отсутствуют или указаны заменителями - брать дату1
 
+    bool starYear1 = false, starYear2 = false;
+    
     if (iDay1   == 0) { iDay1   = day();   }
     if (iMonth1 == 0) { iMonth1 = month(); }
-    if (iYear1  == 0) { iYear1  = year();  }
+    if (iYear1  == 0) { iYear1  = year(); starYear1 = true; }
     if (iDay2   == 0) { iDay2 = iDay1;     }
     if (iMonth2 == 0) { iMonth2 = iMonth1; }
-    if (iYear2  == 0) { iYear2 = iYear1;   }
+    if (iYear2  == 0) { iYear2 = iYear1;  starYear2 = true; }
 
     // Если время в дата2 пропущены - брать 23:59
     if (iHour2 == 0 && !hasTime2) { iHour2 = 23; }
@@ -2119,6 +2121,16 @@ void extractMacroSDates(String text) {
     time_t t_event1 = makeTime(tm1);
     time_t t_event2 = makeTime(tm2);
 
+    if (t_event2 < t_event1) {
+      if (starYear2) {
+        tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, CalendarYrToTm(iYear2 + 1)};     
+        t_event2 = makeTime(tm2);
+      } else if (starYear1) {
+        tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, CalendarYrToTm(iYear1 - 1)}; 
+        t_event1 = makeTime(tm1);
+      }
+    }
+    
     textAllowBegin = t_event1; // время начала допустимого интервала отображения unixTime
     textAllowEnd   = t_event2; // время конца допустимого интервала отображения unixTime
           
@@ -2126,6 +2138,7 @@ void extractMacroSDates(String text) {
     breakTime(t_event2, tm2);
     
     if (t_event2 < t_event1) {
+      Serial.println(String(F("Строка: '")) + text + "'");
       Serial.println(String(F("Интервал показа: ")) + 
                      padNum(tm1.Day,2) + "." + padNum(tm1.Month,2) + "." + padNum(tmYearToCalendar(tm1.Year),4) + " " + padNum(tm1.Hour,2) + ":" + padNum(tm1.Minute,2) + " -- " +
                      padNum(tm2.Day,2) + "." + padNum(tm2.Month,2) + "." + padNum(tmYearToCalendar(tm2.Year),4) + " " + padNum(tm2.Hour,2) + ":" + padNum(tm2.Minute,2));
