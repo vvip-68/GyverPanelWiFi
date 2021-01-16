@@ -418,7 +418,7 @@ void saveDefaults() {
   textLines[5]  = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
   textLines[6]  = "Show must go on!{C#000002}";
   textLines[7]  = "{C#FF000F}Крибле! {C#000001}Крабле!! {C#00FF00}Бумс!!!{E24}";
-  textLines[8]  = "Крепитесь, люди - скоро {C#FF0300}лето!{S15.12.****#10.04.****}";
+  textLines[8]  = "Крепитесь, люди - скоро {C#FF0300}лето!{S01.01.****#10.04.****}";
   textLines[9]  = "Это {C#0081FF}\"ж-ж-ж\"{C#FFFFFF} - неспроста!";
   textLines[10]  = "Элементарно, Ватсон!";
   textLines[11]  = "Дело было вечером, делать было нечего...";
@@ -1699,7 +1699,7 @@ void EEPROM_string_write(uint16_t addr, String buffer, uint16_t max_len) {
 // Возврат: 0 - не найден; 1 - найден в FS микроконтроллера; 2 - найден на SD-карте; 3 - найден в FS и на SD
 uint8_t checkEepromBackup() {
   File file;
-  String  fileName = F("eeprom.bin");
+  String  fileName = F("/eeprom.bin");
   uint8_t existsFS = 0; 
   uint8_t existsSD = 0; 
   size_t  fs_size;
@@ -1736,7 +1736,7 @@ bool saveEepromToFile(String storage) {
   const uint8_t part_size = 128;
   bool ok = true;
   uint8_t buf[part_size];
-  String message = "", fileName = F("eeprom.bin");
+  String message = "", fileName = F("/eeprom.bin");
   size_t len = 0;
   uint16_t cnt = 0, idx = 0;  
   File file;
@@ -1829,7 +1829,7 @@ bool loadEepromFromFile(String storage) {
   const uint8_t part_size = 128;
   bool ok = true;
   uint8_t buf[part_size];
-  String message = "", fileName = F("eeprom.bin");
+  String message = "", fileName = F("/eeprom.bin");
   size_t len = 0;
   uint16_t idx = 0;  
   File file;
