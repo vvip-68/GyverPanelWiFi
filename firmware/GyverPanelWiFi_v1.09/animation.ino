@@ -755,53 +755,6 @@ String openImage(String storage, String fName) {
     }
   
     file = SD.open(fileName, FILE_READ);
-    if (!file) {
-      message = String(F("Файл '")) + fileName + String(F("' не найден."));
-      Serial.println(message);
-      return message;
-    }
-
-    size_t len = 0;
-    uint8_t buf[3];
-    len = file.read(buf, 3);
-    ok = len == 3;
-    if (!ok) {
-      message = String(F("Ошибка чтения файла '")) + fileName + "'";
-      Serial.println(message);
-      file.close();
-      return message;
-    }
-
-    byte w = buf[1];
-    byte h = buf[2];
-    int8_t offset_x = (WIDTH - w) / 2;
-    int8_t offset_y = (HEIGHT - h) / 2;
-
-    FastLED.clear();
-
-    for (uint8_t x = 0; x < w; x++) {
-      for (uint8_t y = 0; y < h; y++) {
-        len = file.read(buf, 3);
-        ok = len == 3;
-        if (!ok) {
-          message = String(F("Ошибка чтения файла '")) + fileName + "'";
-          Serial.println(message);
-          file.close();
-          return message;
-        }
-        int8_t cx = x + offset_x;
-        int8_t cy = y + offset_y;
-        if (cx >= 0 && cy >= 0 && cx < WIDTH && cy < HEIGHT) {
-          uint16_t idx = getPixelNumber(cx, cy);
-          byte r = buf[0];
-          byte g = buf[1];
-          byte b = buf[2];
-          leds[idx] = CRGB(r << 16 | g << 8 | b);
-        }
-      }
-    }
-    file.close();
-    Serial.println(F("Файл загружен."));
   }
   #endif
 
@@ -816,55 +769,57 @@ String openImage(String storage, String fName) {
     }
   
     file = LittleFS.open(fileName, "r");
-    if (!file) {
-      message = String(F("Файл '")) + fileName + String(F("' не найден."));
-      Serial.println(message);
-      return message;
-    }
+  }
 
-    size_t len = 0;
-    uint8_t buf[3];
-    len = file.read(buf, 3);
-    ok = len == 3;
-    if (!ok) {
-      message = String(F("Ошибка чтения файла '")) + fileName + "'";
-      Serial.println(message);
-      file.close();
-      return message;
-    }
+  if (!file) {
+    message = String(F("Файл '")) + fileName + String(F("' не найден."));
+    Serial.println(message);
+    return message;
+  }
 
-    byte w = buf[1];
-    byte h = buf[2];
-    int8_t offset_x = (WIDTH - w) / 2;
-    int8_t offset_y = (HEIGHT - h) / 2;
+  size_t len = 0;
+  uint8_t buf[3];
+  len = file.read(buf, 3);
+  ok = len == 3;
+  if (!ok) {
+    message = String(F("Ошибка чтения файла '")) + fileName + "'";
+    Serial.println(message);
+    file.close();
+    return message;
+  }
 
-    FastLED.clear();
+  byte w = buf[1];
+  byte h = buf[2];
+  int8_t offset_x = (WIDTH - w) / 2;
+  int8_t offset_y = (HEIGHT - h) / 2;
 
-    for (uint8_t x = 0; x < w; x++) {
-      for (uint8_t y = 0; y < h; y++) {
-        len = file.read(buf, 3);
-        ok = len == 3;
-        if (!ok) {
-          message = String(F("Ошибка чтения файла '")) + fileName + "'";
-          Serial.println(message);
-          file.close();
-          return message;
-        }
-        int8_t cx = x + offset_x;
-        int8_t cy = y + offset_y;
-        if (cx >= 0 && cy >= 0 && cx < WIDTH && cy < HEIGHT) {
-          uint16_t idx = getPixelNumber(cx, cy);
-          byte r = buf[0];
-          byte g = buf[1];
-          byte b = buf[2];
-          leds[idx] = CRGB(r << 16 | g << 8 | b);
-        }
+  FastLED.clear();
+
+  for (uint8_t x = 0; x < w; x++) {
+    for (uint8_t y = 0; y < h; y++) {
+      len = file.read(buf, 3);
+      ok = len == 3;
+      if (!ok) {
+        message = String(F("Ошибка чтения файла '")) + fileName + "'";
+        Serial.println(message);
+        file.close();
+        return message;
+      }
+      int8_t cx = x + offset_x;
+      int8_t cy = y + offset_y;
+      if (cx >= 0 && cy >= 0 && cx < WIDTH && cy < HEIGHT) {
+        uint16_t idx = getPixelNumber(cx, cy);
+        byte r = buf[0];
+        byte g = buf[1];
+        byte b = buf[2];
+        leds[idx] = CRGB(r << 16 | g << 8 | b);
       }
     }
-    file.close();
-    Serial.println(F("Файл загружен."));
   }
-  
+
+  file.close();
+  Serial.println(F("Файл загружен."));
+
   return message;
 }
 
@@ -904,40 +859,6 @@ String saveImage(String storage, String fName) {
     }
   
     file = SD.open(fileName, FILE_WRITE);
-    if (!file) {
-      message = String(F("Ошибка создания файла '")) + fileName + "'";
-      Serial.println(message);
-      return message;
-    }
-
-    size_t len = 0;
-    uint8_t buf[] = {0x33, WIDTH, HEIGHT};
-    len = file.write(buf, 3);
-    ok = len == 3;
-    if (!ok) {
-      message = String(F("Ошибка записи в файл '")) + fileName + "'";
-      Serial.println(message);
-      file.close();
-      return message;
-    }
-    for (uint8_t x = 0; x < WIDTH; x++) {
-      for (uint8_t y = 0; y < HEIGHT; y++) {
-        uint16_t idx = getPixelNumber(x,y);
-        buf[0] = leds[idx].r;
-        buf[1] = leds[idx].g;
-        buf[2] = leds[idx].b;
-        len = file.write(buf, 3);
-        ok = len == 3;
-        if (!ok) {
-          message = String(F("Ошибка записи в файл '")) + fileName + "'";
-          Serial.println(message);
-          file.close();
-          return message;
-        }
-      }
-    }
-    file.close();
-    Serial.println(F("Файл сохранен."));
   }
   #endif
 
@@ -962,47 +883,48 @@ String saveImage(String storage, String fName) {
     }
   
     file = LittleFS.open(fileName, "w");
-    if (!file) {
-      message = String(F("Ошибка создания файла '")) + fileName + "'";
-      Serial.println(message);
-      return message;
-    }
+  }
 
-    size_t len = 0;    
-    uint8_t buf[] = {0x33, WIDTH, HEIGHT};
-    len = file.write(buf, 3);
-    ok = len == 3;
-    if (!ok) {
-      message = String(F("Ошибка записи в файл '")) + fileName + "'";
-      Serial.println(message);
-      file.close();
-      return message;
-    }
-    for (uint8_t x = 0; x < WIDTH; x++) {
-      for (uint8_t y = 0; y < HEIGHT; y++) {
-        uint16_t idx = getPixelNumber(x,y);
-        buf[0] = leds[idx].r;
-        buf[1] = leds[idx].g;
-        buf[2] = leds[idx].b;
-        len = file.write(buf, 3);
-        ok = len == 3;
-        if (!ok) {
-          message = String(F("Ошибка записи в файл '")) + fileName + "'";
-          Serial.println(message);
-          file.close();
-          return message;
-        }
+  if (!file) {
+    message = String(F("Ошибка создания файла '")) + fileName + "'";
+    Serial.println(message);
+    return message;
+  }
+
+  size_t len = 0;
+  uint8_t buf[] = {0x33, WIDTH, HEIGHT};
+  len = file.write(buf, 3);
+  ok = len == 3;
+  if (!ok) {
+    message = String(F("Ошибка записи в файл '")) + fileName + "'";
+    Serial.println(message);
+    file.close();
+    return message;
+  }
+  for (uint8_t x = 0; x < WIDTH; x++) {
+    for (uint8_t y = 0; y < HEIGHT; y++) {
+      uint16_t idx = getPixelNumber(x,y);
+      buf[0] = leds[idx].r;
+      buf[1] = leds[idx].g;
+      buf[2] = leds[idx].b;
+      len = file.write(buf, 3);
+      ok = len == 3;
+      if (!ok) {
+        message = String(F("Ошибка записи в файл '")) + fileName + "'";
+        Serial.println(message);
+        file.close();
+        return message;
       }
     }
-    file.close();
-    Serial.println(F("Файл сохранен."));
   }
+  file.close();
+  Serial.println(F("Файл сохранен."));
 
   return message;
 }
 
 String deleteImage(String storage, String fName) {
-  bool ok = true;
+  bool ok = false;
   String message = "";
   String fileName = "/" + String(WIDTH) + "p" + String(HEIGHT) + "/" + fName + ".p";
 
@@ -1012,24 +934,19 @@ String deleteImage(String storage, String fName) {
   #if (USE_SD == 1)
   if (storage == "SD") {
     ok = SD.remove(fileName);
-    if (!ok) {
-      message = String(F("Ошибка удаления файла '")) + fileName + "'";
-      Serial.println(message);
-      return message;
-    }
-    Serial.println(F("Файл удален."));
   }
   #endif
 
   if (storage == "FS") {
     ok = LittleFS.remove(fileName);
-    if (!ok) {
-      message = String(F("Ошибка удаления файла '")) + fileName + "'";
-      Serial.println(message);
-      return message;
-    }
-    Serial.println(F("Файл удален."));
   }
+
+  if (!ok) {
+    message = String(F("Ошибка удаления файла '")) + fileName + "'";
+    Serial.println(message);
+    return message;
+  }
+  Serial.println(F("Файл удален."));
   
   return message;
 }

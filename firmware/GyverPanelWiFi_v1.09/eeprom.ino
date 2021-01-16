@@ -319,6 +319,7 @@ void saveDefaults() {
 
   // Специальные настройки отдельных эффектов
   putEffectUsage(MC_CLOCK, false);
+  putClockScrollSpeed(255);  
   putEffectTextOverlayUsage(MC_CLOCK, false); 
   putEffectTextOverlayUsage(MC_MAZE, false);
   putEffectTextOverlayUsage(MC_SNAKE, false);
@@ -447,7 +448,6 @@ void saveDefaults() {
   textLines[35]  = "-Доброе утро!";
 */ 
   saveTexts();
-  
 
   putCurrentSpecMode(-1);               // Текущий спец-режим - это не спец-режим
   putCurrentManualMode(-1);             // Текущий вручную включенный режим
@@ -1693,6 +1693,195 @@ void EEPROM_string_write(uint16_t addr, String buffer, uint16_t max_len) {
     EEPROMwrite(addr+i, buffer[i]);
     i++;
   }
+}
+
+// Проверка наличия сохраненной резервной копии
+// Возврат: 0 - не найден; 1 - найден в FS микроконтроллера; 2 - найден на SD-карте; 3 - найден в FS и на SD
+uint8_t checkEepromBackup() {
+  File file;
+  String  fileName = F("eeprom.bin");
+  uint8_t existsFS = 0; 
+  uint8_t existsSD = 0; 
+  size_t  fs_size;
+  
+  file = LittleFS.open(fileName, "r");
+  if (file) {
+    fs_size = file.size();
+    if (file.size() == EEPROM_MAX) {
+      existsFS = 1;
+    }
+    file.close();
+  }
+
+  #if (USE_SD == 1)
+    file = SD.open(fileName);
+    if (file) {
+      fs_size = file.size();
+      if (file.size() == EEPROM_MAX) {
+        existsSD = 2;
+      }
+      file.close();
+    }
+  #endif
+  
+  return existsFS + existsSD;
+}
+
+// Сохранить eeprom в файл
+// storage = "FS" - внутренняя файловая система
+// storage = "SD" - на SD-карту
+// возврат: true - успех; false - ошибка
+bool saveEepromToFile(String storage) {
+
+  const uint8_t part_size = 128;
+  bool ok = true;
+  uint8_t buf[part_size];
+  String message = "", fileName = F("eeprom.bin");
+  size_t len = 0;
+  uint16_t cnt = 0, idx = 0;  
+  File file;
+
+  saveSettings();
+  if (USE_SD == 0) storage = "FS";
+
+  Serial.print(F("Сохранение файла: "));
+  Serial.println(storage + String(F(":/")) + fileName);
+
+  memset(buf, 0, part_size);
+
+  if (storage == "FS") {
+
+    // Если файл с таким именем уже есть - удалить (перезапись файла новым)
+    if (LittleFS.exists(fileName)) {
+      ok = LittleFS.remove(fileName);
+      if (!ok) {
+        message = String(F("Ошибка создания файла '")) + fileName + "'";
+        Serial.println(message);
+        return false;
+      }
+    }
+  
+    file = LittleFS.open(fileName, "w");
+  }
+
+  #if (USE_SD == 1) 
+  if (storage == "SD") {
+
+    // Если файл с таким именем уже есть - удалить (перезапись файла новым)
+    if (SD.exists(fileName)) {
+      ok = SD.remove(fileName);
+      if (!ok) {
+        message = String(F("Ошибка создания файла '")) + fileName + "'";
+        Serial.println(message);
+        return false;
+      }
+    }
+
+    file = SD.open(fileName, FILE_WRITE);
+  }
+  #endif
+
+  if (!file) {
+    message = String(F("Ошибка создания файла '")) + fileName + "'";
+    Serial.println(message);
+    return false;
+  }
+
+  while (idx < EEPROM_MAX) {
+    delay(0);
+    if (cnt >= part_size) {
+      len = file.write(buf, cnt);
+      ok = len == cnt;
+      if (!ok) break;
+      cnt = 0;
+      memset(buf, 0, part_size);
+    }
+    buf[cnt++] = EEPROMread(idx++);
+  }
+
+  // Дописываем остаток
+  if (ok && cnt > 0) {
+    len = file.write(buf, cnt);
+    ok = len = cnt;
+  }
+  
+  if (!ok) {
+    message = String(F("Ошибка записи в файл '")) + fileName + "'";
+    Serial.println(message);
+    file.close();
+    return false;
+  }          
+  
+  file.close();
+  Serial.println(F("Файл сохранен."));
+
+  eeprom_backup = checkEepromBackup();
+  
+  return true;
+}
+
+// Загрузить eeprom из файла
+// storage = "FS" - внутренняя файловая система
+// storage = "SD" - на SD-карту
+// возврат: true - успех; false - ошибка
+bool loadEepromFromFile(String storage) {
+
+  const uint8_t part_size = 128;
+  bool ok = true;
+  uint8_t buf[part_size];
+  String message = "", fileName = F("eeprom.bin");
+  size_t len = 0;
+  uint16_t idx = 0;  
+  File file;
+
+  if (USE_SD == 0) storage = "FS";
+
+  Serial.print(F("Загрузка файла: "));
+  Serial.println(storage + String(F(":/")) + fileName);
+
+  if (storage == "FS") {
+    file = LittleFS.open(fileName, "r");
+  }
+
+  #if (USE_SD == 1) 
+  if (storage == "SD") {
+    file = SD.open(fileName, FILE_READ);
+  }
+  #endif
+
+  if (!file) {
+    message = String(F("Файл '")) + fileName + String(F("' не найден."));
+    Serial.println(message);
+    return false;
+  }
+  
+  clearEEPROM();
+  
+  while (idx < EEPROM_MAX) {
+    delay(0);
+    memset(buf, 0, part_size);
+    len = file.read(buf, part_size);
+    for (uint8_t i=0; i<len; i++) {
+      EEPROMwrite(idx++, buf[i]);
+    }
+  }
+  file.close();
+
+  ok = idx == EEPROM_MAX;
+
+  if (!ok) {
+    message = String(F("Ошибка чтения файла '")) + fileName + "'";
+    Serial.println(message);
+    return false;
+  }          
+
+  // Записать в 0 текущее значение EEPROM_OK, иначе при несовпадении версии
+  // после перезагрузки будут восстановлены значения по-умолчанию
+  EEPROMwrite(0, EEPROM_OK);
+  
+  saveSettings();
+  
+  return true;
 }
 
 // ----------------------------------------------------------

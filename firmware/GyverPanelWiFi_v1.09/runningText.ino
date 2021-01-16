@@ -1294,6 +1294,12 @@ String processDateMacrosInText(const String text) {
           // Когда же пришло время отобразить строку - перед обработкой макросов ее нужно "включить"
           textLine = textLines[afterEventIdx];
 
+          // содержит ли стрка замены ограничение на показ в периоде, указанном макросом {S}?
+          bool wrong_date = (textLine.indexOf("{S") >= 0) && !forThisDate(textLine);
+          if (wrong_date) {
+            return "";    
+          }
+
           if (textLine.length() == 0) return "";              
           if (textLine[0] == '-') textLine = textLine.substring(1);
           if (textLine.indexOf("{-}") >= 0) textLine.replace("{-}", "");

@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0113")
+#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0116")
 
 // --------------------------------------------------------
 
@@ -146,7 +146,16 @@ void setup() {
   } else {
     Serial.println(F("Файловая система недоступна."));
   }
-  
+
+  // Проверить наличие резервной копии настроек EEPROM в файловой системе MK и/или на SD-карте
+  eeprom_backup = checkEepromBackup();
+  if (eeprom_backup & 0x01 > 0) {
+    Serial.println(F("Найдены сохраненные настройки: FS://eeprom.bin"));
+  }
+  if (eeprom_backup & 0x02 > 0) {
+    Serial.println(F("Найдены сохраненные настройки: SD://eeprom.bin"));
+  }
+    
   #if (USE_POWER == 1)
     pinMode(POWER_PIN, OUTPUT);
   #endif

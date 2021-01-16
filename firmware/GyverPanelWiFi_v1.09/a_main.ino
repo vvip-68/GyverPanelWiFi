@@ -571,6 +571,8 @@ void parsing() {
              NNn - эффект: -3 - выключено; -2 - выключить матрицу; -1 - ночные часы; 0 - случайный режим и далее по кругу; 1 и далее - список режимов EFFECT_LIST 
     23 - прочие настройки
        - $23 0 VAL  - лимит по потребляемому току
+       - $23 1 ST   - Сохранить EEPROM в файл    ST = 0 - внутр. файл. систему; 1 - на SD-карту
+       - $23 2 ST   - Загрузить EEPROM из файла  ST = 0 - внутр. файл. системы; 1 - на SD-карты
   */  
 
   // Если прием данных завершен и управляющая команда в intData[0] распознана
@@ -2030,10 +2032,37 @@ void parsing() {
 
       case 23:
         // $23 0 VAL - лимит по потребляемому току
+        // $23 1 ST   - Сохранить EEPROM в файл    ST = 0 - внутр. файл. систему; 1 - на SD-карту
+        // $23 2 ST   - Загрузить EEPROM из файла  ST = 0 - внутр. файл. системы; 1 - на SD-карты
         switch(intData[1]) {
           case 0:
             set_CURRENT_LIMIT(intData[2]);
             FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT == 0 ? 100000 : CURRENT_LIMIT);            
+            sendAcknowledge(cmdSource);
+            break;
+          case 1:
+            err = !saveEepromToFile(intData[2] == 1 ? "SD" : "FS");
+            if (err) {
+              str = F("$18 ER:[E~Не удалось сохранить резервную копию настроек]|EE:");
+            } else {
+              str = F("$18 ER:[I~Резервная копия настроек создана]|EE:");
+            }
+            str += String(eeprom_backup) + ";";
+            sendStringData(str, cmdSource);
+            break;
+          case 2:
+            err = !loadEepromFromFile(intData[2] == 1 ? "SD" : "FS");
+            if (err) {
+              str = F("$18 ER:[E~Не удалось загрузить резервную копию настроек];");
+            } else {
+              str = F("$18 ER:[I~Настройки из резервной копии восстановлены];");
+            }
+            sendStringData(str, cmdSource);
+            // Если настройки загружены без ошибок - перезагрузить устройство
+            if (!err) {
+              delay(500);
+              ESP.restart();
+            }
             break;
           default:
             err = true;
@@ -2041,11 +2070,6 @@ void parsing() {
             notifyUnknownCommand(incomeBuffer);
             #endif
             break;
-        }
-        if (!err) {
-          // Для команд, пришедших от MQTT отправлять только ACK;
-          // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
-          sendAcknowledge(cmdSource);
         }
         break;
 
@@ -2221,7 +2245,7 @@ void sendPageParams(int page, eSources src) {
   
   switch (page) { 
     case 1:  // Настройки
-      str = getStateString("W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ");
+      str = getStateString("W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
       break;
     case 2:  // Эффекты
       str = getStateString("EF|EN|UE|UT|UC|SE|SS|BE|SQ");
@@ -2371,8 +2395,10 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // DI:число    интервал показа даты при отображении часов (в секундах)
   // DM:Х        демо режим, где Х = 0 - ручное управление; 1 - авторежим
   // DW:X        показывать температуру вместе с малыми часами 0-нет, 1-да
+  // EE:X        Наличие сохраненных настроек EEPROM на SD-карте или в файловой системе МК: 0 - нет 1 - есть в FS; 2 - есть на SD; 3 - есть в FS и на SD
   // EF:число    текущий эффект - id
-  // EN:текст    текущий эффект - название
+  // EN:[текст]  текущий эффект - название
+  // ER:[текст]  отправка клиенту сообщения инфо/ошибки последней операции (WiFiPanel - сохр. резервной копии настроекж WiFiPlayer - сообщение операции с изображением)
   // FS:X        доступность внутренней файловой системы микроконтроллера для хранения файлов: 0 - нет, 1 - да
   // FL0:[список] список файлов картинок нарисованных пользователем с внутренней памяти, разделенный запятыми, ограничители [] обязательны
   // FL1:[список] список файлов картинок нарисованных пользователем с SD-карты, разделенный запятыми, ограничители [] обязательны
@@ -3283,6 +3309,15 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return String(AM4_effect_id);
     }
     return str + "AM4A:" + String(AM4_effect_id);
+  }
+
+  // Наличие резервной копии EEPROM
+  if (key == "EE") {
+    if (value) {
+      value->set(eeprom_backup);
+      return String(eeprom_backup);
+    }
+    return str + "EE:" + String(eeprom_backup); 
   }
 
   // Доступность внутренней файловой системы
