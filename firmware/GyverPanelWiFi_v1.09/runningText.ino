@@ -368,6 +368,13 @@ boolean prepareNextText(String text) {
 
   if (text.length() == 0 && currentTextLineIdx == 0 && currentText[0] == '#') currentText = "";
 
+  // После обработки макросов в строке может оказаться, что строка не должна отображаться (например, по времени показа макроса {S}),
+  // но в строке присутствует также макрос {#N}, который был разобран и результат сохранен в nextTextLineIdx.
+  // Если основную строку показывать не нужно (возвращена пустая строка), то и "прицеп" нужно "обнулить".
+  if (currentText.length() == 0) {
+    nextTextLineIdx = -1;
+  }
+  
   return currentText.length() > 0;
 }
 
