@@ -182,6 +182,8 @@ bool getWeather() {
     Serial.println(F("Yandex"));
   else  
     Serial.println(F("OpenWeatherMap"));
+  Serial.print(F("Город: "));
+  Serial.println(town);
   Serial.print(F("Сейчас: "));
   Serial.print(weather + ", "); 
   if (temperature > 0) Serial.print("+"); 
