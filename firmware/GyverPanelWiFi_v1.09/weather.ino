@@ -82,7 +82,7 @@ bool getWeather() {
   w_client.stop();
 
   String regId = useWeather == 1 ? String(regionID) : String(regionID2);
-  String town;
+  String town, sunrise, sunset;
   bool   weather_ok = true;
   
   if (useWeather == 1) {
@@ -121,7 +121,19 @@ bool getWeather() {
     isNight      = jsn["clocks"][regId]["isNight"].as<boolean>();
     icon         = jsn["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
     town         = jsn["clocks"][regId]["name"].as<String>();             // Город
+    sunrise      = jsn["clocks"][regId]["sunrise"].as<String>();          // Время рассвета
+    sunset       = jsn["clocks"][regId]["sunset"].as<String>();           // Время заката
     weather_ok   = skyColor.length() == 7;                                // #57bbfe
+
+    if (sunrise.length() > 0) {
+      dawn_hour   = sunrise.substring(0,2).toInt();
+      dawn_minute = sunrise.substring(3,5).toInt();
+    }
+
+    if (sunset.length() > 0) {
+      dusk_hour   = sunset.substring(0,2).toInt();
+      dusk_minute = sunset.substring(3,5).toInt();
+    }
 
     // Для срабатывания триггера на изменение значений
     set_temperature(temperature);
@@ -149,7 +161,20 @@ bool getWeather() {
     weather_ok   = icon.length() == 3;                                    // Иконка вида "XXn" - ночная "XXd" - дневная
     weather      = jsn["weather"][0]["description"].as<String>();         // Строка погодных условий (английский)
     weather_code = jsn["weather"][0]["id"].as<int16_t>();                 // Уточненный код погодных условий
+    sunrise      = jsn["sys"]["sunrise"].as<String>();                    // Время рассвета
+    sunset       = jsn["sys"]["sunset"].as<String>();                     // Время заката
 
+    time_t dawn_time = (time_t)(sunrise.toInt());
+    time_t dusk_time = (time_t)(sunset.toInt());
+
+    dawn_hour   = hour(dawn_time) + timeZoneOffset;
+    dawn_minute = minute(dawn_time);
+    dusk_hour   = hour(dusk_time) + timeZoneOffset;
+    dusk_minute = minute(dusk_time);
+
+    sunrise = padNum(dawn_hour,2) + ":" + padNum(dawn_minute,2);
+    sunset = padNum(dusk_hour,2) + ":" + padNum(dusk_minute,2);
+    
     // Для срабатывания триггера на изменение значений
     set_temperature(temperature);
     set_weather(weather);
@@ -194,6 +219,10 @@ bool getWeather() {
   else
     Serial.println(String(F("Код погоды: ")) + String(weather_code));
   Serial.println(dayTime);
+  Serial.print(F("Рассвет: "));
+  Serial.println(sunrise);
+  Serial.print(F("Закат: "));
+  Serial.println(sunset);
   
   #if (USE_MQTT == 1)
   doc["result"] = F("OK");
@@ -207,6 +236,8 @@ bool getWeather() {
     doc["sky"]    = skyColor;      // для Yandex
   else
     doc["code"]   = weather_code;  // для OpenWeatherMap
+  doc["sunrise"]  = sinrise;
+  doc["sunset"]   = sunset;
   serializeJson(doc, out);      
   SendMQTT(out, TOPIC_WTR);
   #endif

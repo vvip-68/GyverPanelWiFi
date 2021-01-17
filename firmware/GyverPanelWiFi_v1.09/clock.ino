@@ -1181,25 +1181,74 @@ void checkAutoMode4Time() {
   }
 }
 
+// Проверка необходимости включения режима "Рассвет" по установленному времени
+// -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
+void checkAutoMode5Time() {
+  if (dawn_effect_id <= -3 || dawn_effect_id >= MAX_EFFECT || !init_weather) return;
+  
+  hrs = hour();
+  mins = minute();
 
-// Выполнение включения режима 1,2,3,4 (amode) по установленному времени
+  // Режим по времени включен (enable) и настало время активации режима - активировать
+  if (!dawn_running && dawn_hour == hrs && dawn_minute == mins) {
+    dawn_running = true;
+    SetAutoMode(5);
+  }
+
+  // Режим активирован и время срабатывания режима прошло - сбросить флаг для подготовки к следующему циклу
+  if (dawn_running && (dawn_hour != hrs || dawn_minute != mins)) {
+    dawn_running = false;
+  }
+}
+
+// Проверка необходимости включения режима "Закат" по установленному времени
+// -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
+void checkAutoMode6Time() {
+  if (dusk_effect_id <= -3 || dusk_effect_id >= MAX_EFFECT || !init_weather) return;
+  
+  hrs = hour();
+  mins = minute();
+
+  // Режим по времени включен (enable) и настало время активации режима - активировать
+  if (!dusk_running && dusk_hour == hrs && dusk_minute == mins) {
+    dusk_running = true;
+    SetAutoMode(6);
+  }
+
+  // Режим активирован и время срабатывания режима прошло - сбросить флаг для подготовки к следующему циклу
+  if (dusk_running && (dusk_hour != hrs || dusk_minute != mins)) {
+    dusk_running = false;
+  }
+}
+
+// Выполнение включения режима 1,2,3,4,5,6 (amode) по установленному времени
 // -3 - не используется; -2 - выключить матрицу; -1 - ночные часы, 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
 void SetAutoMode(byte amode) {
 
   byte   AM_hour, AM_minute;
   int8_t AM_effect_id;
   switch(amode) {
-    case 1:  AM_hour = AM1_hour; AM_minute = AM1_minute; AM_effect_id = AM1_effect_id; break;
-    case 2:  AM_hour = AM2_hour; AM_minute = AM2_minute; AM_effect_id = AM2_effect_id; break;
-    case 3:  AM_hour = AM3_hour; AM_minute = AM3_minute; AM_effect_id = AM3_effect_id; break;
-    case 4:  AM_hour = AM4_hour; AM_minute = AM4_minute; AM_effect_id = AM4_effect_id; break;
+    case 1:  AM_hour = AM1_hour;  AM_minute = AM1_minute;  AM_effect_id = AM1_effect_id;  break;
+    case 2:  AM_hour = AM2_hour;  AM_minute = AM2_minute;  AM_effect_id = AM2_effect_id;  break;
+    case 3:  AM_hour = AM3_hour;  AM_minute = AM3_minute;  AM_effect_id = AM3_effect_id;  break;
+    case 4:  AM_hour = AM4_hour;  AM_minute = AM4_minute;  AM_effect_id = AM4_effect_id;  break;
+    case 5:  AM_hour = dawn_hour; AM_minute = dawn_minute; AM_effect_id = dawn_effect_id; break;
+    case 6:  AM_hour = dusk_hour; AM_minute = dusk_minute; AM_effect_id = dusk_effect_id; break;
     default: return;
   }
   
   bool   no_action = false;
   
   String text = F("Авторежим ");
-  text += String(amode) + F(" [") + padNum(AM_hour,2) + ":" + padNum(AM_minute,2) + F("] - ");
+  String mode_name = "";
+  if (amode == 5)
+    mode_name = F("'Рассвет'");
+  else if (amode == 6)    
+    mode_name = F("'Закат'");
+  else  
+    mode_name = String(amode);
+    
+  text += mode_name + F(" [") + padNum(AM_hour,2) + ":" + padNum(AM_minute,2) + F("] - ");
 
   int8_t ef = AM_effect_id;
 
@@ -1257,9 +1306,10 @@ void SetAutoMode(byte amode) {
     #if (USE_MQTT == 1)
     DynamicJsonDocument doc(256);
     String out;
-    doc["act"]   = F("AUTO");
-    doc["mode"]  = amode;
-    doc["text"]  = text;
+    doc["act"]       = F("AUTO");
+    doc["mode"]      = amode;
+    doc["mode_name"] = mode_name;
+    doc["text"]      = text;
     serializeJson(doc, out);      
     SendMQTT(out, TOPIC_AMD);
     #endif

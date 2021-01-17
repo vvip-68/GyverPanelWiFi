@@ -36,7 +36,7 @@ void loadSettings() {
   //   33 - Режим 1 по времени - часы                                                                        // getAM1hour()                  // putAM1hour(AM1_hour)
   //   34 - Режим 1 по времени - минуты                                                                      // getAM1minute()                // putAM1minute(AM1_minute) 
   //   35 - Режим 1 по времени - -3 - выкл. (не исп.); -2 - выкл. (черный экран); -1 - ночн.часы, 0 - случ., // getAM1effect()                // putAM1effect(AM1_effect_id)
-  //   36 - Режим 2 по времени - часы >>>                                   ^^^ 1,2..N - эффект EFFECT_LIST  // getAM2hour()                  // putAM2hour(AM2_hour) 
+  //   36 - Режим 2 по времени - часы                                      ^^^ 1,2..N - эффект EFFECT_LIST  // getAM2hour()                  // putAM2hour(AM2_hour) 
   //   37 - Режим 2 по времени - минуты                                                                      // getAM2minute()                // putAM2minute(AM2_minute)
   //   38 - Режим 2 по времени - = " = как для режима 1                                                      // getAM2effect()                // putAM2effect(AM2_effect_id)
   //   39 - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 4 - M; 5 - Y; 6 - W;                             // getNightClockColor()          // putNightClockColor(nightClockColor)          
@@ -73,7 +73,7 @@ void loadSettings() {
   //  162 - Режим 3 по времени - минуты                                                                      // getAM3minute()                 // putAM3minute(AM3_minute) 
   //  163 - Режим 3 по времени - так же как для режима 1                                                     // getAM3effect()                 // putAM3effect(AM3_effect_id)
   //  164 - Режим 4 по времени - часы                                                                        // getAM4hour()                   // putAM4hour(AM4_hour)
-  //  165 - Режим 4 по тайвременимеру - минуты                                                               // getAM4minute()                 // putAM4minute(AM4_minute)
+  //  165 - Режим 4 по времени - минуты                                                                      // getAM4minute()                 // putAM4minute(AM4_minute)
   //  166 - Режим 4 по времени - так же как для режима 1                                                     // getAM4effect()                 // putAM4effect(AM4_effect_id)
   //  167,168 - интервал отображения текста бегущей строки                                                   // getTextInterval()              // putTextInterval(TEXT_INTERVAL)
   //  169 - Режим цвета оверлея часов X: 0,1,2,3                                                             // getClockColor()                // putClockColor(COLOR_MODE)
@@ -93,9 +93,9 @@ void loadSettings() {
   // 239 - использовать MQTT канал управления: 0 - нет 1 - да                                                // getUseMqtt()                   // putUseMqtt(useMQTT)  
   // 240 - яркость ночных часов                                                                              // getNightClockBrightness()      // putNightClockBrightness(nightClockBrightness)
   // 241,242 - задержка отпракии запросов MQTT серверу                                                       // getMqttSendDelay()             // putMqttSendDelay(mqtt_send_delay)
-  //**243 -  не используется
+  //  243 - Режим по времени "Рассвет" - так же как для режима 1                                             // getAM5effect()                 // putAM5effect(dawn_effect_id)
   // 244,245,246,247 - Код региона OpenWeatherMap для получения погоды (4 байта - uint32_t)                  // getWeatherRegion2()            // putWeatherRegion2(regionID2)
-  //**248 - не используется
+  //  248 - Режим по времени "Закат" - так же как для режима 1                                               // getAM6effect()                 // putAM6effect(dawn_effect_id)
   // 249 - отправка параметров состояния в MQTT 0 - индивидуально, 1 - пакетами                              // getSendStateInPacket()         // putSendStateInPacket(mqtt_state_packet)  
   // 250-279 - префикс топика сообщения (30 симв)                                                            // getMqttPrefix()                // putMqttPrefix(mqtt_prefix)
   // 280,281 - интервал отправки значения uptime на MQTT-сервер                                              // getUpTimeSendInterval()        // putUpTimeSendInterval(upTimeSendInterval)
@@ -214,18 +214,20 @@ void loadSettings() {
     upTimeSendInterval = getUpTimeSendInterval();
     #endif
 
-    AM1_hour      = getAM1hour();
-    AM1_minute    = getAM1minute();
-    AM1_effect_id = getAM1effect();
-    AM2_hour      = getAM2hour();
-    AM2_minute    = getAM2minute();
-    AM2_effect_id = getAM2effect();
-    AM3_hour      = getAM3hour();
-    AM3_minute    = getAM3minute();
-    AM3_effect_id = getAM3effect();
-    AM4_hour      = getAM4hour();
-    AM4_minute    = getAM4minute();
-    AM4_effect_id = getAM4effect();
+    AM1_hour       = getAM1hour();
+    AM1_minute     = getAM1minute();
+    AM1_effect_id  = getAM1effect();
+    AM2_hour       = getAM2hour();
+    AM2_minute     = getAM2minute();
+    AM2_effect_id  = getAM2effect();
+    AM3_hour       = getAM3hour();
+    AM3_minute     = getAM3minute();
+    AM3_effect_id  = getAM3effect();
+    AM4_hour       = getAM4hour();
+    AM4_minute     = getAM4minute();
+    AM4_effect_id  = getAM4effect();
+    dawn_effect_id = getAM5effect();
+    dusk_effect_id = getAM6effect();
 
   #if (USE_WEATHER == 1)     
     useWeather = getUseWeather();
@@ -398,6 +400,8 @@ void saveDefaults() {
   putAM4hour(AM4_hour);                 // Режим 4 по времени - часы
   putAM4minute(AM4_minute);             // Режим 4 по времени - минуты
   putAM4effect(AM4_effect_id);          // Режим 4 по времени - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
+  putAM5effect(dawn_effect_id);         // Режим по времени "Рассвет" - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
+  putAM6effect(dusk_effect_id);         // Режим по времени "Закат"   - действие: -3 - выключено (не используется); -2 - выключить матрицу (черный экран); -1 - огонь, 0 - случайный, 1 и далее - эффект EFFECT_LIST
 
 #if (USE_WEATHER == 1)       
   putUseWeather(useWeather);
@@ -1084,6 +1088,30 @@ int8_t getAM4effect() {
 void putAM4effect(int8_t effect) {
   if (effect != getAM4effect()) {
     EEPROMwrite(166, (byte)effect);
+  }
+}
+
+int8_t getAM5effect() {
+  int8_t value = (int8_t)EEPROMread(243);
+  if (value < -3) value = -3;
+  return value;
+}
+
+void putAM5effect(int8_t effect) {
+  if (effect != getAM5effect()) {
+    EEPROMwrite(243, (byte)effect);
+  }
+}
+
+int8_t getAM6effect() {
+  int8_t value = (int8_t)EEPROMread(248);
+  if (value < -3) value = -3;
+  return value;
+}
+
+void putAM6effect(int8_t effect) {
+  if (effect != getAM6effect()) {
+    EEPROMwrite(248, (byte)effect);
   }
 }
 

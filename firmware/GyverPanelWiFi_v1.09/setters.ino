@@ -800,6 +800,22 @@ void set_AM4_effect_id(int8_t value) {
   addKeyToChanged("AM4A");
 }
 
+// AM5A dawn_effect_id
+void set_dawn_effect_id(int8_t value) {
+  if (dawn_effect_id == value) return;
+  putAM5effect(value);
+  dawn_effect_id = getAM5effect();
+  addKeyToChanged("AM5A");
+}
+
+// AM6A dusk_effect_id
+void set_dusk_effect_id(int8_t value) {
+  if (dusk_effect_id == value) return;
+  putAM6effect(value);
+  dusk_effect_id = getAM6effect();
+  addKeyToChanged("AM6A");
+}
+
 #if (USE_SD == 1)
 // SD isSdCardReady
 void set_isSdCardReady(bool value) {
