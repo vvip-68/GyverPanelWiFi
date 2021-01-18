@@ -301,7 +301,7 @@ void doEffectWithOverlay(byte aMode) {
             drawTemperature();
           } else if (showDateState) {   
             // Если показ календаря в часах включен - показать кадлендарь, иначе - вместо календаря снова показать темпераьуру, если она включена         
-            if (showDateInClock)
+            if (showDateInClock || !init_weather)
               drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CLOCK_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
             else if (showWeatherInClock) {
               drawTemperature();  
