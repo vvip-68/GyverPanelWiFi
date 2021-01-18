@@ -155,8 +155,6 @@
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_c.jpg)
 ### С корректировкой питания
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_d.jpg)
-### С управлением питанием матрицы через реле
-![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/power-relay.jpg)
 
 Рабочее напряжение микроконтроллера (логические уровни) - 3.3 вольта.  
 Рабочее напряжение матрицы - 4.0 - 5.5 вольт.  
