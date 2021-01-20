@@ -74,13 +74,13 @@
 
 #define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h     (пароли и ключи доступа как приватные данные в отдельном файле)
                               // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках: (пароли и ключи доступа определены в тексте скетча)
-                              //   299 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   303 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   307 - DEFAULT_MQTT_PASS   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   311 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   315 - DEFAULT_MQTT_PREFIX // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   319 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   426 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 для погоды с OpenWeatherMap
+                              //   324 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   328 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   332 - DEFAULT_MQTT_PASS   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   336 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   340 - DEFAULT_MQTT_PREFIX // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   344 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
+                              //   459 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 для погоды с OpenWeatherMap
                               // Файл a_def_pass.h в комплект не входит, нужно создать, скопировать туда указанные строки
 
 #define LED_PIN  2            // D2 пин ленты

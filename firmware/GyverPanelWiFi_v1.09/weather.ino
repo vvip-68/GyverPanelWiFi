@@ -218,11 +218,12 @@ bool getWeather() {
     Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   else
     Serial.println(String(F("Код погоды: ")) + String(weather_code));
-  Serial.println(dayTime);
+  Serial.println(F("Сейчас: ") + dayTime);
   Serial.print(F("Рассвет: "));
   Serial.println(sunrise);
   Serial.print(F("Закат: "));
   Serial.println(sunset);
+  Serial.println();
   
   #if (USE_MQTT == 1)
   doc["result"] = F("OK");
