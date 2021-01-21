@@ -218,7 +218,8 @@ bool getWeather() {
     Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
   else
     Serial.println(String(F("Код погоды: ")) + String(weather_code));
-  Serial.println(F("Сейчас: ") + dayTime);
+  Serial.print(F("Сейчас: "));
+  Serial.println(dayTime);
   Serial.print(F("Рассвет: "));
   Serial.println(sunrise);
   Serial.print(F("Закат: "));
@@ -237,7 +238,7 @@ bool getWeather() {
     doc["sky"]    = skyColor;      // для Yandex
   else
     doc["code"]   = weather_code;  // для OpenWeatherMap
-  doc["sunrise"]  = sinrise;
+  doc["sunrise"]  = sunrise;
   doc["sunset"]   = sunset;
   serializeJson(doc, out);      
   SendMQTT(out, TOPIC_WTR);
