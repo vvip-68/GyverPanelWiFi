@@ -694,7 +694,7 @@ String processMacrosInText(const String text) {
     //  "{An+} - при начале строки апроирывать звук n из папки "SD://03"? если есть суффикс '+' - воспроизводить в цикле пока показывается строка
     // -------------------------------------------------------------
     #if (USE_MP3 == 1)
-     
+
     runTextSound = -1;
     runTextSoundRepeat = false;
     
@@ -725,7 +725,7 @@ String processMacrosInText(const String text) {
       runTextSound = idx;
 
       // Есть еще вхождения макроса?
-      idx = textLine.indexOf("{E");  
+      idx = textLine.indexOf("{A");  
     }
     #endif
 
