@@ -4,14 +4,14 @@
 IMPORTANT NOTE: For AVR based systems, avr-gcc 4.8.x is supported and tested.  This means Arduino 1.6.5 and later.
 
 
-FastLED 3.3
+FastLED 3.4
 ===========
 
 This is a library for easily & efficiently controlling a wide variety of LED chipsets, like the ones
 sold by adafruit (Neopixel, DotStar, LPD8806), Sparkfun (WS2801), and aliexpress.  In addition to writing to the
 leds, this library also includes a number of functions for high-performing 8bit math for manipulating
 your RGB values, as well as low level classes for abstracting out access to pins and SPI hardware, while
-still keeping things as fast as possible.  Tested with Arduino up to 1.6.5 from arduino.cc.
+still keeping things as fast as possible. Tested with Arduino up to 1.6.5 from arduino.cc.
 
 Quick note for people installing from GitHub repo zips, rename the folder FastLED before copying it to your Arduino/libraries folder.  Github likes putting -branchname into the name of the folder, which unfortunately, makes Arduino cranky!
 
@@ -48,7 +48,7 @@ Here's a list of all the LED chipsets are supported.  More details on the led ch
 * TM1803 - 3 wire chipset, sold by radio shack
 * UCS1903 - another 3 wire led chipset, cheap
 * GW6205 - another 3 wire led chipset
-* LPD8806 - SPI based chpiset, very high speed
+* LPD8806 - SPI based chipset, very high speed
 * WS2801 - SPI based chipset, cheap and widely available
 * SM16716 - SPI based chipset
 * APA102 - SPI based chipset
