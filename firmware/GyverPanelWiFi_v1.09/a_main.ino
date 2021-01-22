@@ -2268,7 +2268,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK|UI");
       break;
     case 7:  // Настройки режимов автовключения по времени
-      str = getStateString("WZ|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A");
+      str = getStateString("WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A");
       break;
     case 10:  // Загрузка картинок
       str = getStateString("W|H|BR|CL|SD");
