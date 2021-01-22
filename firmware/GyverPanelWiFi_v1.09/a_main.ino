@@ -152,8 +152,10 @@ void process() {
     checkAutoMode2Time();
     checkAutoMode3Time();
     checkAutoMode4Time();
+    #if (USE_WEATHER == 1)      
     checkAutoMode5Time();
     checkAutoMode6Time();
+    #endif  
 
     butt.tick();  // обязательная функция отработки. Должна постоянно опрашиваться
     byte clicks = 0;

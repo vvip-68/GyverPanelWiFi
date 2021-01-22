@@ -1181,14 +1181,11 @@ void checkAutoMode4Time() {
   }
 }
 
+#if (USE_WEATHER == 1)  
 // Проверка необходимости включения режима "Рассвет" по установленному времени
 // -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
 void checkAutoMode5Time() {
-  if (dawn_effect_id <= -3 || dawn_effect_id >= MAX_EFFECT || !init_weather 
-#if (USE_WEATHER == 1)  
-  || useWeather == 0
-#endif  
-  ) return;
+  if (dawn_effect_id <= -3 || dawn_effect_id >= MAX_EFFECT || !init_weather || useWeather == 0) return;
   
   hrs = hour();
   mins = minute();
@@ -1208,11 +1205,7 @@ void checkAutoMode5Time() {
 // Проверка необходимости включения режима "Закат" по установленному времени
 // -3 - не используется; -2 - выключить матрицу; -1 - ночные часы; 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
 void checkAutoMode6Time() {
-  if (dusk_effect_id <= -3 || dusk_effect_id >= MAX_EFFECT || !init_weather 
-#if (USE_WEATHER == 1)  
-  || useWeather == 0
-#endif  
-  ) return;
+  if (dusk_effect_id <= -3 || dusk_effect_id >= MAX_EFFECT || !init_weather || useWeather == 0) return;
   
   hrs = hour();
   mins = minute();
@@ -1228,6 +1221,7 @@ void checkAutoMode6Time() {
     dusk_running = false;
   }
 }
+#endif  
 
 // Выполнение включения режима 1,2,3,4,5,6 (amode) по установленному времени
 // -3 - не используется; -2 - выключить матрицу; -1 - ночные часы, 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
