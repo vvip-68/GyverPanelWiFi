@@ -149,10 +149,10 @@ void setup() {
 
   // Проверить наличие резервной копии настроек EEPROM в файловой системе MK и/или на SD-карте
   eeprom_backup = checkEepromBackup();
-  if (eeprom_backup & 0x01 > 0) {
+  if ((eeprom_backup & 0x01) > 0) {
     Serial.println(F("Найдены сохраненные настройки: FS://eeprom.bin"));
   }
-  if (eeprom_backup & 0x02 > 0) {
+  if ((eeprom_backup & 0x02) > 0) {
     Serial.println(F("Найдены сохраненные настройки: SD://eeprom.bin"));
   }
     
