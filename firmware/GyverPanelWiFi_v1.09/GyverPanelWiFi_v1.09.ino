@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0118")
+#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0211")
 
 // --------------------------------------------------------
 
@@ -309,9 +309,7 @@ void loop() {
     #if (USE_MQTT == 1)
       if (!stopMQTT) {
         checkMqttConnection();
-        if (mqtt.connected()) {
-          mqtt.loop();
-        }
+        mqtt.loop();
       }
     #endif
   }

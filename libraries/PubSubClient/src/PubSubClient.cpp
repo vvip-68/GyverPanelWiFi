@@ -268,7 +268,7 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
             if (len == 4) {
                 if (buffer[3] == 0) {
                     lastInActivity = millis();
-                    pingOutstanding = false;
+                    pingOutstanding = 0;
                     _state = MQTT_CONNECTED;
                     return true;
                 } else {
@@ -371,7 +371,7 @@ boolean PubSubClient::loop() {
     if (connected()) {
         unsigned long t = millis();
         if ((t - lastInActivity > this->keepAlive*1000UL) || (t - lastOutActivity > this->keepAlive*1000UL)) {
-            if (pingOutstanding) {
+            if (pingOutstanding > 2) {
                 this->_state = MQTT_CONNECTION_TIMEOUT;
                 _client->stop();
                 return false;
@@ -381,7 +381,7 @@ boolean PubSubClient::loop() {
                 _client->write(this->buffer,2);
                 lastOutActivity = t;
                 lastInActivity = t;
-                pingOutstanding = true;
+                pingOutstanding++;
             }
         }
         if (_client->available()) {
@@ -421,7 +421,7 @@ boolean PubSubClient::loop() {
                     this->buffer[1] = 0;
                     _client->write(this->buffer,2);
                 } else if (type == MQTTPINGRESP) {
-                    pingOutstanding = false;
+                    pingOutstanding = 0;
                 }
             } else if (!connected()) {
                 // readPacket has closed the connection

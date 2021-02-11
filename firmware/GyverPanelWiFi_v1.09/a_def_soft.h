@@ -321,23 +321,23 @@ PubSubClient mqtt(m_client);                    // Объект соединен
 // чтобы изменения вступили в силу нужно также изменить значение константы EEPROM_OK в строке 8 этого файла
 
 #ifndef DEFAULT_MQTT_SERVER
-#define DEFAULT_MQTT_SERVER "srv1.clusterfly.ru" // MQTT сервер
+#define DEFAULT_MQTT_SERVER "mqtt.iotwithus.com" // MQTT сервер
 #endif
 
 #ifndef DEFAULT_MQTT_USER
-#define DEFAULT_MQTT_USER   "user_af7cd12a"      // Имя mqtt-пользователя    (укажите имя пользователя для вашего соединения)
+#define DEFAULT_MQTT_USER   ""                   // Имя mqtt-пользователя    (укажите имя пользователя для вашего соединения)
 #endif
 
 #ifndef DEFAULT_MQTT_PASS
-#define DEFAULT_MQTT_PASS   "pass_eb250bf5"      // Пароль mqtt-пользователя (укажите пароль вашего соединения)
+#define DEFAULT_MQTT_PASS   ""                   // Пароль mqtt-пользователя (укажите пароль вашего соединения)
 #endif
 
 #ifndef DEFAULT_MQTT_PORT
-#define DEFAULT_MQTT_PORT   9124                 // Порт mqtt-соединения
+#define DEFAULT_MQTT_PORT   1883                 // Порт mqtt-соединения
 #endif
 
 #ifndef DEFAULT_MQTT_PREFIX
-#define DEFAULT_MQTT_PREFIX "user_af7cd12a"      // Префикс топика сообщения или пустая строка, если префикс не требуется
+#define DEFAULT_MQTT_PREFIX "af7cd12a"           // Префикс топика сообщения или пустая строка, если префикс не требуется
 #endif
 
 #ifndef MQTT_SEND_DELAY                          // Отправлять сообщение на MQTT-сервер не чаще 1 сообщения в секунду (ограничение бесплатного MQTT сервера);
@@ -739,7 +739,7 @@ int16_t    packetSize = 0;
 
 // ************************* УПРАВЛЕНИЕ МАТРИЦЕЙ *******************************
 String     host_name = "";                       // Имя для регистрации в сети, а так же как имя клиента та сервере MQTT
-uint16_t   CURRENT_LIMIT = 15000;                // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
+uint16_t   CURRENT_LIMIT = 10000;                // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
 
 #define    NUM_LEDS              WIDTH * HEIGHT
 #define    maxDim                max(WIDTH, HEIGHT)

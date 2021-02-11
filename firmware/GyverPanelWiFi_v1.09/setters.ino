@@ -848,6 +848,7 @@ void set_mqtt_port(int16_t value) {
 void set_MqttServer(String value) {
   if (getMqttServer() == value) return;
   putMqttServer(value);
+  memset(mqtt_server, '\0', 25);
   getMqttServer().toCharArray(mqtt_server, 24);
   addKeyToChanged("QS");
 }
@@ -856,6 +857,7 @@ void set_MqttServer(String value) {
 void set_MqttUser(String value) {
   if (getMqttUser() == value) return;
   putMqttUser(value);
+  memset(mqtt_user, '\0', 15);
   getMqttUser().toCharArray(mqtt_user, 14);
   addKeyToChanged("QU");
 }
@@ -864,6 +866,7 @@ void set_MqttUser(String value) {
 void set_MqttPass(String value) {
   if (getMqttPass() == value) return;
   putMqttPass(value);
+  memset(mqtt_pass, '\0', 15);
   getMqttPass().toCharArray(mqtt_pass, 14);
   addKeyToChanged("QW");
 }
@@ -880,6 +883,7 @@ void set_mqtt_send_delay(int16_t value) {
 void set_MqttPrefix(String value) {
   if (getMqttPrefix() == value) return;
   putMqttPrefix(value);
+  memset(mqtt_prefix, '\0', 31);
   getMqttPrefix().toCharArray(mqtt_prefix, 30);
   addKeyToChanged("QR");
 }
