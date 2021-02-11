@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0211")
+#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0212")
 
 // --------------------------------------------------------
 
@@ -84,8 +84,20 @@ void setup() {
   Serial.begin(115200);
   delay(300);
 
-  host_name = String(HOST_NAME) + "-" + String(DEVICE_ID);
+  // пинаем генератор случайных чисел
+  #if defined(ESP8266) && defined(TRUE_RANDOM)
+  unsigned long seed = (int)RANDOM_REG32;
+  #else
+  unsigned long seed = (int)(analogRead(0) ^ micros());
+  #endif
+  randomSeed(seed);
+  random16_set_seed(seed);
 
+  host_name = String(HOST_NAME) + "-" + String(DEVICE_ID);
+  #if (USE_MQTT == 1)
+  mqtt_client_name = host_name + "-" + padNum(random16(),5);
+  #endif
+  
   Serial.println();
   Serial.println(FIRMWARE_VER);
   Serial.println("Host: '" + host_name + "'" + String(F(" >> ")) + String(WIDTH) + "x" + String(HEIGHT));
@@ -191,15 +203,6 @@ void setup() {
   String msg = F("START");
   SendMQTT(msg, TOPIC_STA);
   #endif
-
-  // пинаем генератор случайных чисел
-  #if defined(ESP8266) && defined(TRUE_RANDOM)
-  unsigned long seed = (int)RANDOM_REG32;
-  #else
-  unsigned long seed = (int)(analogRead(0) ^ micros());
-  #endif
-  randomSeed(seed);
-  random16_set_seed(seed);
 
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);
