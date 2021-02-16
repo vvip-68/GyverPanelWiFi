@@ -11,8 +11,8 @@ void process() {
   /*
   uint16_t duration = millis() - last_ms;
   if (duration > 0) {
-    Serial.print(F("duration="));
-    Serial.println(duration);
+    DEBUG(F("duration="));
+    DEBUGLN(duration);
   }
   */
 
@@ -35,7 +35,7 @@ void process() {
       setRandomMode2(); 
     } else {
       #if (USE_MQTT == 0)
-      Serial.println(String(F("Режим: ")) + effect_name);
+      DEBUGLN(String(F("Режим: ")) + effect_name);
       #endif
       tmpSaveMode = thisMode;    
     }               
@@ -57,11 +57,11 @@ void process() {
       // Если настройки программы предполагают синхронизацию с NTP сервером и время пришло - выполнить синхронизацию
       if (useNtp) {
         if ((ntp_t > 0) && getNtpInProgress && (millis() - ntp_t > 5000)) {
-          Serial.println(F("Таймаут NTP запроса!"));
+          DEBUGLN(F("Таймаут NTP запроса!"));
           ntp_cnt++;
           getNtpInProgress = false;
           if (init_time && ntp_cnt >= 10) {
-            Serial.println(F("Не удалось установить соединение с NTP сервером."));  
+            DEBUGLN(F("Не удалось установить соединение с NTP сервером."));  
             refresh_time = false;
           }
           
@@ -89,11 +89,11 @@ void process() {
         if (useWeather > 0) {   
           // Если настройки программы предполагают получение сведений о текущей погоде - выполнить обновление данных с погодного сервера
           if ((weather_t > 0) && getWeatherInProgress && (millis() - weather_t > 5000)) {
-            Serial.println(F("Таймаут запроса погоды!"));
+            DEBUGLN(F("Таймаут запроса погоды!"));
             getWeatherInProgress = false;
             weather_cnt++;
             if (init_weather && weather_cnt >= 10) {
-              Serial.println(F("Не удалось установить соединение с сервером погоды."));  
+              DEBUGLN(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
               
               #if (USE_MQTT == 1)
@@ -189,9 +189,9 @@ void process() {
     }
 
     if (clicks > 0) {
-      Serial.print(F("Кнопка нажата "));  
-      Serial.print(clicks);
-      Serial.println(F(" раз"));  
+      DEBUG(F("Кнопка нажата "));  
+      DEBUG(clicks);
+      DEBUGLN(F(" раз"));  
     }
 
     // Любое нажатие кнопки останавливает будильник
@@ -209,7 +209,7 @@ void process() {
         else {
           saveMode = getCurrentManualMode();
           if (saveMode == 0 && globalColor == 0) set_globalColor(0xFFFFFF);
-          Serial.println(String(F("Вкл: ")) + String(saveMode));
+          DEBUGLN(String(F("Вкл: ")) + String(saveMode));
           setManualModeTo(getAutoplay());
           setEffect(saveMode);
         }
@@ -223,7 +223,7 @@ void process() {
         setSpecialMode(0);
         putCurrentManualMode(saveMode);
         putAutoplay(mm);
-        Serial.println(String(F("Выкл: ")) + String(saveMode));
+        DEBUGLN(String(F("Выкл: ")) + String(saveMode));
       }
     }
     
@@ -324,11 +324,11 @@ void process() {
         alarmSoundsCount = 0;
         dawnSoundsCount = 0;
         noteSoundsCount = 0;
-        Serial.println(F("MP3 плеер недоступен."));
+        DEBUGLN(F("MP3 плеер недоступен."));
       } else if (msg_type == DFPlayerCardOnline || msg_type == DFPlayerCardInserted) {
         // Плеер распознал карту - переинициализировать стадию 2
         InitializeDfPlayer2();
-        if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
+        if (!isDfPlayerOk) DEBUGLN(F("MP3 плеер недоступен."));
       } else if (msg_type == DFPlayerPlayFinished) {
         // Почему-то в звуках бегущей строки повтор через enableLoop не спабатывает
         // Перезапустить заук, если установлен его повтор
@@ -1939,7 +1939,7 @@ void parsing() {
               if (wifi_connected) { 
                 ap_connected = false;              
                 WiFi.softAPdisconnect(true);
-                Serial.println(F("Точка доступа отключена."));
+                DEBUGLN(F("Точка доступа отключена."));
               }
             }      
             break;
@@ -2098,8 +2098,8 @@ void parsing() {
       packetSize = command.length();
       memcpy(incomeBuffer, command.c_str(), packetSize);
 
-      Serial.print(F("MQTT пакeт размером "));
-      Serial.println(packetSize);
+      DEBUG(F("MQTT пакeт размером "));
+      DEBUGLN(packetSize);
     }
   }
   #endif
@@ -2120,24 +2120,24 @@ void parsing() {
       
       delay(0);            // ESP8266 при вызове delay отрабатывает стек IP протокола, дадим ему поработать        
 
-      Serial.print(F("UDP << ip='"));
+      DEBUG(F("UDP << ip='"));
       IPAddress remote = udp.remoteIP();
-      Serial.print(remote.toString());
-      Serial.print(":");
-      Serial.print(udp.remotePort());
-      Serial.print("'");
+      DEBUG(remote.toString());
+      DEBUG(":");
+      DEBUG(udp.remotePort());
+      DEBUG("'");
       if (udp.remotePort() == localPort) {
-        Serial.print(F("; cmd='"));
-        Serial.print(incomeBuffer);
-        Serial.print("'");
+        DEBUG(F("; cmd='"));
+        DEBUG(incomeBuffer);
+        DEBUG("'");
       }
       if (udp.remotePort() == 123) {
-        Serial.print(F("; ntp sync"));
+        DEBUG(F("; ntp sync"));
       }
-      Serial.println();
+      DEBUGLN();
 
-      Serial.print(F("UDP пакeт размером "));
-      Serial.println(packetSize);
+      DEBUG(F("UDP пакeт размером "));
+      DEBUGLN(packetSize);
     }
 
     // NTP packet from time server
@@ -2351,7 +2351,7 @@ void sendStringData(String &str, eSources src) {
     udp.write((const uint8_t*) incomeBuffer, str.length()+1);
     udp.endPacket();
     delay(0);
-    Serial.println(String(F("UDP ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
+    DEBUGLN(String(F("UDP ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
   }
 }
 
@@ -3660,7 +3660,7 @@ void sendAcknowledge(eSources src) {
     udp.endPacket();
     delay(0);
     if (isCmd) {
-      Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+      DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
     }
   }
 }

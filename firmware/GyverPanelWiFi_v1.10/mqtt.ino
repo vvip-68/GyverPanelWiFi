@@ -25,10 +25,10 @@ void putOutQueue(String topic, String message, bool retain = false) {
     ok = mqtt.endPublish() == 1;
     if (ok) {
       // Отправка прошла успешно
-      Serial.print(F("MQTT >> OK >> ")); 
-      Serial.print(topic);
-      Serial.print(F("\t >> ")); 
-      Serial.println(message);
+      DEBUG(F("MQTT >> OK >> ")); 
+      DEBUG(topic);
+      DEBUG(F("\t >> ")); 
+      DEBUGLN(message);
     }
   }
   // Если отправка не произошла и в очереди есть место - помещаем сообщение в очередь отправки
@@ -60,10 +60,10 @@ void notifyUnknownCommand(const char* text) {
 bool subscribeMqttTopicCmd() {
   bool ok = false;
   if (mqtt.connected()) {
-    Serial.print(F("Подписка на topic='cmd' >> "));
+    DEBUG(F("Подписка на topic='cmd' >> "));
     ok = mqtt.subscribe(mqtt_topic(TOPIC_CMD).c_str());
-    if (ok) Serial.println(F("OK"));
-    else    Serial.println(F("FAIL"));
+    if (ok) DEBUGLN(F("OK"));
+    else    DEBUGLN(F("FAIL"));
   }
   return ok;
 }
@@ -88,13 +88,13 @@ void checkMqttConnection() {
   // слишком частые попытки подключения к MQTT серверу не дают передаваться данным из / в приложение - приложение "отваливается"
   if (!stopMQTT && !mqtt.connected() && (mqtt_conn_last == 0 || (millis() - mqtt_conn_last > 2500))) {
     if (!mqtt_connecting) {
-      Serial.print(F("\nПодключаемся к MQTT-серверу '"));
-      Serial.print(mqtt_server);
-      Serial.print(":");
-      Serial.print(mqtt_port);
-      Serial.print(F("'; ClientID -> '"));
-      Serial.print(mqtt_client_name);
-      Serial.print(F("' ..."));
+      DEBUG(F("\nПодключаемся к MQTT-серверу '"));
+      DEBUG(mqtt_server);
+      DEBUG(":");
+      DEBUG(mqtt_port);
+      DEBUG(F("'; ClientID -> '"));
+      DEBUG(mqtt_client_name);
+      DEBUG(F("' ..."));
     }
     mqtt_topic_subscribed = false;
     mqtt_conn_last = millis();
@@ -102,20 +102,20 @@ void checkMqttConnection() {
     String topic = mqtt_topic(TOPIC_PWR);
 
     if (mqtt.connect(mqtt_client_name.c_str(), mqtt_user, mqtt_pass, topic.c_str(), 0, true, "offline")) {
-      Serial.println(F("\nПодключение к MQTT-серверу выполнено."));
+      DEBUGLN(F("\nПодключение к MQTT-серверу выполнено."));
       if (outQueueLength > 0) {
-        Serial.print(F("Сообщений в очереди отправки: "));  
-        Serial.println(outQueueLength);  
+        DEBUG(F("Сообщений в очереди отправки: "));  
+        DEBUGLN(outQueueLength);  
       }
       putOutQueue(topic, "online", true);
       mqtt_connecting = false;      
     } else {      
-      Serial.print(".");
+      DEBUG(".");
       mqtt_connecting = true;
       mqtt_conn_cnt++;
       if (mqtt_conn_cnt == 80) {
         mqtt_conn_cnt = 0;
-        Serial.println();
+        DEBUGLN();
       }
     }
   }
@@ -263,10 +263,10 @@ void processOutQueue() {
     }
     if (ok) {      
       // Отправка прошла успешно
-      Serial.print(F("MQTT >> OK >> ")); 
-      Serial.print(topic);
-      Serial.print(F("\t >> ")); 
-      Serial.println(message);
+      DEBUG(F("MQTT >> OK >> ")); 
+      DEBUG(topic);
+      DEBUG(F("\t >> ")); 
+      DEBUGLN(message);
       // Извлекаем сообщение из очереди
       tpcQueue[outQueueReadIdx] = "";
       outQueue[outQueueReadIdx] = "";
@@ -276,10 +276,10 @@ void processOutQueue() {
       outQueueLength--;
     } else {
       // Отправка не удалась
-      Serial.print(F("MQTT >> FAIL >> ")); 
-      Serial.print(topic);
-      Serial.print(F("\t >> ")); 
-      Serial.println(message);
+      DEBUG(F("MQTT >> FAIL >> ")); 
+      DEBUG(topic);
+      DEBUG(F("\t >> ")); 
+      DEBUGLN(message);
     }
   }  
 }

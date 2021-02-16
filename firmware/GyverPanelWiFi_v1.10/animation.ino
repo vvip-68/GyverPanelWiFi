@@ -749,7 +749,7 @@ String openImage(String storage, String fName) {
       ok = SD.mkdir(directoryName);
       if (!ok) {
         message = String(F("Папка для хранения изображений '")) + directoryName + String(F("' не найдена."));
-        Serial.println(message);
+        DEBUGLN(message);
         return message;
       }
     }
@@ -763,7 +763,7 @@ String openImage(String storage, String fName) {
       ok = LittleFS.mkdir(directoryName);
       if (!ok) {
         message = String(F("Папка для хранения изображений '")) + directoryName + String(F("' не найдена."));
-        Serial.println(message);
+        DEBUGLN(message);
         return message;
       }
     }
@@ -773,7 +773,7 @@ String openImage(String storage, String fName) {
 
   if (!file) {
     message = String(F("Файл '")) + fileName + String(F("' не найден."));
-    Serial.println(message);
+    DEBUGLN(message);
     return message;
   }
 
@@ -783,7 +783,7 @@ String openImage(String storage, String fName) {
   ok = len == 3;
   if (!ok) {
     message = String(F("Ошибка чтения файла '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     file.close();
     return message;
   }
@@ -801,7 +801,7 @@ String openImage(String storage, String fName) {
       ok = len == 3;
       if (!ok) {
         message = String(F("Ошибка чтения файла '")) + fileName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         file.close();
         return message;
       }
@@ -818,7 +818,7 @@ String openImage(String storage, String fName) {
   }
 
   file.close();
-  Serial.println(F("Файл загружен."));
+  DEBUGLN(F("Файл загружен."));
 
   return message;
 }
@@ -834,8 +834,8 @@ String saveImage(String storage, String fName) {
   // Если нет поддержки SD=карты - работать с внутренней файловаой системой МК
   if (USE_SD == 0) storage = "FS";
 
-  Serial.print(F("Сохранение файла: "));
-  Serial.println(storage + String(F(":/")) + fileName);
+  DEBUG(F("Сохранение файла: "));
+  DEBUGLN(storage + String(F(":/")) + fileName);
 
   #if (USE_SD == 1)
   if (storage == "SD") {    
@@ -843,7 +843,7 @@ String saveImage(String storage, String fName) {
       ok = SD.mkdir(directoryName);
       if (!ok) {
         message = String(F("Ошибка создания папки для хранения изображений '")) + directoryName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         return message;
       }
     }
@@ -853,7 +853,7 @@ String saveImage(String storage, String fName) {
       ok = SD.remove(fileName);
       if (!ok) {
         message = String(F("Ошибка создания файла '")) + fileName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         return message;
       }
     }
@@ -867,7 +867,7 @@ String saveImage(String storage, String fName) {
       ok = LittleFS.mkdir(directoryName);
       if (!ok) {
         message = String(F("Ошибка создания папки для хранения изображений '")) + directoryName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         return message;
       }
     }
@@ -877,7 +877,7 @@ String saveImage(String storage, String fName) {
       ok = LittleFS.remove(fileName);
       if (!ok) {
         message = String(F("Ошибка создания файла '")) + fileName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         return message;
       }
     }
@@ -887,7 +887,7 @@ String saveImage(String storage, String fName) {
 
   if (!file) {
     message = String(F("Ошибка создания файла '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     return message;
   }
 
@@ -897,7 +897,7 @@ String saveImage(String storage, String fName) {
   ok = len == 3;
   if (!ok) {
     message = String(F("Ошибка записи в файл '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     file.close();
     return message;
   }
@@ -911,14 +911,14 @@ String saveImage(String storage, String fName) {
       ok = len == 3;
       if (!ok) {
         message = String(F("Ошибка записи в файл '")) + fileName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         file.close();
         return message;
       }
     }
   }
   file.close();
-  Serial.println(F("Файл сохранен."));
+  DEBUGLN(F("Файл сохранен."));
 
   return message;
 }
@@ -928,8 +928,8 @@ String deleteImage(String storage, String fName) {
   String message = "";
   String fileName = "/" + String(WIDTH) + "p" + String(HEIGHT) + "/" + fName + ".p";
 
-  Serial.print(F("Удаление файла: "));
-  Serial.println(storage + String(F(":/")) + fileName);
+  DEBUG(F("Удаление файла: "));
+  DEBUGLN(storage + String(F(":/")) + fileName);
   
   #if (USE_SD == 1)
   if (storage == "SD") {
@@ -943,10 +943,10 @@ String deleteImage(String storage, String fName) {
 
   if (!ok) {
     message = String(F("Ошибка удаления файла '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     return message;
   }
-  Serial.println(F("Файл удален."));
+  DEBUGLN(F("Файл удален."));
   
   return message;
 }

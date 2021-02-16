@@ -1642,12 +1642,12 @@ void rescanTextEvents() {
     str.trim();
 
     if (!found) {
-      Serial.println(F("--------------------"));
-      Serial.println(F("Строки с событием {P}"));
+      DEBUGLN(F("--------------------"));
+      DEBUGLN(F("Строки с событием {P}"));
       found = true;
     }
-    Serial.println(F("--------------------"));
-    Serial.println(String(F("Строка: '")) + text + "'");
+    DEBUGLN(F("--------------------"));
+    DEBUGLN(String(F("Строка: '")) + text + "'");
 
     // Сбрасываем переменные перед разбором очередной строки
     stage = 0; iDay = 0; iMonth = 0; iYear = 0; iHour = 0; iMinute = 0; iBefore = 60; iAfter = 60; star_cnt = 0; num = 0;
@@ -1657,10 +1657,10 @@ void rescanTextEvents() {
     bool err = false;
     for (uint16_t ix = 0; ix < str.length(); ix++) {
       if (err) {
-        Serial.println();
-        Serial.print(String(F("Ошибка в макросе\n'{P")) + str + String(F("}'\n  ")));
-        for(uint8_t n=0; n<ix; n++) Serial.print('-');
-        Serial.println('^');
+        DEBUGLN();
+        DEBUG(String(F("Ошибка в макросе\n'{P")) + str + String(F("}'\n  ")));
+        for(uint8_t n=0; n<ix; n++) DEBUG('-');
+        DEBUGLN('^');
         break;
       }      
       char c = str[ix];
@@ -1828,7 +1828,7 @@ void rescanTextEvents() {
       
       breakTime(t_event, tm);
       
-      Serial.println(String(F("Событие: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + 
+      DEBUGLN(String(F("Событие: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + 
                      String(F("; before=")) + String(iBefore) + String(F("; after=")) + String(iAfter) + String(F("; days='")) + wdays + String(F("'; replace='")) + String(getAZIndex(text_idx)) + "'");
       
       // Заполнить текущий элемент массива полученными параметрами
@@ -1854,7 +1854,7 @@ void rescanTextEvents() {
       moment_idx++;
     }
   }
-  Serial.println(F("--------------------"));  
+  DEBUGLN(F("--------------------"));  
   textCheckTime = millis();
 }
 
@@ -1924,17 +1924,17 @@ boolean forThisDate(String text) {
     // Проверить дату
     if (str.length() > 0) {
       /*
-      Serial.println(F("--------------------")); 
-      Serial.print(F("Строка: '"));
-      Serial.println(text + "'");
+      DEBUGLN(F("--------------------")); 
+      DEBUG(F("Строка: '"));
+      DEBUGLN(text + "'");
       */
       time_t now_moment = now();
       extractMacroSDates(str);
       ok = now_moment >= textAllowBegin && now_moment <= textAllowEnd;
       /*
-      Serial.println("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
-      if (ok) Serial.println(F("вывод разрешен"));
-      else    Serial.println(F("вывод запрещен"));
+      DEBUGLN("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
+      if (ok) DEBUGLN(F("вывод разрешен"));
+      else    DEBUGLN(F("вывод запрещен"));
       */
     }
 
@@ -1948,7 +1948,7 @@ boolean forThisDate(String text) {
     idx = text.indexOf("{S");
   }
   
-//  Serial.println(F("--------------------"));
+//  DEBUGLN(F("--------------------"));
 
   return ok;
 }
@@ -1989,10 +1989,10 @@ void extractMacroSDates(String text) {
   bool err = false;
   for (uint8_t ix = 0; ix < text.length(); ix++) {
     if (err) {
-      Serial.println();
-      Serial.print(String(F("Ошибка в макросе\n'{S")) + text + String(F("}'\n  ")));
-      for(uint8_t n=0; n<ix; n++) Serial.print('-');
-      Serial.println('^');
+      DEBUGLN();
+      DEBUG(String(F("Ошибка в макросе\n'{S")) + text + String(F("}'\n  ")));
+      for(uint8_t n=0; n<ix; n++) DEBUG('-');
+      DEBUGLN('^');
       break;
     }      
     char c = text[ix];
@@ -2138,14 +2138,14 @@ void extractMacroSDates(String text) {
     breakTime(t_event2, tm2);
     
     if (t_event2 < t_event1) {
-      Serial.println(String(F("Строка: '")) + text + "'");
-      Serial.println(String(F("Интервал показа: ")) + 
+      DEBUGLN(String(F("Строка: '")) + text + "'");
+      DEBUGLN(String(F("Интервал показа: ")) + 
                      padNum(tm1.Day,2) + "." + padNum(tm1.Month,2) + "." + padNum(tmYearToCalendar(tm1.Year),4) + " " + padNum(tm1.Hour,2) + ":" + padNum(tm1.Minute,2) + " -- " +
                      padNum(tm2.Day,2) + "." + padNum(tm2.Month,2) + "." + padNum(tmYearToCalendar(tm2.Year),4) + " " + padNum(tm2.Hour,2) + ":" + padNum(tm2.Minute,2));
                    
       textAllowBegin = 0; // время начала допустимого интервала отображения unixTime
       textAllowEnd   = 0; // время конца допустимого интервала отображения unixTime
-      Serial.println(F("Ошибка: дата начала больше даты окончания разрешенного интервала"));
+      DEBUGLN(F("Ошибка: дата начала больше даты окончания разрешенного интервала"));
     }
     
   }

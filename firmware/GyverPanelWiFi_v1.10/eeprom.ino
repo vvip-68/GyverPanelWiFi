@@ -243,7 +243,7 @@ void loadSettings() {
     
   } else {
 
-    Serial.println(F("Инициализация EEPROM..."));
+    DEBUGLN(F("Инициализация EEPROM..."));
 
     // Значения переменных по умолчанию определяются в месте их объявления - в файле a_def_soft.h
     // Здесь выполняются только инициализация массивов и некоторых специальных параметров
@@ -263,7 +263,7 @@ void loadSettings() {
     saveDefaults();
     saveSettings();
     
-    Serial.println();
+    DEBUGLN();
   }  
 
   #if (USE_MQTT == 1) 
@@ -463,7 +463,7 @@ void saveSettings() {
   EEPROMwrite(0, EEPROM_OK);
   
   EEPROM.commit();
-  Serial.println(F("Настройки сохранены в EEPROM"));
+  DEBUGLN(F("Настройки сохранены в EEPROM"));
   eepromModified = false;
 }
 
@@ -1276,16 +1276,16 @@ void loadTexts() {
   if (memoryAvail < 0) memoryAvail = 0;
 
   if (addr == TEXT_EEPROM + 1) {
-    Serial.println(F("Нет сохраненных строк"));
+    DEBUGLN(F("Нет сохраненных строк"));
   } else {
-    Serial.print(F("Загрузка строк выполнена.\nИспользованы адреса EEPROM "));
-    Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
+    DEBUG(F("Загрузка строк выполнена.\nИспользованы адреса EEPROM "));
+    DEBUGLN(String(TEXT_EEPROM) + " - " + String(addr - 1));
   }
   if (addr >= EEPROM_MAX) {
-    Serial.println(F("Память заполнена."));
+    DEBUGLN(F("Память заполнена."));
   }
-  Serial.print(F("Свободно ячеек "));
-  Serial.println(String(EEPROM_MAX - addr));
+  DEBUG(F("Свободно ячеек "));
+  DEBUGLN(String(EEPROM_MAX - addr));
 
   // Заполнить оставшиеся строки массивва пустой строкой
   for (byte i=idx; i<size; i++) {
@@ -1295,7 +1295,7 @@ void loadTexts() {
   /*
   // Контрольная печать загруженных строк
   for (byte i=0; i<size; i++) {
-     Serial.println("Строка " + String(i) + " = '" + textLines[i] + "'");
+     DEBUGLN("Строка " + String(i) + " = '" + textLines[i] + "'");
   }
   */
   
@@ -1417,15 +1417,15 @@ bool saveTexts() {
   set_memoryAvail((EEPROM_MAX - addr) / 2);  // UTF8 кирилицы - один символ 2 байта
   if (memoryAvail < 0) set_memoryAvail(0);
   
-  Serial.print(F("Сохранение строк выполнено.\nИпользованы адреса EEPROM "));
-  Serial.println(String(TEXT_EEPROM) + " - " + String(addr - 1));
+  DEBUG(F("Сохранение строк выполнено.\nИпользованы адреса EEPROM "));
+  DEBUGLN(String(TEXT_EEPROM) + " - " + String(addr - 1));
   if (addr >= EEPROM_MAX - 1) {
-    Serial.println(F("Память заполнена."));
+    DEBUGLN(F("Память заполнена."));
   }
-  Serial.print(F("Свободно ячеек "));
-  Serial.println(String(EEPROM_MAX - addr));
+  DEBUG(F("Свободно ячеек "));
+  DEBUGLN(String(EEPROM_MAX - addr));
   if (!completed) {
-    Serial.println(F("Не все строки были загружены."));
+    DEBUGLN(F("Не все строки были загружены."));
   }
 
   return addr < EEPROM_MAX;
@@ -1748,8 +1748,8 @@ bool saveEepromToFile(String storage) {
   saveSettings();
   if (USE_SD == 0) storage = "FS";
 
-  Serial.print(F("Сохранение файла: "));
-  Serial.println(storage + String(F(":/")) + fileName);
+  DEBUG(F("Сохранение файла: "));
+  DEBUGLN(storage + String(F(":/")) + fileName);
 
   memset(buf, 0, part_size);
 
@@ -1760,7 +1760,7 @@ bool saveEepromToFile(String storage) {
       ok = LittleFS.remove(fileName);
       if (!ok) {
         message = String(F("Ошибка создания файла '")) + fileName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         return false;
       }
     }
@@ -1776,7 +1776,7 @@ bool saveEepromToFile(String storage) {
       ok = SD.remove(fileName);
       if (!ok) {
         message = String(F("Ошибка создания файла '")) + fileName + "'";
-        Serial.println(message);
+        DEBUGLN(message);
         return false;
       }
     }
@@ -1787,7 +1787,7 @@ bool saveEepromToFile(String storage) {
 
   if (!file) {
     message = String(F("Ошибка создания файла '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     return false;
   }
 
@@ -1811,13 +1811,13 @@ bool saveEepromToFile(String storage) {
   
   if (!ok) {
     message = String(F("Ошибка записи в файл '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     file.close();
     return false;
   }          
   
   file.close();
-  Serial.println(F("Файл сохранен."));
+  DEBUGLN(F("Файл сохранен."));
 
   eeprom_backup = checkEepromBackup();
   
@@ -1840,8 +1840,8 @@ bool loadEepromFromFile(String storage) {
 
   if (USE_SD == 0) storage = "FS";
 
-  Serial.print(F("Загрузка файла: "));
-  Serial.println(storage + String(F(":/")) + fileName);
+  DEBUG(F("Загрузка файла: "));
+  DEBUGLN(storage + String(F(":/")) + fileName);
 
   if (storage == "FS") {
     file = LittleFS.open(fileName, "r");
@@ -1855,7 +1855,7 @@ bool loadEepromFromFile(String storage) {
 
   if (!file) {
     message = String(F("Файл '")) + fileName + String(F("' не найден."));
-    Serial.println(message);
+    DEBUGLN(message);
     return false;
   }
   
@@ -1875,7 +1875,7 @@ bool loadEepromFromFile(String storage) {
 
   if (!ok) {
     message = String(F("Ошибка чтения файла '")) + fileName + "'";
-    Serial.println(message);
+    DEBUGLN(message);
     return false;
   }          
 

@@ -26,14 +26,14 @@
 void callback(char* topic, byte* payload, unsigned int length) {
   if (stopMQTT) return;
   // проверяем из нужного ли нам топика пришли данные
-  Serial.print("MQTT << topic='" + String(topic) + "'");
+  DEBUG("MQTT << topic='" + String(topic) + "'");
   if (strcmp(topic, mqtt_topic(TOPIC_CMD).c_str()) == 0) {
     memset(incomeMqttBuffer, 0, BUF_MAX_SIZE);
     memcpy(incomeMqttBuffer, payload, length);
     
-    Serial.print(F("; cmd='"));
-    Serial.print(incomeMqttBuffer);
-    Serial.print("'");
+    DEBUG(F("; cmd='"));
+    DEBUG(incomeMqttBuffer);
+    DEBUG("'");
     
     // В одном сообщении может быть несколько команд. Каждая команда начинается с '$' и заканчивается ';'/ Пробелы между ';' и '$' НЕ допускаются.
     String command = String(incomeMqttBuffer);    
@@ -61,7 +61,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       }
     }    
   }
-  Serial.println();
+  DEBUGLN();
 }
 
 #endif
@@ -81,8 +81,10 @@ void setup() {
     EEPROM.begin(EEPROM_MAX);
   #endif
 
-  Serial.begin(115200);
-  delay(300);
+  #if (DEBUG_SERIAL == 1)
+    Serial.begin(115200);
+    delay(300);
+  #endif
 
   // пинаем генератор случайных чисел
   #if defined(ESP8266) && defined(TRUE_RANDOM)
@@ -98,10 +100,10 @@ void setup() {
   mqtt_client_name = host_name + "-" + padNum(random16(),5);
   #endif
   
-  Serial.println();
-  Serial.println(FIRMWARE_VER);
-  Serial.println("Host: '" + host_name + "'" + String(F(" >> ")) + String(WIDTH) + "x" + String(HEIGHT));
-  Serial.println();
+  DEBUGLN();
+  DEBUGLN(FIRMWARE_VER);
+  DEBUGLN("Host: '" + host_name + "'" + String(F(" >> ")) + String(WIDTH) + "x" + String(HEIGHT));
+  DEBUGLN();
 
   loadSettings();
 
@@ -130,42 +132,42 @@ void setup() {
     InitializeSD();
   #endif
 
-  Serial.println(F("\nИнициализация файловой системы... "));
+  DEBUGLN(F("\nИнициализация файловой системы... "));
   
   spiffs_ok = LittleFS.begin();
   if (!spiffs_ok) {
-    Serial.println(F("\nВыполняется разметка файловой системы... "));
+    DEBUGLN(F("\nВыполняется разметка файловой системы... "));
     LittleFS.format();
     spiffs_ok = LittleFS.begin();    
   }
 
   if (spiffs_ok) {
-    Serial.print(F("FS: "));
+    DEBUG(F("FS: "));
     #if defined(ESP32)
       spiffs_total_bytes = LittleFS.totalBytes();
       spiffs_used_bytes  = LittleFS.usedBytes();
-      Serial.println(String(F("Использовано ")) + String(spiffs_used_bytes) + " из " + String(spiffs_total_bytes) + " байт");
+      DEBUGLN(String(F("Использовано ")) + String(spiffs_used_bytes) + " из " + String(spiffs_total_bytes) + " байт");
     #else
       FSInfo fs_info;
       if (LittleFS.info(fs_info)) {
         spiffs_total_bytes = fs_info.totalBytes;
         spiffs_used_bytes  = fs_info.usedBytes;
-        Serial.println(String(F("Использовано ")) + String(spiffs_used_bytes) + " из " + String(spiffs_total_bytes) + " байт");
+        DEBUGLN(String(F("Использовано ")) + String(spiffs_used_bytes) + " из " + String(spiffs_total_bytes) + " байт");
       } else {
-        Serial.println(F("Ошибка получения сведений о файловой системе."));
+        DEBUGLN(F("Ошибка получения сведений о файловой системе."));
       }
     #endif
   } else {
-    Serial.println(F("Файловая система недоступна."));
+    DEBUGLN(F("Файловая система недоступна."));
   }
 
   // Проверить наличие резервной копии настроек EEPROM в файловой системе MK и/или на SD-карте
   eeprom_backup = checkEepromBackup();
   if ((eeprom_backup & 0x01) > 0) {
-    Serial.println(F("Найдены сохраненные настройки: FS://eeprom.bin"));
+    DEBUGLN(F("Найдены сохраненные настройки: FS://eeprom.bin"));
   }
   if ((eeprom_backup & 0x02) > 0) {
-    Serial.println(F("Найдены сохраненные настройки: SD://eeprom.bin"));
+    DEBUGLN(F("Найдены сохраненные настройки: SD://eeprom.bin"));
   }
     
   #if (USE_POWER == 1)
@@ -184,7 +186,7 @@ void setup() {
   #if (USE_MP3 == 1)
     InitializeDfPlayer2();
     if (!isDfPlayerOk) {
-      Serial.println(F("MP3 плеер недоступен."));
+      DEBUGLN(F("MP3 плеер недоступен."));
     }
   #endif
 
@@ -220,12 +222,12 @@ void setup() {
     else // U_SPIFFS
       type = F("файловой системы SPIFFS...");
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.print(F("Начато обновление "));    
-    Serial.println(type);    
+    DEBUG(F("Начато обновление "));    
+    DEBUGLN(type);    
   });
 
   ArduinoOTA.onEnd([]() {
-    Serial.println(F("\nОбновление завершено"));
+    DEBUGLN(F("\nОбновление завершено"));
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
@@ -233,13 +235,13 @@ void setup() {
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    Serial.print(F("Ошибка: "));
-    Serial.println(error);
-    if      (error == OTA_AUTH_ERROR)    Serial.println(F("Неверное имя/пароль сети"));
-    else if (error == OTA_BEGIN_ERROR)   Serial.println(F("Не удалось запустить обновление"));
-    else if (error == OTA_CONNECT_ERROR) Serial.println(F("Не удалось установить соединение"));
-    else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Не удалось получить данные"));
-    else if (error == OTA_END_ERROR)     Serial.println(F("Ошибка завершения сессии"));
+    DEBUG(F("Ошибка: "));
+    DEBUGLN(error);
+    if      (error == OTA_AUTH_ERROR)    DEBUGLN(F("Неверное имя/пароль сети"));
+    else if (error == OTA_BEGIN_ERROR)   DEBUGLN(F("Не удалось запустить обновление"));
+    else if (error == OTA_CONNECT_ERROR) DEBUGLN(F("Не удалось установить соединение"));
+    else if (error == OTA_RECEIVE_ERROR) DEBUGLN(F("Не удалось получить данные"));
+    else if (error == OTA_END_ERROR)     DEBUGLN(F("Ошибка завершения сессии"));
   });
 
   ArduinoOTA.begin();
@@ -331,8 +333,8 @@ void startWiFi(unsigned long waitTime) {
  
   // Пытаемся соединиться с роутером в сети
   if (strlen(ssid) > 0) {
-    Serial.print(F("\nПодключение к "));
-    Serial.print(ssid);
+    DEBUG(F("\nПодключение к "));
+    DEBUG(ssid);
 
     if (IP_STA[0] + IP_STA[1] + IP_STA[2] + IP_STA[3] > 0) {
       WiFi.config(IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]),  // 192.168.0.106
@@ -340,14 +342,14 @@ void startWiFi(unsigned long waitTime) {
                   IPAddress(255, 255, 255, 0),                            // Mask
                   IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], 1),          // DNS1 192.168.0.1
                   IPAddress(8, 8, 8, 8));                                 // DNS2 8.8.8.8                  
-      Serial.print(F(" -> "));
-      Serial.print(IP_STA[0]);
-      Serial.print(".");
-      Serial.print(IP_STA[1]);
-      Serial.print(".");
-      Serial.print(IP_STA[2]);
-      Serial.print(".");
-      Serial.print(IP_STA[3]);                  
+      DEBUG(F(" -> "));
+      DEBUG(IP_STA[0]);
+      DEBUG(".");
+      DEBUG(IP_STA[1]);
+      DEBUG(".");
+      DEBUG(IP_STA[2]);
+      DEBUG(".");
+      DEBUG(IP_STA[3]);                  
     }              
     WiFi.begin(ssid, pass);
   
@@ -366,15 +368,15 @@ void startWiFi(unsigned long waitTime) {
         set_wifi_connected(WiFi.status() == WL_CONNECTED); 
         if (wifi_connected) {
           // Подключение установлено
-          Serial.println();
-          Serial.print(F("WiFi подключен. IP адрес: "));
-          Serial.println(WiFi.localIP());
+          DEBUGLN();
+          DEBUG(F("WiFi подключен. IP адрес: "));
+          DEBUGLN(WiFi.localIP());
           break;
         }
         if (cnt % 50 == 0) {
-          Serial.println();
+          DEBUGLN();
         }
-        Serial.print(".");
+        DEBUG(".");
         cnt++;
       }
       if (millis() - start_wifi_check > waitTime) {
@@ -386,17 +388,17 @@ void startWiFi(unsigned long waitTime) {
       butt.tick();
       if (butt.hasClicks()) {
         butt.getClicks();
-        Serial.println();
-        Serial.println(F("Нажата кнопка.\nОжидание подключения к сети WiFi прервано."));  
+        DEBUGLN();
+        DEBUGLN(F("Нажата кнопка.\nОжидание подключения к сети WiFi прервано."));  
         stop_waiting = true;
         break;
       }
       delay(0);
     }
-    Serial.println();
+    DEBUGLN();
 
     if (!wifi_connected && !stop_waiting)
-      Serial.println(F("Не удалось подключиться к сети WiFi."));
+      DEBUGLN(F("Не удалось подключиться к сети WiFi."));
   }  
 }
 
@@ -404,26 +406,26 @@ void startSoftAP() {
   WiFi.softAPdisconnect(true);
   ap_connected = false;
 
-  Serial.print(F("Создание точки доступа "));
-  Serial.print(apName);
+  DEBUG(F("Создание точки доступа "));
+  DEBUG(apName);
   
   ap_connected = WiFi.softAP(apName, apPass);
 
   for (int j = 0; j < 10; j++ ) {    
     delay(0);
     if (ap_connected) {
-      Serial.println();
-      Serial.print(F("Точка доступа создана. Сеть: '"));
-      Serial.print(apName);
+      DEBUGLN();
+      DEBUG(F("Точка доступа создана. Сеть: '"));
+      DEBUG(apName);
       // Если пароль совпадает с паролем по умолчанию - печатать для информации,
       // если был изменен пользователем - не печатать
       if (strcmp(apPass, "12341234") == 0) {
-        Serial.print(F("'. Пароль: '"));
-        Serial.print(apPass);
+        DEBUG(F("'. Пароль: '"));
+        DEBUG(apPass);
       }
-      Serial.println(F("'."));
-      Serial.print(F("IP адрес: "));
-      Serial.println(WiFi.softAPIP());
+      DEBUGLN(F("'."));
+      DEBUG(F("IP адрес: "));
+      DEBUGLN(WiFi.softAPIP());
       break;
     }    
     
@@ -431,13 +433,13 @@ void startSoftAP() {
     WiFi.softAPdisconnect(true);
     delay(500);
     
-    Serial.print(".");
+    DEBUG(".");
     ap_connected = WiFi.softAP(apName, apPass);
   }  
-  Serial.println();  
+  DEBUGLN();  
 
   if (!ap_connected) 
-    Serial.println(F("Не удалось создать WiFi точку доступа."));
+    DEBUGLN(F("Не удалось создать WiFi точку доступа."));
 }
 
 void connectToNetwork() {
@@ -454,7 +456,7 @@ void connectToNetwork() {
 
   // Сообщить UDP порт, на который ожидаются подключения
   if (wifi_connected || ap_connected) {
-    Serial.print(F("UDP-сервер на порту "));
-    Serial.println(localPort);
+    DEBUG(F("UDP-сервер на порту "));
+    DEBUGLN(localPort);
   }
 }

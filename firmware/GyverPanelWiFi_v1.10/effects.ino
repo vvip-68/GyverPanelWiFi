@@ -1864,7 +1864,7 @@ void rain(byte backgroundDepth, byte spawnFreq, byte tailLength, bool splashes, 
         }
         free(lightning);
       } else {
-        Serial.println("lightning malloc failed"); 
+        DEBUGLN("lightning malloc failed"); 
       }
     }
 
@@ -1888,7 +1888,7 @@ void rain(byte backgroundDepth, byte spawnFreq, byte tailLength, bool splashes, 
           nblend(leds[XY(x,HEIGHT-z-1)], ColorFromPalette(rainClouds_p, noise[x * cloudHeight + z], effectBrightness), (cloudHeight-z)*(250/cloudHeight));
         }
       } else { 
-        Serial.println("noise malloc failed"); 
+        DEBUGLN("noise malloc failed"); 
       } 
       noiseZ++;
     }

@@ -8,25 +8,25 @@ String  fileName;    // Полное имя файла эффекта, вклю�
 
 void InitializeSD() {  
   set_isSdCardReady(false);
-  Serial.println(F("\nИнициализация SD-карты..."));  
+  DEBUGLN(F("\nИнициализация SD-карты..."));  
   if (SD.begin(SD_CS_PIN)) {
-    Serial.println(F("Загрузка списка файлов с эффектами..."));  
+    DEBUGLN(F("Загрузка списка файлов с эффектами..."));  
     loadDirectory();
     set_isSdCardReady(countFiles > 0);
   } else {
-    Serial.println(F("SD-карта недоступна"));
+    DEBUGLN(F("SD-карта недоступна"));
   }
 }
 
 void loadDirectory() {
 
   String directoryName = "/" + String(WIDTH) + "x" + String(HEIGHT);
-  Serial.print(F("Папка с эффектами "));
-  Serial.print(directoryName);
+  DEBUG(F("Папка с эффектами "));
+  DEBUG(directoryName);
   if (SD.exists(directoryName)) {
-    Serial.println(F(" обнаружена."));
+    DEBUGLN(F(" обнаружена."));
   } else {
-    Serial.println(F(" не обнаружена."));
+    DEBUGLN(F(" не обнаружена."));
     return;
   }
 
@@ -59,15 +59,15 @@ void loadDirectory() {
       }
 
       if (countFiles >= MAX_FILES) {
-        Serial.print(F("Максимальное количество эффектов: "));        
-        Serial.println(MAX_FILES);
+        DEBUG(F("Максимальное количество эффектов: "));        
+        DEBUGLN(MAX_FILES);
         entry.close();
         break;
       }
         
       if (first) {
         first = false;
-        Serial.println(F("Найдены файлы эффектов:"));        
+        DEBUGLN(F("Найдены файлы эффектов:"));        
       }
 
       sz = 0;
@@ -82,14 +82,14 @@ void loadDirectory() {
       int16_t p = file_name.lastIndexOf("/");
       if (p>=0) file_name = file_name.substring(p + 1);
             
-      Serial.print("  ");
-      Serial.print(file_name);
-      Serial.print("\t\t");
+      DEBUG("  ");
+      DEBUG(file_name);
+      DEBUG("\t\t");
       if (sz == 0)
-        Serial.print(file_size, DEC);
+        DEBUGR(file_size, DEC);
       else
-        Serial.print(fsize, 2);      
-      Serial.println(" " + fs_name);
+        DEBUGR(fsize, 2);      
+      DEBUGLN(" " + fs_name);
       
       nameFiles[countFiles++] = file_name;
     }
@@ -98,7 +98,7 @@ void loadDirectory() {
   }
 
   if (countFiles == 0) {
-    Serial.println(F("Доступных файлов эффектов не найдено"));
+    DEBUGLN(F("Доступных файлов эффектов не найдено"));
   }  
 }
 
@@ -155,17 +155,17 @@ void sdcardRoutine() {
     fileName = "/" + String(WIDTH) + "x" + String(HEIGHT) + "/" + nameFiles[file_idx];
 
     play_file_finished = false;
-    Serial.print(F("Загрузка файла эффекта: '"));
-    Serial.print(fileName);
+    DEBUG(F("Загрузка файла эффекта: '"));
+    DEBUG(fileName);
 
     bool error = false;
     String out;
     
     fxdata = SD.open(fileName);
     if (fxdata) {
-      Serial.println(F("' -> ok"));
+      DEBUGLN(F("' -> ok"));
     } else {
-      Serial.println(F("' -> ошибка"));
+      DEBUGLN(F("' -> ошибка"));
       error = true;
     }
 
@@ -205,7 +205,7 @@ void sdcardRoutine() {
   }
 
   if (play_file_finished) {
-    Serial.println("'" + fileName + String(F("' - завершено")));
+    DEBUGLN("'" + fileName + String(F("' - завершено")));
     /*
     if (currentFile >= 0) {
       currentFile++; 

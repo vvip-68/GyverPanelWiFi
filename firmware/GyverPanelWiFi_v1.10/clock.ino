@@ -20,8 +20,8 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
 // send an NTP request to the time server at the given address
 void sendNTPpacket(IPAddress& address) {
-  Serial.print(F("Отправка NTP пакета на сервер "));
-  Serial.println(ntpServerName);
+  DEBUG(F("Отправка NTP пакета на сервер "));
+  DEBUGLN(ntpServerName);
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   
@@ -48,7 +48,7 @@ void sendNTPpacket(IPAddress& address) {
 
 void parseNTP() {
   getNtpInProgress = false;
-  Serial.println(F("Разбор пакета NTP"));
+  DEBUGLN(F("Разбор пакета NTP"));
   ntp_t = 0; ntp_cnt = 0; init_time = true; refresh_time = false;
   unsigned long highWord = word(incomeBuffer[40], incomeBuffer[41]);
   unsigned long lowWord = word(incomeBuffer[42], incomeBuffer[43]);
@@ -60,10 +60,10 @@ void parseNTP() {
   unsigned long t = secsSince1900 - seventyYears + (timeZoneOffset) * 3600UL;
   String t2 = getDateTimeString(t);
 
-  Serial.print(F("Секунд с 1970: "));
-  Serial.println(t);
-  Serial.print(F("Текущее время: ")); 
-  Serial.println(t2);
+  DEBUG(F("Секунд с 1970: "));
+  DEBUGLN(t);
+  DEBUG(F("Текущее время: ")); 
+  DEBUGLN(t2);
 
   setTime(t);  
   calculateDawnTime();
@@ -95,13 +95,13 @@ void getNTP() {
   ip1.fromString(F("0.0.0.0"));
   ip2.fromString(F("255.255.255.255"));
   if (timeServerIP == ip1 || timeServerIP == ip2) {
-    Serial.print(F("Не удалось получить IP aдрес сервера NTP -> "));
-    Serial.print(ntpServerName);
-    Serial.print(F(" -> "));
-    Serial.println(timeServerIP);
+    DEBUG(F("Не удалось получить IP aдрес сервера NTP -> "));
+    DEBUG(ntpServerName);
+    DEBUG(F(" -> "));
+    DEBUGLN(timeServerIP);
     timeServerIP.fromString(F("85.21.78.91"));  // Один из ru.pool.ntp.org  // 91.207.136.55, 91.207.136.50, 46.17.46.226
-    Serial.print(F("Используем сервер по умолчанию: "));
-    Serial.println(timeServerIP);
+    DEBUG(F("Используем сервер по умолчанию: "));
+    DEBUGLN(timeServerIP);
   }
   getNtpInProgress = true;
   printNtpServerName();  
@@ -878,7 +878,7 @@ void calculateDawnTime() {
 
   // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnHour, dawnMinute, dawnWeekDay);
 
-  Serial.println(String(F("Следующий рассвет в ")) + padNum(dawnHour,2)+ F(":") + padNum(dawnMinute,2) + ", " + getWeekdayString(dawnWeekDay));
+  DEBUGLN(String(F("Следующий рассвет в ")) + padNum(dawnHour,2)+ F(":") + padNum(dawnMinute,2) + ", " + getWeekdayString(dawnWeekDay));
 }
 
 // Проверка времени срабатывания будильника
@@ -931,7 +931,7 @@ void checkAlarmTime() {
          if (useAlarmSound) PlayDawnSound();
          #endif
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-         Serial.println(String(F("Рассвет ВКЛ в ")) + padNum(h,2) + ":" + padNum(m,2));
+         DEBUGLN(String(F("Рассвет ВКЛ в ")) + padNum(h,2) + ":" + padNum(m,2));
 
          #if (USE_MQTT == 1)
          DynamicJsonDocument doc(256);
@@ -949,7 +949,7 @@ void checkAlarmTime() {
     
     // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов и звук будильника
     if (alrmWeekDay == w && alrmHour == h && alrmMinute == m && isAlarming) {
-      Serial.println(String(F("Рассвет Авто-ВЫКЛ в ")) + padNum(h,2) + ":" + padNum(m,2));
+      DEBUGLN(String(F("Рассвет Авто-ВЫКЛ в ")) + padNum(h,2) + ":" + padNum(m,2));
       set_isAlarming(false);
       set_isAlarmStopped(false);
       set_isPlayAlarmSound(true);
@@ -996,7 +996,7 @@ void checkAlarmTime() {
     #if (USE_TM1637 == 1)
     display.setBrightness(7);
     #endif
-    Serial.println(String(F("Будильник Авто-ВЫКЛ в ")) + padNum(h,2)+ ":" + padNum(m,2));
+    DEBUGLN(String(F("Будильник Авто-ВЫКЛ в ")) + padNum(h,2)+ ":" + padNum(m,2));
     
     alarmSoundTimer.setInterval(4294967295);
     set_isPlayAlarmSound(false);
@@ -1056,7 +1056,7 @@ void checkAlarmTime() {
 
 void stopAlarm() {
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
-    Serial.println(String(F("Рассвет ВЫКЛ в ")) + padNum(hour(),2) + ":" + padNum(minute(),2));
+    DEBUGLN(String(F("Рассвет ВЫКЛ в ")) + padNum(hour(),2) + ":" + padNum(minute(),2));
     set_isAlarming(false);
     set_isAlarmStopped(true);
     set_isPlayAlarmSound(false);
@@ -1303,7 +1303,7 @@ void SetAutoMode(byte amode) {
   }
 
   if (!no_action) {
-    Serial.println(text);  
+    DEBUGLN(text);  
 
     #if (USE_MQTT == 1)
     DynamicJsonDocument doc(256);
@@ -1459,8 +1459,8 @@ uint32_t getNightClockColorByIndex(byte idx) {
 }
 
 void printNtpServerName() {
-  Serial.print(F("NTP-сервер "));
-  Serial.print(ntpServerName);
-  Serial.print(F(" -> "));
-  Serial.println(timeServerIP);
+  DEBUG(F("NTP-сервер "));
+  DEBUG(ntpServerName);
+  DEBUG(F(" -> "));
+  DEBUGLN(timeServerIP);
 }

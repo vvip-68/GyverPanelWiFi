@@ -8,8 +8,8 @@ bool getWeather() {
   
   if (!wifi_connected || useWeather == 0) return false;  
   
-  Serial.println();
-  Serial.println(F("Запрос текущей погоды"));
+  DEBUGLN();
+  DEBUGLN(F("Запрос текущей погоды"));
 
   if (useWeather == 1) {
     if (!w_client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
@@ -33,8 +33,8 @@ bool getWeather() {
   w_client.readBytesUntil('\r', status, sizeof(status));
   // It should be "HTTP/1.0 200 OK" or "HTTP/1.1 200 OK"
   if (strcmp(status + 9, "200 OK") != 0) {
-    Serial.print(F("Ошибка сервера погоды: "));
-    Serial.println(status);
+    DEBUG(F("Ошибка сервера погоды: "));
+    DEBUGLN(status);
     
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
@@ -49,7 +49,7 @@ bool getWeather() {
     // Пропускаем заголовки                                                                
   char endOfHeaders[] = "\r\n\r\n";                                       // Системные заголовки ответа сервера отделяются от остального содержимого двойным переводом строки
   if (!w_client.find(endOfHeaders)) {                                       // Отбрасываем системные заголовки ответа сервера
-    Serial.println(F("Нераспознанный ответ сервера погоды"));             // Если ответ сервера не содержит системных заголовков, значит что-то пошло не так
+    DEBUGLN(F("Нераспознанный ответ сервера погоды"));             // Если ответ сервера не содержит системных заголовков, значит что-то пошло не так
 
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
@@ -66,8 +66,8 @@ bool getWeather() {
   DeserializationError error = deserializeJson(jsn, w_client);
 
   if (error) {
-    Serial.print(F("JSON не разобран: "));
-    Serial.println(error.c_str());
+    DEBUG(F("JSON не разобран: "));
+    DEBUGLN(error.c_str());
     
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
@@ -181,7 +181,7 @@ bool getWeather() {
   }
   
   if (!weather_ok) {
-    Serial.print(F("JSON не содержит данных о погоде"));  
+    DEBUG(F("JSON не содержит данных о погоде"));  
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("no data");
@@ -202,29 +202,29 @@ bool getWeather() {
   weather_t = 0; 
   weather_cnt = 0;
   
-  Serial.print(F("Погода получена: "));
+  DEBUG(F("Погода получена: "));
   if (useWeather == 1)
-    Serial.println(F("Yandex"));
+    DEBUGLN(F("Yandex"));
   else  
-    Serial.println(F("OpenWeatherMap"));
-  Serial.print(F("Город: "));
-  Serial.println(town);
-  Serial.print(F("Сейчас: "));
-  Serial.print(weather + ", "); 
-  if (temperature > 0) Serial.print("+"); 
-  Serial.println(String(temperature) + "ºC"); // 'º'
-  Serial.println(String(F("Код иконки: '")) + icon + "'");
+    DEBUGLN(F("OpenWeatherMap"));
+  DEBUG(F("Город: "));
+  DEBUGLN(town);
+  DEBUG(F("Сейчас: "));
+  DEBUG(weather + ", "); 
+  if (temperature > 0) DEBUG("+"); 
+  DEBUGLN(String(temperature) + "ºC"); // 'º'
+  DEBUGLN(String(F("Код иконки: '")) + icon + "'");
   if (useWeather == 1)
-    Serial.println(String(F("Цвет неба: '")) + skyColor + "'");
+    DEBUGLN(String(F("Цвет неба: '")) + skyColor + "'");
   else
-    Serial.println(String(F("Код погоды: ")) + String(weather_code));
-  Serial.print(F("Сейчас: "));
-  Serial.println(dayTime);
-  Serial.print(F("Рассвет: "));
-  Serial.println(sunrise);
-  Serial.print(F("Закат: "));
-  Serial.println(sunset);
-  Serial.println();
+    DEBUGLN(String(F("Код погоды: ")) + String(weather_code));
+  DEBUG(F("Сейчас: "));
+  DEBUGLN(dayTime);
+  DEBUG(F("Рассвет: "));
+  DEBUGLN(sunrise);
+  DEBUG(F("Закат: "));
+  DEBUGLN(sunset);
+  DEBUGLN();
   
   #if (USE_MQTT == 1)
   doc["result"] = F("OK");

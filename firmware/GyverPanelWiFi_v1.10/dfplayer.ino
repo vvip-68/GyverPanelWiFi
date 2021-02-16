@@ -19,11 +19,11 @@ void InitializeDfPlayer1() {
 
 void InitializeDfPlayer2() {    
 #if (USE_MP3 == 1)
-  Serial.print(F("\nИнициализация MP3 плеера."));
+  DEBUG(F("\nИнициализация MP3 плеера."));
   refreshDfPlayerFiles();    
-  Serial.println(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
-  Serial.println(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));
-  Serial.println(String(F("Звуков сообщений найдено: ")) + String(noteSoundsCount));
+  DEBUGLN(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
+  DEBUGLN(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));
+  DEBUGLN(String(F("Звуков сообщений найдено: ")) + String(noteSoundsCount));
   set_isDfPlayerOk(alarmSoundsCount + dawnSoundsCount + noteSoundsCount > 0);
 #else  
   set_isDfPlayerOk(false);
@@ -34,57 +34,57 @@ void InitializeDfPlayer2() {
 void printDetail(uint8_t type, int value){
   switch (type) {
     case TimeOut:
-      //Serial.println(F("Таймаут!"));
+      //DEBUGLN(F("Таймаут!"));
       break;
     case WrongStack:
-      //Serial.println(F("Ошибка стека!"));
+      //DEBUGLN(F("Ошибка стека!"));
       break;
     case DFPlayerCardInserted:
-      Serial.println(F("Карта вставлена."));
+      DEBUGLN(F("Карта вставлена."));
       break;
     case DFPlayerCardRemoved:
-      Serial.println(F("Карта удалена."));
+      DEBUGLN(F("Карта удалена."));
       break;
     case DFPlayerCardOnline:
-      Serial.println(F("Карта готова."));
+      DEBUGLN(F("Карта готова."));
       break;
     case DFPlayerUSBInserted:
-      Serial.println(F("Подключен USB."));
+      DEBUGLN(F("Подключен USB."));
       break;
     case DFPlayerUSBRemoved:
-      Serial.println(F("Отключен USB."));
+      DEBUGLN(F("Отключен USB."));
       break;
     case DFPlayerPlayFinished:
-      Serial.print(F("Номер: "));
-      Serial.print(value);
-      Serial.println(F(". Завершено."));
+      DEBUG(F("Номер: "));
+      DEBUG(value);
+      DEBUGLN(F(". Завершено."));
       if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
         dfPlayer.stop();
       }
       break;
     case DFPlayerError:
-      Serial.print(F("DFPlayerError:"));
+      DEBUG(F("DFPlayerError:"));
       switch (value) {
         case Busy:
-          Serial.println(F("Нет карты"));
+          DEBUGLN(F("Нет карты"));
           break;
         case Sleeping:
-          Serial.println(F("Ожидание..."));
+          DEBUGLN(F("Ожидание..."));
           break;
         case SerialWrongStack:
-          Serial.println(F("Неверные данные"));
+          DEBUGLN(F("Неверные данные"));
           break;
         case CheckSumNotMatch:
-          Serial.println(F("Ошибка контрольной суммы"));
+          DEBUGLN(F("Ошибка контрольной суммы"));
           break;
         case FileIndexOut:
-          Serial.println(F("Неверный индекс файла"));
+          DEBUGLN(F("Неверный индекс файла"));
           break;
         case FileMismatch:
-          Serial.println(F("Файл не найден"));
+          DEBUGLN(F("Файл не найден"));
           break;
         case Advertise:
-          Serial.println(F("Реклама"));
+          DEBUGLN(F("Реклама"));
           break;
         default:
           break;
@@ -107,7 +107,7 @@ void refreshDfPlayerFiles() {
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
-    Serial.print(F("."));
+    DEBUG(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);
   alarmSoundsCount = val < 0 ? 0 : val;
   
@@ -119,7 +119,7 @@ void refreshDfPlayerFiles() {
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
-    Serial.print(F("."));
+    DEBUG(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
   dawnSoundsCount = val < 0 ? 0 : val;
 
@@ -131,11 +131,11 @@ void refreshDfPlayerFiles() {
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
-    Serial.print(F("."));
+    DEBUG(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
   noteSoundsCount = val < 0 ? 0 : val;
 
-  Serial.println();  
+  DEBUGLN();  
 }
 #endif
 
