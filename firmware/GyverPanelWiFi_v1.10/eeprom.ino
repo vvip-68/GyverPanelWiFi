@@ -92,11 +92,12 @@ void loadSettings() {
   // 237,238 - MQTT порт                                                                                     // getMqttPort()                  // putMqttPort(mqtt_port)
   // 239 - использовать MQTT канал управления: 0 - нет 1 - да                                                // getUseMqtt()                   // putUseMqtt(useMQTT)  
   // 240 - яркость ночных часов                                                                              // getNightClockBrightness()      // putNightClockBrightness(nightClockBrightness)
-  // 241,242 - задержка отпракии запросов MQTT серверу                                                       // getMqttSendDelay()             // putMqttSendDelay(mqtt_send_delay)
+  //**241 - не используется
+  //**242 - не используется
   //  243 - Режим по времени "Рассвет" - так же как для режима 1                                             // getAM5effect()                 // putAM5effect(dawn_effect_id)
   // 244,245,246,247 - Код региона OpenWeatherMap для получения погоды (4 байта - uint32_t)                  // getWeatherRegion2()            // putWeatherRegion2(regionID2)
   //  248 - Режим по времени "Закат" - так же как для режима 1                                               // getAM6effect()                 // putAM6effect(dawn_effect_id)
-  // 249 - отправка параметров состояния в MQTT 0 - индивидуально, 1 - пакетами                              // getSendStateInPacket()         // putSendStateInPacket(mqtt_state_packet)  
+  //**249 - не используется
   // 250-279 - префикс топика сообщения (30 симв)                                                            // getMqttPrefix()                // putMqttPrefix(mqtt_prefix)
   // 280,281 - интервал отправки значения uptime на MQTT-сервер                                              // getUpTimeSendInterval()        // putUpTimeSendInterval(upTimeSendInterval)
   //**282 - не используется
@@ -200,7 +201,6 @@ void loadSettings() {
 
     #if (USE_MQTT == 1)
     useMQTT = getUseMqtt();
-    mqtt_state_packet = getSendStateInPacket();
     getMqttServer().toCharArray(mqtt_server, 25);   //  182-206 - mqtt сервер          (24 байт макс) + 1 байт '\0'
     getMqttUser().toCharArray(mqtt_user, 15);       //  207-221 - mqtt user            (14 байт макс) + 1 байт '\0'
     getMqttPass().toCharArray(mqtt_pass, 15);       //  222-236 - mqtt password        (14 байт макс) + 1 байт '\0'
@@ -210,7 +210,6 @@ void loadSettings() {
     if (strlen(mqtt_pass)   == 0) strcpy(mqtt_pass,   DEFAULT_MQTT_PASS);
     if (strlen(mqtt_prefix) == 0) strcpy(mqtt_prefix, DEFAULT_MQTT_PREFIX);
     mqtt_port = getMqttPort();
-    mqtt_send_delay = getMqttSendDelay();
     upTimeSendInterval = getUpTimeSendInterval();
     #endif
 
@@ -380,8 +379,6 @@ void saveDefaults() {
   putMqttPrefix(String(mqtt_prefix));
   putMqttPort(mqtt_port);
   putUseMqtt(useMQTT);
-  putSendStateInPacket(mqtt_state_packet);
-  putMqttSendDelay(mqtt_send_delay);
   putUpTimeSendInterval(upTimeSendInterval);
   #endif
 
@@ -1561,16 +1558,6 @@ void putUseMqtt(boolean use) {
   }
 }
 
-bool getSendStateInPacket() {
-  return EEPROMread(249) == 1;
-}
-
-void putSendStateInPacket(boolean use_packet) {  
-  if (use_packet != getSendStateInPacket()) {
-    EEPROMwrite(249, use_packet ? 1 : 0);
-  }
-}
-
 uint16_t getMqttPort() {
   uint16_t val = (uint16_t)EEPROM_int_read(237);
   return val;
@@ -1620,17 +1607,6 @@ void putMqttPrefix(String prefix) {
   if (prefix != getMqttPrefix()) {
     EEPROM_string_write(250, prefix, 30);
   }
-}
-
-uint16_t getMqttSendDelay() {
-  uint16_t val = (uint16_t)EEPROM_int_read(241);
-  return val;
-}
-
-void putMqttSendDelay(uint16_t port) {
-  if (port != getMqttSendDelay()) {
-    EEPROM_int_write(241, port);
-  }  
 }
 
 #endif

@@ -38,7 +38,7 @@
 
 // Профиль устройства, под которое выполняется компиляция и сборка проекта
 #define HOST_NAME   F("WiFiPanel")
-#define DEVICE_ID   0               // 0 - тестовый стенд
+#define DEVICE_ID   5               // 0 - тестовый стенд
                                     // 1 - часы на кухне
                                     // 2 - часы на столе
                                     // 3 - панель на стене
@@ -458,6 +458,8 @@
 #endif
 
 #if (USE_MQTT == 1)
+#define MQTT_KEEPALIVE 15        // Интервал "пинга" MQTT ервера для проверки, что соединение еще "живо"
+#define MQTT_SOCKET_TIMEOUT 5    // Таймаут сокета передачи данных в MQTT
 #include <PubSubClient.h>        // Библиотека для работы с MQTT
 #endif
 

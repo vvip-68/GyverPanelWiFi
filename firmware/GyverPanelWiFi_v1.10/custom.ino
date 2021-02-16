@@ -55,7 +55,6 @@ void doEffectWithOverlay(byte aMode) {
     // Если подошло время отправки uptime на MQTT-сервер - отправить
     if (init_time && upTime > 0 && upTimeSendInterval > 0 && (millis() - uptime_send_last > upTimeSendInterval * 1000L )) {
       addKeyToChanged("UP");
-      uptime_send_last = millis();
     }    
     #endif    
   }

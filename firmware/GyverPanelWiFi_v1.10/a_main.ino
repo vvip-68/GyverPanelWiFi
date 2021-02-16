@@ -190,7 +190,7 @@ void process() {
 
     if (clicks > 0) {
       Serial.print(F("Кнопка нажата "));  
-      Serial.print(String(clicks));
+      Serial.print(clicks);
       Serial.println(F(" раз"));  
     }
 
@@ -481,9 +481,7 @@ void parsing() {
     11 - Настройки MQTT-канала (см. также $6 для N=8,9,10)
       - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
       - $11 2 D;   - порт MQTT
-      - $11 4 D;   - Задержка между последовательными обращениями к MQTT серверу
       - $11 5;     - Разорвать подключение к MQTT серверу, чтобы он иог переподключиться с новыми параметрами
-      - $11 6 X;   - Флаг - отправка состояний 0 - индивидуально 1 - пакетом
       - $11 7 D;   - интервал отправки uptime на MQTT сервер в секундах или 0, если отключено
     12 - Настройки погоды
       - $12 3 X;   - использовать цвет для отображения температуры X=0 - выкл X=1 - вкл в дневных часах
@@ -589,7 +587,6 @@ void parsing() {
     if (!(intData[0] == 18 || (intData[0] == 6 && intData[1] == 7))) {
       idleTimer.reset();
       wifi_print_ip = false;
-      stopAlarm();
     }
 
     switch (intData[0]) {
@@ -1332,9 +1329,7 @@ void parsing() {
       // 11 - Настройки MQTT-канала
       // - $11 1 X;   - использовать управление через MQTT сервер X; 0 - не использовать; 1 - использовать
       // - $11 2 D;   - Порт MQTT
-      // - $11 4 D;   - Задержка между последовательными обращениями к MQTT серверу
       // - $11 5;     - Разорвать подключение к MQTT серверу, чтобы он иог переподключиться с новыми параметрами
-      // - $11 6 X;   - Флаг - отправка состояний 0 - индивидуально 1 - пакетом
       // - $11 7 D;   - интервал отправки uptime на MQTT сервер в секундах или 0, если отключено
       // ----------------------------------------------------
 
@@ -1350,9 +1345,6 @@ void parsing() {
            case 2:               // $11 2 D; - Порт MQTT
              set_mqtt_port(intData[2]);
              break;
-           case 4:               // $11 4 D; - Задержка между последовательными обращениями к MQTT серверу
-             set_mqtt_send_delay(intData[2]);
-             break;
            case 5:               // $11 5;   - Сохранить изменения ипереподключиться к MQTT серверу
              saveSettings();
              mqtt.disconnect();
@@ -1366,9 +1358,6 @@ void parsing() {
              }
              // MQTT сервер мог поменять свои настройки, переключились на другой сервер или другой аккаунт - отправить туда все начальные настройки,
              if (useMQTT) mqttSendStartState();
-             break;
-           case 6:               // $11 6 X; - Отправка параметров состояния в MQTT: 0 - индивидуально; 1 - пакетом
-             set_mqtt_state_packet(intData[2] == 1);
              break;
            case 7:               // $11 7 D; - Интервал отправки uptime на сервер MQTT
              set_upTimeSendInterval(intData[2]);
@@ -2466,7 +2455,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   //               4 - синий - активная, содержит макрос даты
   //               5 - красный - для строки 0 - это управляющая строка
   // TY:[Z:текст] текст для строки, с указанным индексом I 0..35, Z 0..9,A..Z. Ограничители [] обязательны; текст ответа в формате: 'I:Z > текст'; 
-  // TZ:[Z:текст] То же, что 'TY". Служит для фоновой загрузки всего массива сохраненных строк в смартфон для формирования элементов списка выбора строки. Получив этот ответ приложение на смартфоне берет следующий индекс и отправляет команду `'$13 3 I;'` для получения следующей строки.
   // UC:X        использовать часы поверх эффекта 0-нет, 1-да
   // UE:X        использовать эффект в демо-режиме 0-нет, 1-да
   // UP:число    uptime системы в секундах
@@ -2663,7 +2651,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       value->set(effect);
       return String(effect);
     }
-    return str + "EF:" + String(effect+1); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
+    return str + "EF:" + String(effect); // +1 т.к эффекты считаются с нуля, а индекс в списке эффектов - с 1
   }
 
   // Текущий эффект - название
@@ -2803,8 +2791,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     c = CRGB(globalClockColor);
     tmp = String(c.r) + "," + String(c.g) + "," + String(c.b);
     if (value) {
-   // value->set(globalClockColor);
-   // return String(globalClockColor);
       value->set(tmp);
       return tmp;
     }
@@ -2816,8 +2802,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     c = CRGB(globalTextColor);
     tmp = String(c.r) + "," + String(c.g) + "," + String(c.b);
     if (value) {
-  //  value->set(globalTextColor);
-  //  return String(globalTextColor);
+
       value->set(tmp);
       return tmp;
     }
@@ -2845,12 +2830,12 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
 
   // Исходная строка с индексом editIdx без обработки для отправки в приложени для формирования
   if (key == "TY" && editIdx >= 0 && (editIdx < (sizeof(textLines) / sizeof(String)))) {
-    tmp = String(editIdx) + ":" + String(getAZIndex(editIdx)) + " > '" + getTextByIndex(editIdx);
+    tmp = String(editIdx) + ":" + String(getAZIndex(editIdx)) + " > " + getTextByIndex(editIdx);
     if (value) {
       value->set(tmp);
       return tmp;
     }
-    return str + "TY:" + "[" + tmp + "']";
+    return str + "TY:" + "[" + tmp + "]";
   }
 
   // Оверлей часов вкл/выкл
@@ -3064,7 +3049,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       value->set(alarmEffect);
       return String(alarmEffect);
     }
-    return str + "AE:" + String(alarmEffect + 1);
+    return str + "AE:" + String(alarmEffect);
   }
 
   // Доступность MP3-плеера    
@@ -3174,6 +3159,9 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
 
   // uptime - время работы системы в секундах
   if (key == "UP") {
+    #if (USE_MQTT == 1)    
+      uptime_send_last = millis();
+    #endif
     uint32_t upt = upTime;
     if (upt > 0) {
       upt = ((uint32_t)now()) - upt;
@@ -3482,15 +3470,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     return str + "QW:" + "[" + tmp +  "]";
   }
 
-  // QD:число    задержка между отправками сообщений к MQTT серверу
-  if (key == "QD") {
-    if (value) {
-      value->set(mqtt_send_delay);
-      return String(mqtt_send_delay);
-    }
-    return str + "QD:" + String(mqtt_send_delay);  
-  }
-
   // QR:[text]   префикс топика MQTT сообщения, например QR:[user_af7cd12a/WiFiPanel-0]
   if (key == "QR") {
     tmp = String(mqtt_prefix);
@@ -3499,15 +3478,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return tmp;
     }
     return str + "QR:" + "[" + tmp +  "]";
-  }
-
-  // Использовать отправку состояния параметров в MQTT пакетами 0-индивидуально, 1-пакетами
-  if (key == "QK") {
-    if (value) {
-      value->set(mqtt_state_packet);
-      return String(mqtt_state_packet);  
-    }
-    return str + "QK:" + String(mqtt_state_packet);
   }
 
   // Интервал отправки uptime на cервер в секундах

@@ -871,14 +871,6 @@ void set_MqttPass(String value) {
   addKeyToChanged("QW");
 }
 
-// QD mqtt_send_delay
-void set_mqtt_send_delay(int16_t value) {
-  if (mqtt_send_delay == value) return;  
-  putMqttSendDelay(value);
-  mqtt_send_delay = getMqttSendDelay();
-  addKeyToChanged("QD");
-}
-
 // QR mqtt_prefix
 void set_MqttPrefix(String value) {
   if (getMqttPrefix() == value) return;
@@ -886,14 +878,6 @@ void set_MqttPrefix(String value) {
   memset(mqtt_prefix, '\0', 31);
   getMqttPrefix().toCharArray(mqtt_prefix, 30);
   addKeyToChanged("QR");
-}
-
-// QK mqtt_state_packet
-void set_mqtt_state_packet(bool value) {
-  if (mqtt_state_packet == value) return;  
-  putSendStateInPacket(value);
-  mqtt_state_packet = getSendStateInPacket();
-  addKeyToChanged("QK");
 }
 
 // UI upTimeSendInterval
