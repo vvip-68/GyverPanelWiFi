@@ -510,6 +510,8 @@
 #include "a_def_pass.h"     // Если здесь ошибка - смотри комментарий к определению A_DEF_PASS выше в блоке с соответствующим DEVICE_ID
 #endif
 
+// =======================================================
+
 #if (DEBUG_SERIAL == 1)
 #define DEBUGLN(x)   Serial.println(x)
 #define DEBUG(x)     Serial.print(x)
