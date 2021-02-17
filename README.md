@@ -156,6 +156,8 @@
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_b.jpg)
 ### С SD картой
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_c.jpg)
+### С корректировкой питания и отключением матрицы
+![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_e.jpg)
 ### С корректировкой питания
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_d.jpg)
 
