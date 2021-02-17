@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0216")
+#define FIRMWARE_VER F("WiFiPanel-v.1.09.2021.0217")
 
 // --------------------------------------------------------
 
@@ -95,9 +95,14 @@ void setup() {
   randomSeed(seed);
   random16_set_seed(seed);
 
-  host_name = String(HOST_NAME) + "-" + String(DEVICE_ID);
+  #ifdef DEVICE_ID
+    host_name = String(HOST_NAME) + "-" + String(DEVICE_ID);
+  #else
+    host_name = String(HOST_NAME);
+  #endif
+
   #if (USE_MQTT == 1)
-  mqtt_client_name = host_name + "-" + padNum(random16(),5);
+    mqtt_client_name = host_name + "-" + padNum(random16(),5);
   #endif
   
   DEBUGLN();
