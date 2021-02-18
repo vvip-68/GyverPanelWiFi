@@ -38,16 +38,11 @@
                               // 0 - Настройки профиля вашего устройства размещены ниже в этом файле
                               // Файл a_def_devc.h в комплект не входит, нужно создать, скопировать туда настройки профилей ваших устройств
                               
-#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h     (пароли и ключи доступа как приватные данные в отдельном файле)
-                              // 0 - Настройки MQTT и API KEY OpenWeatherMap в скетче в a_def_soft.h в строках: (пароли и ключи доступа определены в тексте скетча)
-                              //   326 - DEFAULT_MQTT_SERVER // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   330 - DEFAULT_MQTT_USER   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   334 - DEFAULT_MQTT_PASS   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   338 - DEFAULT_MQTT_PORT   // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   342 - DEFAULT_MQTT_PREFIX // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   346 - MQTT_SEND_DELAY     // Требуется если в a_def_hard.h ваша настройка USE_MQTT == 1
-                              //   453 - WEATHER_API_KEY     // Требуется если в a_def_hard.h ваша настройка USE_WEATHER == 1 для погоды с OpenWeatherMap
+#define A_DEF_PASS 1          // 1 - Настройки MQTT и API KEY OpenWeatherMap в отдельном файле a_def_pass.h
+                              // 0 - Настройки MQTT и API KEY OpenWeatherMap определен ниже
                               // Файл a_def_pass.h в комплект не входит, нужно создать, скопировать туда указанные строки
+
+#define WEATHER_API_KEY "6a4ba421859c9f4166697758b68d889b"  // Ключ доступа к информации о погоде с сервиса OpenWeatherMap
 
 #if defined(ESP8266)
 #define DEVICE_VARIANT 0      // Поставьте 0 - если ваше устройство использует только часть из доступных компонентов в схемах с ESP8266 - не полная схема
@@ -59,8 +54,8 @@
                               // Выполняйте сборку устройства в соответственно с выбранной схемой
                               //
                               // При необходимости измените настройки подключении в соответсвии с вариантом вашего устройства:
-                              //   для DEVICE_VARIANT == 0 --> строки 75-105
-                              //   для DEVICE_VARIANT == 1 --> строки 107-144
+                              //   для DEVICE_VARIANT == 0 --> строки 70-100
+                              //   для DEVICE_VARIANT == 1 --> строки 102-139
 #endif
 
 // =================== ESP8266 (NodeMCU, Wemos d1) ===================
