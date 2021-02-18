@@ -638,13 +638,14 @@ void clockTicker() {
     display.point(false);
   } else if (wifi_print_ip) {
     // Четырехкратное нажатие кнопки запускает отображение по частям текущего IP лампы  
-    if (dotFlag  && halfSec) {
-      String ip = WiFi.localIP().toString();
-      int value = atoi(GetToken(ip, wifi_print_idx + 1, '.').c_str()); 
-      display.displayInt(value);
-      display.point(false);
-      wifi_print_idx++;
-      if (wifi_print_idx>3) {
+    if (dotFlag && halfSec) {
+      if (wifi_print_idx<=3) {
+        String ip = WiFi.localIP().toString();
+        int value = atoi(GetToken(ip, wifi_print_idx + 1, '.').c_str()); 
+        display.displayInt(value);
+        display.point(false);
+        wifi_print_idx++;
+      } else {
         wifi_print_idx = 0; 
         wifi_print_ip = false;
       }

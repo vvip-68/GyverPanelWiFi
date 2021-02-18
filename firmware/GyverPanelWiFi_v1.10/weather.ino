@@ -244,6 +244,10 @@ bool getWeather() {
   SendMQTT(out, TOPIC_WTR);
   #endif
 
+  if (thisMode == MC_WEATHER) {
+    loadingFlag = true;
+  }
+
   return true;
 }
 
@@ -538,27 +542,25 @@ void weatherRoutine() {
     // Общая площадь - размер картинки плюс размер отображения погоды
     // Если полученный размер выходит за границы - сдвигаем позицию погоды вверх/влево, пока она не поместится в размер.
     // Полученную скорректированную площадь отрисовки размещаем по центру матирицы
-    pos_x = 0;
-    pos_y = HEIGHT - image_desc.frame_height;
-    weather_text_x = image_desc.frame_width + 8; // знак +/- пусть залазит на картинку  - это прая границаемпературы
-    weather_text_y = pos_y - 5;                  // отступ от низа картинки; 5 - высота шрифта
-    
+    pos_x = (WIDTH - image_desc.frame_width) / 2;
+    pos_y = (HEIGHT - image_desc.frame_height) / 2;
+    weather_text_x = pos_x + image_desc.frame_width + 8; // знак +/- пусть залазит на картинку  - это првая граница температуры
+    weather_text_y = pos_y - 5;                          // отступ от низа картинки; 5 - высота шрифта
+
+    #if (USE_WEATHER == 1)     
+      if (useWeather > 0) {
+        pos_y += 3;
+        while(pos_y + image_desc.frame_height > HEIGHT) pos_y--;
+        weather_text_y = pos_y - 5;                          
+      }
+    #endif
+        
     while(weather_text_x > 0 && weather_text_x >= WIDTH) weather_text_x--;
-    while(weather_text_y < 0) weather_text_y++;
-
-    // Ширина картинки + text = oт "pos_x" до "weather_text_x + 15"; - если матрица шире - центрировать конгломерат по матрице
-    // Высота картинки + text = oт "weather_text_x" до "pos_y + image_desc.frame_height"; - если матрица выше - центрировать конгломерат по матрице
-    uint8_t offset_x = (WIDTH - (weather_text_x - pos_x)) / 2 + 1;
-    uint8_t offset_y = (HEIGHT - ((pos_y + image_desc.frame_height) - (weather_text_y + 5))) / 2 - 1;
-
-    pos_x += offset_x;
-    pos_y += offset_y;
-    weather_text_x += offset_x;
-    weather_text_y += offset_y;
+    while(weather_text_y <= 0) weather_text_y++;
 
     #if (USE_WEATHER == 1)     
       if (useWeather > 0 && init_weather) {
-          need_fade_image = useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5);      
+          need_fade_image = true; // useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5); // ?? - не помню зачем так
       } else {
         // Если режим без отображения температуры - рисовать картинки погоды по центру матрицы
         pos_x = (WIDTH - image_desc.frame_width) / 2;

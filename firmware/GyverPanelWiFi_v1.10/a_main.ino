@@ -92,6 +92,7 @@ void process() {
             DEBUGLN(F("Таймаут запроса погоды!"));
             getWeatherInProgress = false;
             weather_cnt++;
+            refresh_weather = true; weather_t = 0;
             if (init_weather && weather_cnt >= 10) {
               DEBUGLN(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
@@ -586,7 +587,6 @@ void parsing() {
     // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
     if (!(intData[0] == 18 || (intData[0] == 6 && intData[1] == 7))) {
       idleTimer.reset();
-      wifi_print_ip = false;
     }
 
     switch (intData[0]) {
@@ -1392,7 +1392,10 @@ void parsing() {
            case 4:               // $12 4 X; - Использовать получение погоды с сервера 0 - нет; 1 - Yandex 2 - OpenWeatherMap
              set_useWeather(intData[2]);
              if (wifi_connected) {
-               refresh_weather = true; weather_t = 0; weather_cnt = 0;
+               refresh_weather = true; weather_t = 0; weather_cnt = 0; init_weather = false; 
+             }
+             if (thisMode == MC_WEATHER && !useWeather) {
+               loadingFlag = true;
              }
              break;
            case 5:               // $12 5 I C C2; - Интервал обновления погоды с сервера в минутах, Код региона Yandex, Код региона OpenWeatherMap 
@@ -2241,34 +2244,34 @@ void sendPageParams(int page, eSources src) {
   
   switch (page) { 
     case 1:  // Настройки
-      str = getStateString("W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
+      str = getStateString("UP|W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
       break;
     case 2:  // Эффекты
-      str = getStateString("EF|EN|UE|UT|UC|SE|SS|BE|SQ");
+      str = getStateString("UP|EF|EN|UE|UT|UC|SE|SS|BE|SQ");
       break;
     case 3:  // Настройки бегущей строки
-      str = getStateString("TE|TI|CT|ST|C2|OM|TS");
+      str = getStateString("UP|TE|TI|CT|ST|C2|OM|TS");
       break;
     case 4:  // Настройки часов
-      str = getStateString("CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM");
+      str = getStateString("UP|CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM");
       break;
     case 5:  // Настройки будильника
-      str = getStateString("AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
+      str = getStateString("UP|AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
       break;
     case 6:  // Настройки подключения
-      str = getStateString("AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK|UI");
+      str = getStateString("UP|AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK|UI");
       break;
     case 7:  // Настройки режимов автовключения по времени
-      str = getStateString("WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A");
+      str = getStateString("UP|WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A");
       break;
     case 10:  // Загрузка картинок
-      str = getStateString("W|H|BR|CL|SD");
+      str = getStateString("UP|W|H|BR|CL|SD");
       break;
     case 11:  // Рисование
-      str = getStateString("W|H|BR|CL|SD|FS");
+      str = getStateString("UP|W|H|BR|CL|SD|FS");
       break;
     case 12:  // Игры
-      str = getStateString("W|H|BR|SE|SD");
+      str = getStateString("UP|W|H|BR|SE|SD");
       break;
     case 91:  // Запрос текста бегущей строки для редактирования указанной ячейки или замены строки текста в списке ячейки
       str = getStateString("TS|TY");
@@ -3800,7 +3803,7 @@ void setEffect(byte eff) {
 void showCurrentIP(boolean autoplay) {
   setEffect(MC_TEXT);
   textHasMultiColor = false;
-  wifi_print_ip = true;  
+  wifi_print_ip = wifi_connected;  
   wifi_print_ip_text = true;
   wifi_print_idx = 0; 
   wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : F("Нет подключения к сети WiFi");

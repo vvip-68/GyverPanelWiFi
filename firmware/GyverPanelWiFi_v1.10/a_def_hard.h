@@ -60,7 +60,7 @@
                               //
                               // При необходимости измените настройки подключении в соответсвии с вариантом вашего устройства:
                               //   для DEVICE_VARIANT == 0 --> строки 75-105
-                              //   для DEVICE_VARIANT == 1 --> строки 107-141
+                              //   для DEVICE_VARIANT == 1 --> строки 107-144
 #endif
 
 // =================== ESP8266 (NodeMCU, Wemos d1) ===================
@@ -92,8 +92,8 @@
                               // D6 для схем с DFPlayer    (D6 --- КНОПКА --- GND)
 #define POWER_PIN D1          // D1 управляющий пин вкл/выкл матрицы через MOSFET / реле; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
-#define SRX D3                // к TX MP3 DFPlayer - требуется для компиляции скетча (USE_MP3 == 1)
-#define STX D4                // к RX MP3 DFPlayer - требуется для компиляции скетча (USE_MP3 == 1)
+#define STX D3                // подключен в RX пин (2) модуля DFPlayer
+#define SRX D4                // подключен в TX пин (3) модуля DFPlayer
 #define DIO D5                // D5 TM1637 display DIO pin - требуется для компиляции скетча (USE_TM1637 == 1)
 #define CLK D7                // D7 TM1637 display CLK pin - требуется для компиляции скетча (USE_TM1637 == 1)
 
@@ -105,6 +105,8 @@
 #endif
 
 #if (DEVICE_VARIANT == 1)
+// Схему соединений смотри в папке "schemes" проекта
+// ESP8266+ALL.JPG             - подключены все возможные компоненты, сенсорная кнопка (BUTTON_TYPE == 0)
 #define WIDTH 16              // ширина матрицы
 #define HEIGHT 16             // высота матрицы
 #define SEGMENTS 1            // диодов в одном "пикселе" (для создания матрицы из кусков ленты)
@@ -123,15 +125,16 @@
 // Внимание!!!
 // Данная компоновка работает только при отключенном отладочном выводе (DEBUG_SERIAL == 0), поскольку вывод в Serial использует D9 и D10 
 // которые в данной схеме заняты под пин кнопки и пин CLK TM1637
+// Если используется сенсорная кнопка - для прошивки ESP8266 необходимо отсоединить управляющий провод идущий от кнопки до Rx.
  
 #define LED_PIN 2             // пин ленты
-#define PIN_BTN D10           // кнопка подключена сюда (D10 --- КНОПКА --- GND) 
+#define PIN_BTN D9            // кнопка подключена сюда (D9 --- КНОПКА --- GND) 
 #define POWER_PIN D1          // управляющий пин вкл/выкл матрицы через MOSFET / реле; POWER_ON - HIGH, POWER_OFF - LOW
 #define SD_CS_PIN D8          // пин выбора SD карты - ChipSelect; Также SD карта использует D5 (CLK), D6 (MISO), D7 (MOSI)
-#define SRX D3                // к TX MP3 DFPlayer
-#define STX D4                // к RX MP3 DFPlayer
+#define STX D3                // подключен в RX пин (2) модуля DFPlayer
+#define SRX D4                // подключен в TX пин (3) модуля DFPlayer
 #define DIO D0                // TM1637 display DIO pin
-#define CLK D9                // TM1637 display CLK pin
+#define CLK D10               // TM1637 display CLK pin
 
                               // Для USE_SD == 1 - поведение при проигрывании файла эффекта с SD-карты 
 #define WAIT_PLAY_FINISHED 1  // 1 - переключаться на следующий эффект только когда весь файл полностью показан; 
