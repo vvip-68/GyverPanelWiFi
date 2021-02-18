@@ -23,10 +23,10 @@
 ## Схемы устройств для ESP32
 
 ### С полным набором компонент
-![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP32_ALL.jpg)
+![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP32_ALL.JPG)
 
 ### С сенсорной кнопкой и отключением матрицы
-![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP32_MOSFET.jpg)
+![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP32_MOSFET.JPG)
 
 ### С обычной кнопкой
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP32_button_noRELAY.jpg)
