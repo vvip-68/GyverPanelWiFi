@@ -4,6 +4,8 @@
 
 ![Среда разработки Arduino IDE](https://github.com/vvip-68/GyverWallWiFi/blob/master/wiki/Step_01.png)
 
+![Среда разработки Arduino IDE](https://github.com/vvip-68/GyverWallWiFi/blob/master/wiki/Step_01_1.png)
+
 Установите среду разработки на ваш компьютер. После завершения установки, запустите Arduino IDE.
 
 ## Шаг 2
