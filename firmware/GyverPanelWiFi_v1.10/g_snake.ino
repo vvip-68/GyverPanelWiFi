@@ -7,11 +7,10 @@
 int8_t vectorX, vectorY;
 int8_t headX, headY, buttX, buttY;
 int8_t appleX, appleY;
-boolean apple_flag, missDelete = false;
-
 int8_t buttVector[MAX_LENGTH];
 int snakeLength;
-boolean butt_flag, pizdetc;
+boolean butt_flag, pizdetc, missDelete = false;
+volatile boolean apple_flag;
 
 void snakeRoutine() {
   if (loadingFlag || gameOverFlag) {
@@ -24,7 +23,7 @@ void snakeRoutine() {
   
   buttonsTickSnake();
 
-  if (!apple_flag) putApple();
+  if (!apple_flag) putApple();  
 
   // запоминаем, куда повернули голову
   // 0 - право, 1 - лево, 2 - вверх, 3 - вниз
