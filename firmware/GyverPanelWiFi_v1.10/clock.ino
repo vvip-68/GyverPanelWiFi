@@ -852,8 +852,6 @@ void calculateDawnTime() {
     }
   }
 
-  // Serial.printf("Alarm: h:%d m:%d wd:%d\n", alrmHour, alrmMinute, alrmWeekDay);
-  
   // расчёт времени рассвета
   if (alrmMinute > dawnDuration) {                  // если минут во времени будильника больше продолжительности рассвета
     dawnHour = alrmHour;                            // час рассвета равен часу будильника
@@ -876,8 +874,6 @@ void calculateDawnTime() {
       }
     }
   }
-
-  // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnHour, dawnMinute, dawnWeekDay);
 
   DEBUGLN(String(F("Следующий рассвет в ")) + padNum(dawnHour,2)+ F(":") + padNum(dawnMinute,2) + ", " + getWeekdayString(dawnWeekDay));
 }

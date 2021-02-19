@@ -100,10 +100,6 @@ void setup() {
   #else
     host_name = String(HOST_NAME);
   #endif
-
-  #if (USE_MQTT == 1)
-    mqtt_client_name = host_name + "-" + padNum(random16(),5);
-  #endif
   
   DEBUGLN();
   DEBUGLN(FIRMWARE_VER);
@@ -202,11 +198,17 @@ void setup() {
   // Настройка соединения с MQTT сервером
   stopMQTT = !useMQTT;
   changed_keys = "";
+  mqtt_client_name = host_name + "-" + String(random16(), HEX);
   last_mqtt_server = mqtt_server;
   last_mqtt_port = mqtt_port;
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
-  checkMqttConnection();    
+  mqtt.setSocketTimeout(1);
+  uint32_t t = millis();
+  checkMqttConnection();
+  if (millis() - t > MQTT_CONNECT_TIMEOUT) {
+    nextMqttConnectTime = millis() + MQTT_RECONNECT_PERIOD;
+  }
   String msg = F("START");
   SendMQTT(msg, TOPIC_STA);
   #endif
@@ -236,7 +238,9 @@ void setup() {
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    #if (DEBUG_SERIAL == 1)
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    #endif
   });
 
   ArduinoOTA.onError([](ota_error_t error) {

@@ -32,7 +32,7 @@ void snowRoutine() {
 
 uint8_t USE_SEGMENTS_PAINTBALL = 0;
 uint8_t BorderWidth = 0;
-uint8_t dir_mx, seg_num, seg_size, seg_offset;
+uint8_t dir_mx, seg_num, seg_size, seg_offset, seg_offset_x, seg_offset_y;
 int16_t idx;
 
 void lightBallsRoutine() {
@@ -411,7 +411,7 @@ void colorsRoutine() {
 // ---------------------------------------- ЦИКЛОН ------------------------------------------
 
 int16_t cycle_x, cycle_y; // могут уходить в минус при смене направления
-uint8_t move_dir, fade_divider, USE_SEGMENTS_CYCLON;
+uint8_t move_dir, fade_divider, inc_cnt, USE_SEGMENTS_CYCLON;
 
 void cyclonRoutine() {
   if (loadingFlag) {
@@ -421,12 +421,15 @@ void cyclonRoutine() {
     dir_mx = WIDTH > HEIGHT ? 0 : 1;                                                                       // 0 - сегменты расположены горизонтально, 1 - вертикально
     seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);                                           // вычисляем количество сегментов, умещающихся на матрице, в режиме без сигментов ширина одной полоски будет равна кол-ву сегментов
     seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                                                               // Размер квадратного сегмента (высота и ширина равны)
-    seg_offset = USE_SEGMENTS_CYCLON == 1 ? ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / 2 : 0; // смещение от низа/верха матрицы
+    seg_offset_y = USE_SEGMENTS_CYCLON == 1 ? (dir_mx == 1 ? HEIGHT - seg_size * seg_num : 0) / 2 : 0;     // смещение от низа/верха матрицы
+    seg_offset_x = USE_SEGMENTS_CYCLON == 1 ? (dir_mx == 0 ? WIDTH - seg_size * seg_num : 0) / 2 : 0;      // смещение от левого/правого края матрицы
     hue = 0;
-    cycle_x = USE_SEGMENTS_CYCLON == 1 ? (dir_mx == 0 ? seg_offset + seg_size - 1 : seg_size - 1) : WIDTH - 1; 
-    cycle_y = USE_SEGMENTS_CYCLON == 1 ? (dir_mx == 0 ? 0 : seg_offset) : 0;
+    cycle_x = USE_SEGMENTS_CYCLON == 1 ? (seg_offset_x + seg_size - 1) : WIDTH - 1; // начало - от правого края к левому
+    cycle_y = USE_SEGMENTS_CYCLON == 1 ?  seg_offset_y : 0;
     move_dir = 1;
     fade_divider = 0;
+    inc_cnt = NUM_LEDS / 384;
+    if (inc_cnt == 0) inc_cnt = 1;
     FastLED.clear();  // очистить
   }
 
@@ -436,20 +439,21 @@ void cyclonRoutine() {
   // Использовать отрисовку по сегментам
   // Если сегменты не используется - ширина одной полоски - кол-во сегментов
   for (byte i=0; i < seg_num; i++) {
-    
-    if (USE_SEGMENTS_CYCLON == 1) {
-      idx = dir_mx == 0
-         ? getPixelNumber(cycle_x + i * seg_size , cycle_y)
-         : getPixelNumber(cycle_x, cycle_y + i * seg_size);
-    } else {
-      idx = getPixelNumber(cycle_x + i, cycle_y);
+    for (byte k=0; k < inc_cnt; k++) {    
+      if (USE_SEGMENTS_CYCLON == 1) {
+        idx = dir_mx == 0
+           ? getPixelNumber(cycle_x + i * seg_size, cycle_y + k)
+           : getPixelNumber(cycle_x, cycle_y + i * seg_size + k);
+      } else {
+        idx = getPixelNumber(cycle_x + i, cycle_y + k);
+      }
+      if (idx >= 0 && idx < NUM_LEDS) 
+          leds[idx] = CHSV(hue + k + (USE_SEGMENTS_CYCLON == 1 ? i * 85 : 0), 255, actualBrightness);              
     }
-    if (idx >= 0 && idx < NUM_LEDS) 
-        leds[idx] = CHSV(hue + (USE_SEGMENTS_CYCLON == 1 ? i * 85 : 0), 255, actualBrightness);              
   }  
 
-  hue++;
-
+  hue += inc_cnt;
+  
   // Затухание - не на каждый цикл, а регулируется параметром эффекта
   byte fader_param = map8(255 - effectScaleParam[MC_CYCLON],0,5);
   fade_divider++;
@@ -458,26 +462,26 @@ void cyclonRoutine() {
     fader(5);
   }
 
-  cycle_y++;
+  cycle_y += inc_cnt;
 
   if (USE_SEGMENTS_CYCLON) {
     
-    if (cycle_y >= seg_size) {
-      cycle_y = (dir_mx == 0 ? 0 : seg_offset);
+    if (cycle_y - seg_offset_y >= seg_size) {
+      cycle_y = seg_offset_y;
   
       if (move_dir == 0) {
         // Слева направо
         cycle_x++;     
-        if (cycle_x >= seg_size - seg_offset) {
+        if (cycle_x - seg_offset_x >= seg_size) {
             move_dir = 1;
-            cycle_x = seg_size - 1 - seg_offset;
+            cycle_x = seg_size - 1 + seg_offset_x;
         }
       } else {
         // Справа налево
         cycle_x--;     
-        if (cycle_x < seg_offset) {
+        if (cycle_x < seg_offset_x) {
             move_dir = 0;
-            cycle_x = seg_offset;
+            cycle_x = seg_offset_x;
         }
       }    
     }

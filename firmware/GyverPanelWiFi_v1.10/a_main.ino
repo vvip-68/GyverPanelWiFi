@@ -3,19 +3,18 @@
 
 
 // Контроль времени цикла
-// uint32_t last_ms = millis();  
+uint32_t last_ms = millis();  
 
 void process() {  
 
-  // Время прохода одного цикла
-  /*
+  // Время прохода одного цикла  
   uint16_t duration = millis() - last_ms;
   if (duration > 0) {
-    DEBUG(F("duration="));
-    DEBUGLN(duration);
+    last_ms = millis();
+    //DEBUG(F("duration="));
+    //DEBUGLN(duration);
   }
-  */
-
+  
   // принимаем данные
   parsing();
 
@@ -1340,7 +1339,10 @@ void parsing() {
              set_useMQTT(intData[2] == 1);
              // Если MQTT канал только что включили - отправить туда все начальные настройки,
              // т.к. пока канал был отключен - состояние параметров изменялось, но сервер об этом не знает
-             if (useMQTT) mqttSendStartState();
+             if (useMQTT) {
+               nextMqttConnectTime = millis();
+               mqttSendStartState();
+             }
              break;
            case 2:               // $11 2 D; - Порт MQTT
              set_mqtt_port(intData[2]);

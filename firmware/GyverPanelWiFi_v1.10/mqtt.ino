@@ -73,6 +73,8 @@ void checkMqttConnection() {
   // Ели нет оединения  интернетом - незачем проверять наличие подключения к MQTT-ерверу
   if (!wifi_connected) return;
 
+  if (!mqtt.connected() && millis() < nextMqttConnectTime) return;
+
   // Проверить - выполнена ли подписка на топик команд, если нет - подписаться
   if (!stopMQTT && !mqtt_topic_subscribed) {
     mqtt_topic_subscribed = subscribeMqttTopicCmd();
@@ -100,6 +102,7 @@ void checkMqttConnection() {
     mqtt_conn_last = millis();
 
     String topic = mqtt_topic(TOPIC_PWR);
+    uint32_t t = millis();
 
     if (mqtt.connect(mqtt_client_name.c_str(), mqtt_user, mqtt_pass, topic.c_str(), 0, true, "offline")) {
       DEBUGLN(F("\nПодключение к MQTT-серверу выполнено."));
@@ -117,6 +120,13 @@ void checkMqttConnection() {
         mqtt_conn_cnt = 0;
         DEBUGLN();
       }
+    }
+
+    // Если сервер недоступен и попытка соединения отвалилась по таймауту - следующую попытку подключения осуществлять не ранее чем через минут.
+    // Попытка соединения - операция блокирующая и когда сервер недоступен - пауза примерно 18 секунд и все замирает.
+    // Пока не знаю как уменьшить таймаут соединения, но так будет все замирать хотя бы раз в минуту
+    if (millis() - t > MQTT_CONNECT_TIMEOUT) {
+      nextMqttConnectTime = millis() + MQTT_RECONNECT_PERIOD;
     }
   }
   // Проверить необходимость отправки сообщения об изменении состояния клиенту MQTT

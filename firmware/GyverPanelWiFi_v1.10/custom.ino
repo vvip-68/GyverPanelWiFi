@@ -554,7 +554,7 @@ void setTimersForMode(byte aMode) {
 
   if (!(aMode == MC_TEXT || aMode == MC_CLOCK)) {
     effectSpeed = getEffectSpeed(aMode);
-    if (effectSpeed == 0) effectSpeed = 2;
+    if (effectSpeed == 0) effectSpeed = 1;
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_WATERFALL || 
