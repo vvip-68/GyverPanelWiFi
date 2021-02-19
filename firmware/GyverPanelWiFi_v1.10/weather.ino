@@ -633,7 +633,6 @@ void weatherRoutine() {
 
   // Если находимся в фазе 1 - отображение - считаем сколько времени уже отображается, не пора ли переходить к фазе затухания и следующему кадру
   if (fade_weather_phase == 1) {
-    fader(64);
     if (!init_weather) {
       if (millis() - last_draw_frame > image_desc.draw_frame_interval) {
         fade_weather_phase = 2;
