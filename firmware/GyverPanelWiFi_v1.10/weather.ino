@@ -515,8 +515,35 @@ int8_t  weather_text_x, weather_text_y;
 
 void weatherRoutine() {
 
-  boolean need_fade_image = false;     // Если отображение значения температуры наслаивается на картинку и задано использовать цвета для отображения значения -
-                                       // яркость картинки нужно немного приглушать, чтобы цифры температуры не сливались с картинкой
+  #if (USE_WEATHER == 1)     
+
+    // Есть ли возможность отрисовки температуры большим шрифтом?
+    bool big_font = c_size == 2 && (WIDTH > image_desc.frame_width + 10 || HEIGHT > image_desc.frame_height + 7);
+
+    byte t = abs(temperature);
+    byte dec_t = t / 10;
+    byte edc_t = t % 10;
+
+    // ширина текста температуры
+    int8_t temp_width = t == 0
+      ? (big_font ? 9 : 5)      // Цифра 0 и знак градусов и пробел между ними
+      : (big_font ? 15 : 11);   // +/- две цифры градусов
+
+    if (t != 0 && dec_t == 0) temp_width -= (big_font ? 6 : 4); // Если десятки градусов - их не отображать
+    if (big_font) {                               // больш шрифт
+      if (dec_t == 1) temp_width -= 2;            // 1 занимает 3 колонки а не 5
+      if (edc_t == 1) temp_width -= 2;            // 1 занимает 3 колонки а не 5
+    } else {
+      if (dec_t == 1) temp_width -= 1;            // 1 занимает 2 колонки а не 3
+      if (edc_t == 1) temp_width -= 1;            // 1 занимает 2 колонки а не 3
+    }
+
+    // Если температура 0 - нужно рисовать занк градуса или букву 'c'
+    // Если температура другая - для большого шрифта, если позволяет место - рисовать знак градуса. Если не позволяет - не рисовать.
+    bool need_deg = t == 0 || (big_font && t != 0);
+    if (need_deg) temp_width += (big_font ? (t == 0 ? : 4) : (t == 0 ? 3 : 0));
+  #endif
+  
   if (loadingFlag) {
     loadingFlag = false;
     // modeCode = MC_WEATHER;
@@ -537,57 +564,55 @@ void weatherRoutine() {
 
     flip_x = false;
     flip_y = false;
-      
-    // Если режим c отображением температуры - по максимуму картинка погоды - в левом верхнем углу, температура не перекрывая - в правом нижнем
-    // Общая площадь - размер картинки плюс размер отображения погоды
-    // Если полученный размер выходит за границы - сдвигаем позицию погоды вверх/влево, пока она не поместится в размер.
-    // Полученную скорректированную площадь отрисовки размещаем по центру матирицы
-    pos_x = (WIDTH - image_desc.frame_width) / 2;
-    pos_y = (HEIGHT - image_desc.frame_height) / 2;
-    weather_text_x = pos_x + image_desc.frame_width + 8; // знак +/- пусть залазит на картинку  - это првая граница температуры
-    weather_text_y = pos_y - 5;                          // отступ от низа картинки; 5 - высота шрифта
-
-    #if (USE_WEATHER == 1)     
-      if (useWeather > 0) {
-        pos_y += 3;
-        while(pos_y + image_desc.frame_height > HEIGHT) pos_y--;
-        weather_text_y = pos_y - 5;                          
-      }
-    #endif
-        
-    while(weather_text_x > 0 && weather_text_x >= WIDTH) weather_text_x--;
-    while(weather_text_y <= 0) weather_text_y++;
-
-    #if (USE_WEATHER == 1)     
-      if (useWeather > 0 && init_weather) {
-          need_fade_image = true; // useTemperatureColor && (pos_x + image_desc.frame_width < weather_text_x) && (pos_y < weather_text_y + 5); // ?? - не помню зачем так
-      } else {
-        // Если режим без отображения температуры - рисовать картинки погоды по центру матрицы
-        pos_x = (WIDTH - image_desc.frame_width) / 2;
-        pos_y = (HEIGHT - image_desc.frame_height) / 2;
-      }
-    #else 
-      // Если режим без отображения температуры - рисовать картинки погоды по центру матрицы
-      pos_x = (WIDTH - image_desc.frame_width) / 2;
-      pos_y = (HEIGHT - image_desc.frame_height) / 2;
-    #endif   
-
-    #if (USE_WEATHER == 0)
-      weather_frame_num = 0;      
-    #endif
-
+          
     fade_weather_phase = init_weather ? 1 : 0;                         // плавное появление картинки
   }  
+
+  #if (USE_WEATHER == 1)     
+    if (useWeather > 0) {
+      pos_x = (WIDTH - image_desc.frame_width - temp_width) / 2 + 1;
+      pos_y = (HEIGHT - image_desc.frame_height - (big_font ? 7 : 5)) / 2 + (big_font ? 8 : 6);
+      while(pos_x < 0) pos_x++;
+      while(pos_y + image_desc.frame_height > HEIGHT) pos_y--;
+      // Если знак градуса не обязателен к рисованию и он не влазит в ширину - уменьшить ширину текста температуры на знакоместо градуса
+      if (big_font && image_desc.frame_width + temp_width > WIDTH && need_deg && t != 0) {
+        need_deg = false;
+        temp_width -= 4;
+        pos_x += 2;
+      }
+      weather_text_x = pos_x + image_desc.frame_width - (big_font ? (edc_t != 1 ? 0 : -1) : (edc_t != 1 ? 0 : 1)); 
+      if (!big_font && dec_t != 0) weather_text_x--;
+      if (!big_font && edc_t == 0) weather_text_x--;
+      weather_text_x -= (big_font ? 1 : 0);
+      weather_text_y = pos_y - (big_font ? 7 : 5);
+    } else {
+      pos_x = (WIDTH - image_desc.frame_width) / 2;
+      pos_y = (HEIGHT - image_desc.frame_height) / 2;      
+    }
+    while(pos_x < 0) pos_x++;
+    while(pos_y < 0) pos_y++;
+    if (useWeather > 0) {
+      while(weather_text_x + temp_width - 1 > WIDTH) weather_text_x--;
+      while(weather_text_y <= 0) { 
+        weather_text_y++;
+        if (pos_y + image_desc.frame_height < HEIGHT) pos_y++;
+      }
+    }
+  #else
+    pos_x = (WIDTH - image_desc.frame_width) / 2;
+    pos_y = (HEIGHT - image_desc.frame_height) / 2;
+    weather_frame_num = 0;      
+  #endif        
 
   // Если погода отключена или еще не получена - просто рисуем картинки по кругу
   // Если погода получена - находим индекс отрисовываемой картинки в соответствии с полученной иконкой погоды
   #if (USE_WEATHER == 1)
-  if (useWeather > 0 && init_weather) {
-    int8_t fr = useWeather == 1 ? getWeatherFrame(icon) : getWeatherFrame2(icon);
-    if (fr >= 0) {
-      weather_frame_num = fr;
+    if (useWeather > 0 && init_weather) {
+      int8_t fr = useWeather == 1 ? getWeatherFrame(icon) : getWeatherFrame2(icon);
+      if (fr >= 0) {
+        weather_frame_num = fr;
+      }
     }
-  }
   #endif
 
   // Нарисовать картинку
@@ -608,9 +633,7 @@ void weatherRoutine() {
 
   // Если находимся в фазе 1 - отображение - считаем сколько времени уже отображается, не пора ли переходить к фазе затухания и следующему кадру
   if (fade_weather_phase == 1) {
-    if (need_fade_image) {
-      fader(64);
-    }
+    fader(64);
     if (!init_weather) {
       if (millis() - last_draw_frame > image_desc.draw_frame_interval) {
         fade_weather_phase = 2;
@@ -649,52 +672,65 @@ void weatherRoutine() {
     
     // Получить цвет отображения значения температуры
     CRGB color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
+    int16_t temp_x = weather_text_x + temp_width;
+    int16_t temp_y = weather_text_y;
     
-    byte temp_x = weather_text_x;
-    byte temp_y = weather_text_y;
-
-    byte t = abs(temperature);
-
-    byte dec_t = t / 10;
-    byte edc_t = t % 10;
-
     // Для правильного позиционирования - рисуем справа налево
-    if (temperature == 0) {
-      // При температуре = 0 - рисуем маленький значок C
-      temp_x -= 3;  
-      for(int i = 0; i < 3; i++) {
-        drawPixelXY(getClockX(temp_x), temp_y + i, color);      
+    // Нужно ли рисовать букву "c" в малом шрифте или знак градуса в большом шрифте?
+    if (need_deg) {
+      if (big_font) {
+        temp_x -= 4;  
+        // Для больших часов рисуем значок градуса
+        for(int i = 0; i < 2; i++) drawPixelXY(getClockX(temp_x), temp_y + 4 + i, color);      
+        drawPixelXY(getClockX(temp_x + 1), temp_y+3, color);      
+        drawPixelXY(getClockX(temp_x + 1), temp_y+6, color);      
+        for(int i = 0; i < 2; i++) drawPixelXY(getClockX(temp_x+2), temp_y + 4 + i, color);      
+      } else {
+        temp_x -= 3;  
+        // При температуре = 0 - рисуем маленький значок C
+        for(int i = 0; i < 3; i++) {
+          drawPixelXY(getClockX(temp_x), temp_y + i, color);      
+        }
+        drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 2, color);      
       }
-      drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
-      drawPixelXY(getClockX(temp_x + 1), temp_y + 2, color);      
     }
 
     // Единицы градусов
     temp_x -= (edc_t == 1 ? 3 : 4);
-    drawDigit3x5(edc_t, getClockX(temp_x), temp_y, color);
+    if (big_font) {
+      temp_x -= 2;
+      drawDigit5x7(edc_t, getClockX(temp_x), temp_y, color);
+    } else {
+      drawDigit3x5(edc_t, getClockX(temp_x), temp_y, color);
+    }
     temp_x += (dec_t == 0 && edc_t == 1 ? 1 : 0);
 
     // Десятки градусов
     if (dec_t != 0) {
       temp_x -= (dec_t == 1 ? 3 : 4);
-      drawDigit3x5(dec_t, getClockX(temp_x), temp_y, color);
+      if (big_font) {
+        temp_x -= 2;
+        drawDigit5x7(dec_t, getClockX(temp_x), temp_y, color);
+      } else {
+        drawDigit3x5(dec_t, getClockX(temp_x), temp_y, color);
+      }
       temp_x += (dec_t == 1 ? 1 : 0);
     }
             
     // Нарисовать '+' или '-' если температура не 0
     // Горизонтальная черта - общая для '-' и '+'
     if (temperature != 0) {
-       temp_x -= 4;
+      bool dy = big_font ? 2 : 0;
+      temp_x -= 4;
       for(int i = 0; i < 3; i++) {
-        drawPixelXY(getClockX(temp_x + i), temp_y + 2, color);      
-      }
-      
+        drawPixelXY(getClockX(temp_x + i), temp_y + 2 + dy, color);      
+      }      
       // Для плюcа - вертикальная черта
       if (temperature > 0) {
-        drawPixelXY(getClockX(temp_x + 1), temp_y + 1, color);
-        drawPixelXY(getClockX(temp_x + 1), temp_y + 3, color);
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 1 + dy, color);
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 3 + dy, color);
       }
-      temp_x += 4;
     }    
   }
   

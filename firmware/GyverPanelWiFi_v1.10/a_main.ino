@@ -1719,6 +1719,10 @@ void parsing() {
            case 7:               // $19 7 X; - Размер часов  X: 0 - авто, 1 - малые 3х5, 2 - большие 5х7
              set_CLOCK_SIZE(intData[2]);
              checkClockOrigin();
+             // Шрифт отображения температуры в эффекте Погода зависит от установленного размера часов 
+             if (thisMode == MC_WEATHER) {
+               loadingFlag = true;
+             }
              break;
            case 8:               // $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
              setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
