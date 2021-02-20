@@ -25,13 +25,6 @@ void doEffectWithOverlay(byte aMode) {
     overlayDelayed = false;
   }  
 
-  #if (USE_WEATHER == 1)       
-    if (overlayDelayed2) {
-      overlayWeatherUnwrap();
-      overlayDelayed2 = false;
-    } 
-  #endif
-
   // Проверить есть ли активное событие текста? 
   // Если нет - после проверки  momentTextIdx = -1 и momentIdx = -1
   // Если есть - momentTextIdx - индекс текста для вывода в зависимости от ДО или ПОСЛЕ события текущее время; momentIdx - активная позиция в массиве событий moments[] 
@@ -229,7 +222,6 @@ void doEffectWithOverlay(byte aMode) {
         // Задана отрисовка строки поверх однотонной заливки указанным цветом
         fillAll(specialBackColor);
         overlayDelayed = false;
-        overlayDelayed2 = false;
       } else {
         // Отобразить текущий эффект, поверх которого будет нарисована строка
         processEffect(aMode);
@@ -283,62 +275,68 @@ void doEffectWithOverlay(byte aMode) {
     overlayDelayed = needOverlay;
     setOverlayColors();
     if (needOverlay) {
-      y_overlay_low  = min(CALENDAR_Y, CLOCK_Y);
-      y_overlay_high = y_overlay_low + max(CALENDAR_H, CLOCK_H) - 1;
+      // Размер календаря по высоте имеет максимальный оверлей, в который входит и бегущая строка и часы с температурой в две строки и сам календарь
+      y_overlay_low  = CALENDAR_Y - 1;
+      y_overlay_high = y_overlay_low + CALENDAR_H;
+      while (y_overlay_low < 0) y_overlay_low++;
+      while (y_overlay_high >= HEIGHT) y_overlay_high--;
       overlayWrap();
     }      
 
-    if (showDateState && (showDateInClock || init_weather && showWeatherInClock && showWeatherState)) {      
-      if ((c_size == 1) && showDateInClock && showDateState) {
-        // Календарь в малых часах
+    // Время отрисовки календаря или температуры
+    bool cal_or_temp_processed = false;
+    if (showDateState && (showDateInClock || !allow_two_row && (init_weather && showWeatherInClock && showWeatherState))) {      
+      if (showDateInClock && showDateState && !showWeatherState) {
+        // Календарь
         drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+        cal_or_temp_processed = true;
       } else {
-        // Календарь в больших часах чередуется с показом температуры при установленном флаге showWeatherInClock
-        // Температура в больших часах - только при горизонтальной ориентации часов
+        // Температура, когда чередуется с часами - только при горизонтальной ориентации часов и если она по высоте не входит в отображение ВМЕСТЕ с часами
         #if (USE_WEATHER == 1)       
-          if (init_weather && showWeatherInClock && showWeatherState && showDateState && CLOCK_ORIENT == 0) {
+          if (init_weather && showWeatherInClock && showWeatherState && showDateState && showWeatherState && CLOCK_ORIENT == 0 && !allow_two_row) {
+            CLOCK_WY = CLOCK_Y;
             drawTemperature();
-          } else if (showDateState) {   
-            // Если показ календаря в часах включен - показать кадлендарь, иначе - вместо календаря снова показать темпераьуру, если она включена         
-            if (showDateInClock || !init_weather)
-              drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CLOCK_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
-            else if (showWeatherInClock) {
+            cal_or_temp_processed = true;
+          } else {   
+            // Если показ календаря в часах включен - показать кадлендарь, иначе - вместо календаря снова показать температуру, если она включена         
+            if (showDateInClock || !init_weather) {
+              drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
+              cal_or_temp_processed = true;
+            } else if (showWeatherInClock && !allow_two_row) {
+              CLOCK_WY = CLOCK_Y;
               drawTemperature();  
+              cal_or_temp_processed = true;
             }
           }
         #else
-          drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CLOCK_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы
+           drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы
+           cal_or_temp_processed = true;
         #endif
       }
-    } else {
-      weatherOverlayEnabled = false;
+    } 
+
+    // Если календарь или температура по условиям не могут быть нарисованы - рисовать часы
+    if (!cal_or_temp_processed) {
+
       byte CLK_Y = CLOCK_Y;
 
-      if (needOverlay) {
-        #if (USE_WEATHER == 1)       
-          weatherOverlayEnabled = useWeather > 0 && init_weather && c_size == 1 && showWeatherInClock && (CLOCK_ORIENT == 0) && allowVertical && allowHorizontal;  // Нужно 2 строки шрифта 3x5 + один пробел между строками минимум
-          overlayDelayed2 = weatherOverlayEnabled;
-          if (weatherOverlayEnabled) {
-            CLK_Y += 3;                                            // Сдвинуть позицию часов на 3 строки выше с контролем не выхода за высоту матрицы
-            while (CLK_Y + 5 > HEIGHT) CLK_Y--;
-            CLOCK_WY = CLK_Y - 7;                                  // Пытаемся сделать две строки отступа между часами и погодой (5 + 2), 5 - высота шрифта
-            while (CLOCK_WY < 0) CLOCK_WY++;                       // Поднимаем строку вывода температуры, если она выходит за размер матрицы
-    
-            yw_overlay_low  = CLOCK_WY;                            // Низ сохраняемого оверлея погоды - строка вывода температуры
-            yw_overlay_high = yw_overlay_low + 4;                  // Размер - 5 строк при шрифте 3x5            
-          }
-        #endif
-      }      
-
+      #if (USE_WEATHER == 1)       
+        // Если температура отрисовывается вместе с часами - позийия рисования такая же как у двухстрочного календаря
+        bool draw_temp = init_weather && showWeatherInClock && allow_two_row && CLOCK_ORIENT == 0;
+        if (draw_temp) {
+          CLK_Y = CALENDAR_Y + (c_size == 1 ? 6 : 9);
+          while (CLK_Y + (c_size == 1 ? 5 : 7) > HEIGHT) CLK_Y--;
+        }
+      #endif
+      
       drawClock(hrs, mins, dotFlag, CLOCK_XC, CLK_Y);
 
       #if (USE_WEATHER == 1)       
-        if (needOverlay) {
-          if (weatherOverlayEnabled) {            
-            overlayWeatherWrap();                                  // Сохраняем пиксели эффекта под выводом температуры (правый край температуры - совпадает с правым краем часов, ширина - 3 символа шрифта 3х5 и 2 пробела между цифрами
-            drawTemperature();
-          }
-        }      
+        if (draw_temp) {
+          CLOCK_WY = CALENDAR_Y - 1;
+          while (CLOCK_WY < 0) CLOCK_WY++;
+          drawTemperature();
+        }
       #endif
     }
     

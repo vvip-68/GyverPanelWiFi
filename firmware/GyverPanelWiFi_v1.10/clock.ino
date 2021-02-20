@@ -242,7 +242,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   if (CLOCK_ORIENT == 0) {
 
     if (c_size == 1) {
-
+      
       // Часы занимают 4 знакоместа в 3x5 + 3 разделительных колонки, итого 15 точек по горизонтали
       // Однако реально они могут занимать меньше места, если в часах/минутах есть 11. Экстремально е значение 1:11 занимает 10 точек и также должно быть отцентрировано в этих 15 точках
       // Центр композиции - разделительное двоеточие
@@ -284,16 +284,16 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
       x += (m10 != 1 && m01 == 1 ? -1 : 0);
       drawDigit3x5(m01, x , Y, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
-      x += (m01 == 1 ? 2 : 3);
-
-      CLOCK_WX = x - 11;   // температуру выравнивать по правому краю с часами. 11 - 3символа температуры 3x5 + 2 пробела
+      CLOCK_LX = x + (m01 == 1 ? 3 : 4);
 
     } else {
-
+      
       // отрисовка часов 5x7
       byte cx = 0;
-      if (h10 == 1 && m01 == 1 && X > 0) X += 2;
-      if (m10 == 1 || m01 == 1) X++;
+      if (h10 == 1) X++;
+      if (h01 == 1) X++;
+      if (m10 == 1) X++;
+      if (m01 == 1) X++;
       
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
@@ -329,13 +329,15 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
       int8_t dx = (WIDTH > 25) ? 0 : -1;      
       cx += (m10 == 1 ? -1 : 0);
 
-      // Если матрица 23 илм 24 - пробел ПОСЛЕ одинарных точек не рисовать), цифпы сдвинуть влево
+      // Если матрица 23 или 24 - пробел ПОСЛЕ одинарных точек не рисовать), цифпы сдвинуть влево
       if (WIDTH < 25) cx--;
       
       drawDigit5x7(m10, X + 15 + cx + dx, Y, clockLED[3]);
 
       cx += (m01 == 1 ? -1 : 0) + (m10 == 1 && m01 != 1 ? -1 : 0);
       drawDigit5x7(m01, X + 21 + cx + dx, Y, clockLED[4]);  // шрифт 5x7 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+
+      CLOCK_LX = X + 21 + cx + dx + (m01 == 1 ? 4 : 5);
 
     }
   } else { // Вертикальные часы
@@ -369,135 +371,145 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 void drawTemperature() {
 #if (USE_WEATHER == 1)      
 
-  if (c_size != 1 || c_size == 1 && weatherOverlayEnabled) {
-    // позиция вывода температуры по X вычисляется при отрисовке часов и сохраняется в глобальную переменную CLOCK_WX
-    // При этом рассчитана на символы шириной 3
-    // Если десятки градусов = 1 - сместить на колонку вправо
-    // Если единицы градусов = 1 - сместить на колонку вправо
-    // Если десятки градусов = 0 - сместить на 4 колонки вправо и 0 не рисовать
-    // Если температура 0 - рисовать 0C
-    byte temp_x = CLOCK_WX + 12; 
-    byte temp_y = CLOCK_WY;
+  // позиция вывода температуры по X вычисляется при отрисовке часов и сохраняется в глобальную переменную CLOCK_WX
+  // При этом рассчитана на символы шириной 3
+  // Если десятки градусов = 1 - сместить на колонку вправо
+  // Если единицы градусов = 1 - сместить на колонку вправо
+  // Если десятки градусов = 0 - сместить на 4 колонки вправо и 0 не рисовать
+  // Если температура 0 - рисовать 0C
+  volatile byte temp_x = CLOCK_LX; 
+  byte temp_y = CLOCK_WY;
 
-    byte t = abs(temperature);
-    byte dec_t = t / 10;
-    byte edc_t = t % 10;
-    
-    // Получить цвет отображения значения температуры
-    CRGB color;          
-    if (isNightClock) 
-      color = useTemperatureColorNight ? (temperature < -3 ? CRGB(0x000002) : (temperature > 3 ? CRGB(0x020000) : CRGB(0x020202))) : clockLED[0];
-    else 
-      color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : clockLED[0]; // CRGB::White; 
+  byte t = abs(temperature);
+  byte dec_t = t / 10;
+  byte edc_t = t % 10;
 
-    if (c_size == 1 || CLOCK_ORIENT == 1) {
-      // Отрисовка температуры в малых часах
-      // Для правильного позиционирования - рисуем справа налево
-      if (temperature == 0) {
-        // При температуре = 0 - рисуем маленький значок C
-        temp_x -= 3;  
-        for(int i = 0; i < 3; i++) {
-          drawPixelXY(getClockX(temp_x), temp_y + i, color);      
-        }
-        drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
-        drawPixelXY(getClockX(temp_x + 1), temp_y + 2, color);      
-      }
-  
-      // Единицы градусов
-      temp_x -= (edc_t == 1 ? 3 : 4);
-      drawDigit3x5(edc_t, getClockX(temp_x), temp_y, color);
-      temp_x += (dec_t == 0 && edc_t == 1 ? 1 : 0);
-  
-      // Десятки градусов
-      if (dec_t != 0) {
-        temp_x -= (dec_t == 1 ? 3 : 4);
-        drawDigit3x5(dec_t, getClockX(temp_x), temp_y, color);
-        temp_x += (dec_t == 1 ? 1 : 0);
-      }
-              
-      // Нарисовать '+' или '-' если температура не 0
-      // Горизонтальная черта - общая для '-' и '+'
-      if (temperature != 0) {
-         temp_x -= 4;
-        for(int i = 0; i < 3; i++) {
-          drawPixelXY(getClockX(temp_x + i), temp_y + 2, color);      
-        }
-        
-        // Для плюcа - вертикальная черта
-        if (temperature > 0) {
-          drawPixelXY(getClockX(temp_x + 1), temp_y + 1, color);
-          drawPixelXY(getClockX(temp_x + 1), temp_y + 3, color);
-        }
-        temp_x += 4;
-      }    
+  if (!allow_two_row) {
+    temp_y = (HEIGHT - (c_size == 1 ? 5 : 7)) / 2;
+    byte width = 0;
+    if (temperature == 0) {
+      width = (c_size == 1 ? 6 : 15);
     } else {
-      // Отрисовка температуры в больших часах
-      byte len = 15;             // Обязательно - ед. градусов + знак градуса + 'C' + два пробеда      
-      if (dec_t != 0) len += 6;  // Если есть десятки градусов - 5 точек + 1 точка пробела;
-      if (dec_t == 1) len -= 2;  // Если десятки градусов - '1' - она занимает 3 точки в ширину, а не 5
-      if (edc_t == 1) len -= 2;  // Если единицы градусов - '1' - она занимает 3 точки в ширину, а не 5
-      if (t != 0) len += 6;      // Если есть знак +/- - 5 точек + 1 точка пробела
-      if (WIDTH < 27) len -= 2;  // На матрицах 27 и шире - знак занимает 5, на узких = 3 точки
+      width = (c_size == 1 ? 11 : 25);
+      if (dec_t == 0) width -= (c_size == 1 ? 4 : 6);
+      if (dec_t == 1) width -= (c_size == 1 ? 1 : 2);
+      if (edc_t == 1) width -= (c_size == 1 ? 1 : 2);
+    }
+    temp_x = ((WIDTH - width) / 2) + width;
+    while (temp_x >= WIDTH) temp_x--;
+  }
+    
+  // Получить цвет отображения значения температуры
+  CRGB color;          
+  if (isNightClock) 
+    color = useTemperatureColorNight ? (temperature < -3 ? CRGB(0x000002) : (temperature > 3 ? CRGB(0x020000) : CRGB(0x020202))) : clockLED[0];
+  else 
+    color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : clockLED[0]; // CRGB::White; 
 
-      // Ширина больших часов (макс) - 25 или 26 точек в зависимости от ширины дисплея
-      // Центрировать вывод температуры относительно области вывода часов
-      byte cw = WIDTH > 25 ? 26 : 25;
-      int8_t dx = (cw - len) / 2; 
-      temp_x = CLOCK_XC + dx;
-      temp_y = CLOCK_Y;
-
-      // Если температура не нудевая - рисуем занк '+' или '-'
-      // На матрицах 27 и шире - ширина знака 5, на более узких - 3
-      if (t != 0) {
-        if (!useTemperatureColor) color = clockLED[2];
-        if (WIDTH < 27) {
-          for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + i), temp_y + 3, color);
-          if (temperature > 0) {
-            for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + 1), temp_y + 2 + i, color);
-          }
-          temp_x += 4;
-        } else {
-          for(byte i=0; i<5; i++) drawPixelXY(getClockX(temp_x + i), temp_y + 3, color);
-          if (temperature > 0) {
-            for(byte i=0; i<5; i++) drawPixelXY(getClockX(temp_x + 1), temp_y + 1 + i, color);
-          }
-          temp_x += 6;
-        }          
+  if (c_size == 1) {
+    // Отрисовка температуры в малых часах
+    // Для правильного позиционирования - рисуем справа налево
+    if (temperature == 0) {
+      // При температуре = 0 - рисуем маленький значок C
+      if (!(useTemperatureColor || isNightClock)) color = clockLED[1]; 
+      temp_x -= 3;  
+      for(int i = 0; i < 3; i++) {
+        drawPixelXY(getClockX(temp_x), temp_y + i, color);      
       }
-      // Десятки температуры
-      if (!useTemperatureColor) color = clockLED[0];
-      if (dec_t != 0) {
-        drawDigit5x7(dec_t, getClockX(temp_x), temp_y, color);
-        temp_x += 6;
+      drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
+      drawPixelXY(getClockX(temp_x + 1), temp_y + 2, color);      
+    }
+
+    // Единицы градусов
+    if (!(useTemperatureColor || isNightClock)) color = clockLED[0]; 
+    if (temperature !=0 && edc_t == 1) temp_x++;
+    temp_x -= 4;
+    drawDigit3x5(edc_t, getClockX(temp_x), temp_y, color);
+    temp_x += (dec_t == 0 && edc_t == 1 ? 1 : 0);
+
+    // Десятки градусов
+    if (dec_t != 0) {
+      if (!(useTemperatureColor || isNightClock)) color = clockLED[4]; 
+      temp_x -= (dec_t == 1 ? 3 : 4);
+      drawDigit3x5(dec_t, getClockX(temp_x), temp_y, color);
+      temp_x += (dec_t == 1 ? 1 : 0);
+    }
+            
+    // Нарисовать '+' или '-' если температура не 0
+    // Горизонтальная черта - общая для '-' и '+'
+    if (temperature != 0) {
+      if (!(useTemperatureColor || isNightClock)) color = clockLED[2]; 
+      temp_x -= 4;
+      for(int i = 0; i < 3; i++) {
+        drawPixelXY(getClockX(temp_x + i), temp_y + 2, color);      
       }
-      // Единицы температуры
-      if (!useTemperatureColor) color = clockLED[1];
-      drawDigit5x7(edc_t, getClockX(temp_x), temp_y, color);
-      temp_x += 6;
-
-      // Знак градуса и С ресуется цветом минут
-      color = clockLED[3]; 
-
-      if (temp_x + 9 >= WIDTH) temp_x--;
       
-      // Знак градусов
-      drawPixelXY(getClockX(temp_x),   temp_y + 5, color);
-      drawPixelXY(getClockX(temp_x),   temp_y + 4, color);
-      drawPixelXY(getClockX(temp_x+1), temp_y + 6, color);
-      drawPixelXY(getClockX(temp_x+1), temp_y + 3, color);
-      drawPixelXY(getClockX(temp_x+2), temp_y + 5, color);
-      drawPixelXY(getClockX(temp_x+2), temp_y + 4, color);
-      temp_x += 4;
+      // Для плюcа - вертикальная черта
+      if (temperature > 0) {
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 1, color);
+        drawPixelXY(getClockX(temp_x + 1), temp_y + 3, color);
+      }
+    }    
+  } else {
+    // Отрисовка температуры в больших часах
+    /*
+    byte len = 15;             // Обязательно - ед. градусов + знак градуса + 'C' + два пробеда      
+    if (dec_t != 0) len += 6;  // Если есть десятки градусов - 5 точек + 1 точка пробела;
+    if (dec_t == 1) len -= 2;  // Если десятки градусов - '1' - она занимает 3 точки в ширину, а не 5
+    if (edc_t == 1) len -= 2;  // Если единицы градусов - '1' - она занимает 3 точки в ширину, а не 5
+    if (t != 0) len += 6;      // Если есть знак +/- - 5 точек + 1 точка пробела
+    if (WIDTH < 27) len -= 2;  // На матрицах 27 и шире - знак занимает 5, на узких = 3 точки
 
-      if (temp_x + 5 >= WIDTH) temp_x--;
-      
-      // Буква 'C'
-      color = clockLED[4]; 
-      for(byte i=0; i<5; i++) drawPixelXY(getClockX(temp_x), temp_y + 1 + i, color);
-      for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + 1 + i), temp_y, color);
-      for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + 1 + i), temp_y + 6, color);
-      drawPixelXY(getClockX(temp_x+4), temp_y + 5, color);
-      drawPixelXY(getClockX(temp_x+4), temp_y + 1, color);
+    // Ширина больших часов (макс) - 25 или 26 точек в зависимости от ширины дисплея
+    // Центрировать вывод температуры относительно области вывода часов
+    byte cw = WIDTH > 25 ? 26 : 25;
+    int8_t dx = (cw - len) / 2; 
+    */
+
+    temp_x = CLOCK_LX;
+    temp_y = CLOCK_Y - 5;
+    while (temp_y < 0) temp_y++; 
+
+    // Буква 'C'
+    temp_x -=5;
+    if (!(useTemperatureColor || isNightClock))color = clockLED[1]; 
+    for(byte i=0; i<5; i++) drawPixelXY(getClockX(temp_x), temp_y + 1 + i, color);
+    for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + 1 + i), temp_y, color);
+    for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + 1 + i), temp_y + 6, color);
+    drawPixelXY(getClockX(temp_x+4), temp_y + 5, color);
+    drawPixelXY(getClockX(temp_x+4), temp_y + 1, color);
+
+    // Знак градусов; если ширина <= 24 - пробела между градусом и С нет
+    if (!(useTemperatureColor || isNightClock))color = clockLED[0]; 
+    temp_x -= (WIDTH <= 24 ? 3 : 4);
+    drawPixelXY(getClockX(temp_x),   temp_y + 5, color);
+    drawPixelXY(getClockX(temp_x),   temp_y + 4, color);
+    drawPixelXY(getClockX(temp_x+1), temp_y + 6, color);
+    drawPixelXY(getClockX(temp_x+1), temp_y + 3, color);
+    drawPixelXY(getClockX(temp_x+2), temp_y + 5, color);
+    drawPixelXY(getClockX(temp_x+2), temp_y + 4, color);
+
+    // Единицы температуры; если ширина <= 23 - пробела между цифрой и градусомнет
+    temp_x -= (edc_t == 1 ? 4 : 6);
+    if (WIDTH <= 23) temp_x++;
+    if (!(useTemperatureColor || isNightClock))color = clockLED[4]; 
+    drawDigit5x7(edc_t, getClockX(temp_x), temp_y, color);
+
+    // Десятки температуры
+    if (dec_t != 0) {
+    if (!(useTemperatureColor || isNightClock))color = clockLED[3]; 
+      temp_x -= (dec_t == 1 ? 4 : 6);
+      drawDigit5x7(dec_t, getClockX(temp_x - 1), temp_y, color); // ??? почему -1 - не понимаю, но без этого цифра располагается на один правее...
+    }
+
+    // Если температура не нулевая - рисуем занк '+' или '-'
+    if (t != 0) {
+      if (!(useTemperatureColor || isNightClock))color = clockLED[2]; 
+      temp_x -= 4;
+      for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + i), temp_y + 3, color);
+      if (temperature > 0) {
+        for(byte i=0; i<3; i++) drawPixelXY(getClockX(temp_x + 1), temp_y + 2 + i, color);
+      }
     }
   }
 #endif
@@ -506,61 +518,80 @@ void drawTemperature() {
 // нарисовать дату календаря
 void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, int8_t Y) {
 
+  byte d10 = aday / 10;
+  byte d01 = aday % 10;
+  byte m10 = amnth / 10;
+  byte m01 = amnth % 10;
+
+  byte cx = 0, dy = 0;
+  
+  if (!allow_two_row) {
+    Y = (HEIGHT - (c_size == 1 ? 5 : 7)) / 2;
+  }
+
   if (c_size == 1) {
+
+    dy = allow_two_row ? 6 : 0;
+    
     // Отрисовка календаря в малых часах  
     // Число месяца
-    drawDigit3x5(aday / 10, X, Y + 6, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-    drawDigit3x5(aday % 10, X + 4, Y + 6, clockLED[0]);
+    drawDigit3x5(d10, X, Y + dy, clockLED[3]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+    drawDigit3x5(d01, X + 4, Y + dy, clockLED[3]);
   
     // разделитель числа/месяца
     if (dots) {
-      drawPixelXY(getClockX(X + 7), Y + 5, clockLED[2]);
+      drawPixelXY(getClockX(X + 7), Y + dy - (allow_two_row ? 1 : 0), clockLED[2]);
     }
     
     // Месяц
-    drawDigit3x5(amnth / 10, X + 8, Y + 6, clockLED[1]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-    drawDigit3x5(amnth % 10, X + 12, Y + 6, clockLED[1]);
+    drawDigit3x5(m10, X + 8, Y + dy, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+    drawDigit3x5(m01, X + 12, Y + dy, clockLED[4]);
   
     // Год  
-    drawDigit3x5(ayear / 1000, X, Y, clockLED[3]);
-    drawDigit3x5((ayear / 100) % 10, X + 4, Y, clockLED[3]);
-    drawDigit3x5((ayear / 10) % 10, X + 8, Y, clockLED[4]);
-    drawDigit3x5(ayear % 10, X + 12, Y, clockLED[4]);
+    if (allow_two_row) {
+      drawDigit3x5(ayear / 1000, X, Y, clockLED[0]);
+      drawDigit3x5((ayear / 100) % 10, X + 4, Y, clockLED[0]);
+      drawDigit3x5((ayear / 10) % 10, X + 8, Y, clockLED[1]);
+      drawDigit3x5(ayear % 10, X + 12, Y, clockLED[1]);
+    }
 
   } else {
     
     // Отрисовка календаря в больщих часах
     int8_t x = X;
-    byte cx = 0;
+    int8_t y = Y;
+    byte width = 0;
 
-    byte d10 = aday / 10;
-    byte d01 = aday % 10;
-    byte m10 = amnth / 10;
-    byte m01 = amnth % 10;
+    if (CLOCK_ORIENT == 0 || !allow_two_row) {
+      
+      dy = allow_two_row ? 9 : 0;
+      while (y + dy + 7 > HEIGHT) dy--;
 
-    if (CLOCK_ORIENT == 0) {
+      width = (m10 == 1 ? 4 : 6) + (m01 == 1 ? 4 : 6) + (d10 == 1 ? 4 : 6) + (d01 == 1 ? 4 : 6) + 4;
 
       // Горизонтальное расположение календаря - также как часы ЧЧ:ММ -> ДД.MM
-      if (d10 == 1 && m01 == 1 && X > 0) X += 2;
-      if (m10 == 1 || m01 == 1) X++;
+      if (d10 == 1 && m01 == 1 && x > 0) x += 2;
+      if (m10 == 1 || m01 == 1) x++;
       
-      drawDigit5x7(d10, X + cx, Y, clockLED[0]); // шрифт 5x7 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+      drawDigit5x7(d10, x + cx, y + dy, clockLED[0]); // шрифт 5x7 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
       
       cx += (d10 == 1 ? -1 : 0);
       cx += (d10 > 1 && d01 == 1 ? -1 : 0);
-      drawDigit5x7(d01, X + 6 + cx, Y, clockLED[1]);      
+      drawDigit5x7(d01, x + 6 + cx, y + dy, clockLED[1]);      
 
       cx += (d01 == 1 ? -1 : 0);
       
       // Для ширины матрицы в 23 или 24 колонок - пробел ДО точки не рисовать
-      if (WIDTH < 25) cx--;
+      if (WIDTH < 25) { cx--; width--; }
       
       // Для ширины матрицы в 25 колонок - рисовать одинарные точки разделения дня и месяца, если больше - сдвоенные
-      drawPixelXY(getClockX(X + 12 + cx), Y    , clockLED[2]);         
-      drawPixelXY(getClockX(X + 12 + cx), Y + 1, clockLED[2]);
+      drawPixelXY(getClockX(x + 12 + cx), y + dy   , clockLED[2]);         
+      drawPixelXY(getClockX(x + 12 + cx), y + dy + 1, clockLED[2]);
       if (WIDTH > 25) {
-        drawPixelXY(getClockX(X + 13 + cx), Y    , clockLED[2]);
-        drawPixelXY(getClockX(X + 13 + cx), Y + 1, clockLED[2]);
+        drawPixelXY(getClockX(x + 13 + cx), y + dy    , clockLED[2]);
+        drawPixelXY(getClockX(x + 13 + cx), y + dy + 1, clockLED[2]);
+      } else {
+        width--;
       }
   
       // Для часов шириной 25 точек (одинарная разделительная точка) смещать вывод месяца на одну позицию влево
@@ -568,12 +599,30 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
       cx += (m10 == 1 ? -1 : 0);
 
       // Для ширины матрицы в 23 или 24 колонок - пробел ПОСЛЕ точки не рисовать, цифры сдвинуть влево
-      if (WIDTH < 25) cx--;
+      if (WIDTH < 25) { cx--; width--; }
       
-      drawDigit5x7(m10, X + 15 + cx + dx, Y, clockLED[3]);
+      drawDigit5x7(m10, x + 15 + cx + dx, y + dy, clockLED[3]);
   
       cx += (m01 == 1 ? -1 : 0) + (m10 == 1 && m01 != 1 ? -1 : 0);
-      drawDigit5x7(m01, X + 21 + cx + dx, Y, clockLED[4]);  // шрифт 5x7 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+      drawDigit5x7(m01, x + 21 + cx + dx, y + dy, clockLED[4]);  // шрифт 5x7 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+
+      // Если позволено рисовать в два ряда - нарисовать год календаря
+      // Отрисовку проводить справа налево, чтобы выравнивать по правому краю даты (день/месяц)
+      if (allow_two_row) {
+        x = X + width - 2;
+        byte d1 = ayear / 1000;
+        byte d2 = (ayear / 100) % 10;
+        byte d3 = (ayear / 10) % 10;
+        byte d4 = ayear % 10;
+        x -= (d4 == 1 ? 4 : 6);
+        drawDigit5x7(d4, x, y, clockLED[0]);
+        x -= (d3 == 1 ? 4 : 6);
+        drawDigit5x7(d3, x, y, clockLED[1]);
+        x -= (d2 == 1 ? 4 : 6);
+        drawDigit5x7(d2, x, y, clockLED[3]);
+        x -= (d1 == 1 ? 4 : 6);
+        drawDigit5x7(d1, x, y, clockLED[4]);
+      }
 
     } else {
 
@@ -709,59 +758,12 @@ void overlayUnwrap() {
   }
 }
 
-void overlayWeatherWrap() {
-
-  // Погода выводится - правая граница = правой границы часов, ширина вывода = 3 симв 3x5 + 2 пробела между - 11 симв.
-  // Строка вывода - yw_overlay_low до yw_overlay_high, позиция отсчитывается от CLOCK_XC - позиции вывода часов
-  int16_t thisLED = 0;
-  int8_t xx = CLOCK_WX;
-  for (int8_t i = xx; i < xx + 11; i++) {
-    for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
-      int8_t ix = getClockX(i);
-      #if (DEVICE_TYPE == 1)
-      if (ix>=0) {
-      #endif
-        int16_t pn = getPixelNumber(ix,j);
-        if (pn >= 0 && pn < NUM_LEDS) {
-          overlayWeather[thisLED] = leds[pn];
-        }
-      #if (DEVICE_TYPE == 1)
-      }
-      #endif
-      thisLED++;
-    }
-  }
-}
-
-void overlayWeatherUnwrap() {
-
-  int16_t thisLED = 0;
-  int8_t xx = CLOCK_WX;  // в часах - 4 символа, в погоде - 3 символа - т.е. позиция погоды сдвинута на одно знакоместо
-  
-  for (int8_t i = xx; i < xx + 11; i++) {
-    for (uint8_t j = yw_overlay_low; j <= yw_overlay_high; j++) {
-      int8_t ix = getClockX(i);
-      #if (DEVICE_TYPE == 1)
-      if (ix>=0) {
-      #endif
-        int16_t pn = getPixelNumber(ix,j);
-        if (pn >= 0 && pn < NUM_LEDS) {
-          leds[pn] = overlayWeather[thisLED];
-        }
-      #if (DEVICE_TYPE == 1)
-      }
-      #endif
-      thisLED++; 
-    }
-  }
-}
-
 void checkCalendarState() {
   if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
     showDateStateLastChange = millis();
     showDateState = !showDateState;
-    // В больших часах чередовать отображение даты и температуры
-    if (c_size != 1 && init_weather && showDateState) {
+    // В однострочных часах чередовать отображение даты и температуры
+    if (!allow_two_row && init_weather && showDateState) {
       if (showDateInClock) {
         showWeatherState = !showWeatherState;
       } else {
@@ -1383,7 +1385,7 @@ void checkClockOrigin() {
           CALENDAR_W = 26; // (4*5 + 2*1 + 4);
         }
         CLOCK_H = (1*7);
-        CALENDAR_H = (1*7);                                       // В больших часах календарь - в формате ДД.MM - без года 
+        CALENDAR_H = (2*7 + 2);                                   // В больших часах календарь - две строки высотой 7 + 2 пробела между строкамми
         CLOCK_X = (byte((WIDTH - CLOCK_W) / 2.0 + 0.51));         // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
         CLOCK_Y = (byte((HEIGHT - CLOCK_H) / 2.0 + 0.51));        // Одна строка цифр 7 пикс высотой  / 2 - в центр
         CALENDAR_X = (byte((WIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
@@ -1408,7 +1410,7 @@ void checkClockOrigin() {
         CLOCK_X = (byte((WIDTH - CLOCK_W) / 2.0 + 0.51));         // 2 цифры * (шрифт 5 пикс шириной) 1 + пробел между цифрами) /2 - в центр
         CLOCK_Y = (byte((HEIGHT - CLOCK_H) / 2.0 + 1));           // Две строки цифр 7 пикс высотой + 1 пробел между строками / 2 - в центр
         CALENDAR_W = (2*5 + 1);
-        CALENDAR_H = (2*7 + 1);
+        CALENDAR_H = (2*7 + 2);
         CALENDAR_X = (byte((WIDTH - CALENDAR_W) / 2.0 + 0.51));   // 2 цифры * (шрифт 5 пикс шириной) 1 + пробел между цифрами) /2 - в центр
         CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 1);     // Две строки цифр 7 пикс высотой + 1 пробел между строками / 2 - в центр
       }     
@@ -1431,9 +1433,15 @@ void checkClockOrigin() {
       c_size = 1;
       continue;
     }
-  
+
     break;
   }
+
+  // Можно ли отображать горизонтальные часы вместе с температурой и календарь - дата с годом - это требует двух строк
+  // Если в две строки отображать нельзя - календарь отображается без года, температура - не вместе с часами, а чередуется с календарем
+  allow_two_row = (c_size == 1)
+    ? HEIGHT >= 11  // Малые часы - шрифт 3x5 - две строки + пробел между строками - высота 11 строк 
+    : HEIGHT >= 15; // Большие часы - шрифт 5x7 - две строки + пробел между строками - высота 15 строк
 
   CLOCK_XC = CLOCK_X;
   CALENDAR_XC = CALENDAR_X;

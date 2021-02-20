@@ -721,7 +721,6 @@ void putClockOrientation(byte orientation) {
 
 bool getShowWeatherInClock() {
   bool val = EEPROMread(32) == 1;
-  if (val && HEIGHT < 11) val = 0;
   return val;
 }
 
@@ -733,7 +732,6 @@ void putShowWeatherInClock(boolean use) {
 
 bool getShowDateInClock() {
   bool val = EEPROMread(16) == 1;
-  if (val && HEIGHT < 11) val = 0;
   return val;
 }
 
