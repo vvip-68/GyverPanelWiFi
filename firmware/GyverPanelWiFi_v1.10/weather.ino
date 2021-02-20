@@ -575,7 +575,8 @@ void weatherRoutine() {
       while(pos_x < 0) pos_x++;
       while(pos_y + image_desc.frame_height > HEIGHT) pos_y--;
       // Если знак градуса не обязателен к рисованию и он не влазит в ширину - уменьшить ширину текста температуры на знакоместо градуса
-      if (big_font && image_desc.frame_width + temp_width > WIDTH && need_deg && t != 0) {
+      // Исключение - если цифры температуры целиком ниже картинки - знак градуса можно оставить
+      if (need_deg && big_font && t != 0 && image_desc.frame_width + temp_width > WIDTH && image_desc.frame_height + 7 < HEIGHT) {
         need_deg = false;
         temp_width -= 4;
         pos_x += 2;
