@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// Copyright Benoit Blanchon 2014-2021
 // MIT License
 //
 // This example shows how to store your project configuration in a file.
@@ -139,6 +139,12 @@ void setup() {
 void loop() {
   // not used in this example
 }
+
+// Performance issue?
+// ------------------
+//
+// File is an unbuffered stream, which is not optimal for ArduinoJson.
+// See: https://arduinojson.org/v6/how-to/improve-speed/
 
 // See also
 // --------

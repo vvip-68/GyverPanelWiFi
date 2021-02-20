@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// Copyright Benoit Blanchon 2014-2021
 // MIT License
 
 #pragma once
@@ -309,6 +309,8 @@ class JsonDocument : public Visitable {
   JsonDocument(char* buf, size_t capa) : _pool(buf, capa) {
     _data.setNull();
   }
+
+  ~JsonDocument() {}
 
   void replacePool(MemoryPool pool) {
     _pool = pool;

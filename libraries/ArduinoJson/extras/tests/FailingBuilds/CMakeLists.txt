@@ -1,5 +1,5 @@
 # ArduinoJson - arduinojson.org
-# Copyright Benoit Blanchon 2014-2020
+# Copyright Benoit Blanchon 2014-2021
 # MIT License
 
 macro(build_should_fail target)
@@ -36,3 +36,6 @@ build_should_fail(read_long_long)
 add_executable(write_long_long write_long_long.cpp)
 set_property(TARGET write_long_long PROPERTY CXX_STANDARD 11)
 build_should_fail(write_long_long)
+
+add_executable(delete_jsondocument delete_jsondocument.cpp)
+build_should_fail(delete_jsondocument)

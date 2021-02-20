@@ -7,7 +7,6 @@
 struct Stream {};
 
 int main() {
-  Stream* stream = 0;
-  DynamicJsonDocument doc(1024);
-  deserializeJson(doc, stream);
+  JsonDocument* doc = new DynamicJsonDocument(42);
+  delete doc;
 }
