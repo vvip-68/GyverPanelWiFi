@@ -428,7 +428,7 @@ void cyclonRoutine() {
     cycle_y = USE_SEGMENTS_CYCLON == 1 ?  seg_offset_y : 0;
     move_dir = 1;
     fade_divider = 0;
-    inc_cnt = NUM_LEDS / 384;
+    inc_cnt = NUM_LEDS / 312;
     if (inc_cnt == 0) inc_cnt = 1;
     FastLED.clear();  // очистить
   }
@@ -439,12 +439,14 @@ void cyclonRoutine() {
   // Использовать отрисовку по сегментам
   // Если сегменты не используется - ширина одной полоски - кол-во сегментов
   for (byte i=0; i < seg_num; i++) {
-    for (byte k=0; k < inc_cnt; k++) {    
+    for (byte k=0; k < inc_cnt; k++) { 
       if (USE_SEGMENTS_CYCLON == 1) {
+        if (cycle_y + k - seg_offset_y >= seg_size) continue;
         idx = dir_mx == 0
            ? getPixelNumber(cycle_x + i * seg_size, cycle_y + k)
            : getPixelNumber(cycle_x, cycle_y + i * seg_size + k);
       } else {
+        if (cycle_y + k  >= HEIGHT) continue;
         idx = getPixelNumber(cycle_x + i, cycle_y + k);
       }
       if (idx >= 0 && idx < NUM_LEDS) 
