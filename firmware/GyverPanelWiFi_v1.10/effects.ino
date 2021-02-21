@@ -1756,13 +1756,13 @@ void munchRoutine() {
 
   count += dir;
 
-  if (count <= 0 || count >= WIDTH / seg_num) {
+  if (count <= 0 || count >= seg_size) {
     dir = dir < 0 ? 1 : -1;
   }
 
   if (count <= 0) {
     if (flip == 0)
-      flip = 15;
+      flip = seg_size - 1; 
     else
       flip = 0;
   }
