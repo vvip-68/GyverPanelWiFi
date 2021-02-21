@@ -1485,7 +1485,7 @@ void paletteRoutine() {
            if (block_sta[c][r] == 0) {
              block_dur[c][r] = FADE_IN_STEPS;    // Количество шагов появления блока
              palette_h[c][r] = random8(0,255);   // Цвет нового блока
-             palette_s[c][r] = random8(32,196);  // Насыщенность цвета нового блока
+             palette_s[c][r] = random8(112,254); // Насыщенность цвета нового блока
            } else { 
              block_dur[c][r] = FADE_OUT_STEPS;  // Кол-во шагов убирания блока
            }  
