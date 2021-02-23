@@ -23,9 +23,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "SoftwareSerial.h"
 #include <Arduino.h>
 
-#ifdef ESP32
+#if defined(ESP8266)
+#include <interrupts.h>
+using esp8266::InterruptLock;
+#elif defined(ESP32)
 #define xt_rsil(a) (a)
 #define xt_wsr_ps(a)
+#elif defined(ARDUINO)
+class InterruptLock {
+public:
+    InterruptLock() {
+        noInterrupts();
+    }
+    ~InterruptLock() {
+        interrupts();
+    }
+};
 #endif
 
 constexpr uint8_t BYTE_ALL_BITS_SET = ~static_cast<uint8_t>(0);
@@ -423,9 +436,12 @@ int SoftwareSerial::peek() {
 void SoftwareSerial::rxBits() {
     int isrAvail = m_isrBuffer->available();
 #ifdef ESP8266
-    if (m_isrOverflow.load()) {
-        m_overflow = true;
-        m_isrOverflow.store(false);
+    {
+        InterruptLock lock;
+        if (m_isrOverflow.load()) {
+            m_overflow = true;
+            m_isrOverflow.store(false);
+        }
     }
 #else
     if (m_isrOverflow.exchange(false)) {
