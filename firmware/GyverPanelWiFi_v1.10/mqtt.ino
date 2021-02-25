@@ -283,6 +283,10 @@ void processOutQueue() {
     if (ok) {      
       // Отправка прошла успешно
       DEBUG(F("MQTT >> OK >> ")); 
+      if (retain)
+        DEBUG(F("[r] "));
+      else   
+        DEBUG(F("[ ] "));
       DEBUG(topic);
       DEBUG(F("\t >> ")); 
       DEBUGLN(message);
