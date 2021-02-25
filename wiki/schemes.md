@@ -15,8 +15,11 @@
 ### С корректировкой питания
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/scheme_d.jpg)
 
-### С полным набором компонент
+### С полным набором компонент (отключение матрицы - MOSFET)
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP8266_ALL.jpg)
+
+### С полным набором компонент (отключение матрицы - реле)
+![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP8266_RELAY.jpg)
 
 <br><br>
 

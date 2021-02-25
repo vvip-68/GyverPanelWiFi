@@ -1,5 +1,5 @@
 
-// ************************ НАСТРОЙКИ ************************
+// ----------------------------------------------------
 
 byte lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
 unsigned long xxx;
@@ -239,31 +239,31 @@ void doEffectWithOverlay(byte aMode) {
   }
 
   // Смещение движущихся часов 
-  if (clockReady) {
-    byte cw = WIDTH >= 23 && WIDTH <= 25 ? WIDTH : 26;                      // Если ширина матрицы 23 или 24 колонки - брять 23; 25 колонок - брать ширину часов 25, если больше - 26. Отрисовка точек между часами и минутами - одинарные или сдвоенные
-    if (cw == 24) cw--;
-    
-    byte clock_width = CLOCK_ORIENT == 0 ? (c_size == 1 ? 15 : cw) : (c_size == 1 ? 7 : 11);     // Горизонтальные часы занимают 15/25/26 колонок (малые/большие), вертикальные - 7 для малых часов или 11 для больших
-    byte calendar_width = 15;                                               // Календарь занимает 15 колонок (4 цифры 3x5 и 3 пробела между ними)
+  if (clockReady) {    
     CLOCK_MOVE_CNT--;
     if (CLOCK_MOVE_CNT <= 0) {
-       CLOCK_MOVE_CNT = CLOCK_MOVE_DIVIDER;
-       CLOCK_XC--;
-       CALENDAR_XC--;
-       if (CLOCK_XC < -clock_width) {
-        #if (DEVICE_TYPE == 0)
-          CLOCK_XC = WIDTH - clock_width - 1;
-        #else
-          CLOCK_XC = WIDTH - 1;
-        #endif  
-       }     
-       if (CALENDAR_XC < -calendar_width) {
-        #if (DEVICE_TYPE == 0)
-          CALENDAR_XC = WIDTH - calendar_width - 1;
-        #else
-          CALENDAR_XC = WIDTH - 1;
-        #endif  
-       }     
+      CLOCK_MOVE_CNT = CLOCK_MOVE_DIVIDER;
+      if (showDateInClock && showDateState && !showWeatherState) {
+        CALENDAR_XC--;
+        if (CALENDAR_XC < -CALENDAR_W) {
+         #if (DEVICE_TYPE == 0 && CLOCK_W < WIDTH)
+           CALENDAR_XC = WIDTH - CALENDAR_W - 1 ;
+         #else
+           CALENDAR_XC = WIDTH - 1;
+         #endif  
+        }     
+        CLOCK_XC = CALENDAR_XC + (CLOCK_W - CALENDAR_W) / 2;
+      } else {
+        CLOCK_XC--;
+        if (getClockX(CLOCK_XC + CLOCK_LX) < 0) {
+         #if (DEVICE_TYPE == 0 && CLOCK_W < WIDTH)
+           CLOCK_XC = WIDTH - CLOCK_W - 1;
+         #else
+           CLOCK_XC = WIDTH - CLOCK_FX - 1;
+         #endif  
+        }     
+        CALENDAR_XC = CLOCK_XC + (CALENDAR_W - CLOCK_W) / 2;
+      }
     }
   }
 
@@ -293,9 +293,9 @@ void doEffectWithOverlay(byte aMode) {
       } else {
         // Температура, когда чередуется с часами - только при горизонтальной ориентации часов и если она по высоте не входит в отображение ВМЕСТЕ с часами
         #if (USE_WEATHER == 1)       
-          if (init_weather && showWeatherInClock && showWeatherState && showDateState && showWeatherState && CLOCK_ORIENT == 0 && !allow_two_row) {
+          if (init_weather && showWeatherInClock && showDateState && showWeatherState && CLOCK_ORIENT == 0 && !allow_two_row) {
             CLOCK_WY = CLOCK_Y;
-            drawTemperature();
+            drawTemperature(CLOCK_XC);
             cal_or_temp_processed = true;
           } else {   
             // Если показ календаря в часах включен - показать кадлендарь, иначе - вместо календаря снова показать температуру, если она включена         
@@ -304,7 +304,7 @@ void doEffectWithOverlay(byte aMode) {
               cal_or_temp_processed = true;
             } else if (showWeatherInClock && !allow_two_row) {
               CLOCK_WY = CLOCK_Y;
-              drawTemperature();  
+              drawTemperature(CLOCK_XC);  
               cal_or_temp_processed = true;
             }
           }
@@ -335,7 +335,7 @@ void doEffectWithOverlay(byte aMode) {
         if (draw_temp) {
           CLOCK_WY = CALENDAR_Y - 1;
           while (CLOCK_WY < 0) CLOCK_WY++;
-          drawTemperature();
+          drawTemperature(CLOCK_XC);
         }
       #endif
     }

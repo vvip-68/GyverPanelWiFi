@@ -1,7 +1,6 @@
 
 // ----------------------------------------------------
 
-
 // Контроль времени цикла
 uint32_t last_ms = millis();  
 
@@ -78,7 +77,7 @@ void process() {
         
         bool timeToSync = ntpSyncTimer.isReady();
         if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
-        if (timeToSync || (refresh_time && (ntp_t == 0 || (millis() - ntp_t > 60000)) && (ntp_cnt < 10 || !init_time))) {
+        if (timeToSync || (refresh_time && (ntp_t == 0 || (millis() - ntp_t > 30000)) && (ntp_cnt < 10 || !init_time))) {
           ntp_t = millis();
           getNTP();
         }
@@ -202,29 +201,7 @@ void process() {
 
     // Одинарный клик - включить . выключить панель
     if (clicks == 1) {
-      if (isTurnedOff) {
-        // Если выключен - включить панель, восстановив эффект на котором панель была выключена
-        if (saveSpecialMode && saveSpecialModeId != 0) 
-          setSpecialMode(saveSpecialModeId);
-        else {
-          saveMode = getCurrentManualMode();
-          if (saveMode == 0 && globalColor == 0) set_globalColor(0xFFFFFF);
-          DEBUGLN(String(F("Вкл: ")) + String(saveMode));
-          setManualModeTo(getAutoplay());
-          setEffect(saveMode);
-        }
-      } else {
-        // Выключить панель, запомнив текущий режим
-        saveSpecialMode = specialMode;
-        saveSpecialModeId = specialModeId;
-        saveMode = thisMode;
-        bool mm = manualMode;
-        // Выключить панель - черный экран
-        setSpecialMode(0);
-        putCurrentManualMode(saveMode);
-        putAutoplay(mm);
-        DEBUGLN(String(F("Выкл: ")) + String(saveMode));
-      }
+      turnOnOff();
     }
     
     // Прочие клики работают только если не выключено
@@ -431,6 +408,10 @@ void parsing() {
 #endif  
   /*
     Протокол связи, посылка начинается с режима. Режимы:
+    1 - Включение / выключение устройства
+     - $1 0; - выключить
+     - $1 1; - включить
+     - $1 2; - переключить
     3 - управление играми из приложение WiFi Panel Player
       - $3 0;   включить на устройстве демо-режим
       - $3 1;   включить игру "Лабиринт" в режиме ожидания начала игры
@@ -545,6 +526,7 @@ void parsing() {
       - $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
       - $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
       - $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
+      - $19 18 HH MM TT; - Установить указанное время HH:MM и температуру TT - для отладки позиционирования часов с температурой
     20 - настройки и управление будильников
       - $20 0;       - отключение будильника (сброс состояния isAlarming)
       - $20 2 X VV MA MB;
@@ -590,6 +572,35 @@ void parsing() {
 
     switch (intData[0]) {
 
+      // ----------------------------------------------------
+      // 1 - Включение / выключение устройства
+      //   - $1 0; - выключить
+      //   - $1 1; - включить
+      //   - $1 2; - переключить
+
+      case 1:
+        if (intData[1] == 0) {
+          // Выключить устройство
+          turnOff();
+          sendPageParams(1, cmdSource);
+        } else
+        if (intData[1] == 1) {
+          // Включить устройство
+          turnOn();
+          sendPageParams(1, cmdSource);
+        } else
+        if (intData[1] == 2) {
+          // Переключить устройство
+          turnOnOff();
+          sendPageParams(1, cmdSource);
+        } 
+        else {
+          #if (USE_MQTT == 1)
+          notifyUnknownCommand(incomeBuffer);
+          #endif
+        }
+        break;
+      
       // ----------------------------------------------------
       // 3 - управление играми из приложение WiFi Panel Player
       //   - $3 0;   включить на устройстве демо-режим
@@ -1652,8 +1663,13 @@ void parsing() {
           // Если идет отправка изображения - ответ отправлять не нужно
           if (sendImageFlag) 
             sendImageLine();
-          else
-            sendAcknowledge(cmdSource);
+          else {
+            if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
+              sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника  
+            } else {
+              sendAcknowledge(cmdSource);
+            }
+          }
         } else {                          // запрос параметров страницы приложения
           // Для команд, пришедших от MQTT отправлять ответы так же как и для команд, полученных из UDP
           sendPageParams(intData[1], cmdSource);
@@ -1677,8 +1693,9 @@ void parsing() {
       //   $19 14 00FFAA; - цвет часов оверлея, сохраняемый в globalClockColor
       //   $19 16 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
       //   $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
+      //   $19 18 HH MM TT; - Установить указанное время HH:MM и температуру TT - для отладки позиционирования часов с температурой
       // ----------------------------------------------------
-      
+
       case 19: 
          switch (intData[1]) {
            case 1:               // $19 1 X; - сохранить настройку X "Часы в эффектах"
@@ -1727,6 +1744,8 @@ void parsing() {
            case 8:               // $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
              setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
              init_time = true; refresh_time = false; ntp_cnt = 0;
+             debug_hours = -1;
+             debug_mins = -1;
              rescanTextEvents();
              break;
            case 9:               // $19 9 X; - Показывать температуру в режиме часов  X: 0 - нет, 1 - да
@@ -1770,6 +1789,11 @@ void parsing() {
            case 17:               // $19 17 D I; - Продолжительность отображения даты / часов (в секундах)
              set_showDateDuration(intData[2]);
              set_showDateInterval(intData[3]);
+             break;
+           case 18:               // $19 18 HH MM TT; - Установить указанное время HH:MM и температуру TT - для отладки позиционирования часов с температурой
+             debug_hours = intData[2];
+             debug_mins = intData[3];
+             debug_temperature = intData[4];
              break;
           default:
             err = true;
@@ -3662,6 +3686,8 @@ void sendAcknowledge(eSources src) {
     bool isCmd = false; 
     if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
     if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
+    byte L = reply.length();
+    if (L > 0 && reply[L-1] != ';') reply += ";";
     reply += "ack" + String(ackCounter++) + ";";  
     reply.toCharArray(replyBuffer, reply.length()+1);
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
@@ -3922,4 +3948,41 @@ void sendImageLine() {
     sendImageFlag = false;
     sendImageSrc  = NONE;
   }  
+}
+
+void turnOnOff() {
+  if (isTurnedOff) {
+    turnOn();
+  } else {
+    turnOff();
+  }
+}
+
+void turnOff() {
+  if (!isTurnedOff) {
+    // Выключить панель, запомнив текущий режим
+    saveSpecialMode = specialMode;
+    saveSpecialModeId = specialModeId;
+    saveMode = thisMode;
+    bool mm = manualMode;
+    // Выключить панель - черный экран
+    setSpecialMode(0);
+    putCurrentManualMode(saveMode);
+    putAutoplay(mm);
+  }
+}
+
+void turnOn() {
+  if (isTurnedOff) {
+    DEBUGLN(F("Режим: Включено"));
+    // Если выключен - включить панель, восстановив эффект на котором панель была выключена
+    if (saveSpecialMode && saveSpecialModeId != 0) 
+      setSpecialMode(saveSpecialModeId);
+    else {
+      saveMode = getCurrentManualMode();
+      if (saveMode == 0 && globalColor == 0) set_globalColor(0xFFFFFF);
+      setManualModeTo(getAutoplay());
+      setEffect(saveMode);
+    }
+  }
 }

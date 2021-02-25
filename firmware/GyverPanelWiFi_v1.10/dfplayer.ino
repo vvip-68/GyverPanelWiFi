@@ -1,12 +1,6 @@
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
-#if defined(ESP8266)
-  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);   // Используйте этот вариант, если у вас библиотека ядра ESP8266 версии 2.6.1
-#endif
-#if defined(ESP32)
-  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);   // Используйте этот вариант, если у вас библиотека EspSoftwareSerial v6.0
-#endif
-
+  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
   dfPlayer.begin(mp3Serial, false, true);
   dfPlayer.setTimeOut(1000);
   dfPlayer.EQ(DFPLAYER_EQ_NORMAL);

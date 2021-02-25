@@ -5,6 +5,9 @@ bool getWeather() {
   
   // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
   // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&lang=ru&appid=6a4ba421859c9f4166697758b68d889b
+
+  // Пока включена отладка позийионирования часов - запросы на температуру не выполнять
+  if (debug_hours >= 0 && debug_mins >= 0) return true;
   
   if (!wifi_connected || useWeather == 0) return false;  
   
