@@ -46,7 +46,11 @@ void doEffectWithOverlay(byte aMode) {
 
     #if (USE_MQTT == 1)
     // Если подошло время отправки uptime на MQTT-сервер - отправить
-    if (init_time && upTime > 0 && upTimeSendInterval > 0 && (millis() - uptime_send_last > upTimeSendInterval * 1000L )) {
+    if (init_time && upTime > 0 && upTimeSendInterval > 0 && (millis() - uptime_send_last > upTimeSendInterval * 1000L )) {      
+      // Некоторые сервера пропускают самый первый отправленный "online" сразу после соединения с брокером
+      // Подключающиеся устройства получают статус "offline" и приложение не может соединиться с устройством, считая, что оно выключено.
+      // Посылаем статус "online" по таймеру вместе с периодической отправкой времени uptime (времени бесперебойной работы)
+      putOutQueue(mqtt_topic(TOPIC_PWR).c_str(), "online", true);
       addKeyToChanged("UP");
     }    
     #endif    

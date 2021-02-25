@@ -14,7 +14,11 @@ String mqtt_topic(String topic) {
 }
 
 // Поместить сообщения для отправки на сервер в очередь
-void putOutQueue(String topic, String message, bool retain = false) {
+void putOutQueue(String topic, String message) {
+  putOutQueue(topic, message, false);
+}
+
+void putOutQueue(String topic, String message, bool retain) {
   if (stopMQTT) return;
   bool ok = false;
   ok = mqtt.beginPublish(topic.c_str(), message.length(), retain);
@@ -26,6 +30,10 @@ void putOutQueue(String topic, String message, bool retain = false) {
     if (ok) {
       // Отправка прошла успешно
       DEBUG(F("MQTT >> OK >> ")); 
+      if (retain)
+        DEBUG(F("[r] "));
+      else   
+        DEBUG(F("[ ] "));
       DEBUG(topic);
       DEBUG(F("\t >> ")); 
       DEBUGLN(message);
@@ -105,13 +113,14 @@ void checkMqttConnection() {
     uint32_t t = millis();
 
     if (mqtt.connect(mqtt_client_name.c_str(), mqtt_user, mqtt_pass, topic.c_str(), 0, true, "offline")) {
+      stopMQTT = false;
+      mqtt_connecting = false;      
       DEBUGLN(F("\nПодключение к MQTT-серверу выполнено."));
       if (outQueueLength > 0) {
         DEBUG(F("Сообщений в очереди отправки: "));  
         DEBUGLN(outQueueLength);  
       }
       putOutQueue(topic, "online", true);
-      mqtt_connecting = false;      
     } else {      
       DEBUG(".");
       mqtt_connecting = true;
