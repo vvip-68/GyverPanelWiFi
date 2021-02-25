@@ -474,6 +474,10 @@ boolean  useTemperatureColorNight = false;  // Для ночных часов:  
 #define  hot_20_29    "#A01F03"             // +20..+29
 #define  hot_30_great "#FF0000"             // +30..+39
 
+#define  night_blue_temperature  CRGB(0x000002)  // цвет температуры в ночных часах - отрицательные (синий)
+#define  night_red_temperature   CRGB(0x020000)  // цвет температуры в ночных часах - положительные (красный)
+#define  night_white_temperature CRGB(0x020202)  // цвет температуры в ночных часах - околонулевые  (-3..+3)
+
 // *********************** ДЛЯ БУДИЛЬНИКА-РАССВЕТ ************************
 
 bool   isAlarming = false;                  // Сработал будильник "рассвет"
