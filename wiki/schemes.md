@@ -18,6 +18,9 @@
 ### С полным набором компонент (отключение матрицы - MOSFET)
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP8266_ALL.jpg)
 
+Для данного варианта схему ползователь ***RailWar*** (Evgeny) разработал печатную плату.  
+PCB Layout смотри в папке **"pcb"** проекта - архив **"lamp8266.zip"**.
+
 ### С полным набором компонент (отключение матрицы - реле)
 ![SCHEME](https://github.com/vvip-68/GyverPanelWiFi/blob/master/schemes/ESP8266_RELAY.jpg)
 
