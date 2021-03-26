@@ -12,14 +12,17 @@ boolean isWhite = false;
 // H   - высота паттерна
 void drawPattern(uint8_t ptrn, uint8_t X, uint8_t Y, uint8_t W, uint8_t H) {
 
-  byte y_offs = beatsin8(5, 1, 32); // for X and Y texture move     <-- Эти две строчки принадлежат перу господина Stepko (C)
-  byte x_offs = beatsin8(6, 1, 32); // for X and Y texture move     <--
+  // Идея "подвижного" смещения узора - (С) Stepko
+  // https://editor.soulmatelights.com/gallery/761-patterns
+
+  byte y_offs = beatsin8(5, 1, 32); // for X and Y texture move
+  byte x_offs = beatsin8(6, 1, 32); // for X and Y texture move
     
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
   for (byte y = 0; y < HEIGHT; y++) {
     for (byte x = 0; x < WIDTH; x++) {
-      uint8_t in = (uint8_t) pgm_read_byte( & (patterns[ptrn][(y_offs + y) % H][(x_offs + x) % W]));   // <-- Эта строчка использует переменные, объявленные выше, которые принадлежат перу господина Stepko (C)
+      uint8_t in = (uint8_t) pgm_read_byte( & (patterns[ptrn][(y_offs + y) % H][(x_offs + x) % W]));
       CHSV color = colorMR[in];
       CHSV color2 = color.v != 0 ? CHSV(color.h, color.s, effectBrightness) : color;
       drawPixelXY(x, y, color2); 

@@ -529,7 +529,7 @@ void set_pass(String value) {
 void set_SoftAPName(String value) {
   if (getSoftAPName() == value) return;
   putSoftAPName(value);
-  getSoftAPName().toCharArray(pass, 16);
+  getSoftAPName().toCharArray(apName, 10);
   addKeyToChanged("AN");
 }              
 
