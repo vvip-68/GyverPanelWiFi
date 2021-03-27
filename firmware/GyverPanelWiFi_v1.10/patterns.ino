@@ -2,6 +2,7 @@
 
 int8_t patternIdx = -1;
 int8_t lineIdx = 0;
+int8_t columnIdx = 0;
 boolean isWhite = false;
 
 // Заполнение матрицы указанным паттерном
@@ -15,17 +16,57 @@ void drawPattern(uint8_t ptrn, uint8_t X, uint8_t Y, uint8_t W, uint8_t H) {
   // Идея "подвижного" смещения узора - (С) Stepko
   // https://editor.soulmatelights.com/gallery/761-patterns
 
-  byte y_offs = beatsin8(5, 1, 32); // for X and Y texture move
-  byte x_offs = beatsin8(6, 1, 32); // for X and Y texture move
+  byte y_offs = 0;
+  byte x_offs = 0;
     
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
-
+  byte variant = map8(effectScaleParam[MC_PATTERNS],0,4);
+  switch(variant) {
+    case 1:
+      // снизу вверх
+      columnIdx = -((WIDTH % W) / 2) + 1;      
+      lineIdx++;      
+      if (lineIdx >= H) lineIdx = 0;
+      y_offs = lineIdx;
+      x_offs = columnIdx;
+      break;
+    case 2:
+      // сверху вниз
+      columnIdx = -((WIDTH % W) / 2) + 1;      
+      lineIdx--;      
+      if (lineIdx < 0) lineIdx = H - 1;
+      y_offs = lineIdx;
+      x_offs = columnIdx;
+      break;
+    case 3:
+      // справа налево
+      lineIdx = 0;      
+      columnIdx++;      
+      if (columnIdx >= W) columnIdx = 0;
+      y_offs = lineIdx;
+      x_offs = columnIdx;
+      break;
+    case 4:
+      // слева направо
+      lineIdx = 0;      
+      columnIdx--;      
+      if (columnIdx < 0) columnIdx = W - 1;
+      y_offs = lineIdx;
+      x_offs = columnIdx;
+      break;
+    default:
+      // Переменное движение
+      y_offs = beatsin8(5, 1, 32); // for X and Y texture move
+      x_offs = beatsin8(6, 1, 32); // for X and Y texture move
+      break;
+  }
+  
   for (byte y = 0; y < HEIGHT; y++) {
     for (byte x = 0; x < WIDTH; x++) {
       uint8_t in = (uint8_t) pgm_read_byte( & (patterns[ptrn][(y_offs + y) % H][(x_offs + x) % W]));
       CHSV color = colorMR[in];
       CHSV color2 = color.v != 0 ? CHSV(color.h, color.s, effectBrightness) : color;
-      drawPixelXY(x, y, color2); 
+      drawPixelXY(x, HEIGHT - y - 1, color2); 
     }
   }
 }

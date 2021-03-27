@@ -3606,7 +3606,6 @@ String getParamForMode(byte mode) {
    case MC_IMAGE:
    case MC_WEATHER:
    case MC_LIFE:
-   case MC_PATTERNS:
    case MC_FIRE2:
    case MC_SDCARD:
      str = "X";
