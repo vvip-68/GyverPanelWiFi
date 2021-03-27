@@ -249,6 +249,10 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   byte m10 = mins / 10;
   byte m01 = mins % 10;
 
+  byte t = abs(temperature);
+  byte dec_t = t / 10;
+  byte edc_t = t % 10;  
+
   // Старший байт - ширина часов, младший - ширина температуры
   // Выбираем бОльшую из значений ширины и центрируем ее относительно ширины матрицы
   uint16_t ww = getClockWithTempWidth(hrs, mins);
@@ -263,10 +267,11 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   while(dx == 0 && x > 0 && x + CLOCK_W >= WIDTH) x--;
   if (clockScrollSpeed >= 240) {
     X = 0;
-    if (CLOCK_W == 23 && WIDTH == 24) X++;
+    if (CLOCK_W >= 23 && WIDTH <= 25) X++;
   }
 
   CLOCK_FX = x - (dx > 0 ? dx : 0);
+  
   if (CLOCK_ORIENT == 0) {
     if (dx < 0) {
       if (h10 == 1 && h01 == 1) x++;
@@ -275,6 +280,12 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
       if (h10 == 1 && h01 == 1 && m10 == 1 && m01 == 1 && c_size == 1) CLOCK_FX--;
     } else if (dx > 0) {
       if (h10 == 1 && h01 == 1 && (m10 != 1 || m01 != 1)) x++;
+    }
+    if (c_size != 1 && WIDTH >= 23 && WIDTH <= 25) {
+      CLOCK_FX--;
+      if (dec_t > 0 && m10 != 1 && m01 == 1) {
+        x--;
+      }
     }
   }
   if (debug) {
@@ -322,8 +333,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
     } else {
       
-      // отрисовка часов 5x7
-      
+      // отрисовка часов 5x7      
       x += (h10 == 1 && h01 == 1 ? -1 : 0);
       x += (h10 == 1 && h01 == 1 && m10 == 1 && m01 == 1 ? 1 : 0);
 
@@ -334,7 +344,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
         x += (h10 == 1 ? -1 : 0);        
-        drawDigit5x7(h10, getClockX(X + x), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+        drawDigit5x7(h10, getClockX(X + x), Y, clockLED[0]); // шрифт 5x7 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
         x += (h10 == 1 ? (h01 == 1 ? 6 : 5) : 6);
       }      
 
