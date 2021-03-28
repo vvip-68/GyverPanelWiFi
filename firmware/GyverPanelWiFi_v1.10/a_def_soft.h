@@ -742,6 +742,7 @@ uint16_t   CURRENT_LIMIT = 10000;                // лимит по току в 
 
 #define    NUM_LEDS              WIDTH * HEIGHT
 #define    maxDim                max(WIDTH, HEIGHT)
+#define    minDim                min(WIDTH, HEIGHT)
 
 #if (HEIGHT < 17)
 #define    OVERLAY_SIZE          WIDTH * HEIGHT   

@@ -1714,60 +1714,59 @@ void prizmataRoutine() {
 
 // *************************** ВЫШИВАНКА **************************
 
-int8_t count = 0;
+// ------ Эффект "Вышиванка" 
+// (с) проект Aurora "Munch"
+// adopted/updated by kostyamat
 
+int8_t count = 0;
 byte flip = 0;
 byte generation = 0;
+byte rnd = 4; //1-8
+byte mic[2];
+byte minDimLocal = maxDim > 32 ? 32 : 16;
 
-const TProgmemRGBPalette16 MunchColors_p FL_PROGMEM =
-{
-    0xFF0000, 0x000000, 0xAB5500, 0x000000,
-    0xABAB00, 0x000000, 0x00FF00, 0x000000,
-    0x00AB55, 0x000000, 0x0000FF, 0x000000,
-    0x5500AB, 0x000000, 0xAB0055, 0x000000
-};
+const byte width_adj = (WIDTH < HEIGHT ? (HEIGHT - WIDTH) / 2 : 0);
+const byte height_adj = (HEIGHT < WIDTH ? (WIDTH - HEIGHT) / 2 : 0);
+const byte maxDim_steps = 256 / maxDim;
 
 void munchRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     //modeCode = MC_MUNCH;
     generation = 0;
-    dir_mx = WIDTH > HEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
-    seg_num = dir_mx == 0 ? (WIDTH / HEIGHT) : (HEIGHT / WIDTH);     // вычисляем количество сегментов, умещающихся на матрице
-    seg_size = dir_mx == 0 ? HEIGHT : WIDTH;                         // Размер квадратного сегмента (высота и ширина равны)
-    seg_offset = ((dir_mx == 0 ? WIDTH : HEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
     dir = 1;
+    count = 0;
+    flip = 0;
     FastLED.clear();
   }
 
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
-  for (byte x = 0; x < seg_size; x++) {
-    for (byte y = 0; y < seg_size; y++) {
-      for (byte n = 0; n < seg_num; n++) {
-        CRGB color = ((x ^ y ^ flip) < count ? ColorFromPalette(MunchColors_p, ((x ^ y) << 4) + generation, effectBrightness) : CRGB::Black);
-        if (dir_mx == 0)
-          drawPixelXY(seg_offset + x + (n * seg_size), y, color);
-        else   
-          drawPixelXY(x, seg_offset + y + (n * seg_size), color);
-      }
+  for (byte x = 0; x < minDimLocal; x++) {
+    for (byte y = 0; y < minDimLocal; y++) {
+      CRGB color = (x ^ y ^ flip) < count ? ColorFromPalette(RainbowColors_p, ((x ^ y) << rnd) + generation, effectBrightness) : CRGB::Black;
+      if (x < WIDTH and y < HEIGHT) leds[XY(x, y)] = color;
+      if (x + minDimLocal < WIDTH and y < HEIGHT) leds[XY(x + minDimLocal, y)] = color;
+      if (y + minDimLocal < HEIGHT and x < WIDTH) leds[XY(x, y + minDimLocal)] = color;
+      if (x + minDimLocal < WIDTH and y + minDimLocal < HEIGHT) leds[XY(x + minDimLocal, y + minDimLocal)] = color;
     }
   }
 
   count += dir;
 
-  if (count <= 0 || count >= seg_size) {
-    dir = dir < 0 ? 1 : -1;
+  if (count <= 0 || count >= mic[0]) {
+    dir = -dir;
+    if (count <= 0) {
+      mic[0] = mic[1];
+      if (flip == 0)
+        flip = mic[1] - 1;
+      else
+        flip = 0;
+    }
   }
-
-  if (count <= 0) {
-    if (flip == 0)
-      flip = seg_size - 1; 
-    else
-      flip = 0;
-  }
-
+  
   generation++;
+  mic[1] = minDimLocal;
 }
 
 // *************************** ДОЖДЬ **************************
