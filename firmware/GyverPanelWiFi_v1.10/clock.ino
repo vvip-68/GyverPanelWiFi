@@ -870,6 +870,7 @@ void clockTicker() {
       if (((useWeather > 0)) && weather_ok && (((second() + 10) % 30) >= 28)) {
         uint8_t atH = abs(temperature) / 10;
         uint8_t atL = abs(temperature) % 10;
+        display.point(false);
         if (atH == 0)
           display.displayByte(_empty, (temperature >= 0) ? _empty : _dash, display.encodeDigit(atL), _degree);
         else
