@@ -86,7 +86,6 @@ bool getWeather() {
 
   String regId = useWeather == 1 ? String(regionID) : String(regionID2);
   String town, sunrise, sunset;
-  bool   weather_ok = true;
   
   if (useWeather == 1) {
     /*
@@ -584,7 +583,11 @@ void weatherRoutine() {
         temp_width -= 4;
         pos_x += 2;
       }
-      weather_text_x = pos_x + image_desc.frame_width - (big_font ? (edc_t != 1 ? 0 : -1) : (edc_t != 1 ? 0 : 1)); 
+      #if (DEVICE_TYPE == 0)
+        weather_text_x = pos_x + (image_desc.frame_width / 2) - 2 - (big_font ? (edc_t != 1 ? 0 : -1) : (edc_t != 1 ? 0 : 1)); 
+      #else
+        weather_text_x = pos_x + image_desc.frame_width - (big_font ? (edc_t != 1 ? 0 : -1) : (edc_t != 1 ? 0 : 1)); 
+      #endif
       if (!big_font && dec_t != 0) weather_text_x--;
       if (!big_font && edc_t == 0) weather_text_x--;
       weather_text_x -= (big_font ? 1 : 0);

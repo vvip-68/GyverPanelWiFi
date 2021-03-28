@@ -239,7 +239,10 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   // Для отладки позиционирования часов с температурой
   bool debug = debug_hours >= 0 && debug_mins >= 0;
   if (debug) {
-    hrs = debug_hours; mins = debug_mins; temperature = debug_temperature;
+    hrs = debug_hours; mins = debug_mins; 
+    #if (USE_WEATHER == 1)
+    temperature = debug_temperature;
+    #endif
   }
 
   int8_t x = X;
@@ -249,10 +252,12 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   byte m10 = mins / 10;
   byte m01 = mins % 10;
 
+  #if (USE_WEATHER == 1)
   byte t = abs(temperature);
   byte dec_t = t / 10;
   byte edc_t = t % 10;  
-
+  #endif
+  
   // Старший байт - ширина часов, младший - ширина температуры
   // Выбираем бОльшую из значений ширины и центрируем ее относительно ширины матрицы
   uint16_t ww = getClockWithTempWidth(hrs, mins);
@@ -283,9 +288,11 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
     }
     if (c_size != 1 && WIDTH >= 23 && WIDTH <= 25) {
       CLOCK_FX--;
+      #if (USE_WEATHER == 1)
       if (dec_t > 0 && m10 != 1 && m01 == 1) {
         x--;
       }
+      #endif
     }
   }
   if (debug) {
@@ -333,7 +340,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
     } else {
       
-      // отрисовка часов 5x7      
+      // отрисовка часов 5x7
       x += (h10 == 1 && h01 == 1 ? -1 : 0);
       x += (h10 == 1 && h01 == 1 && m10 == 1 && m01 == 1 ? 1 : 0);
 
@@ -838,8 +845,6 @@ void clockTicker() {
       }
     }
   } else {
-    // Отображение часов - разделительное двоеточие...
-    if (halfSec) display.point(dotFlag);
     // Если время еще не получено - отображать прочерки
     if (!init_time) {
       if (halfSec) display.displayByte(_dash, _dash, _dash, _dash);
@@ -859,11 +864,24 @@ void clockTicker() {
         }
       }
     } else {
-      // Время получено - отображать часы:минуты
-      if (halfSec) {
-        display.displayClock(hour(),minute());
-        display.setBrightness(isTurnedOff ? 1 : 7);
+      // Время получено - отображать часы:минуты  
+      #if (USE_WEATHER == 1)
+      // RailWar Evgeny (C)
+      if (((useWeather > 0)) && weather_ok && (((second() + 10) % 30) >= 28)) {
+        uint8_t atH = abs(temperature) / 10;
+        uint8_t atL = abs(temperature) % 10;
+        if (atH == 0)
+          display.displayByte(_empty, (temperature >= 0) ? _empty : _dash, display.encodeDigit(atL), _degree);
+        else
+          display.displayByte((temperature >= 0) ? _empty : _dash, display.encodeDigit(atH), display.encodeDigit(atL), _degree);
+      } else 
+      #endif
+      {
+        display.displayClock(hour(),minute());         
+        // Отображение часов - разделительное двоеточие...
+        if (halfSec) display.point(dotFlag);
       }
+      display.setBrightness(isTurnedOff ? 1 : 7);
     }
   }
 #endif  
