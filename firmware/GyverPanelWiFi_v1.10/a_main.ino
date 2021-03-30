@@ -3497,8 +3497,8 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   if (key == "QW") {
     tmp = String(mqtt_pass);
     if (value) {
-      // value->set(tmp);  // Решено пароль по открытому каналу на [публичный] сервер MQTT не отправлять
-      return "";           // tmp;
+      value->set(tmp);
+      return tmp;
     }
     return str + "QW:" + "[" + tmp +  "]";
   }
