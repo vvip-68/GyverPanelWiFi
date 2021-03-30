@@ -317,16 +317,16 @@ unsigned int localPort = 2390;              // локальный порт на 
 // ------------------------ MQTT parameters --------------------
 #if (USE_MQTT == 1)
 
-WiFiClient m_client;                            // Объект для работы с удалёнными хостами - соединение с MQTT-сервером
-PubSubClient mqtt(m_client);                    // Объект соединения с MQTT сервером
+WiFiClient m_client;                             // Объект для работы с удалёнными хостами - соединение с MQTT-сервером
+PubSubClient mqtt(m_client);                     // Объект соединения с MQTT сервером
 
-String mqtt_client_name = "";                   // Имя для регистрации клиента на сервере MQTT
+String mqtt_client_name = "";                    // Имя для регистрации клиента на сервере MQTT
 
 // Внимание!!! Если вы меняете эти значения ПОСЛЕ того, как прошивка уже хотя бы раз была загружена в плату и выполнялась,
 // чтобы изменения вступили в силу нужно также изменить значение константы EEPROM_OK в строке 8 этого файла
 
 #ifndef DEFAULT_MQTT_SERVER
-#define DEFAULT_MQTT_SERVER "mqtt.iotwithus.com" // MQTT сервер
+#define DEFAULT_MQTT_SERVER "mqtt.by"            // MQTT сервер
 #endif
 
 #ifndef DEFAULT_MQTT_USER
