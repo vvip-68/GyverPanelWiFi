@@ -1,3 +1,15 @@
+// Задержка между отправкой последовательных команд в модуль DFPlayer
+// На некоторых платах достаточно 10 мс задержки, однако встречаются экземпляры DFPlayer, 
+// которые не выполняют команды, если между отправкой аоследовательных команд задержка менее 100 мс.
+// Рекомендуется подбирать опытным путем. Слишком большая задержка может давать суммарно до 0.5 сек замирания
+// эффектов при начале/окончании воспроизведения звука.
+//
+// Проявление: если прошивка распознаёт подключенный DFPlayer и в InitializeDfPlayer2() файлы звуков считываются, 
+// однако отправка команды "играть" из приложения, страница настройки будильника, комбобокс выбора зввука  
+// не начинает воспроизведение звука - увеличьте значение задержки.
+
+#define GUARD_DELAY 75
+
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
   mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
@@ -93,8 +105,8 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для будильника
   int cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.readFileCountsInFolder(1);     delay(10);
-    new_val = dfPlayer.readFileCountsInFolder(1); delay(10);    
+    val = dfPlayer.readFileCountsInFolder(1);     delay(GUARD_DELAY);
+    new_val = dfPlayer.readFileCountsInFolder(1); delay(GUARD_DELAY);    
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
@@ -105,8 +117,8 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для рассвета
   cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.readFileCountsInFolder(2);     delay(10);
-    new_val = dfPlayer.readFileCountsInFolder(2); delay(10);     
+    val = dfPlayer.readFileCountsInFolder(2);     delay(GUARD_DELAY);
+    new_val = dfPlayer.readFileCountsInFolder(2); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
@@ -117,8 +129,8 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для звуков в бегущей строке
   cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.readFileCountsInFolder(3);     delay(10);
-    new_val = dfPlayer.readFileCountsInFolder(3); delay(10);     
+    val = dfPlayer.readFileCountsInFolder(3);     delay(GUARD_DELAY);
+    new_val = dfPlayer.readFileCountsInFolder(3); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
@@ -143,13 +155,13 @@ void PlayAlarmSound() {
   // Установлен корректный звук?
   if (sound > 0) {
     dfPlayer.stop();
-    delay(10);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
+    delay(GUARD_DELAY);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
     dfPlayer.volume(constrain(maxAlarmVolume,1,30));
-    delay(10);
+    delay(GUARD_DELAY);
     dfPlayer.playFolder(1, sound);
-    delay(10);
+    delay(GUARD_DELAY);
     dfPlayer.enableLoop();
-    delay(10);    
+    delay(GUARD_DELAY);    
     alarmSoundTimer.setInterval(alarmDuration * 60L * 1000L);
     alarmSoundTimer.reset();
     set_isPlayAlarmSound(true);
@@ -173,13 +185,13 @@ void PlayDawnSound() {
   // Установлен корректный звук?
   if (sound > 0) {
     dfPlayer.stop();
-    delay(10);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
+    delay(GUARD_DELAY);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
     dfPlayer.volume(1);
-    delay(10);
+    delay(GUARD_DELAY);
     dfPlayer.playFolder(2, sound);
-    delay(10);
+    delay(GUARD_DELAY);
     dfPlayer.enableLoop();
-    delay(10);
+    delay(GUARD_DELAY);
     // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
     fadeSoundDirection = 1;   
     fadeSoundStepCounter = maxAlarmVolume;
@@ -202,7 +214,7 @@ void StopSound(int duration) {
 
   if (duration <= 0) {
     dfPlayer.stop();
-    delay(100);
+    delay(GUARD_DELAY);
     dfPlayer.volume(0);
     return;
   }

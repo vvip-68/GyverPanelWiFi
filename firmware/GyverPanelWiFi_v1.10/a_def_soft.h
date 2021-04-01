@@ -124,12 +124,12 @@ enum  eSources {NONE, BOTH, UDP, MQTT} cmdSource; // Источник коман
 // Так, файл записанный в папку первым получает номер 1, второй - 2 и так далее и ника не зависит от имен файлов
 // Данные массивы содержат отображаемые в приложении имена звуков в порядке, соответствующем нумерации записанных в папки файлов.
 
-// Список звуков для комбобокса "Звук рассвета" в приложении на смартфоне
-#define ALARM_SOUND_LIST   F("One Step Over,In the Death Car,Труба зовет,Маяк,Mister Sandman,Шкатулка,Banana Phone")
+// Список звуков для комбобокса "Звук будильника" в приложении на смартфоне
+#define ALARM_SOUND_LIST   F("One Step Over,In the Death Car,Труба зовет,Маяк,Mister Sandman,Шкатулка,Banana Phone,Carol of the Bells")
 // Список звуков для комбобокса "Звук рассвета" в приложении на смартфоне
 #define DAWN_SOUND_LIST    F("Птицы,Гроза,Прибой,Дождь,Ручей,Мантра,La Petite Fille De La Mer")
 // Список звуков для макроса {A} бегущей строки
-#define NOTIFY_SOUND_LIST  F("Piece Of Сake,Swiftly,Pristine,Goes Without Saying,Inflicted,Eventually,Point Blank,Spring Board,To The Point,Serious Strike,Jingle Bells,Happy New Year,Christmas Bells,Door Knock,Alarm Signal,Viber Message,Viber Call,Text Message")
+#define NOTIFY_SOUND_LIST  F("Piece Of Сake,Swiftly,Pristine,Goes Without Saying,Inflicted,Eventually,Point Blank,Spring Board,To The Point,Serious Strike,Jingle Bells,Happy New Year,Christmas Bells,Door Knock,Alarm Signal,Viber Message,Viber Call,Text Message,Old Clock 1,Old Clock 2,Old Clock 3")
 
 #endif
 
