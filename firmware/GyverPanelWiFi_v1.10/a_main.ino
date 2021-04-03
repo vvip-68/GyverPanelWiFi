@@ -744,8 +744,6 @@ void parsing() {
           // Установить активный цвет рисования - incomeBuffer = '$5 0 00FF00;'
           str = String(incomeBuffer).substring(5,11);
           set_drawColor(HEXtoInt(str));
-          uint32_t c1 = gammaCorrection(drawColor);
-          uint32_t c2 = gammaCorrectionBack(c1);
           sendAcknowledge(cmdSource);
         } else
         if (intData[1] == 1) {
@@ -965,7 +963,7 @@ void parsing() {
               pntY = str.toInt();
               pictureLine = pictureLine.substring(b_tmp+1);
       
-              pntIdx = 0;
+              pntIdx = 0; pntX = 0;
               idx = pictureLine.indexOf("|");
               while (idx>0)
               {
@@ -1029,7 +1027,7 @@ void parsing() {
               pntX = str.toInt();
               pictureLine = pictureLine.substring(b_tmp+1);
       
-              pntIdx = 0;
+              pntIdx = 0; pntY = 0;
               idx = pictureLine.indexOf("|");
               while (idx>0)
               {
@@ -1469,7 +1467,7 @@ void parsing() {
              }
              break;
            case 2:               // $13 2 I; - Запросить исходный текст бегущей строки с индексом I 0..35 без обработки макросов
-             if (intData[2] >= 0 && (intData[2]<(sizeof(textLines) / sizeof(String)))) {
+             if (intData[2] >= 0 && ((uint32_t)intData[2]<(sizeof(textLines) / sizeof(String)))) {
                editIdx = intData[2];          // На время вызова sendPageParams(91) editIdx должен указывать на строку в массиве  
                sendPageParams(91, cmdSource); // Обработать указанную строку
              }
@@ -2269,7 +2267,6 @@ void sendPageParams(int page, eSources src) {
 
   String str = "", color, text;
   CRGB c1, c2;
-  int8_t tmp_eff = -1;
   bool err = false;
   
   switch (page) { 
@@ -2862,7 +2859,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   }
 
   // Исходная строка с индексом editIdx без обработки для отправки в приложени для формирования
-  if (key == "TY" && editIdx >= 0 && (editIdx < (sizeof(textLines) / sizeof(String)))) {
+  if (key == "TY" && editIdx >= 0 && ((uint32_t)editIdx < (sizeof(textLines) / sizeof(String)))) {
     tmp = String(editIdx) + ":" + String(getAZIndex(editIdx)) + " > " + getTextByIndex(editIdx);
     if (value) {
       value->set(tmp);
@@ -3912,7 +3909,7 @@ void sendImageLine() {
   // Выполняется отправка изображения с матрицы в приложение на телефоне?
   bool sendByRow = WIDTH <= HEIGHT, stopSend = false;
   String imageLine, sHex;
-  byte len;
+
   // Идет отправка изображения? Находимся в режиме рисования?
   // Время здержки отправки по UDP - вышло? Для MQTT задержка не нужна
   // Не все строки/колонки еще переданы?

@@ -441,7 +441,6 @@ int8_t getWeatherFrame(String icon) {
 int8_t getWeatherFrame2(String icon) {
   // https://openweathermap.org/weather-conditions#How-to-get-icon-URL
   bool hasDay   = icon.endsWith("d");
-  bool hasNight = icon.endsWith("n");
   switch (weather_code) {
     case 200: return 19;                         // weather  = F("Гроза, небольшой дождь"); break;         // thunderstorm with light rain
     case 201: return 19;                         // weather  = F("Дождь с грозой"); break;                 // thunderstorm with rain
@@ -543,7 +542,7 @@ void weatherRoutine() {
     // Если температура 0 - нужно рисовать занк градуса или букву 'c'
     // Если температура другая - для большого шрифта, если позволяет место - рисовать знак градуса. Если не позволяет - не рисовать.
     bool need_deg = (t == 0) || (big_font && t != 0);
-    if (need_deg) temp_width += (big_font ? (t == 0 ? : 4) : (t == 0 ? 3 : 0));    
+    if (need_deg) temp_width += (big_font ? (t == 0 ? 0 : 4) : (t == 0 ? 3 : 0));    
   #endif
   
   if (loadingFlag) {

@@ -219,7 +219,7 @@ byte getClockSizeType() {
   byte clock_size = CLOCK_SIZE;
   // Если часы авто или большие - определить - а поместятся ли они на матрицу по ширине при горизонтальном режиме / по высоте при вертикальном
   // Большие часы для шрифта 5x7 требуют 4*5 /цифры/ + 4 /двоеточие/ + 2 /пробел между цифрами часов и минут / = 23, 25 или 26 колонки (одинарные / двойные точки в часах) если 23 - нет пробела вокруг точек
-  if ((clock_size == 0 || clock_size == 2) && (CLOCK_ORIENT == 0 && WIDTH < 23 || CLOCK_ORIENT == 1 && HEIGHT < 15)) clock_size = 1;
+  if ((clock_size == 0 || clock_size == 2) && ((CLOCK_ORIENT == 0 && WIDTH < 23) || (CLOCK_ORIENT == 1 && HEIGHT < 15))) clock_size = 1;
   if (clock_size == 0) clock_size = 2;
   return clock_size;
 }
@@ -255,7 +255,6 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
   #if (USE_WEATHER == 1)
   byte t = abs(temperature);
   byte dec_t = t / 10;
-  byte edc_t = t % 10;  
   #endif
   
   // Старший байт - ширина часов, младший - ширина температуры
@@ -868,8 +867,9 @@ void clockTicker() {
       #if (USE_WEATHER == 1)
       // RailWar Evgeny (C)
       if (((useWeather > 0)) && weather_ok && (((second() + 10) % 30) >= 28)) {
-        uint8_t atH = abs(temperature) / 10;
-        uint8_t atL = abs(temperature) % 10;
+        byte t = abs(temperature);
+        uint8_t atH = t / 10;
+        uint8_t atL = t % 10;
         display.point(false);
         if (atH == 0)
           display.displayByte(_empty, (temperature >= 0) ? _empty : _dash, display.encodeDigit(atL), _degree);

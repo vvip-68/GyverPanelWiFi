@@ -390,7 +390,7 @@ int8_t getNextLine(int8_t currentIdx) {
   if (sequenceIdx < 1) {
     nextLineIdx++;
   } else {
-    if (sequenceIdx >= textLines[0].length()) {
+    if (sequenceIdx >= (int16_t)textLines[0].length()) {
       sequenceIdx = 1;  // перемотать на начало последовательности
     }
     char c = textLines[0].charAt(sequenceIdx);
@@ -454,7 +454,7 @@ int8_t getNextLine(int8_t currentIdx) {
         }
         // Строка недоступна - брать следующий номер в последовательности
         sequenceIdx++;
-        if (sequenceIdx >= textLines[0].length()) {
+        if (sequenceIdx >= (int16_t)textLines[0].length()) {
           sequenceIdx = 1;  // перемотать на начало последовательности
         }
         if (c_idx == sequenceIdx) break;
@@ -1263,7 +1263,7 @@ String processDateMacrosInText(const String text) {
              iMinutes = s_mins.toInt();
            }
 
-           tmElements_t tm = {0, iMinutes, iHours, 0, iDay, iMonth, CalendarYrToTm(iYear)};
+           tmElements_t tm = {0, iMinutes, iHours, 0, iDay, iMonth, (byte)CalendarYrToTm(iYear)};
            t_event = makeTime(tm);
         }
 
@@ -1538,7 +1538,7 @@ boolean checkIsTextMultiColor(const String text) {
   }
 
 
-  if (cnt == 1 && (idx_first == 0 || idx_first == (text.length() - 10))) {  // text{C#0000FF} поз макр - 4, длина строки - 14, длина макроса - 10
+  if (cnt == 1 && (idx_first == 0 || idx_first == (int16_t)(text.length() - 10))) {  // text{C#0000FF} поз макр - 4, длина строки - 14, длина макроса - 10
     return false;
   }
 
@@ -1616,7 +1616,7 @@ void rescanTextEvents() {
 */
   // Предварительная очистка массива постоянно отслеживаемых событий
   for (uint8_t i = 0; i < MOMENTS_NUM; i++) {
-    moments[i].moment == 0;
+    moments[i].moment = 0;
   }
 
   bool     found = false;
@@ -1775,11 +1775,10 @@ void rescanTextEvents() {
       if (iYear < year()) continue;
       
       // Сформировать ближайшее время события из полученных компонент
-      tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, CalendarYrToTm(iYear)}; 
+      tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, (byte)CalendarYrToTm(iYear)}; 
       time_t t_event = makeTime(tm);            
       
       // Если событие уже прошло - это может быть, когда дата опущена или звездочками, а время указано меньше текущего - брать то же время следующего дня/месяца/года
-      ulong add_part = 0;
       const uint8_t monthDays[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
       while ((unsigned long)t_event < (unsigned long)now() && (star_day || star_month || star_year)) {
@@ -1812,7 +1811,7 @@ void rescanTextEvents() {
         else if (star_year) {
           iYear++;          
         }        
-        tm = {0, iMinute, iHour, 0, iDay, iMonth, CalendarYrToTm(iYear)};
+        tm = {0, iMinute, iHour, 0, iDay, iMonth, (byte)CalendarYrToTm(iYear)};
         t_event = makeTime(tm);        
       }
       
@@ -1868,13 +1867,13 @@ void checkMomentText() {
     // Не содержит события
     if (moments[i].moment == 0) break;
     // Время за #B секунд до наступления события? - отдать index_b
-    if (this_moment >= moments[i].moment - moments[i].before && this_moment < moments[i].moment) {
+    if ((ulong)this_moment >= moments[i].moment - moments[i].before && this_moment < moments[i].moment) {
       momentIdx = i;
       momentTextIdx = moments[i].index_b; // before
       break;
     }    
     // Время #А секунд после наступления события? - отдать index_a
-    if (this_moment >= moments[i].moment && this_moment <= moments[i].moment + moments[i].after) {
+    if ((time_t)this_moment >= moments[i].moment && (time_t)this_moment <= moments[i].moment + (time_t)moments[i].after) {
       momentIdx = i;
       momentTextIdx = moments[i].index_a; // after
       break;
@@ -1901,7 +1900,7 @@ boolean forThisDate(String text) {
   */
   boolean ok = false;
   String str;
-  int8_t idx1, idx2;
+  int8_t idx2;
   
   idx = text.indexOf("{S");
   while (idx >= 0) {
@@ -1930,7 +1929,7 @@ boolean forThisDate(String text) {
       */
       time_t now_moment = now();
       extractMacroSDates(str);
-      ok = now_moment >= textAllowBegin && now_moment <= textAllowEnd;
+      ok = (now_moment >= (time_t)textAllowBegin) && (now_moment <= (time_t)textAllowEnd);
       /*
       DEBUGLN("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
       if (ok) DEBUGLN(F("вывод разрешен"));
@@ -1968,7 +1967,7 @@ void extractMacroSDates(String text) {
   boolean  hasTime2 = false;    // В строке есть элементы времени даты2
   String   str;
   
-  if (idx > 0) {
+  if (hasDate2) {
     str = text.substring(idx+1); // Выделяем часть, отвечающую за Дату2
     hasTime2 = str.indexOf(":") > 0;    // Если в оставшейся части есть разделитель часов/минут - время указано
   }
@@ -2115,18 +2114,18 @@ void extractMacroSDates(String text) {
     if (iMinute2 == 0 && !hasTime2) { iMinute2 = 59; }
 
     // Сформировать ближайшее время события из полученных компонент
-    tmElements_t tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, CalendarYrToTm(iYear1)}; 
-    tmElements_t tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, CalendarYrToTm(iYear2)}; 
+    tmElements_t tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (byte)CalendarYrToTm(iYear1)}; 
+    tmElements_t tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (byte)CalendarYrToTm(iYear2)}; 
     
     time_t t_event1 = makeTime(tm1);
     time_t t_event2 = makeTime(tm2);
 
     if (t_event2 < t_event1) {
       if (starYear2) {
-        tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, CalendarYrToTm(iYear2 + 1)};     
+        tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (byte)CalendarYrToTm(iYear2 + 1)};     
         t_event2 = makeTime(tm2);
       } else if (starYear1) {
-        tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, CalendarYrToTm(iYear1 - 1)}; 
+        tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (byte)CalendarYrToTm(iYear1 - 1)}; 
         t_event1 = makeTime(tm1);
       }
     }
@@ -2178,7 +2177,7 @@ bool isFirstLineControl() {
     // textLines[0][1] == '#' - допускается - значит брать случайную последовательность
     // '0' - НЕ допускается - т.к строка массива с индексом 0 - и есть управляющаая
     textLines[0].toUpperCase();
-    for (int i = 1; i < textLines[0].length(); i++) {
+    for (uint16_t i = 1; i < textLines[0].length(); i++) {
       char c = textLines[0].charAt(i);
       if ((i == 1 && c == '#') || (c >= '1' && c <= '9') || (c >= 'A' && c <= 'Z')) continue;
       textLines[0][i] = ' ';

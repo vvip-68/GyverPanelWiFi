@@ -1704,11 +1704,9 @@ uint8_t checkEepromBackup() {
   String  fileName = F("/eeprom.bin");
   uint8_t existsFS = 0; 
   uint8_t existsSD = 0; 
-  size_t  fs_size;
   
   file = LittleFS.open(fileName, "r");
   if (file) {
-    fs_size = file.size();
     if (file.size() == EEPROM_MAX) {
       existsFS = 1;
     }
@@ -1718,7 +1716,6 @@ uint8_t checkEepromBackup() {
   #if (USE_SD == 1)
     file = SD.open(fileName);
     if (file) {
-      fs_size = file.size();
       if (file.size() == EEPROM_MAX) {
         existsSD = 2;
       }
@@ -1804,7 +1801,7 @@ bool saveEepromToFile(String storage) {
   // Дописываем остаток
   if (ok && cnt > 0) {
     len = file.write(buf, cnt);
-    ok = len = cnt;
+    ok = len == cnt;
   }
   
   if (!ok) {

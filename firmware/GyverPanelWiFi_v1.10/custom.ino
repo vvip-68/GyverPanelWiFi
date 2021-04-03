@@ -139,7 +139,7 @@ void doEffectWithOverlay(byte aMode) {
   if (showTextNow && fullTextFlag && !moment_active) {  
     if (textShowTime > 0) {
       // Показ строки ограничен по времени
-      if ((millis() - textStartTime) > (textShowTime * 1000L)) {
+      if ((millis() - textStartTime) > (textShowTime * 1000UL)) {
         needStopText = true;
       }
     } else {
@@ -289,7 +289,7 @@ void doEffectWithOverlay(byte aMode) {
 
     // Время отрисовки календаря или температуры
     bool cal_or_temp_processed = false;
-    if (showDateState && (showDateInClock || !allow_two_row && (init_weather && showWeatherInClock && showWeatherState))) {      
+    if (showDateState && (showDateInClock || (!allow_two_row && (init_weather && showWeatherInClock && showWeatherState)))) {
       if (showDateInClock && showDateState && !showWeatherState) {
         // Календарь
         drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
