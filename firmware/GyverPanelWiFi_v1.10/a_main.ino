@@ -1666,9 +1666,8 @@ void parsing() {
           else {
             if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
               sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника  
-            } else {
-              sendAcknowledge(cmdSource);
-            }
+            } 
+            sendAcknowledge(cmdSource);
           }
         } else {                          // запрос параметров страницы приложения
           // Для команд, пришедших от MQTT отправлять ответы так же как и для команд, полученных из UDP
@@ -1747,6 +1746,7 @@ void parsing() {
              debug_hours = -1;
              debug_mins = -1;
              rescanTextEvents();
+             calculateDawnTime();
              break;
            case 9:               // $19 9 X; - Показывать температуру в режиме часов  X: 0 - нет, 1 - да
              if (allowHorizontal || allowVertical) {
