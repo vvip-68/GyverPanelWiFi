@@ -19,8 +19,7 @@
 
 В открывшемся окне добавьте в поле ввода следующие строки:
 `http://arduino.esp8266.com/stable/package_esp8266com_index.json` - для поддержки микроконтроллеров ESP8266 (NodeMCU, Wemos d1 mini)
-`https://raw.githubuserconteenumnt.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json` - для поддержки микроконтроллера ESP32
-
+`https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json` - для поддержки микроконтроллера ESP32.
 ![Ссылка на плату ESP8266](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Step_02_3.png)
 
 Примените изменения
