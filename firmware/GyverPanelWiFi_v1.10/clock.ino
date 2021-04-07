@@ -668,7 +668,7 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
 
   if (c_size == 1) {
 
-    CALENDAR_W = 15;   // 4 цифры шириной 3 + 3 пробела междуу цифрами
+    CALENDAR_W = 15;   // 4 цифры шириной 3 + 3 пробела между цифрами
     
     dy = allow_two_row ? 6 : 0;
     
@@ -771,13 +771,13 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
     } else {
 
       // Вертикальное расположение календаря - также как часы ДД в верхней строке, ММ - в нижней строке
-      drawDigit5x7(d10, X, Y + 8, clockLED[0]);
-      drawDigit5x7(d01, X + 6, Y + 8, clockLED[1]);
+      drawDigit5x7(d10, X, Y + 9, clockLED[0]);
+      drawDigit5x7(d01, X + 6, Y + 9, clockLED[1]);
       if (dots) { // Мигающие точки легко ассоциируются с часами
-        for (byte i=0; i<3; i++) drawPixelXY(getClockX(X + 4 + i), Y + 7, clockLED[2]);
+        for (byte i=0; i<3; i++) drawPixelXY(getClockX(X + 4 + i), Y + 8, clockLED[2]);
       }
-      drawDigit5x7(m10, X, Y, clockLED[3]);
-      drawDigit5x7(m01, X + 6, Y, clockLED[4]);
+      drawDigit5x7(m10, X, Y + 1, clockLED[3]);
+      drawDigit5x7(m01, X + 6, Y + 1, clockLED[4]);
       
     }
   }
@@ -1557,9 +1557,9 @@ void checkClockOrigin() {
         CLOCK_X = (byte((WIDTH - CLOCK_W) / 2.0 + 0.51));         // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
         CLOCK_Y = (byte((HEIGHT - CLOCK_H) / 2.0 + 0.51));        // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр
         CALENDAR_W = (4*3 + 1);
-        CALENDAR_H = (2*5 + 1);
+        CALENDAR_H = (2*5 + 1);        
         CALENDAR_X = (byte((WIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-        CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 1);     // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр      
+        CALENDAR_Y = CLOCK_Y;                                     // Вертикальные часы имеют тот же размер, что и календарь
       } else {
         // Большие часы     
         CLOCK_W = (2*5 + 1);
@@ -1568,8 +1568,8 @@ void checkClockOrigin() {
         CLOCK_Y = (byte((HEIGHT - CLOCK_H) / 2.0 + 1));           // Две строки цифр 7 пикс высотой + 1 пробел между строками / 2 - в центр
         CALENDAR_W = (2*5 + 1);
         CALENDAR_H = (2*7 + 2);
-        CALENDAR_X = (byte((WIDTH - CALENDAR_W) / 2.0 + 0.51));   // 2 цифры * (шрифт 5 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-        CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 1);     // Две строки цифр 7 пикс высотой + 1 пробел между строками / 2 - в центр
+        CALENDAR_X = CLOCK_X;                                     // Вертикальные часы имеют тот же размер, что и календарь
+        CALENDAR_Y = CLOCK_Y;                                     // Вертикальные часы имеют тот же размер, что и календарь
       }     
     }
 
