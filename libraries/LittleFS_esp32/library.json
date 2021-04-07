@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/lorol/LITTLEFS.git"
   },
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "LGPL-2.0",
   "frameworks": "arduino",
   "platforms": "espressif32",

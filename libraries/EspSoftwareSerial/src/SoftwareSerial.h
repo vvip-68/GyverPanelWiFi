@@ -138,7 +138,7 @@ public:
     }
     int peek() override;
     int read() override;
-    /// @returns The verbatim parity bit associated with the last read() or peek() call
+    /// @returns The verbatim parity bit associated with the last successful read() or peek() call
     bool readParity()
     {
         return m_lastReadParity;
@@ -157,9 +157,9 @@ public:
     }
     /// The read(buffer, size) functions are non-blocking, the same as readBytes but without timeout
     int read(uint8_t* buffer, size_t size)
-//#if defined(ESP8266)
-//        override
-//#endif
+#if defined(ESP8266)
+        override
+#endif
         ;
     /// The read(buffer, size) functions are non-blocking, the same as readBytes but without timeout
     int read(char* buffer, size_t size) {

@@ -23,22 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "SoftwareSerial.h"
 #include <Arduino.h>
 
-#if defined(ESP8266)
-#include <interrupts.h>
-using esp8266::InterruptLock;
-#elif defined(ESP32)
+#ifdef ESP32
 #define xt_rsil(a) (a)
 #define xt_wsr_ps(a)
-#elif defined(ARDUINO)
-class InterruptLock {
-public:
-    InterruptLock() {
-        noInterrupts();
-    }
-    ~InterruptLock() {
-        interrupts();
-    }
-};
 #endif
 
 constexpr uint8_t BYTE_ALL_BITS_SET = ~static_cast<uint8_t>(0);
@@ -258,7 +245,7 @@ int SoftwareSerial::available() {
     return avail;
 }
 
-void ICACHE_RAM_ATTR SoftwareSerial::preciseDelay(bool sync) {
+void IRAM_ATTR SoftwareSerial::preciseDelay(bool sync) {
     if (!sync)
     {
         // Reenable interrupts while delaying to avoid other tasks piling up
@@ -289,7 +276,7 @@ void ICACHE_RAM_ATTR SoftwareSerial::preciseDelay(bool sync) {
     m_periodStart = ESP.getCycleCount();
 }
 
-void ICACHE_RAM_ATTR SoftwareSerial::writePeriod(
+void IRAM_ATTR SoftwareSerial::writePeriod(
     uint32_t dutyCycle, uint32_t offCycle, bool withStopBit) {
     preciseDelay(true);
     if (dutyCycle)
@@ -318,7 +305,7 @@ size_t SoftwareSerial::write(const uint8_t* buffer, size_t size) {
     return write(buffer, size, m_parityMode);
 }
 
-size_t ICACHE_RAM_ATTR SoftwareSerial::write(const uint8_t* buffer, size_t size, SoftwareSerialParity parity) {
+size_t IRAM_ATTR SoftwareSerial::write(const uint8_t* buffer, size_t size, SoftwareSerialParity parity) {
     if (m_rxValid) { rxBits(); }
     if (!m_txValid) { return -1; }
 
@@ -434,14 +421,10 @@ int SoftwareSerial::peek() {
 }
 
 void SoftwareSerial::rxBits() {
-    int isrAvail = m_isrBuffer->available();
 #ifdef ESP8266
-    {
-        InterruptLock lock;
-        if (m_isrOverflow.load()) {
-            m_overflow = true;
-            m_isrOverflow.store(false);
-        }
+    if (m_isrOverflow.load()) {
+        m_overflow = true;
+        m_isrOverflow.store(false);
     }
 #else
     if (m_isrOverflow.exchange(false)) {
@@ -449,10 +432,11 @@ void SoftwareSerial::rxBits() {
     }
 #endif
 
+    m_isrBuffer->for_each([this](const uint32_t& isrCycle) { rxBits(isrCycle); });
+
     // stop bit can go undetected if leading data bits are at same level
     // and there was also no next start bit yet, so one byte may be pending.
-    // low-cost check first
-    if (!isrAvail && m_rxCurBit >= -1 && m_rxCurBit < m_pduBits - m_stopBits) {
+    if (m_rxCurBit >= -1 && m_rxCurBit < m_pduBits - m_stopBits) {
         uint32_t detectionCycles = (m_pduBits - m_stopBits - m_rxCurBit) * m_bitCycles;
         if (ESP.getCycleCount() - m_isrLastCycle > detectionCycles) {
             // Produce faux stop bit level, prevents start bit maldetection
@@ -460,8 +444,6 @@ void SoftwareSerial::rxBits() {
             rxBits(((m_isrLastCycle + detectionCycles) | 1) ^ m_invert);
         }
     }
-
-    m_isrBuffer->for_each([this](const uint32_t& isrCycle) { rxBits(isrCycle); });
 }
 
 void SoftwareSerial::rxBits(const uint32_t& isrCycle) {
@@ -541,7 +523,7 @@ void SoftwareSerial::rxBits(const uint32_t& isrCycle) {
     }
 }
 
-void ICACHE_RAM_ATTR SoftwareSerial::rxBitISR(SoftwareSerial* self) {
+void IRAM_ATTR SoftwareSerial::rxBitISR(SoftwareSerial* self) {
     uint32_t curCycle = ESP.getCycleCount();
     bool level = digitalRead(self->m_rxPin);
 
@@ -550,7 +532,7 @@ void ICACHE_RAM_ATTR SoftwareSerial::rxBitISR(SoftwareSerial* self) {
     if (!self->m_isrBuffer->push((curCycle | 1U) ^ !level)) self->m_isrOverflow.store(true);
 }
 
-void ICACHE_RAM_ATTR SoftwareSerial::rxBitSyncISR(SoftwareSerial* self) {
+void IRAM_ATTR SoftwareSerial::rxBitSyncISR(SoftwareSerial* self) {
     uint32_t start = ESP.getCycleCount();
     uint32_t wait = self->m_bitCycles - 172U;
 
