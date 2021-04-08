@@ -1424,8 +1424,8 @@ void SetAutoMode(byte amode) {
 
     // Выключить матрицу (черный экран)
     text += F("выключение панели");
-    setSpecialMode(0);
-    
+    turnOff();
+
   } else if (ef == -1) {
 
     // Ночные часы
