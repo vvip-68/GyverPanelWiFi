@@ -110,10 +110,10 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
   if (offset > (WIDTH - LET_WIDTH)) finish_pos = WIDTH - offset;
 
   for (byte i = start_pos; i < finish_pos; i++) {
-    uint8_t thisByte; // байт колонки i отображаемого символа шрифта
-    uint8_t diasByte; // байт колонки i отображаемого диакритического символа
-    int8_t  diasOffs; // смещение по Y отображения диакритического символа: diasOffs > 0 - позиция над основной буквой; diasOffs < 0 - позиция ниже основной буквы
-    int16_t pn;       // номер пикселя в массиве leds[]
+    uint16_t thisByte; // байт колонки i отображаемого символа шрифта
+    uint16_t diasByte; // байт колонки i отображаемого диакритического символа
+    int8_t  diasOffs;  // смещение по Y отображения диакритического символа: diasOffs > 0 - позиция над основной буквой; diasOffs < 0 - позиция ниже основной буквы
+    int16_t pn;        // номер пикселя в массиве leds[]
     
     if (MIRR_V) {
       thisByte = getFont(letter, modif, LET_WIDTH - 1 - i);
@@ -192,7 +192,7 @@ String getTextStates() {
 // ------------- СЛУЖЕБНЫЕ ФУНКЦИИ --------------
 
 // интерпретатор кода символа в массиве fontHEX (для Arduino IDE 1.8.* и выше)
-uint8_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
+uint16_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
   if (font <= 94) {
     return pgm_read_byte(&(fontHEX[font][row]));   // для английских букв и символов
@@ -281,7 +281,7 @@ uint8_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
   return 0;
 }
 
-int8_t getDiasOffset(uint8_t font, uint8_t modif) {
+int16_t getDiasOffset(uint8_t font, uint8_t modif) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
   if ((modif == 208) && font == 97) {              // Ё
     return 3; 
