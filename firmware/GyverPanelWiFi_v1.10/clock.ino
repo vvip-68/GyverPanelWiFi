@@ -1158,6 +1158,8 @@ void checkAlarmTime() {
     set_isPlayAlarmSound(false);
     StopSound(1000);   
 
+    calculateDawnTime();
+    
     resetModes();  
     setManualModeTo(false);
 
@@ -1231,6 +1233,7 @@ void stopAlarm() {
 
     resetModes();  
     setManualModeTo(false);
+    calculateDawnTime();
     
     if (saveSpecialMode){
        setSpecialMode(saveSpecialModeId);
