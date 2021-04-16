@@ -1076,6 +1076,7 @@ void checkAlarmTime() {
          set_isAlarming(true);
          set_isAlarmStopped(false);
          loadingFlag = true;         
+         isButtonHold = false;
          set_thisMode(MC_DAWN_ALARM);
          setTimersForMode(thisMode);
          // Реальная продолжительность рассвета
@@ -1208,7 +1209,7 @@ void checkAlarmTime() {
     }
   }
   #endif
-  
+    
   delay(0); // Для предотвращения ESP8266 Watchdog Timer    
 }
 

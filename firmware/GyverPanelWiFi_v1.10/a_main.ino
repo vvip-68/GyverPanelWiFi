@@ -195,6 +195,7 @@ void process() {
 
     // Любое нажатие кнопки останавливает будильник
     if ((isAlarming || isPlayAlarmSound) && (isButtonHold || clicks > 0)) {
+      DEBUG(F("Выключение будильника кнопкой."));  
       stopAlarm();
       clicks = 0;
     }
