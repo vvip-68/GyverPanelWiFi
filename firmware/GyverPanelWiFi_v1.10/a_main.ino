@@ -2290,7 +2290,7 @@ void sendPageParams(int page, eSources src) {
       str = getStateString("UP|AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK|UI");
       break;
     case 7:  // Настройки режимов автовключения по времени
-      str = getStateString("UP|WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A");
+      str = getStateString("UP|WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A|T1|T2");
       break;
     case 10:  // Загрузка картинок
       str = getStateString("UP|W|H|BR|CL|SD");
@@ -2476,6 +2476,8 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // SQ:спец     параметр #2 эффекта; спец - "L>val>itrm1,item2,..itemN" - список, где val - текущее, далее список; "C>x>title" - чекбокс, где x=0 - выкл, x=1 - вкл; title - текст чекбокса
   // ST:число    скорость смещения бегущей строки
   // TE:X        оверлей текста бегущей строки вкл/выкл, где Х = 0 - выкл; 1 - вкл (использовать бегущую строку в эффектах)
+  // T1:[ЧЧ:MM]  время рассвета, полученное с погодного сервера
+  // T2:[ЧЧ:MM]  время заката, полученное с погодного сервера
   // TI:число    интервал отображения текста бегущей строки
   // TM:X        в системе присутствует индикатор TM1637, где Х = 0 - нет; 1 - есть
   // TS:строка   строка состояния кнопок выбора текста из массива строк: 36 символов 0..5, где
@@ -2673,6 +2675,26 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return String(temperature);
     }
     return str + "W2:" + String(temperature);
+  }
+  
+  // Время рассвета, полученное с погодного сервера
+  if (key == "T1") {
+    String t1 = padNum(dawn_hour,2) + ":" + padNum(dawn_minute,2);
+    if (value) {
+      value->set(t1);
+      return t1;
+    }
+    return str + "T1:" + "[" + t1 + "]";
+  }
+
+  // Время заката, полученное с погодного сервера
+  if (key == "T2") {
+    String t2 = padNum(dusk_hour,2) + ":" + padNum(dusk_minute,2);
+    if (value) {
+      value->set(t2);
+      return t2;
+    }
+    return str + "T2:" + "[" + t2 + "]";
   }
 #endif  
 
