@@ -12,7 +12,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel-v.1.10.2021.0418")
+#define FIRMWARE_VER F("WiFiPanel v.1.10.2021.0423")
 
 // --------------------------------------------------------
 
@@ -123,15 +123,12 @@ void setup() {
   FastLED.clear();
   FastLED.show();
 
-  // Первый этап инициализации плеера - подключение и основные настройки
-  #if (USE_MP3 == 1)
-    InitializeDfPlayer1();
-  #endif
-
-  // Инициализация SD-карты
-  #if (USE_SD == 1)
-    InitializeSD();
-  #endif
+  #if defined(REBOOT_HOUR)
+    DEBUG(F("Включена автоматическая перезагрузка ежедневно в "));
+    DEBUG(REBOOT_HOUR);
+    DEBUGLN(":00");
+    need_reboot = false;
+  #endif   
 
   DEBUGLN(F("\nИнициализация файловой системы... "));
   
@@ -162,6 +159,11 @@ void setup() {
     DEBUGLN(F("Файловая система недоступна."));
   }
 
+  // Инициализация SD-карты
+  #if (USE_SD == 1)
+    InitializeSD1();
+  #endif
+
   // Проверить наличие резервной копии настроек EEPROM в файловой системе MK и/или на SD-карте
   eeprom_backup = checkEepromBackup();
   if ((eeprom_backup & 0x01) > 0) {
@@ -171,10 +173,20 @@ void setup() {
     DEBUGLN(F("Найдены сохраненные настройки: SD://eeprom.bin"));
   }
     
+  // Инициализация SD-карты
+  #if (USE_SD == 1)
+    InitializeSD2();
+  #endif
+
   #if (USE_POWER == 1)
     pinMode(POWER_PIN, OUTPUT);
   #endif
      
+  // Первый этап инициализации плеера - подключение и основные настройки
+  #if (USE_MP3 == 1)
+    InitializeDfPlayer1();
+  #endif
+
   #if defined(ESP8266)
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
   #endif

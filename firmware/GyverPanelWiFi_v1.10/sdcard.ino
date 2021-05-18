@@ -5,15 +5,22 @@ File folder;
 
 int8_t  file_idx;    // Служебное - для определения какой следующий файл воспроизводить
 String  fileName;    // Полное имя файла эффекта, включая имя папки
+bool    sd_card_ok = false;
 
-void InitializeSD() {  
+void InitializeSD1() {  
   set_isSdCardReady(false);
   DEBUGLN(F("\nИнициализация SD-карты..."));  
-  if (SD.begin(SD_CS_PIN)) {
+  sd_card_ok = SD.begin(SD_CS_PIN);
+}
+
+void InitializeSD2() {  
+  if (sd_card_ok) {
     DEBUGLN(F("Загрузка списка файлов с эффектами..."));  
     loadDirectory();
-    set_isSdCardReady(countFiles > 0);
-  } else {
+    sd_card_ok = countFiles > 0;
+    set_isSdCardReady(sd_card_ok);
+  }
+  if (!sd_card_ok) {
     DEBUGLN(F("SD-карта недоступна"));
   }
 }

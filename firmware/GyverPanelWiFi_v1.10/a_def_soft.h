@@ -792,6 +792,10 @@ int8_t     eeprom_backup = 0;                    // Флаг - backup настр
 
 // ------------------- ВРЕМЕННЫЕ ПЕРЕМЕННЫЕ ----------------------
 
+#if defined(REBOOT_HOUR)
+bool       need_reboot = false;
+#endif 
+
 bool       saveSpecialMode = specialMode;
 int8_t     saveSpecialModeId = specialModeId;
 byte       saveMode;
