@@ -535,7 +535,7 @@ void drawTemperature(int8_t X) {
   byte edc_t = t % 10;
 
   if (!allow_two_row) {
-    temp_y = (HEIGHT - (c_size == 1 ? 5 : 7)) / 2;
+    temp_y = CLOCK_Y;
     byte width = 0;
     if (temperature == 0) {
       width = (c_size == 1 ? 6 : 15);
@@ -603,7 +603,8 @@ void drawTemperature(int8_t X) {
   } else {
     // Отрисовка температуры в больших часах
     temp_x = CLOCK_LX;
-    temp_y = CLOCK_Y - 5;
+
+    temp_y = allow_two_row ? CLOCK_Y - 5 : CLOCK_Y;
     while (temp_y < 0) temp_y++; 
 
     // Буква 'C'
@@ -663,7 +664,7 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
   byte cx = 0, dy = 0;
   
   if (!allow_two_row) {
-    Y = (HEIGHT - (c_size == 1 ? 5 : 7)) / 2;
+    Y = CLOCK_Y;
   }
 
   if (c_size == 1) {
@@ -1527,7 +1528,7 @@ void checkClockOrigin() {
         CALENDAR_W = (4*3 + 1);
         CALENDAR_H = (2*5 + 1);
         CALENDAR_X = (byte((WIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-        CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 1);     // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр      
+        CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 0.51);  // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр      
       } else {
         // Большие часы       
         // Если ширина матрицы - 25 колонок - ширина точки, разделяющих часы /минуты и день/месяц - не 2 колонки, а одна
@@ -1550,7 +1551,7 @@ void checkClockOrigin() {
         CLOCK_X = (byte((WIDTH - CLOCK_W) / 2.0 + 0.51));         // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
         CLOCK_Y = (byte((HEIGHT - CLOCK_H) / 2.0 + 0.51));        // Одна строка цифр 7 пикс высотой  / 2 - в центр
         CALENDAR_X = (byte((WIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
-        CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 1);     // Одна строка цифр 7 пикс высотой  / 2 - в центр
+        CALENDAR_Y = (byte((HEIGHT - CALENDAR_H) / 2.0) + 0.51);  // Одна строка цифр 7 пикс высотой  / 2 - в центр
       }     
     } else {
       // Вериткальные часы, календарь
@@ -1590,7 +1591,7 @@ void checkClockOrigin() {
     while (CALENDAR_Y > 0 && CALENDAR_Y + CALENDAR_H > HEIGHT) CALENDAR_Y--;
 
     // Если большие часы всё равно не влазят в рабочее поле матрицы - переключиться на малые часы и пересчитать размеры и положение
-    if (c_size != 1 && (CALENDAR_X + CALENDAR_W > WIDTH || CALENDAR_Y + CALENDAR_H > HEIGHT)) {
+    if (c_size != 1 && (CALENDAR_X + CALENDAR_W > WIDTH)) {
       c_size = 1;
       continue;
     }
@@ -1606,6 +1607,10 @@ void checkClockOrigin() {
 
   CLOCK_XC = CLOCK_X;
   CALENDAR_XC = CALENDAR_X;
+
+  if (!allow_two_row) {
+    CALENDAR_Y = CLOCK_Y;
+  }
 }
 
 uint32_t getNightClockColorByIndex(byte idx) {
