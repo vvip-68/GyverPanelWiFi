@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -6,8 +6,7 @@
 #define ARDUINOJSON_ENABLE_NAN 1
 #define ARDUINOJSON_ENABLE_INFINITY 1
 
-#include <ArduinoJson/Numbers/parseNumber.hpp>
-#include <ArduinoJson/Variant/VariantImpl.hpp>
+#include <ArduinoJson.hpp>
 #include <catch.hpp>
 
 using namespace ARDUINOJSON_NAMESPACE;

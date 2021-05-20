@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -54,7 +54,7 @@ template <typename TObject>
 template <typename TString>
 inline typename enable_if<IsString<TString*>::value,
                           MemberProxy<TObject, TString*> >::type
-    ObjectShortcuts<TObject>::operator[](TString* key) const {
+ObjectShortcuts<TObject>::operator[](TString* key) const {
   return MemberProxy<TObject, TString*>(*impl(), key);
 }
 
@@ -62,7 +62,7 @@ template <typename TObject>
 template <typename TString>
 inline typename enable_if<IsString<TString>::value,
                           MemberProxy<TObject, TString> >::type
-    ObjectShortcuts<TObject>::operator[](const TString& key) const {
+ObjectShortcuts<TObject>::operator[](const TString& key) const {
   return MemberProxy<TObject, TString>(*impl(), key);
 }
 

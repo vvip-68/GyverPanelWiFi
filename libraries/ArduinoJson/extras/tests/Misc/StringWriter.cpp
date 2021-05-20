@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -39,15 +39,15 @@ void common_tests(StringWriter& sb, const String& output) {
 }
 
 TEST_CASE("StaticStringWriter") {
-  char output[20];
+  char output[20] = {0};
   StaticStringWriter sb(output, sizeof(output));
 
   common_tests(sb, static_cast<const char*>(output));
 
   SECTION("OverCapacity") {
-    REQUIRE(19 == print(sb, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+    REQUIRE(20 == print(sb, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
     REQUIRE(0 == print(sb, "ABC"));
-    REQUIRE(std::string("ABCDEFGHIJKLMNOPQRS") == output);
+    REQUIRE("ABCDEFGHIJKLMNOPQRST" == std::string(output, 20));
   }
 }
 

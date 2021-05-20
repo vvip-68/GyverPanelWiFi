@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -181,6 +181,5 @@ TEST_CASE("DeserializationError::f_str()") {
   TEST_STRINGIFICATION(IncompleteInput);
   TEST_STRINGIFICATION(InvalidInput);
   TEST_STRINGIFICATION(NoMemory);
-  TEST_STRINGIFICATION(NotSupported);
   TEST_STRINGIFICATION(TooDeep);
 }

@@ -1,4 +1,4 @@
-# ArduinoJson - arduinojson.org
+# ArduinoJson - https://arduinojson.org
 # Copyright Benoit Blanchon 2014-2021
 # MIT License
 
@@ -45,6 +45,11 @@ macro(add_fuzzer name)
 			"${FUZZER}"
 		COMMAND
 			"${FUZZER}" "${CORPUS_DIR}" "${SEED_CORPUS_DIR}" -max_total_time=5 -timeout=1
+	)
+
+	set_tests_properties("${FUZZER}"
+		PROPERTIES
+			LABELS 		"Fuzzing"
 	)
 endmacro()
 

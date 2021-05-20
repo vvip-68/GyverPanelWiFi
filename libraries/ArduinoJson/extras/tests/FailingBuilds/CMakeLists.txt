@@ -1,4 +1,4 @@
-# ArduinoJson - arduinojson.org
+# ArduinoJson - https://arduinojson.org
 # Copyright Benoit Blanchon 2014-2021
 # MIT License
 
@@ -18,7 +18,8 @@ macro(build_should_fail target)
 	)
 	set_tests_properties(${target} 
 		PROPERTIES
-			WILL_FAIL TRUE
+			WILL_FAIL	TRUE
+			LABELS 		"WillFail;Catch"
 	)
 endmacro()
 
@@ -39,3 +40,9 @@ build_should_fail(write_long_long)
 
 add_executable(delete_jsondocument delete_jsondocument.cpp)
 build_should_fail(delete_jsondocument)
+
+add_executable(variant_as_char variant_as_char.cpp)
+build_should_fail(variant_as_char)
+
+add_executable(assign_char assign_char.cpp)
+build_should_fail(assign_char)

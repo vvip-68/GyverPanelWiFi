@@ -9,10 +9,18 @@
 // http://arduino.esp8266.com/stable/pspackage_esp8266com_index.json
 // https://raw.githubuserconteenumnt.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
+// Внимание!!! 
+// На версии ядра ESP8266 v3.0.0 и FastLED 3.4 работать не будет! 
+//  -> Постоянно горит самый первый светодиод в цемочке синим или зелёным
+//  -> некоторые эффекты сильно мерцают.
+//  -> пин ленты с D2 переназначается ядром на D4
+
+// Версия ядра ESP8266 - 2.7.4    
+// Версия ядра ESP32   - 1.0.6
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.10.2021.0423")
+#define FIRMWARE_VER F("WiFiPanel v.1.10.2021.0521")
 
 // --------------------------------------------------------
 

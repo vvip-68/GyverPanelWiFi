@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -10,7 +10,7 @@
 using namespace ARDUINOJSON_NAMESPACE;
 
 void check(const char* input, std::string expected) {
-  char output[1024];
+  char output[64] = {0};
   StaticStringWriter sb(output, sizeof(output));
   TextFormatter<StaticStringWriter> writer(sb);
   writer.writeString(input);

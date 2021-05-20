@@ -1,4 +1,4 @@
-# ArduinoJson - arduinojson.org
+# ArduinoJson - https://arduinojson.org
 # Copyright Benoit Blanchon 2014-2021
 # MIT License
 
@@ -12,3 +12,8 @@ add_executable(MsgPackSerializerTests
 )
 
 add_test(MsgPackSerializer MsgPackSerializerTests)
+
+set_tests_properties(MsgPackSerializer
+	PROPERTIES
+		LABELS 		"Catch"
+)

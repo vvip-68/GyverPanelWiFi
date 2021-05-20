@@ -1,4 +1,4 @@
-# ArduinoJson - arduinojson.org
+# ArduinoJson - https://arduinojson.org
 # Copyright Benoit Blanchon 2014-2021
 # MIT License
 
@@ -11,3 +11,8 @@ add_executable(MemoryPoolTests
 )
 
 add_test(MemoryPool MemoryPoolTests)
+
+set_tests_properties(MemoryPool
+	PROPERTIES
+		LABELS 		"Catch"
+)

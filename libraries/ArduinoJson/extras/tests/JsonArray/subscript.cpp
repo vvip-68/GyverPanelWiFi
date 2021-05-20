@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -60,7 +60,6 @@ TEST_CASE("JsonArray::operator[]") {
 
     array[0] = str;
     REQUIRE(str == array[0].as<const char*>());
-    REQUIRE(str == array[0].as<char*>());  // <- short hand
     REQUIRE(true == array[0].is<const char*>());
     REQUIRE(false == array[0].is<int>());
   }

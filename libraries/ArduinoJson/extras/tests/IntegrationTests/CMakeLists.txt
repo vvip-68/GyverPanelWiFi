@@ -1,4 +1,4 @@
-# ArduinoJson - arduinojson.org
+# ArduinoJson - https://arduinojson.org
 # Copyright Benoit Blanchon 2014-2021
 # MIT License
 
@@ -17,3 +17,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif()
 
 add_test(IntegrationTests IntegrationTests)
+
+set_tests_properties(IntegrationTests
+	PROPERTIES
+		LABELS 		"Catch"
+)

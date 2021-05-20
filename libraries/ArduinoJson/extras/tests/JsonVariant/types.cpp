@@ -1,4 +1,4 @@
-// ArduinoJson - arduinojson.org
+// ArduinoJson - https://arduinojson.org
 // Copyright Benoit Blanchon 2014-2021
 // MIT License
 
@@ -67,9 +67,6 @@ TEST_CASE("JsonVariant set()/get()") {
   }
   SECTION("Float") {
     checkNumericType<float>();
-  }
-  SECTION("Char") {
-    checkNumericType<char>();
   }
   SECTION("SChar") {
     checkNumericType<signed char>();
