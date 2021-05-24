@@ -109,7 +109,7 @@ void setup() {
   #else
     host_name = String(HOST_NAME);
   #endif
-  
+
   DEBUGLN();
   DEBUGLN(FIRMWARE_VER);
   DEBUGLN("Host: '" + host_name + "'" + String(F(" >> ")) + String(WIDTH) + "x" + String(HEIGHT));
