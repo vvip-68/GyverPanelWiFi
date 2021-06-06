@@ -6,8 +6,8 @@
 // https://AlexGyver.ru/
 //
 // Дополнительные ссылки для Менеджера плат ESP8266 и ESP32 в Файл -> Настройки
-// http://arduino.esp8266.com/stable/pspackage_esp8266com_index.json
-// https://raw.githubuserconteenumnt.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+// https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
+// https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
 // Внимание!!! 
 // На версии ядра ESP8266 v3.0.0 и FastLED 3.4 работать не будет! 
