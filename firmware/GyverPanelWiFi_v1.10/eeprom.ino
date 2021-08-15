@@ -326,7 +326,6 @@ void saveDefaults() {
   putEffectTextOverlayUsage(MC_SNAKE, false);
   putEffectTextOverlayUsage(MC_TETRIS, false);
   putEffectTextOverlayUsage(MC_ARKANOID, false);
-  putEffectTextOverlayUsage(MC_IMAGE, false);
   putEffectTextOverlayUsage(MC_WEATHER, false);
   putEffectTextOverlayUsage(MC_LIFE, false);
   putEffectClockOverlayUsage(MC_CLOCK, false);
@@ -334,9 +333,13 @@ void saveDefaults() {
   putEffectClockOverlayUsage(MC_SNAKE, false);
   putEffectClockOverlayUsage(MC_TETRIS, false);
   putEffectClockOverlayUsage(MC_ARKANOID, false);
-  putEffectClockOverlayUsage(MC_IMAGE, false);
   putEffectClockOverlayUsage(MC_WEATHER, false);
   putEffectClockOverlayUsage(MC_LIFE, false);
+
+  #ifdef MC_IMAGE
+  putEffectTextOverlayUsage(MC_IMAGE, false);
+  putEffectClockOverlayUsage(MC_IMAGE, false);
+  #endif
 
   putClockScrollSpeed(150);
   putTextScrollSpeed(186);

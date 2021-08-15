@@ -242,7 +242,11 @@ void animationRoutine() {
   
       for (int i = 0; i < size; i++) {
         int8_t eff = image_desc.background_effect[i];    
-        if (eff > 0 && eff < MAX_EFFECT && eff != MC_IMAGE) {
+        if (eff > 0 && eff < MAX_EFFECT
+        #ifdef MC_IMAGE
+         && eff != MC_IMAGE
+        #endif  
+        ) {
           arr[cnt++] = image_desc.background_effect[i];
         }
       }

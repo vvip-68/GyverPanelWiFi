@@ -12,9 +12,14 @@ void doEffectWithOverlay(byte aMode) {
 
   bool clockReady = clockTimer.isReady();
   bool textReady = textTimer.isReady();
-  
+
+  #ifdef MC_IMAGE
   bool effectReady = aMode == MC_IMAGE || effectTimer.isReady(); // "Анимация" использует собственные "таймеры" для отрисовки - отрисовка без задержек; Здесь таймер опрашивать нельзя - он после опроса сбросится. 
                                                                  // А должен читаться в эффекте анимации, проверяя не пришло ли время отрисовать эффект фона
+  #else
+  bool effectReady = effectTimer.isReady();
+  #endif  
+  
 
   if (!(effectReady || (clockReady && !showTextNow) || (textReady && (showTextNow || thisMode == MC_TEXT)))) return;
 
@@ -400,7 +405,6 @@ void processEffect(byte aMode) {
     case MC_RAIN:                rainRoutine(); break;
     case MC_FIRE2:               fire2Routine(); break;
     case MC_WATERFALL:           waterfallRoutine(); break;
-    case MC_IMAGE:               animationRoutine(); break;
     case MC_ARROWS:              arrowsRoutine(); break;
     case MC_WEATHER:             weatherRoutine(); break;
     case MC_LIFE:                lifeRoutine(); break;
@@ -408,6 +412,10 @@ void processEffect(byte aMode) {
     case MC_CLOCK:               clockRoutine(); break;
     case MC_DAWN_ALARM:          dawnProcedure(); break;
     case MC_PATTERNS:            patternRoutine(); break;
+
+    #ifdef MC_IMAGE
+    case MC_IMAGE:               animationRoutine(); break;
+    #endif  
 
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutine(); break;
@@ -560,7 +568,11 @@ void setTimersForMode(byte aMode) {
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_WATERFALL || 
-        aMode == MC_IMAGE || aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS) {      
+        aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS
+        #ifdef MC_IMAGE
+         || aMode == MC_IMAGE
+        #endif  
+        ) {      
       if (aMode == MC_TETRIS) {
         effectTimer.setInterval(50);
         gameTimer.setInterval(200 + 4 * effectSpeed);

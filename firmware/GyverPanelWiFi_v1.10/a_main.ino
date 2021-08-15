@@ -2782,14 +2782,21 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Настройка скорости
   if (key == "SE") {
     if (value) {
-      if (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE || effect == MC_FIRE2) {
+      if (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_FIRE2 
+        #ifdef MC_IMAGE     
+        || effect == MC_IMAGE 
+        #endif
+        ) {
         value->set("X");
         return "X";
       }
       value->set(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255));
       return String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255));
     }
-    return str + "SE:" +  (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_IMAGE || effect == MC_FIRE2
+    return str + "SE:" +  (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_WATERFALL || effect == MC_FIRE2
+       #ifdef MC_IMAGE     
+       || effect == MC_IMAGE 
+       #endif
          ? "X" 
          : String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
   }
@@ -3647,11 +3654,13 @@ String getParamForMode(byte mode) {
    case MC_MUNCH:
    case MC_ARROWS:
    case MC_WATERFALL:
-   case MC_IMAGE:
    case MC_WEATHER:
    case MC_LIFE:
    case MC_FIRE2:
    case MC_SDCARD:
+   #ifdef MC_IMAGE     
+   case MC_IMAGE:
+   #endif
      str = "X";
      break;
    case MC_CLOCK:
@@ -3699,12 +3708,14 @@ String getParam2ForMode(byte mode) {
      }     
      break;
      #endif
+   #ifdef MC_IMAGE     
    case MC_IMAGE:
      // Эффект "Анимация" имеет несколько вариантов - список выбора отображаемой картинки
      // Дополнительный параметр представлен в приложении списком выбора
      //           Маркер типа - список выбора         0,1,2,3,4               0                           1, 2, ...
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,")) + String(IMAGE_LIST);
      break;
+   #endif  
    case MC_PAINTBALL:
    case MC_SWIRL:
    case MC_CYCLON:
