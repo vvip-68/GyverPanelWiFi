@@ -3297,22 +3297,20 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
 
   // Имя локальной сети (SSID)
   if (key == "NW") {
-    tmp = String(ssid);
     if (value){
-      value->set(tmp);
-      return tmp;
+      value->set(ssid);
+      return ssid;
     }
-    return str + "NW:" + "[" + tmp + "]";
+    return str + "NW:" + "[" + ssid + "]";
   }
 
   // Пароль к сети
   if (key == "NA") {
-    tmp = String(pass);
     if (value) {
-      // value->set(tmp);  // Решено пароль по открытому каналу на [публичный] сервер MQTT не отправлять
-      return "";           // tmp;
+      // value->set(pass); // Решено пароль по открытому каналу на [публичный] сервер MQTT не отправлять
+      return "";           // pass;
     }
-    return str + "NA:" + "[" + tmp + "]";
+    return str + "NA:" + "[" + pass + "]";
   }
 
   // IP адрес

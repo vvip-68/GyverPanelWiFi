@@ -56,8 +56,7 @@ void loadSettings() {
   //   53 - Будильник, время: воскресенье : минуты                                                           // getAlarmMinute(7)             // putAlarmTime(7, alarmHour[6], alarmMinute[6])
   //  54-63   - имя точки доступа    - 10 байт                                                               // getSoftAPName().toCharArray(apName, 10)       // putSoftAPName(String(apName))       // char apName[11] = ""
   //  64-79   - пароль точки доступа - 16 байт                                                               // getSoftAPPass().toCharArray(apPass, 17)       // putSoftAPPass(String(apPass))       // char apPass[17] = "" 
-  //  80-103  - имя сети  WiFi       - 24 байта                                                              // getSsid().toCharArray(ssid, 25)               // putSsid(String(ssid))               // char ssid[25]   = ""
-  //  104-119 - пароль сети  WiFi    - 16 байт                                                               // getPass().toCharArray(pass, 17)               // putPass(String(pass))               // char pass[17]   = ""
+  //**80-119  - не используется
   //  120-149 - имя NTP сервера      - 30 байт                                                               // getNtpServer().toCharArray(ntpServerName, 31) // putNtpServer(String(ntpServerName)) // char ntpServerName[31] = ""
   //  150,151 - лимит по току в миллиамперах                                                                 // getPowerLimit()                // putPowerLimit(CURRENT_LIMIT)
   //  152 - globalClockColor.r -  цвет часов в режиме MC_COLOR, режим цвета "Монохром"                       // getGlobalClockColor()          // putGlobalClockColor(globalClockColor)              // uint32_t globalClockColor
@@ -116,9 +115,9 @@ void loadSettings() {
   // Ниже, если EEPROM уже инициализирован - из него будут загружены актуальные значения
   strcpy(apName, DEFAULT_AP_NAME);
   strcpy(apPass, DEFAULT_AP_PASS);
-  strcpy(ssid, NETWORK_SSID);
-  strcpy(pass, NETWORK_PASS);
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+  ssid = NETWORK_SSID;
+  pass = NETWORK_PASS;
 
   #if (USE_MQTT == 1)
   strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
@@ -185,15 +184,16 @@ void loadSettings() {
     #endif
 
     globalColor = getGlobalColor();           // цвет лампы, задаваемый пользователем
-    globalClockColor = getGlobalClockColor(); // цвет часов в режиме MC_COLOR? режим цвета "Монохром"
+    globalClockColor = getGlobalClockColor(); // цвет часов в режиме MC_COLOR, режим цвета "Монохром"
     globalTextColor = getGlobalTextColor();   // цвет часов бегущей строки в режиме цвета "Монохром"
 
     useSoftAP = getUseSoftAP();
     getSoftAPName().toCharArray(apName, 10);        //  54-63   - имя точки доступа    ( 9 байт макс) + 1 байт '\0'
     getSoftAPPass().toCharArray(apPass, 17);        //  64-79   - пароль точки доступа (16 байт макс) + 1 байт '\0'
-    getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
-    getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
     getNtpServer().toCharArray(ntpServerName, 31);  //  120-149 - имя NTP сервера      (30 байт макс) + 1 байт '\0'
+
+    ssid = getSsid();                               //          - имя сети WiFi
+    pass = getPass();                               //          - пароль сети WiFi
     
     if (strlen(apName) == 0) strcpy(apName, DEFAULT_AP_NAME);
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
@@ -361,8 +361,8 @@ void saveDefaults() {
 
   strcpy(apName, DEFAULT_AP_NAME);
   strcpy(apPass, DEFAULT_AP_PASS);
-  strcpy(ssid, NETWORK_SSID);
-  strcpy(pass, NETWORK_PASS);
+  ssid = NETWORK_SSID;
+  pass = NETWORK_PASS;
 
   #if (USE_MQTT == 1)
   strcpy(mqtt_server, DEFAULT_MQTT_SERVER);
@@ -372,8 +372,8 @@ void saveDefaults() {
 
   putSoftAPName(String(apName));
   putSoftAPPass(String(apPass));
-  putSsid(String(ssid));
-  putPass(String(pass));
+  putSsid(ssid);
+  putPass(pass);
 
   #if (USE_MQTT == 1)
   putMqttServer(String(mqtt_server));
@@ -891,25 +891,109 @@ void putSoftAPPass(String SoftAPPass) {
   }
 }
 
+// -----------------------------
+// До версии v.1.10.2021.0915 имя сети (SSID) и пароль доступа размещались в ячейках 80-103 и 104-119 соответственно
+// Начиная с версии v.1.10.2021.0915 хранение SSID и пароля перенесены в файловую сичтему в файлы ssid и pass соответственно
+// Длина имени сети и пароля увеличина до 32 символов
+// -----------------------------
+
 String getSsid() {
-  return EEPROM_string_read(80, 24);
+  String ssid;
+  File file;
+  bool ok = true;
+  file = LittleFS.open("ssid", "r");
+  if (!file) {
+    // Файл не найден. Полагаем, что переход на хранение имени сети в файле еще не выполнен - счтываем имя сети с прежнего места хранения в EEPROM из ячеек 80-103
+    // после чего сохраняем его в файл в файловой системе МК
+    ssid = EEPROM_string_read(80, 24);
+    ok = putSsid(ssid);    
+  } else {
+    // считываем содержимое файла ssid
+    char buf[255];
+    memset(buf, '\0', 255);
+    size_t len = file.read((uint8_t*)buf, 255);
+    ok = len > 0;    
+    file.close();
+    ssid = ok ? String(buf) : "";
+  }
+  return ssid;
 }
 
-void putSsid(String Ssid) {
-  if (Ssid != getSsid()) {
-    EEPROM_string_write(80, Ssid, 24);
+bool putSsid(String Ssid) {
+  File file;
+  bool ok = true;
+  if (LittleFS.exists("ssid")) {
+    ok = LittleFS.remove("ssid");
   }
+  if (ok) {
+    file = LittleFS.open("ssid", "w");
+    if (file) {
+      size_t len = Ssid.length()+1, lenw = 0;
+      char buf[255];
+      memset(buf, '\0', 255);
+      Ssid.toCharArray(buf, len);
+      lenw = file.write((uint8_t*)buf, len);
+      ok = lenw == len;
+      file.close();
+    } else {
+      ok = false;
+    }
+  }
+  if (!ok) {
+    DEBUGLN(String(F("Ошибка сохранения SSID")));
+  } 
+  return ok; 
 }
 
 String getPass() {
-  return EEPROM_string_read(104, 16);
+  String pass;
+  File file;
+  bool ok = true;
+  file = LittleFS.open("pass", "r");
+  if (!file) {
+    // Файл не найден. Полагаем, что переход на хранение имени сети в файле еще не выполнен - счтываем пароль с прежнего места хранения в EEPROM из ячеек 104-119
+    // после чего сохраняем его в файл в файловой системе МК
+    pass = EEPROM_string_read(104, 16);
+    ok = putPass(pass);    
+  } else {
+    // считываем содержимое файла pass
+    char buf[255];
+    memset(buf, '\0', 255);
+    size_t len = file.read((uint8_t*)buf, 255);
+    ok = len > 0; 
+    file.close();
+    pass = ok ? String(buf) : "";
+  }
+  return pass;
 }
 
-void putPass(String Pass) {
-  if (Pass != getPass()) {
-    EEPROM_string_write(104, Pass, 16);
+bool putPass(String Pass) {
+  File file;
+  bool ok = true;
+  if (LittleFS.exists("pass")) {
+    ok = LittleFS.remove("pass");
   }
+  if (ok) {
+    file = LittleFS.open("pass", "w");
+    if (file) {
+      size_t len = Pass.length()+1, lenw = 0;
+      char buf[255];
+      memset(buf, '\0', 255);
+      Pass.toCharArray(buf, len);
+      lenw = file.write((uint8_t*)buf, len);
+      ok = lenw == len;
+      file.close();
+    } else {
+      ok = false;
+    }
+  }
+  if (!ok) {
+    DEBUGLN(String(F("Ошибка сохранения пароля")));
+  } 
+  return ok; 
 }
+
+// -----------------------------
 
 String getNtpServer() {
   return EEPROM_string_read(120, 30);

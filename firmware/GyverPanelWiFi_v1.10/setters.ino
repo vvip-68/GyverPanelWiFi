@@ -511,17 +511,15 @@ void set_ntpServerName(String value) {
 
 // NW ssid
 void set_Ssid(String value) {
-  if (getSsid() == value) return;
   putSsid(value);
-  getSsid().toCharArray(ssid, 24);
+  ssid = value;
   addKeyToChanged("NW");
 }
 
 // NA pass
 void set_pass(String value) {
-  if (getPass() == value) return;
   putPass(value);
-  getPass().toCharArray(pass, 16);
+  pass = value;
   addKeyToChanged("NA");
 }
               

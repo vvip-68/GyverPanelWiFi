@@ -21,7 +21,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.10.2021.0819")
+#define FIRMWARE_VER F("WiFiPanel v.1.10.2021.0915")
 
 // --------------------------------------------------------
 
@@ -115,30 +115,6 @@ void setup() {
   DEBUGLN("Host: '" + host_name + "'" + String(F(" >> ")) + String(WIDTH) + "x" + String(HEIGHT));
   DEBUGLN();
 
-  loadSettings();
-
-  // -----------------------------------------
-  // В этом блоке можно принудительно устанавливать параметры, которые должны быть установлены при старте микроконтроллера
-  // -----------------------------------------
-
-  // -----------------------------------------  
-    
-  // Настройки ленты
-  FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
-  FastLED.setBrightness(globalBrightness);
-  if (CURRENT_LIMIT > 0) {
-    FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
-  }
-  FastLED.clear();
-  FastLED.show();
-
-  #if defined(REBOOT_HOUR)
-    DEBUG(F("Включена автоматическая перезагрузка ежедневно в "));
-    DEBUG(REBOOT_HOUR);
-    DEBUGLN(":00");
-    need_reboot = false;
-  #endif   
-
   DEBUGLN(F("\nИнициализация файловой системы... "));
   
   spiffs_ok = LittleFS.begin();
@@ -167,6 +143,30 @@ void setup() {
   } else {
     DEBUGLN(F("Файловая система недоступна."));
   }
+
+  loadSettings();
+
+  // -----------------------------------------
+  // В этом блоке можно принудительно устанавливать параметры, которые должны быть установлены при старте микроконтроллера
+  // -----------------------------------------
+
+  // -----------------------------------------  
+    
+  // Настройки ленты
+  FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.setBrightness(globalBrightness);
+  if (CURRENT_LIMIT > 0) {
+    FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
+  }
+  FastLED.clear();
+  FastLED.show();
+
+  #if defined(REBOOT_HOUR)
+    DEBUG(F("Включена автоматическая перезагрузка ежедневно в "));
+    DEBUG(REBOOT_HOUR);
+    DEBUGLN(":00");
+    need_reboot = false;
+  #endif   
 
   // Инициализация SD-карты
   #if (USE_SD == 1)
@@ -362,7 +362,7 @@ void startWiFi(unsigned long waitTime) {
   WiFi.mode(WIFI_STA);
  
   // Пытаемся соединиться с роутером в сети
-  if (strlen(ssid) > 0) {
+  if (ssid.length() > 0) {
     DEBUG(F("\nПодключение к "));
     DEBUG(ssid);
 
@@ -381,7 +381,7 @@ void startWiFi(unsigned long waitTime) {
       DEBUG(".");
       DEBUG(IP_STA[3]);                  
     }              
-    WiFi.begin(ssid, pass);
+    WiFi.begin(ssid.c_str(), pass.c_str());
   
     // Проверка соединения (таймаут 180 секунд, прерывается при необходимости нажатием кнопки)
     // Такой таймаут нужен в случае, когда отключают электричество, при последующем включении устройство стартует быстрее
