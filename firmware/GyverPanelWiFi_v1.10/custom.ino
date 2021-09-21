@@ -10,6 +10,10 @@ void customRoutine(byte aMode) {
 
 void doEffectWithOverlay(byte aMode) {
 
+  // Минимальное время вывода кадров на матрицу - 1мс. 
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(1);
+
   bool clockReady = clockTimer.isReady();
   bool textReady = textTimer.isReady();
 

@@ -43,6 +43,8 @@ typedef struct {
 } animation_t;
  
 #include "bitmap1.h"
+#include "fifteens.h"
+#include "jinx.h"
 #include "weather.h"
 
 // ------------------- Загрузка картинок и фреймов анимации -------------------
@@ -92,7 +94,7 @@ void loadDescriptor(const animation_t (*src_desc)) {
 // Отрисовка строки изображения
 void drawImageRow(byte row, const uint16_t (*frame)) {  
   
-  if (!frame) return;
+  if (!frame) return;  
 
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
 
@@ -156,7 +158,7 @@ void loadImageFrame(const uint16_t (*frame)) {
 }
 
 void animationRoutine() {
-
+  
   const uint16_t *ppFrame;
   
   byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);  
@@ -191,13 +193,21 @@ void animationRoutine() {
         loadDescriptor(&animation_mario);
         frames_in_image = sizeof(mario_array) / sizeof(mario_array[0]);
         break;
-      /*  
-      case 99:
+      case 2:
+        // Пятнашки
+        loadDescriptor(&animation_Fifteens);
+        frames_in_image = sizeof(Fifteens_array) / sizeof(Fifteens_array[0]);
+        break;
+      case 3:
+        // Jinx
+        loadDescriptor(&animation_Jinx);
+        frames_in_image = sizeof(Jinx_array) / sizeof(Jinx_array[0]);
+        break;
+      case 4:
         // Погода
         loadDescriptor(&animation_weather);
         frames_in_image = sizeof(weather_array) / sizeof(weather_array[0]);
         break;
-      */  
       default:
         return;  
     }
@@ -223,7 +233,9 @@ void animationRoutine() {
     
     inverse_dir_x = false;
     inverse_dir_y = false;
-
+    
+    if (image_desc.draw_frame_interval < 5) image_desc.draw_frame_interval = 5;
+     
     // Если задан интервал между отрисовкой строк - рисуем построчно
     // Если межстрочный интервал зада нулевым - рисуем покадрово
     draw_by_row = image_desc.draw_row_interval > 0;
@@ -413,8 +425,7 @@ void animationRoutine() {
             pos_y = inverse_dir_y ? edge_bottom : edge_top;
         }
       }            
-    }
-    
+    }    
   }
   
   // -----------------------------------------------------
@@ -422,7 +433,7 @@ void animationRoutine() {
   // -----------------------------------------------------
   if (draw_by_row && !frame_completed) {
     if (millis() - last_draw_row < image_desc.draw_row_interval) return;
-  } else
+  }
   
   // -----------------------------------------------------
   // Пришло время отрисовки следующего кадра?
@@ -430,15 +441,14 @@ void animationRoutine() {
   // а вот переход к следующему кадру - с указанным интервалом
   // -----------------------------------------------------
 
+  bool need_change_frame = millis() - last_draw_frame >= image_desc.draw_frame_interval;  
+
   if (background_effect <= 0 || draw_by_row) {
-    if (millis() - last_draw_frame < image_desc.draw_frame_interval) return;
-  }
-
-  bool need_change_frame = (millis() - last_draw_frame >= image_desc.draw_frame_interval);
-
+    if (!need_change_frame) return; 
+  }  
   // В качестве фона для картинки указан эффект - его нужно отрисовывать по собственному таймеру
   // предварительно при необходимости восстановив оверлей - то, поверх чего нарисована картинка
-
+  
   if (image_desc.background_effect <= 0) {
     // Нужна заливка всей матрицы перед отрисовкой очередного кадра?  
     if (!first_draw && frame_completed && ((image_desc.options & 16) > 0)) {
@@ -476,16 +486,22 @@ void animationRoutine() {
 
   // Здесь определяется какая конкретно картинка сейчас отображается
   switch (currentImageIdx) {
-    // Марио
     case 1:      
+      // Марио
       ppFrame = mario_array[frameNum];
       break;
-    /*  
+    case 2:      
+      // Пятнашки
+      ppFrame = Fifteens_array[frameNum];
+      break;
     // Погода
-    case 99:      
+    case 3:      
+      ppFrame = Jinx_array[frameNum];
+      break;
+    // Погода
+    case 4:      
       ppFrame = weather_array[frameNum];
       break;
-    */  
     default:
       return;  
   }
@@ -552,11 +568,13 @@ void animationRoutine() {
   // -----------------------------------------------
   // Если кадр отрисован полностью  - брать следующий по циклу
   // -----------------------------------------------
-  if (frame_completed && need_change_frame) {
+  if (frame_completed) {    
     last_draw_frame = millis();
-    if (++frameNum >= frames_in_image) {
-      image_completed = true;
-      frameNum = 0;
+    if (need_change_frame) { 
+      if (++frameNum >= frames_in_image) {
+        image_completed = true;
+        frameNum = 0;
+      }
     }
   }
 }
@@ -624,7 +642,7 @@ const uint8_t PROGMEM gammaB[] = {
   169, 171, 173, 175, 177, 179, 181, 183, 185, 187, 189, 191, 193, 196, 198, 200
 };
 
-// гамма-коррекция (более натуральные цвета)
+// гамма-коррекция цвет плашки в цвет светодиода (более натуральные цвета)
 uint32_t gammaCorrection(uint32_t color) {
   byte r = (color >> 16) & 0xFF;  // Extract the RR byte
   byte g = (color >> 8) & 0xFF;   // Extract the GG byte
@@ -638,7 +656,7 @@ uint32_t gammaCorrection(uint32_t color) {
   return newColor;
 }
 
-// обратная гамма-коррекция - из света светодиода в цвет плашки в программе
+// обратная гамма-коррекция - из цвета светодиода в цвет плашки в программе
 uint32_t gammaCorrectionBack(uint32_t color) {
   byte r = (color >> 16) & 0xFF;  // Extract the RR byte
   byte g = (color >> 8) & 0xFF;   // Extract the GG byte
@@ -649,8 +667,6 @@ uint32_t gammaCorrectionBack(uint32_t color) {
   tmp = pgm_read_byte(&gammaR[idx]);
   while (idx < 255 && r > tmp) {
     tmp = pgm_read_byte(&gammaR[++idx]);
-    if (r <= tmp) break;
-    idx++;
   }
   r = idx;
   
@@ -658,8 +674,6 @@ uint32_t gammaCorrectionBack(uint32_t color) {
   tmp = pgm_read_byte(&gammaG[idx]);
   while (idx < 255 && g > tmp) {
     tmp = pgm_read_byte(&gammaG[++idx]);
-    if (g <= tmp) break;
-    idx++;
   }
   g = idx;
 
@@ -667,8 +681,6 @@ uint32_t gammaCorrectionBack(uint32_t color) {
   tmp = pgm_read_byte(&gammaB[idx]);
   while (idx < 255 && b > tmp) {
     tmp = pgm_read_byte(&gammaB[++idx]);
-    if (b <= tmp) break;
-    idx++;
   }
   b = idx;
 

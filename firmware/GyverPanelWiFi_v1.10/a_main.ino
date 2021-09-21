@@ -1322,6 +1322,14 @@ void parsing() {
             // Если установлен узор - "случайный" - продолжаем показывать тот что был
             loadingFlag = effectScaleParam2[tmp_eff] != 0;
           } 
+          #ifndef NO_ANIMATION
+          else
+          if (thisMode == tmp_eff && tmp_eff == MC_IMAGE) {
+            // При получении параметра 2 эффекта "Анимация" -  вид - надо переинициализировать эффект
+            // Если установлена анимация - "случайная" - продолжаем показывать тот что был
+            loadingFlag = effectScaleParam2[tmp_eff] != 0;
+          } 
+          #endif
           #if (USE_SD == 1)
           else
           if (thisMode == tmp_eff && tmp_eff == MC_SDCARD) {

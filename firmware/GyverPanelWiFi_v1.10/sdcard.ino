@@ -21,7 +21,7 @@ void InitializeSD2() {
     set_isSdCardReady(sd_card_ok);
   }
   if (!sd_card_ok) {
-    DEBUGLN(F("SD-карта недоступна"));
+    DEBUGLN(F("Эффекты Jinx! на SD-карте не обнаружены"));
   }
 }
 
