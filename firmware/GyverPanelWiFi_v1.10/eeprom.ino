@@ -901,7 +901,12 @@ String getSsid() {
   String ssid;
   File file;
   bool ok = true;
-  file = LittleFS.open("ssid", "r");
+  #if defined(ESP32)
+    String fileName = "/ssid";
+  #else
+    String fileName = "ssid";
+  #endif  
+  file = LittleFS.open(fileName, "r");
   if (!file) {
     // Файл не найден. Полагаем, что переход на хранение имени сети в файле еще не выполнен - счтываем имя сети с прежнего места хранения в EEPROM из ячеек 80-103
     // после чего сохраняем его в файл в файловой системе МК
@@ -922,11 +927,16 @@ String getSsid() {
 bool putSsid(String Ssid) {
   File file;
   bool ok = true;
-  if (LittleFS.exists("ssid")) {
-    ok = LittleFS.remove("ssid");
+  #if defined(ESP32)
+    String fileName = "/ssid";
+  #else
+    String fileName = "ssid";
+  #endif  
+  if (LittleFS.exists(fileName)) {
+    ok = LittleFS.remove(fileName);
   }
   if (ok) {
-    file = LittleFS.open("ssid", "w");
+    file = LittleFS.open(fileName, "w");
     if (file) {
       size_t len = Ssid.length()+1, lenw = 0;
       char buf[255];
@@ -949,7 +959,12 @@ String getPass() {
   String pass;
   File file;
   bool ok = true;
-  file = LittleFS.open("pass", "r");
+  #if defined(ESP32)
+    String fileName = "/pass";
+  #else
+    String fileName = "pass";
+  #endif  
+  file = LittleFS.open(fileName, "r");
   if (!file) {
     // Файл не найден. Полагаем, что переход на хранение имени сети в файле еще не выполнен - счтываем пароль с прежнего места хранения в EEPROM из ячеек 104-119
     // после чего сохраняем его в файл в файловой системе МК
@@ -970,11 +985,16 @@ String getPass() {
 bool putPass(String Pass) {
   File file;
   bool ok = true;
-  if (LittleFS.exists("pass")) {
-    ok = LittleFS.remove("pass");
+  #if defined(ESP32)
+    String fileName = "/pass";
+  #else
+    String fileName = "pass";
+  #endif  
+  if (LittleFS.exists(fileName)) {
+    ok = LittleFS.remove(fileName);
   }
   if (ok) {
-    file = LittleFS.open("pass", "w");
+    file = LittleFS.open(fileName, "w");
     if (file) {
       size_t len = Pass.length()+1, lenw = 0;
       char buf[255];
