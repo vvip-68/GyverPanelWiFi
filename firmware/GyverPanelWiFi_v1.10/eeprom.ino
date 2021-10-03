@@ -897,6 +897,7 @@ void putSoftAPPass(String SoftAPPass) {
 // Длина имени сети и пароля увеличина до 32 символов
 // -----------------------------
 
+// ssid – символьная строка, содержащая SSID точки доступа, к которой мы хотим подключиться (может содержать не более 32 символов).
 String getSsid() {
   String ssid;
   File file;
@@ -914,9 +915,9 @@ String getSsid() {
     ok = putSsid(ssid);    
   } else {
     // считываем содержимое файла ssid
-    char buf[255];
-    memset(buf, '\0', 255);
-    size_t len = file.read((uint8_t*)buf, 255);
+    char buf[33];
+    memset(buf, '\0', 33);
+    size_t len = file.read((uint8_t*)buf, 33);
     ok = len > 0;    
     file.close();
     ssid = ok ? String(buf) : "";
@@ -939,11 +940,12 @@ bool putSsid(String Ssid) {
     file = LittleFS.open(fileName, "w");
     if (file) {
       size_t len = Ssid.length()+1, lenw = 0;
-      char buf[255];
-      memset(buf, '\0', 255);
+      if (len > 32) len = 32;
+      char buf[33];
+      memset(buf, '\0', 33);
       Ssid.toCharArray(buf, len);
       lenw = file.write((uint8_t*)buf, len);
-      ok = lenw == len;
+      ok = lenw == len;       
       file.close();
     } else {
       ok = false;
@@ -955,6 +957,7 @@ bool putSsid(String Ssid) {
   return ok; 
 }
 
+// password – это пароль к точке доступа в виде символьной строки, которая может содержать от 8 до 64 символов
 String getPass() {
   String pass;
   File file;
@@ -972,9 +975,9 @@ String getPass() {
     ok = putPass(pass);    
   } else {
     // считываем содержимое файла pass
-    char buf[255];
-    memset(buf, '\0', 255);
-    size_t len = file.read((uint8_t*)buf, 255);
+    char buf[65];
+    memset(buf, '\0', 65);
+    size_t len = file.read((uint8_t*)buf, 65);
     ok = len > 0; 
     file.close();
     pass = ok ? String(buf) : "";
@@ -997,8 +1000,9 @@ bool putPass(String Pass) {
     file = LittleFS.open(fileName, "w");
     if (file) {
       size_t len = Pass.length()+1, lenw = 0;
-      char buf[255];
-      memset(buf, '\0', 255);
+      if (len > 64) len = 64;
+      char buf[65];
+      memset(buf, '\0', 65);
       Pass.toCharArray(buf, len);
       lenw = file.write((uint8_t*)buf, len);
       ok = lenw == len;
