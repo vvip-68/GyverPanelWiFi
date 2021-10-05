@@ -1,4 +1,4 @@
-﻿// Файл создан программой 'Jinx Frame Viewer'
+// Файл создан программой 'Jinx Frame Viewer'
 
 const uint16_t Jinx__00[] PROGMEM = {
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 
@@ -886,5 +886,3 @@ const animation_t animation_Jinx PROGMEM = {
       -1, -1, -1, -1, -1, -1
    }
 };
-
-

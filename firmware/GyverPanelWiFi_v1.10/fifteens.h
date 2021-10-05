@@ -1,4 +1,4 @@
-﻿// Файл создан программой 'Jinx Frame Viewer'
+// Файл создан программой 'Jinx Frame Viewer'
 
 const uint16_t Fifteens_00[] PROGMEM = {
     0xef5f, 0xef5f, 0xef5f, 0xef5f, 0xffdf, 0xffdf, 0xffdf, 0xffdf, 0xf77f, 0xf77f, 0xf77f, 0xf77f, 0xde5f, 0xde5f, 0xde5f, 0xde5f, 
@@ -1058,5 +1058,3 @@ const animation_t animation_Fifteens PROGMEM = {
       -1, -1, -1, -1, -1, -1
    }
 };
-
-
