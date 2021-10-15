@@ -370,8 +370,8 @@ void doEffectWithOverlay(byte aMode) {
 }
 
 void processEffect(byte aMode) {
-  // Эффект сменился?  resourcesMode - эффект, который был на предыдущем шаге цикла для которого были выделены ресурсы памяти, aMode - текущий эффект
-  if (resourcesMode != aMode) {
+  // Эффект сменился?  resourcesMode - эффект, который был на предыдущем шаге цикла для которого были выделены ресурсы памяти, aMode - текущий эффект  
+  if (resourcesMode != aMode && aMode < MAX_EFFECT) {
     // Освободить ресурсы (в основном динамическое выделение памяти под работу эффекта)    
     releaseEffectResources(resourcesMode);
     resourcesMode = aMode;        
