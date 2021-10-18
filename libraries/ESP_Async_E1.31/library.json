@@ -1,0 +1,22 @@
+{
+  "name": "ESPAsyncE131",
+  "keywords": "dmx, e131, e1.31, sacn",
+  "description": "Library for the asynchronous processing of sACN (E1.31 DMX over Ethernet) data.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/forkineye/ESPAsyncE131.git"
+  },
+  "version": "1.0.3",
+  "authors": {
+    "name": "Shelby Merrick",
+    "url": "http://forkineye.com",
+    "maintainer": true
+  },
+  "frameworks": "arduino",
+  "platforms": ["espressif8266", "espressif32"],
+  "dependencies":
+  {
+    "name": "ESPAsyncUDP",
+    "platforms": "espressif8266"
+  }
+}

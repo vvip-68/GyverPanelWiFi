@@ -50,8 +50,27 @@ bool SoftwareSerial::isValidGPIOpin(int8_t pin) {
 #if defined(ESP8266)
     return (pin >= 0 && pin <= 16) && !isFlashInterfacePin(pin);
 #elif defined(ESP32)
-    return (pin >= 0 && pin <= 5) || (pin >= 12 && pin <= 19) ||
+    // Remove the strapping pins as defined in the datasheets, they affect bootup and other critical operations
+    // Remmove the flash memory pins on related devices, since using these causes memory access issues.
+#ifdef CONFIG_IDF_TARGET_ESP32
+    // Datasheet https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf,
+    // Pinout    https://docs.espressif.com/projects/esp-idf/en/latest/esp32/_images/esp32-devkitC-v4-pinout.jpg    
+    return (pin == 1) || (pin >= 3 && pin <= 5) ||
+        (pin >= 12 && pin <= 15) ||
+        (!psramFound() && pin >= 16 && pin <= 17) ||
+        (pin >= 18 && pin <= 19) ||
         (pin >= 21 && pin <= 23) || (pin >= 25 && pin <= 27) || (pin >= 32 && pin <= 39);
+#elif CONFIG_IDF_TARGET_ESP32S2
+    // Datasheet https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf,
+    // Pinout    https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/_images/esp32-s2_saola1-pinout.jpg
+    return (pin >= 1 && pin <= 21) || (pin >= 33 && pin <= 44);
+#elif CONFIG_IDF_TARGET_ESP32C3
+    // Datasheet https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf, 
+    // Pinout    https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/_images/esp32-c3-devkitm-1-v1-pinout.jpg
+    return (pin >= 0 && pin <= 1) || (pin >= 3 && pin <= 7) || (pin >= 18 && pin <= 21);
+#else 
+    return true;
+#endif
 #else
     return true;
 #endif
@@ -68,7 +87,13 @@ bool SoftwareSerial::isValidRxGPIOpin(int8_t pin) {
 bool SoftwareSerial::isValidTxGPIOpin(int8_t pin) {
     return isValidGPIOpin(pin)
 #if defined(ESP32)
+#ifdef CONFIG_IDF_TARGET_ESP32
         && (pin < 34)
+#elif CONFIG_IDF_TARGET_ESP32S2
+        && (pin <= 45)
+#elif CONFIG_IDF_TARGET_ESP32C3
+        // no restrictions
+#endif
 #endif
         ;
 }
@@ -102,7 +127,7 @@ void SoftwareSerial::begin(uint32_t baud, SoftwareSerialConfig config,
             m_parityBuffer.reset(new circular_queue<uint8_t>((m_buffer->capacity() + 7) / 8));
             m_parityInPos = m_parityOutPos = 1;
         }
-        m_isrBuffer.reset(new circular_queue<uint32_t>((isrBufCapacity > 0) ?
+        m_isrBuffer.reset(new circular_queue<uint32_t, SoftwareSerial*>((isrBufCapacity > 0) ?
             isrBufCapacity : m_buffer->capacity() * (2 + m_dataBits + static_cast<bool>(m_parityMode))));
         if (m_buffer && (!m_parityMode || m_parityBuffer) && m_isrBuffer) {
             m_rxValid = true;
@@ -252,26 +277,19 @@ void IRAM_ATTR SoftwareSerial::preciseDelay(bool sync) {
         if (!m_intTxEnabled) { xt_wsr_ps(m_savedPS); }
         const auto expired = ESP.getCycleCount() - m_periodStart;
         const int32_t remaining = m_periodDuration - expired;
-        const auto ms = remaining / ESP.getCpuFreqMHz() / 1000UL;
-        if (remaining > 0 && ms)
+        const int32_t ms = remaining / 1000L / ESP.getCpuFreqMHz();
+        if (ms > 0)
         {
             delay(ms);
         }
         else
         {
-            do
-            {
-                optimistic_yield(10000UL);
-            }
-            while ((ESP.getCycleCount() - m_periodStart) < m_periodDuration);
+            optimistic_yield(10000UL);
         }
-        // Disable interrupts again
-        if (!m_intTxEnabled) { m_savedPS = xt_rsil(15); }
     }
-    else
-    {
-        while ((ESP.getCycleCount() - m_periodStart) < m_periodDuration) {}
-    }
+    while ((ESP.getCycleCount() - m_periodStart) < m_periodDuration) {}
+    // Disable interrupts again if applicable
+    if (!sync && !m_intTxEnabled) { m_savedPS = xt_rsil(15); }
     m_periodDuration = 0;
     m_periodStart = ESP.getCycleCount();
 }
@@ -432,13 +450,15 @@ void SoftwareSerial::rxBits() {
     }
 #endif
 
-    m_isrBuffer->for_each([this](const uint32_t& isrCycle) { rxBits(isrCycle); });
+    m_isrBuffer->for_each(m_isrBufferForEachDel);
 
-    // stop bit can go undetected if leading data bits are at same level
-    // and there was also no next start bit yet, so one byte may be pending.
-    if (m_rxCurBit >= -1 && m_rxCurBit < m_pduBits - m_stopBits) {
-        uint32_t detectionCycles = (m_pduBits - m_stopBits - m_rxCurBit) * m_bitCycles;
-        if (ESP.getCycleCount() - m_isrLastCycle > detectionCycles) {
+    // A stop bit can go undetected if leading data bits are at same level
+    // and there was also no next start bit yet, so one word may be pending.
+    // Check that there was no new ISR data received in the meantime, inserting an
+    // extraneous stop level bit out of sequence breaks rx.
+    if (m_rxCurBit > -1 && m_rxCurBit < m_pduBits - m_stopBits) {
+        const uint32_t detectionCycles = (m_pduBits - m_stopBits - m_rxCurBit) * m_bitCycles;
+        if (!m_isrBuffer->available() && ESP.getCycleCount() - m_isrLastCycle > detectionCycles) {
             // Produce faux stop bit level, prevents start bit maldetection
             // cycle's LSB is repurposed for the level bit
             rxBits(((m_isrLastCycle + detectionCycles) | 1) ^ m_invert);
