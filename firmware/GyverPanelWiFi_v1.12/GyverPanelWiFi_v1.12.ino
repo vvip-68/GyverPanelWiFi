@@ -21,7 +21,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.11.2021.1015")
+#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1016")
 
 // --------------------------------------------------------
 
@@ -213,6 +213,10 @@ void setup() {
 
   // Подключение к сети
   connectToNetwork();
+
+  #if (USE_E131 == 1)
+    InitializeE131();
+  #endif
   
   #if (USE_MQTT == 1)
   // Настройка соединения с MQTT сервером

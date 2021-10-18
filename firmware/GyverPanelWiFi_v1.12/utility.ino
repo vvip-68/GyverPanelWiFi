@@ -484,6 +484,18 @@ String IntToHex(uint32_t value) {
   return sHex;
 }
 
+String IntToHex(uint32_t value, uint8_t n) {
+  String sHex = "";
+  for(int i=0; i<n; i++) sHex += "0";
+  sHex += String(value, HEX);
+  byte len = sHex.length();
+  if (len > n) {
+    sHex = sHex.substring(len - n);
+    sHex.toUpperCase();
+  }
+  return sHex;
+}
+
 uint32_t CountTokens(String str, char separator) {
 
   uint32_t count = 0;

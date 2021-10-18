@@ -66,7 +66,10 @@ void loadSettings() {
   //   87 - тип мета-матрицы (параллельная / зигзаг)
   //   88 - угол подключения к мета-матрице
   //   89 - направление сегментов из угла мета-матрицы
-  //**90-119  - не используется
+  //   90 - режим работы - Standalone/Master/Slave
+  //   91 - тип данных в пакете - Phisic/Logic/Command
+  //   92 - группа синхронизации
+  //**93-119  - не используется
   //  120-149 - имя NTP сервера      - 30 байт                                                               // getNtpServer().toCharArray(ntpServerName, 31) // putNtpServer(String(ntpServerName)) // char ntpServerName[31] = ""
   //  150,151 - лимит по току в миллиамперах                                                                 // getPowerLimit()                // putPowerLimit(CURRENT_LIMIT)
   //  152 - globalClockColor.r -  цвет часов в режиме MC_COLOR, режим цвета "Монохром"                       // getGlobalClockColor()          // putGlobalClockColor(globalClockColor)              // uint32_t globalClockColor
@@ -222,6 +225,12 @@ void loadSettings() {
       maxAlarmVolume = getMaxAlarmVolume();
     #endif
 
+    #if (USE_E131 == 1)
+      workMode = getSyncWorkMode();
+      syncMode = getSyncDataMode();
+      syncGroup = getSyncGroup();;    
+    #endif
+    
     globalColor = getGlobalColor();           // цвет лампы, задаваемый пользователем
     globalClockColor = getGlobalClockColor(); // цвет часов в режиме MC_COLOR, режим цвета "Монохром"
     globalTextColor = getGlobalTextColor();   // цвет часов бегущей строки в режиме цвета "Монохром"
@@ -370,7 +379,7 @@ void saveDefaults() {
 
   // Специальные настройки отдельных эффектов
   putEffectUsage(MC_CLOCK, false);
-  putClockScrollSpeed(255);  
+  putClockScrollSpeed(250);  
   putEffectTextOverlayUsage(MC_CLOCK, false); 
   putEffectTextOverlayUsage(MC_MAZE, false);
   putEffectTextOverlayUsage(MC_SNAKE, false);
@@ -419,6 +428,15 @@ void saveDefaults() {
   strcpy(mqtt_user, DEFAULT_MQTT_USER);
   strcpy(mqtt_pass, DEFAULT_MQTT_PASS);
   #endif  
+
+  #if (USE_E131 == 1)
+    workMode = STANDALONE;      // По умолчанию - самостоятельный режим работы
+    syncMode = LOGIC;           // По умолчанию - размещение данных в логическом порядке - левый верхний угол, далее вправо и вниз.
+    syncGroup = 0;
+    putSyncWorkMode(workMode);
+    putSyncDataMode(syncMode);
+    putSyncGroup(syncGroup);
+  #endif
 
   putSoftAPName(String(apName));
   putSoftAPPass(String(apPass));
@@ -1875,6 +1893,48 @@ void putMqttPrefix(String prefix) {
   if (prefix != getMqttPrefix()) {
     EEPROM_string_write(250, prefix, 30);
   }
+}
+
+#endif
+
+#if (USE_E131 == 1)
+
+eWorkModes getSyncWorkMode() {
+  byte value = EEPROMread(90);
+  if (value > 2) value = 0;
+  return (eWorkModes)value;
+}
+void putSyncWorkMode(eWorkModes value) {
+  byte val = (byte)value;
+  if (val > 2) val = 0;
+  if (val != (byte)getSyncWorkMode()) {
+    EEPROMwrite(90, val);
+  }  
+}
+
+eSyncModes getSyncDataMode() {
+  byte value = EEPROMread(91);
+  if (value > 2) value = 1;
+  return (eSyncModes)value;
+}
+void putSyncDataMode(eSyncModes value) {
+  byte val = (byte)value;
+  if (val > 2) val = 1;
+  if (val != (byte)getSyncDataMode()) {
+    EEPROMwrite(90, val);
+  }  
+}
+
+uint8_t getSyncGroup() {
+  byte value = EEPROMread(92);
+  if (value > 9) value = 9;
+  return value;
+}
+void putSyncGroup(uint8_t value) {
+  if (value > 9) value = 9;
+  if (value != getSyncGroup()) {
+    EEPROMwrite(92, value);
+  }  
 }
 
 #endif

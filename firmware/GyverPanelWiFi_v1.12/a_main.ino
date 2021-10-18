@@ -4,6 +4,12 @@
 // Контроль времени цикла
 uint32_t last_ms = millis();  
 
+// Отладка приема пакетов E1.31
+#if (USE_E131 == 1)
+bool flag_1 = false;
+bool flag_2 = false;
+#endif
+
 void process() {  
 
   // Время прохода одного цикла  
@@ -16,6 +22,39 @@ void process() {
   
   // принимаем данные
   parsing();
+
+  #if (USE_E131 == 1)
+    bool streaming = e131 != NULL && (!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)); 
+    if (!e131_streaming && streaming) {
+      flag_1 = false;
+      flag_2 = false;
+      #if (USE_MQTT == 1)
+        DynamicJsonDocument doc(256);
+        String out;
+        doc["act"] = F("E131");
+        doc["mode"] = F("SLAVE");
+        doc["type"] = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIG ? F("LOGIC"): F("COMMAND"));
+        doc["run"] = true;
+        serializeJson(doc, out);      
+        SendMQTT(out, TOPIC_E131);
+      #endif
+      FastLED.clear();
+    }
+    if (!e131_streaming && !streaming) {
+      #if (USE_MQTT == 1)
+        DynamicJsonDocument doc(256);
+        String out;
+        doc["act"] = F("E131");
+        doc["mode"] = F("SLAVE");
+        doc["type"] = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIG ? F("LOGIC"): F("COMMAND"));
+        doc["run"] = false;
+        serializeJson(doc, out);      
+        SendMQTT(out, TOPIC_E131);
+      #endif
+    }
+    e131_streaming = streaming;
+  #endif
+
 
   // Если включен эффект с кодом большим кол-ва эффектов (но меньшим кода специальных эффектов) - 
   // выбрать случайный эффект, иначе будет отображаться черный экран или застывший предыдущий эффект
@@ -30,13 +69,15 @@ void process() {
       // на следующем цикле tmpSaveMode != thisMode - имя будет определено снова
       setRandomMode2(); 
     } else {
-      #if (USE_MQTT == 0)
-      DEBUGLN(String(F("Режим: ")) + effect_name);
-      #else
-      if (!useMQTT || !mqtt.connected()) {
+      if (!e131_streaming) {
+        #if (USE_MQTT == 0)
         DEBUGLN(String(F("Режим: ")) + effect_name);
-      }      
-      #endif
+        #else
+        if (!useMQTT || !mqtt.connected()) {
+          DEBUGLN(String(F("Режим: ")) + effect_name);
+        }      
+        #endif
+      }
       tmpSaveMode = thisMode;    
     }               
   }
@@ -142,17 +183,78 @@ void process() {
       if (timeToSync) calculateDawnTime();
     }
 
-    // Сформировать и вывести на матрицу текущий демо-режим
-    // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
-    // поэтому отображать эффект "ночные часы"
-    byte br = specialMode ? specialBrightness : globalBrightness;
-    if (br == 1 && !(loadingFlag || isAlarming || thisMode == MC_TEXT || thisMode == MC_DRAW || thisMode == MC_LOADIMAGE)) {
-      if (allowHorizontal || allowVertical) 
-        customRoutine(MC_CLOCK);    
-      else
-        FastLED.clear();  
-    } else {    
-      customRoutine(thisMode);
+    bool needProcessEffect = true;
+
+    #if (USE_E131 == 1)
+        
+    // Если сработал будильник - отрабатывать его эффект, даже если идет стриминг с мастера    
+    if (e131_streaming && (!(isAlarming || isPlayAlarmSound))) {      
+      needProcessEffect = false;
+      // Если идет прием потока данных с MASTER-устройства - проверить наличие пакета от мастера
+      if (!e131->isEmpty()) {
+        // Получен пакет данных. 
+        e131_last_packet = millis();
+        e131->pull(&e131_packet);
+
+        uint16_t CURRENT_UNIVERSE = htons(e131_packet.universe);      
+
+        /*
+        // Отладка: информация о полученном E1.31 пакете
+        Serial.printf("Universe %u / %u Channels | Packet#: %u / Errors: %u\n",
+                  CURRENT_UNIVERSE,                            // The Universe for this packet
+                  htons(e131_packet.property_value_count) - 1, // Start code is ignored, we're interested in dimmer data
+                  e131->stats.num_packets,                     // Packet counter
+                  e131->stats.packet_errors);                  // Packet error counter
+        */     
+             
+        /*
+        // Отладка: вывод данных структуры полученного пакета E1.31 для первых двух вселенных
+        if (!flag_1 && CURRENT_UNIVERSE == 1 || !flag_2 && CURRENT_UNIVERSE == 2) {
+          printE131packet(&e131_packet);
+          flag_1 |= CURRENT_UNIVERSE == 1;
+          flag_2 |= CURRENT_UNIVERSE == 2;
+        }
+        */
+
+        // Если задан расчет FPS выводимых данных потока E1.31 - рассчитать и вывести в консоль
+        if (E131_FPS_INTERVAL > 0) {
+          if (CURRENT_UNIVERSE == START_UNIVERSE) frameCnt++;
+          if (millis() - last_fps_time >= E131_FPS_INTERVAL) {
+            last_fps_time = millis();
+            DEBUG(F("FPS: "));
+            DEBUGLN(1000.0 * frameCnt / E131_FPS_INTERVAL);
+            frameCnt = 0;
+          }
+        }
+
+        // Если режим стрима - PHYSIC или LOGIC - вывести принятые данные на матрицу
+        if (syncMode == PHYSIC || syncMode == LOGIC) {
+          if (drawE131frame(&e131_packet, syncMode)) {
+            FastLED.show();
+          }
+        } else {
+          // Если режим стриминга - прием команд и пришла команда  - получить команду и обработать ее
+          // TODO: проверить что данные в пакете это команда, извлечь ее и выполнить
+          needProcessEffect = true;
+        }
+      }
+    }
+
+    #endif
+
+    if (needProcessEffect) {
+      // Сформировать и вывести на матрицу текущий демо-режим
+      // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
+      // поэтому отображать эффект "ночные часы"
+      byte br = specialMode ? specialBrightness : globalBrightness;
+      if (br == 1 && !(loadingFlag || isAlarming || thisMode == MC_TEXT || thisMode == MC_DRAW || thisMode == MC_LOADIMAGE)) {
+        if (allowHorizontal || allowVertical) 
+          customRoutine(MC_CLOCK);    
+        else
+          FastLED.clear();  
+      } else {    
+        customRoutine(thisMode);
+      }
     }
     
     clockTicker();

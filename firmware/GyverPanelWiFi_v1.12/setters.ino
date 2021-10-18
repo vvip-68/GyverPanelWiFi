@@ -879,3 +879,31 @@ void set_MqttPrefix(String value) {
 }
 
 #endif
+
+#if (USE_E131 == 1)
+
+// E1 - workMode
+void set_SyncWorkMode(eWorkModes value) {
+  if (workMode == value) return;
+  putSyncWorkMode(value);
+  workMode = getSyncWorkMode();
+  addKeyToChanged("E1");  
+}
+
+// E2 - syncMode
+void set_SyncDataMode(eSyncModes value) {
+  if (syncMode == value) return;
+  putSyncDataMode(value);
+  syncMode = getSyncDataMode();
+  addKeyToChanged("E2");  
+}
+
+// E3 - syncGroup
+void set_SyncGroup(uint8_t value) {
+  if (syncGroup == value) return;
+  putSyncGroup(value);
+  syncGroup = getSyncGroup();
+  addKeyToChanged("E3");  
+}
+
+#endif
