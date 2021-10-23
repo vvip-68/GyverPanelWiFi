@@ -5,8 +5,8 @@
 #define BALL_SPEED 50     // период интегрирования
 
 #define BLOCKS_H 4        // высота кучи блоков
-#define LINE_NUM 8        // количество "линий" с блоками других уровней
-#define LINE_MAX 4        // макс. длина линии
+#define ARK_LINE_NUM 8    // количество "линий" с блоками других уровней
+#define ARK_LINE_MAX 4    // макс. длина линии
 
 // цвета блоков по крутости
 #define BLOCK_COLOR_1 CRGB::Aqua
@@ -42,7 +42,7 @@ void arkanoidRoutine() {
     shelfMAX = pWIDTH - SHELF_LENGTH;
     buttons = 4;
     newGameArkan();    
-    FastLED.show();
+    FastLEDshow();
     delay(500);
   }
 
@@ -181,11 +181,11 @@ void generateBlocks() {
       drawPixelXY(i, j, BLOCK_COLOR_1);
     }
   }
-  for (byte k = 0; k < LINE_NUM; k++) {
-    byte newPosX = random(0, pWIDTH - 1 - LINE_MAX);
+  for (byte k = 0; k < ARK_LINE_NUM; k++) {
+    byte newPosX = random(0, pWIDTH - 1 - ARK_LINE_MAX);
     byte newPosY = random(pHEIGHT - BLOCKS_H, pHEIGHT);
     byte newColor = random(0, 3);
-    for (byte i = newPosX; i < newPosX + LINE_MAX; i++) {
+    for (byte i = newPosX; i < newPosX + ARK_LINE_MAX; i++) {
       switch (newColor) {
         case 0: drawPixelXY(i, newPosY, 0);
           break;
@@ -200,7 +200,7 @@ void generateBlocks() {
 
 void gameOverArkan() {
   displayScore(arkScore);
-  FastLED.show();
+  FastLEDshow();
   delay(1500);
   FastLED.clear();
   newGameArkan();

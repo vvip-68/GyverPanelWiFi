@@ -97,14 +97,14 @@ void tetrisRoutine() {
       if (xl >= left_offset) drawPixelXY(xl, 0, color);
       if (xr <= right_offset) drawPixelXY(xr, 0, color);
       delay(25);
-      FastLED.show();
+      FastLEDshow();
       xl--; xr++;
     }
     for (byte i = 0; i < pHEIGHT; i++) {
       drawPixelXY(left_offset, i, color);
       drawPixelXY(right_offset, i, color);
       delay(25);
-      FastLED.show();
+      FastLEDshow();
     }
     // -----------------------------------
 
@@ -215,7 +215,7 @@ void checkAndClear() {
         for (byte i = 0; i < linesToClear; i++) {
           leds[getPixelNumber(X, lineNum + i)] = CHSV(0, 0, 255);         // закрашиваем его белым
         }
-        FastLED.show();
+        FastLEDshow();
         delay(5);     // задержка между пикселями слева направо
       }
       delay(10);
@@ -227,7 +227,7 @@ void checkAndClear() {
             leds[getPixelNumber(X, lineNum + i)] = CHSV(0, 0, 240 - 8 * val);  // гасим белый цвет
           }
         }
-        FastLED.show();
+        FastLEDshow();
         delay(5);       // задержка между сменой цвета
       }
       delay(10);
@@ -238,7 +238,7 @@ void checkAndClear() {
           for (byte X = x_st; X <= x_en; X++) {
             drawPixelXY(X, Y, getPixColorXY(X, Y + 1));      // сдвигаем вниз
           }
-          //FastLED.show();  // Почему-то этот show() рисует весь "стакан", прижатым к правому краю матрицы, хотя на широких матрицах всё действо происходит по центру
+          //FastLEDshow();   // Почему-то этот show() рисует весь "стакан", прижатым к правому краю матрицы, хотя на широких матрицах всё действо происходит по центру
                              // и предыдущие show() в циклах выше рисуют все точки в правильном месте
         }
         // delay(200);       // задержка между "сдвигами" всех пикселей на один уровень - убрал, так как отрисовка выше убрана
@@ -261,7 +261,7 @@ void gameOverTetris() {
   // тут можно вывести счёт lineCleanCounter
   if (!gameDemo) {
     displayScore(lineCleanCounter);
-    FastLED.show();
+    FastLEDshow();
   }
   delay(1500);
 

@@ -41,7 +41,7 @@ void newGameMaze() {
         }
       }
       // Отображаем сгенерированный лабиринт строка за строкой
-      FastLED.show();
+      FastLEDshow();
       delay(25);
     }
   } else {
@@ -67,7 +67,7 @@ void newGameMaze() {
   
   drawPixelXY(playerPos[0], playerPos[1], GLOBAL_COLOR_2);
 
-  FastLED.show();
+  FastLEDshow();
   delay(25);
 
   mazeStarted = false;  
@@ -150,12 +150,12 @@ void movePlayer(int8_t nowX, int8_t nowY, int8_t prevX, int8_t prevY) {
 
   if ((nowX == (MAZE_WIDTH - 2) - SHIFT) && (nowY == (MAZE_HEIGHT - 1) - SHIFT)) {
     gameOverFlag = true;
-    FastLED.show();
+    FastLEDshow();
     delay(250);
     FastLED.clear();
     //if (!gameDemo) {
       displayScore((millis() - labTimer) / 1000);
-      FastLED.show();
+      FastLEDshow();
     //}
     delay(1500);
     return;
@@ -169,7 +169,7 @@ void movePlayer(int8_t nowX, int8_t nowY, int8_t prevX, int8_t prevY) {
           drawPixelXY(x, y, GLOBAL_COLOR_1);
         }
       }
-      FastLED.show();
+      FastLEDshow();
     }
   }
 }

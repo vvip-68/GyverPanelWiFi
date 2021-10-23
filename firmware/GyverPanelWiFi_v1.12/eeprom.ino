@@ -1921,7 +1921,7 @@ void putSyncDataMode(eSyncModes value) {
   byte val = (byte)value;
   if (val > 2) val = 1;
   if (val != (byte)getSyncDataMode()) {
-    EEPROMwrite(90, val);
+    EEPROMwrite(91, val);
   }  
 }
 

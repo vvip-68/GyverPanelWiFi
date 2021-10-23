@@ -95,7 +95,7 @@ void snakeRoutine() {
       for (int i = 0; i < NUM_LEDS; i++) {
         leds[i] = CRGB::Red;
       }
-      FastLED.show();
+      FastLEDshow();
       delay(10);
     }
 
@@ -105,7 +105,7 @@ void snakeRoutine() {
 
     //if (!gameDemo) {
       displayScore(snakeLength - START_LENGTH);
-      FastLED.show();
+      FastLEDshow();
     //}
     delay(1500);    
   }

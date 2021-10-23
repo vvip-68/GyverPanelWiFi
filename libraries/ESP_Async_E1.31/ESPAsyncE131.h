@@ -42,6 +42,7 @@ typedef struct ip_addr ip4_addr_t;
 
 // Defaults
 #define E131_DEFAULT_PORT 5568
+#define E131_PACKET_LENGTH 638
 
 // E1.31 Packet Offsets
 #define E131_ROOT_PREAMBLE_SIZE 0
@@ -99,7 +100,7 @@ typedef union {
         uint8_t  property_values[513];
     } __attribute__((packed));
 
-    uint8_t raw[638];
+    uint8_t raw[E131_PACKET_LENGTH];
 } e131_packet_t;
 
 // Error Types
@@ -115,6 +116,7 @@ typedef enum {
 
 // E1.31 Listener Types
 typedef enum {
+    E131_NOT_INITIALIZED,
     E131_UNICAST,
     E131_MULTICAST
 } e131_listen_t;
@@ -132,16 +134,28 @@ typedef uint16_t ESPAsyncE131PortId;
 
 class ESPAsyncE131 {
  private:
-    // Constants for packet validation
-    static const uint8_t ACN_ID[];
-    static const uint32_t VECTOR_ROOT = 4;
-    static const uint32_t VECTOR_FRAME = 2;
-    static const uint8_t VECTOR_DMP = 2;
+
+    static const uint8_t        ACN_ID[];
+    static const uint16_t 	PREAMBLE_SIZE    = 0x0010;
+    static const uint16_t 	POSTAMBLE_SIZE   = 0x0000;
+    static const uint32_t 	ROOT_VECTOR      = 0x00000004;
+    static const uint32_t 	FRAME_VECTOR     = 0x00000002;
+    static const uint8_t 	FRAME_OPTIONS    = 0x00;
+    static const uint8_t 	DMP_VECTOR       = 0x02;
+    static const uint8_t 	DMP_TYPE         = 0xa1;
+    static const uint16_t 	DMP_FIRST_ADDR   = 0x0000;
+    static const uint16_t 	DMP_ADDR_INC     = 0x0001;
+    static const uint8_t 	DEFAULT_PRIORITY = 0x64;
 
     e131_packet_t   *sbuff;     // Pointer to scratch packet buffer
     AsyncUDP        udp;        // AsyncUDP
     RingBuf         *pbuff;     // Ring Buffer of universe packet buffers
-    void            * UserInfo = nullptr;
+    void            *UserInfo = nullptr;
+
+    uint16_t start_universe;
+    uint8_t count_universe;
+    e131_listen_t listen_type;
+    uint8_t send_sequence_number;
 
     // Internal Initializers
     bool initUnicast();
@@ -156,6 +170,7 @@ class ESPAsyncE131 {
  public:
     e131_stats_t  stats;    // Statistics tracker
     ESPAsyncE131(uint8_t buffers = 1);
+    ~ESPAsyncE131();
 
     // Generic UDP listener, no physical or IP configuration
     bool begin (e131_listen_t type, uint16_t universe = 1, uint8_t n = 1);
@@ -167,6 +182,11 @@ class ESPAsyncE131 {
 
     // Callback support
     void registerCallback(void* _UserInfo, void (*cbFunction)(e131_packet_t*, void*)) { PacketCallback = cbFunction; UserInfo = _UserInfo; }
+
+    // Send support
+    e131_packet_t* createPacket(const char* src_name, uint8_t* uuid);
+    void setRGB(e131_packet_t *packet, uint8_t cnt, uint8_t r, uint8_t g, uint8_t b);
+    size_t sendPacket(e131_packet_t *packet, uint16_t universe, uint8_t cnt);
 
     // Diag functions
     void dumpError(e131_error_t error);

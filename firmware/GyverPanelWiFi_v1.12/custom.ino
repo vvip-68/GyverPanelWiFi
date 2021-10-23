@@ -366,6 +366,16 @@ void doEffectWithOverlay(byte aMode) {
     runningText();
   }
 
+  FastLEDshow();
+}
+
+void FastLEDshow() {
+  #if (USE_E131 == 1)
+  if (workMode == MASTER && (syncMode == PHYSIC || syncMode == LOGIC)) {
+    sendE131Screen();
+    delay(e131_send_delay);
+  }
+  #endif
   FastLED.show();
 }
 

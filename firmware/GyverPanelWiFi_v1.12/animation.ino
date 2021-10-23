@@ -379,7 +379,7 @@ void animationRoutine() {
   // а вот переход к следующему кадру - с указанным интервалом
   // -----------------------------------------------------
 
-  bool need_change_frame = millis() - last_draw_frame >= image_desc.draw_frame_interval;  // +++
+  bool need_change_frame = millis() - last_draw_frame >= image_desc.draw_frame_interval;
 
   if (draw_by_row && !need_change_frame) return; 
 

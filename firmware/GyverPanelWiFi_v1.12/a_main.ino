@@ -24,29 +24,42 @@ void process() {
   parsing();
 
   #if (USE_E131 == 1)
-    bool streaming = e131 != NULL && (!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)); 
+    bool streaming = e131 != NULL && (workMode == MASTER || workMode == SLAVE && ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)))); 
     if (!e131_streaming && streaming) {
       flag_1 = false;
       flag_2 = false;
+      if (workMode == MASTER)
+        DEBUGLN(F("Запуск вещания E1.31 потока"));
+      else 
+        DEBUGLN(F("Ожидание поступления данных потока E1.31..."));
+      prevWorkMode = workMode;
+      prevSyncMode = syncMode;
+      prevSyncGroup = syncGroup;
       #if (USE_MQTT == 1)
         DynamicJsonDocument doc(256);
         String out;
         doc["act"] = F("E131");
-        doc["mode"] = F("SLAVE");
-        doc["type"] = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIG ? F("LOGIC"): F("COMMAND"));
+        doc["mode"] = workMode == MASTER ? F("MASTER") : F("SLAVE");
+        doc["type"] = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
+        doc["group"] = syncGroup;
         doc["run"] = true;
         serializeJson(doc, out);      
         SendMQTT(out, TOPIC_E131);
       #endif
       FastLED.clear();
     }
-    if (!e131_streaming && !streaming) {
+    if (e131_streaming && !streaming) {
+      if (prevWorkMode == MASTER)
+        DEBUGLN(F("Останов вещания E1.31 потока"));
+      else
+        DEBUGLN(F("Останов слушателя E1.31 потока"));            
       #if (USE_MQTT == 1)
         DynamicJsonDocument doc(256);
         String out;
         doc["act"] = F("E131");
-        doc["mode"] = F("SLAVE");
-        doc["type"] = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIG ? F("LOGIC"): F("COMMAND"));
+        doc["mode"] = prewWorkMode == MASTER ? F("MASTER") : F("SLAVE");;
+        doc["type"] = prevSyncMode == PHYSIC ? F("PHYSIC") : (prevSyncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
+        doc["group"] = prevSyncGroup;
         doc["run"] = false;
         serializeJson(doc, out);      
         SendMQTT(out, TOPIC_E131);
@@ -69,7 +82,7 @@ void process() {
       // на следующем цикле tmpSaveMode != thisMode - имя будет определено снова
       setRandomMode2(); 
     } else {
-      if (!e131_streaming) {
+      if (!(e131_streaming && workMode == SLAVE)) {
         #if (USE_MQTT == 0)
         DEBUGLN(String(F("Режим: ")) + effect_name);
         #else
@@ -188,10 +201,10 @@ void process() {
     #if (USE_E131 == 1)
         
     // Если сработал будильник - отрабатывать его эффект, даже если идет стриминг с мастера    
-    if (e131_streaming && (!(isAlarming || isPlayAlarmSound))) {      
+    if (workMode == SLAVE && !isTurnedOff && e131_streaming && (!(isAlarming || isPlayAlarmSound))) {      
       needProcessEffect = false;
       // Если идет прием потока данных с MASTER-устройства - проверить наличие пакета от мастера
-      if (!e131->isEmpty()) {
+      if (e131 && !e131->isEmpty()) {
         // Получен пакет данных. 
         e131_last_packet = millis();
         e131->pull(&e131_packet);
@@ -679,6 +692,12 @@ void parsing() {
        - $23 0 VAL  - лимит по потребляемому току
        - $23 1 ST   - Сохранить EEPROM в файл    ST = 0 - внутр. файл. систему; 1 - на SD-карту
        - $23 2 ST   - Загрузить EEPROM из файла  ST = 0 - внутр. файл. системы; 1 - на SD-карты
+       - $23 3 E1 E2 E3   - Установка режима работы панели и способа трактовки полученных данных синхронизаии
+             E1 - режим работы 0 - STANDALONE; 1 - MASTER; 2 - SLAVE
+             E2 - данные в кадре: 0 - физическое расположение цепочки диодов
+                                  1 - логическое расположение - ЧбН - 0,0 - левый верхний угол и далее вправо по X, затем вниз по Y
+                                  2 - payload пакета - строка команды
+             E3 - группа синхронизации 0..9                      
   */  
 
   // Если прием данных завершен и управляющая команда в intData[0] распознана
@@ -776,7 +795,7 @@ void parsing() {
         if (intData[1] == 0) {
           // Включить на устройстве демо-режим
           FastLED.clear();
-          FastLED.show();
+          FastLEDshow();
           delay(50);
           setManualModeTo(false);
           nextMode();
@@ -869,7 +888,7 @@ void parsing() {
             if (specialMode) set_specialBrightness(globalBrightness);
             if (!isTurnedOff) FastLED.setBrightness(globalBrightness);
             if (thisMode == MC_DRAW || thisMode == MC_LOADIMAGE) {
-              FastLED.show();
+              FastLEDshow();
             }
           }
           // Для команд, пришедших от MQTT отправлять только ACK;
@@ -1109,7 +1128,7 @@ void parsing() {
                 setManualModeTo(true);
                 set_thisMode(MC_LOADIMAGE);
                 FastLED.clear();
-                FastLED.show();
+                FastLEDshow();
                 delay(50);
               }
       
@@ -1148,7 +1167,7 @@ void parsing() {
                 // начало картинки - очистить матрицу
                 if (pntX == 0 && pntY == 0) {
                   FastLED.clear(); 
-                  FastLED.show();
+                  FastLEDshow();
                 }
                 
                 drawPixelXY(pntX, pHEIGHT - pntY - 1, gammaCorrection(pntColor));
@@ -1156,7 +1175,7 @@ void parsing() {
       
               // Выводить построчно для ускорения вывода на экран
               if (pntX == pWIDTH - 1) {
-                FastLED.show();
+                FastLEDshow();
               }
               
               // Строка подтверждения приема строки изображения + восстановить переменную выбора типа строки из команды "$6 11|xxx"
@@ -1173,7 +1192,7 @@ void parsing() {
                 setManualModeTo(true);
                 set_thisMode(MC_LOADIMAGE);
                 FastLED.clear();
-                FastLED.show();
+                FastLEDshow();
                 delay(50);
               }
       
@@ -1212,7 +1231,7 @@ void parsing() {
                 // начало картинки - очистить матрицу
                 if (pntX == 0 && pntY == 0) {
                   FastLED.clear(); 
-                  FastLED.show();
+                  FastLEDshow();
                 }
                 
                 drawPixelXY(pntX, pHEIGHT - pntY - 1, gammaCorrection(pntColor));
@@ -1220,7 +1239,7 @@ void parsing() {
       
               // Выводить построчно для ускорения вывода на экран
               if (pntY == pHEIGHT - 1) {
-                FastLED.show();
+                FastLEDshow();
               }
               
               // Строка подтверждения приема строки изображения + восстановить переменную выбора типа строки из команды "$6 11|xxx"
@@ -2217,12 +2236,26 @@ void parsing() {
       // ----------------------------------------------------
       // 23 - прочие настройки
       // - $23 0 VAL  - лимит по потребляемому току
+      // - $23 1 ST   - Сохранить EEPROM в файл    ST = 0 - внутр. файл. систему; 1 - на SD-карту
+      // - $23 2 ST   - Загрузить EEPROM из файла  ST = 0 - внутр. файл. системы; 1 - на SD-карты
+      // - $23 3 E1 E2 E3   - Установка режима работы панели и способа трактовки полученных данных синхронизаии
+      //       E1 - режим работы 0 - STANDALONE; 1 - MASTER; 2 - SLAVE
+      //       E2 - данные в кадре: 0 - физическое расположение цепочки диодов
+      //                            1 - логическое расположение - ЧбН - 0,0 - левый верхний угол и далее вправо по X, затем вниз по Y
+      //                            2 - payload пакета - строка команды
+      //       E3 - группа синхронизации 0..9                      
       // ----------------------------------------------------
 
       case 23:
         // $23 0 VAL - лимит по потребляемому току
         // $23 1 ST   - Сохранить EEPROM в файл    ST = 0 - внутр. файл. систему; 1 - на SD-карту
         // $23 2 ST   - Загрузить EEPROM из файла  ST = 0 - внутр. файл. системы; 1 - на SD-карты
+        // $23 3 E1 E2 E3   - Установка режима работы панели и способа трактовки полученных данных синхронизаии
+        //     E1 - режим работы 0 - STANDALONE; 1 - MASTER; 2 - SLAVE
+        //     E2 - данные в кадре: 0 - физическое расположение цепочки диодов
+        //                          1 - логическое расположение - ЧбН - 0,0 - левый верхний угол и далее вправо по X, затем вниз по Y
+        //                          2 - payload пакета - строка команды
+        //     E3 - группа синхронизации 0..9                      
         switch(intData[1]) {
           case 0:
             set_CURRENT_LIMIT(intData[2]);
@@ -2252,6 +2285,31 @@ void parsing() {
               delay(500);
               ESP.restart();
             }
+            break;
+          case 3:
+            #if (USE_E131 == 1)
+            // Переинициализировать не нужно, если изменился только syncMode с PHYSIC на LOGIC или наоборот
+            {
+              bool needReInitialize = workMode != (eWorkModes)intData[2] || syncGroup != intData[4] || !((syncMode == PHYSIC && ((eSyncModes)intData[3] == LOGIC)) || (syncMode == LOGIC && (eSyncModes)intData[3] == PHYSIC));
+              set_SyncWorkMode((eWorkModes)intData[2]);
+              set_SyncDataMode((eSyncModes)intData[3]);
+              set_SyncGroup(intData[4]);
+              saveSettings();
+              if (needReInitialize) {
+                DisposeE131();
+                InitializeE131();
+              } else {
+                printWorkMode();  
+              }
+              // Для команд, пришедших от MQTT отправлять только ACK;
+              // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
+              if (cmdSource == UDP) {
+                sendPageParams(9, cmdSource);
+              } else {
+                sendAcknowledge(cmdSource);
+              }
+            }
+            #endif
             break;
           default:
             err = true;
@@ -2455,6 +2513,9 @@ void sendPageParams(int page, eSources src) {
       break;
     case 8:  // Настройки параметтров матрицы (размеры, подключение)
       str = getStateString("UP|FM|M0|M1|M2|M3|M4|M5|M6|M7|M8|M9");
+      break;
+    case 9:  // Настройки параметтров синхронизации
+      str = getStateString("UP|FM|E0|E1|E2|E3");
       break;
     case 10:  // Загрузка картинок
       str = getStateString("UP|FM|W|H|BR|CL|SD");
@@ -3823,7 +3884,50 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     }
     return str + "M9:" + tmp;
   }
+
+  // Поддержка протокола E1.31
+  if (key == "E0") {
+    if (value) {
+      value->set(USE_E131 == 1);
+      return String(USE_E131 == 1);
+    }
+    return str + "E0:" + String(USE_E131 == 1);
+  }
+
+  #if (USE_E131 == 1)
   
+  // режим работы 0 - STANDALONE, 1 - MASTER, 2 - SLAVE
+  if (key == "E1") {
+    tmp = String(workMode);
+    if (value) {
+      value->set(tmp);
+      return tmp;
+    }
+    return str + "E1:" + tmp;
+  }
+  
+  // тип данных работы 0 - PHYSIC, 1 - LOGIC, 2 - COMMAND
+  if (key == "E2") {
+    tmp = String(syncMode);
+    if (value) {
+      value->set(tmp);
+      return tmp;
+    }
+    return str + "E2:" + tmp;
+  }
+  
+  // Группа синхронизации 0..9
+  if (key == "E3") {
+    tmp = String(syncGroup);
+    if (value) {
+      value->set(tmp);
+      return tmp;
+    }
+    return str + "E3:" + tmp;
+  }
+  
+  #endif
+    
   // Запрошенный ключ не найден - вернуть пустую строку
   return "";
 }

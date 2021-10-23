@@ -57,7 +57,7 @@ void init_world(uint8_t **world) {
     drawDigit3x5(val % 10, px + 4, py, color);
   }
   
-  FastLED.show();
+  FastLEDshow();
 
   // Считываем с поля клетки в основной массив
   for (uint8_t y = 0; y < pHEIGHT; y++) {
