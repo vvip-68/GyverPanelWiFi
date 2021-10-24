@@ -85,6 +85,7 @@ void doEffectWithOverlay(uint8_t aMode) {
       textStartTime = millis();            // Запомнить время начала отображения бегущей строки
 
       #if (USE_E131 == 1)
+        commandSetTextSpeed(textScrollSpeed);
         commandSetImmediateText(syncText); // Присваивается в prepareNextText - currentText из которого НЕ удалены макросы
       #endif
 
@@ -718,12 +719,11 @@ void setTimersForMode(uint8_t aMode) {
       effectTimer.setInterval(250);
   }
 
-  #if (USE_E131 == 1)
-  if (!e131_wait_command)
-  #endif
-  set_clockScrollSpeed(getClockScrollSpeed());
-  if (clockScrollSpeed < D_CLOCK_SPEED_MIN) set_clockScrollSpeed(D_CLOCK_SPEED_MIN); // Если clockScrollSpeed == 0 - бегущая строка начинает дергаться.
-  if (clockScrollSpeed > D_CLOCK_SPEED_MAX) set_clockScrollSpeed(D_CLOCK_SPEED_MAX);
+  if (!e131_wait_command) {
+    set_clockScrollSpeed(getClockScrollSpeed());
+    if (clockScrollSpeed < D_CLOCK_SPEED_MIN) set_clockScrollSpeed(D_CLOCK_SPEED_MIN); // Если clockScrollSpeed == 0 - бегущая строка начинает дергаться.
+    if (clockScrollSpeed > D_CLOCK_SPEED_MAX) set_clockScrollSpeed(D_CLOCK_SPEED_MAX);
+  }
   if (clockScrollSpeed >= 240) {
     clockTimer.setInterval(4294967295);
     checkClockOrigin();
@@ -731,12 +731,11 @@ void setTimersForMode(uint8_t aMode) {
     clockTimer.setInterval(clockScrollSpeed);
   }
 
-  #if (USE_E131 == 1)
-  if (!e131_wait_command)
-  #endif
-  set_textScrollSpeed(getTextScrollSpeed());
-  if (textScrollSpeed < D_TEXT_SPEED_MIN) set_textScrollSpeed(D_TEXT_SPEED_MIN); // Если textScrollSpeed == 0 - бегущая строка начинает дергаться.
-  if (textScrollSpeed > D_TEXT_SPEED_MAX) set_textScrollSpeed(D_TEXT_SPEED_MAX);
+  if (!e131_wait_command) {
+    set_textScrollSpeed(getTextScrollSpeed());
+    if (textScrollSpeed < D_TEXT_SPEED_MIN) set_textScrollSpeed(D_TEXT_SPEED_MIN); // Если textScrollSpeed == 0 - бегущая строка начинает дергаться.
+    if (textScrollSpeed > D_TEXT_SPEED_MAX) set_textScrollSpeed(D_TEXT_SPEED_MAX);
+  }
   textTimer.setInterval(textScrollSpeed);
 }
 

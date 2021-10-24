@@ -55,8 +55,6 @@ void InitializeE131() {
     flag_1 = false;
     flag_2 = false;
     e131_wait_command = syncMode == COMMAND;
-    
-    DEBUGLN();
   }
 } 
 
@@ -371,7 +369,10 @@ void processCommandPacket(e131_packet_t *packet) {
 
     // Остановить бегущую строку, если она отображается
     case CMD_STOPTEXT:
-      mandatoryStopText = true;
+      // Если ширина матрицы на мастере отличается от ширины устройства -
+      // текст принудительно останавливать не нужно - на мастере он уже может пробежать,
+      // а на более широкой матрице - все еще отображаться      
+      mandatoryStopText = masterWidth > 0 && pWIDTH <= masterWidth;
       //DEBUGLN("GOT CMD_STOPTEXT");
       break;
 
@@ -429,14 +430,19 @@ void processCommandPacket(e131_packet_t *packet) {
     case CMD_TEXTSPEED:
       // Скорость прокрутки текста
       textScrollSpeed = packet->property_values[4];
-      setTimersForMode(thisMode);
+      textTimer.setInterval(textScrollSpeed);
       //DEBUGLN("GOT CMD_TEXTSPEED");
       break;      
 
     case CMD_CLOCKSPEED:
       // Скорость прокрутки текста
       clockScrollSpeed = packet->property_values[4];
-      setTimersForMode(thisMode);
+      if (clockScrollSpeed >= 240) {
+        clockTimer.setInterval(4294967295);
+        checkClockOrigin();
+      } else {
+        clockTimer.setInterval(clockScrollSpeed);
+      }
       //DEBUGLN("GOT CMD_CLOCKSPEED");
       break;      
   }
@@ -462,6 +468,7 @@ void commandTurnOnOff(bool value) {
   if (!packet) return;
   packet->property_values[4] = value ? 1 :0;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);  
   //DEBUGLN("SEND CMD_TURNONOFF");
 }
@@ -472,6 +479,7 @@ void commandSetBrightness(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_BRIGHTNESS");
 }
@@ -482,6 +490,7 @@ void commandSetSpecialBrightness(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_SPCBRIGHTNESS");
 }
@@ -492,6 +501,7 @@ void commandSetImmediateText(String str) {
   if (!packet) return;
   str.getBytes(&packet->property_values[4], str.length() + 1);  
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_RUNTEXT");
 }
@@ -501,6 +511,7 @@ void commandStopText() {
   e131_packet_t *packet = makeCommandPacket(CMD_STOPTEXT);
   if (!packet) return;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);      
   //DEBUGLN("SEND CMD_STOPTEXT");
 }
@@ -516,6 +527,7 @@ void commandSetCurrentTime(uint8_t hh, uint8_t mm, uint8_t ss, uint8_t dd, uint8
   packet->property_values[8] = nn;
   packet->property_values[9] = yy % 100;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_SPCBRIGHTNESS");
 }
@@ -530,6 +542,7 @@ void commandSetMode(int8_t value) {
   packet->property_values[7] = effectScaleParam[value];
   packet->property_values[8] = effectScaleParam2[value];
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_EFFECT");
 }
@@ -540,6 +553,7 @@ void commandSetSpecialMode(int8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_SPCEFFECT");
 }
@@ -550,6 +564,7 @@ void commandSetEffectSpeed(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_SPEED");
 }
@@ -560,6 +575,7 @@ void commandSetEffectContrast(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_CONTRAST");
 }
@@ -570,6 +586,7 @@ void commandSetEffectParam(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_PARAM1");
 }
@@ -580,6 +597,7 @@ void commandSetEffectParam2(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_PARAM2");
 }
@@ -593,6 +611,7 @@ void commandSetGlobalColor(uint32_t col) {
   packet->property_values[5] = color.g;
   packet->property_values[6] = color.b;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_COLOR");
 }
@@ -603,9 +622,10 @@ void commandSetDimension(int8_t w, int8_t h) {
   if (!packet) return;
   packet->property_values[4] = pWIDTH;
   packet->property_values[5] = pHEIGHT;
-    e131->sendPacket(packet, 1, 512);
-    free(packet);    
-  //DEBUGLN("SEND CMD_DIMENSION");
+  e131->sendPacket(packet, 1, 512);
+  delay(5);
+  free(packet);    
+  //DEBUGLN("SEND CMD_DIMENSION");  
 }
 
 void commandSetTextSpeed(uint8_t value) {
@@ -614,8 +634,9 @@ void commandSetTextSpeed(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);      
-  //DEBUGLN("SEND CMD_TEXTSPEED");
+  //DEBUGLN("SEND CMD_TEXTSPEED");  
 }
 
 void commandSetClockSpeed(uint8_t value) {
@@ -624,6 +645,7 @@ void commandSetClockSpeed(uint8_t value) {
   if (!packet) return;
   packet->property_values[4] = value;
   e131->sendPacket(packet, 1, 512);
+  delay(5);
   free(packet);      
   //DEBUGLN("SEND CMD_CLOCKSPEED");
 }

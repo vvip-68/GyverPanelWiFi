@@ -48,9 +48,9 @@ void process() {
         }
       } else {
         if (syncMode == COMMAND)
-          DEBUGLN(F("Ожидание поступления потока команд E1.31..."));        
+          DEBUGLN(F("Ожидание поступления потока команд E1.31...\n"));        
         else
-          DEBUGLN(F("Ожидание поступления потока данных E1.31..."));        
+          DEBUGLN(F("Ожидание поступления потока данных E1.31...\n"));        
       }
 
       prevWorkMode = workMode;
@@ -322,6 +322,11 @@ void process() {
     if (butt.isTriple()) clicks = 3;
     // Четверной и более клик
     if (butt.hasClicks()) clicks = butt.getClicks();
+
+    // Максимальное количество нажатий - 5-кратный клик
+    // По неизвестными причинам (возможно ошибка в библиотеке GyverButtons) 
+    // getClicks() возвращает 179, что абсолютная ерунда
+    if (clicks > 4) clicks = 0;
     
     if (butt.isPress()) {
       // Состояние - кнопку нажали  
@@ -4425,8 +4430,8 @@ void setImmediateText(String str) {
   fullTextFlag = true;
   textLastTime = 0;
   #if (USE_E131 == 1)
-    commandSetImmediateText(str);
     commandSetTextSpeed(textScrollSpeed);
+    commandSetImmediateText(str);
   #endif  
 }
 
