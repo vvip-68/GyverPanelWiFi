@@ -364,7 +364,6 @@ void processCommandPacket(e131_packet_t *packet) {
       // property_values[4] - char* null terminated string 
       char* buf = (char*)(&packet->property_values[4]);
       String text = String(buf);
-      Serial.println(text);
       setImmediateText(text);
       //DEBUGLN("GOT CMD_RUNTEXT");
       break;

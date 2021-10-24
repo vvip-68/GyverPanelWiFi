@@ -104,7 +104,9 @@ void process() {
       // на следующем цикле tmpSaveMode != thisMode - имя будет определено снова
       setRandomMode2(); 
     } else {
+      #if (USE_E131 == 1)
       if (!(e131_streaming && workMode == SLAVE)) {
+      #endif  
         #if (USE_MQTT == 0)
         DEBUGLN(String(F("Режим: ")) + effect_name);
         #else
@@ -112,7 +114,9 @@ void process() {
           DEBUGLN(String(F("Режим: ")) + effect_name);
         }      
         #endif
+      #if (USE_E131 == 1)
       }
+      #endif
       tmpSaveMode = thisMode;    
     }               
   }
