@@ -13,9 +13,9 @@
 #define BLOCK_COLOR_2 CRGB::Amethyst
 #define BLOCK_COLOR_3 CRGB::Blue
 
-byte shelfMAX;
-int posX_ark, posY_ark, lastSpeed, arkScore;
-int8_t velX_ark, velY_ark, shelf_x;
+uint8_t shelfMAX;
+int16_t posX_ark, posY_ark, lastSpeed, arkScore;
+int8_t  velX_ark, velY_ark, shelf_x;
 
 timerMinim popTimeout(500);
 timerMinim shelfTimer(150);
@@ -27,8 +27,8 @@ void newGameArkan() {
   posX_ark = pWIDTH / 2 * 10;
   posY_ark = 15;
   velX_ark = random(1, 4);
-  velY_ark = (long)sqrt(sq(VELOCITY) - sq(velX_ark));
-  for (byte i = shelf_x; i < shelf_x + SHELF_LENGTH; i++) {
+  velY_ark = (int32_t)sqrt(sq(VELOCITY) - sq(velX_ark));
+  for (uint8_t i = shelf_x; i < shelf_x + SHELF_LENGTH; i++) {
       drawPixelXY(i, 0, GLOBAL_COLOR_2);
   }
 }
@@ -71,7 +71,7 @@ void arkanoidRoutine() {
     int8_t posY_arkm = posY_ark / 10;
     if (abs(velY_ark) <= 2) {
       velX_ark = 3;
-      velY_ark = (long)sqrt(sq(VELOCITY) - sq(velX_ark));
+      velY_ark = (uint32_t)sqrt(sq(VELOCITY) - sq(velX_ark));
     }
 
     // отскок левый край
@@ -104,10 +104,10 @@ void arkanoidRoutine() {
           if (posX_arkm == shelf_x) {
             velX_ark -= 2;  // уменьшаем скорость по Х
             // расчёт скорости по У с учётом общего заданного вектора скорости
-            velY_ark = (long)sqrt(sq(VELOCITY) - sq(velX_ark));
+            velY_ark = (uint32_t)sqrt(sq(VELOCITY) - sq(velX_ark));
           } else if (posX_arkm == (shelf_x + SHELF_LENGTH - 1)) {
             velX_ark += 2;  // увеличиваем скорость по Х
-            velY_ark = (long)sqrt(sq(VELOCITY) - sq(velX_ark));
+            velY_ark = (uint32_t)sqrt(sq(VELOCITY) - sq(velX_ark));
           } else {
             velY_ark = -velY_ark;
           }
@@ -122,8 +122,8 @@ void arkanoidRoutine() {
       posY_ark = (pHEIGHT - 1) * 10;
       velY_ark = -velY_ark;
     }
-    byte ballX = floor(posX_ark / 10);
-    byte ballY = floor(posY_ark / 10);
+    uint8_t ballX = floor(posX_ark / 10);
+    uint8_t ballY = floor(posY_ark / 10);
 
     if (ballY > 2) {
       if (ballX < pWIDTH - 1 && velX_ark > 0 && getPixColorXY(ballX + 1, ballY) != 0) {
@@ -147,16 +147,16 @@ void arkanoidRoutine() {
     if (checkBlocks()) gameOverArkan();    
 
     drawPixelXY(ballX, ballY, GLOBAL_COLOR_1);
-    for (byte i = shelf_x; i < shelf_x + SHELF_LENGTH; i++) {
+    for (uint8_t i = shelf_x; i < shelf_x + SHELF_LENGTH; i++) {
       drawPixelXY(i, 0, GLOBAL_COLOR_2);
     }
   }
 }
 
-boolean checkBlocks() {   
+bool checkBlocks() {   
   // возвр ДА если блоков нет
-  for (byte j = pHEIGHT - 1; j > pHEIGHT - 1 - BLOCKS_H; j--) {
-    for (byte i = 0; i < pWIDTH; i++) {
+  for (uint8_t j = pHEIGHT - 1; j > pHEIGHT - 1 - BLOCKS_H; j--) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
       if (getPixColorXY(i, j) != 0) {
         return false;
       }
@@ -165,7 +165,7 @@ boolean checkBlocks() {
   return true;
 }
 
-void redrawBlock(byte blockX, byte blockY) {
+void redrawBlock(uint8_t blockX, uint8_t blockY) {
   arkScore++;  
   if (getPixColorXY(blockX, blockY) == BLOCK_COLOR_2) 
     drawPixelXY(blockX, blockY, BLOCK_COLOR_1);
@@ -176,16 +176,16 @@ void redrawBlock(byte blockX, byte blockY) {
 }
 
 void generateBlocks() {
-  for (byte j = pHEIGHT - 1; j > pHEIGHT - 1 - BLOCKS_H; j--) {
-    for (byte i = 0; i < pWIDTH; i++) {
+  for (uint8_t j = pHEIGHT - 1; j > pHEIGHT - 1 - BLOCKS_H; j--) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
       drawPixelXY(i, j, BLOCK_COLOR_1);
     }
   }
-  for (byte k = 0; k < ARK_LINE_NUM; k++) {
-    byte newPosX = random(0, pWIDTH - 1 - ARK_LINE_MAX);
-    byte newPosY = random(pHEIGHT - BLOCKS_H, pHEIGHT);
-    byte newColor = random(0, 3);
-    for (byte i = newPosX; i < newPosX + ARK_LINE_MAX; i++) {
+  for (uint8_t k = 0; k < ARK_LINE_NUM; k++) {
+    uint8_t newPosX = random(0, pWIDTH - 1 - ARK_LINE_MAX);
+    uint8_t newPosY = random(pHEIGHT - BLOCKS_H, pHEIGHT);
+    uint8_t newColor = random(0, 3);
+    for (uint8_t i = newPosX; i < newPosX + ARK_LINE_MAX; i++) {
       switch (newColor) {
         case 0: drawPixelXY(i, newPosY, 0);
           break;

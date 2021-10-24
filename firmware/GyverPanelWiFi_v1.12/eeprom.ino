@@ -143,23 +143,23 @@ void loadSettings() {
   
   if (isInitialized) {    
 
-    sWIDTH = getMatrixSegmentWidth();
-    sHEIGHT = getMatrixSegmentHeight();
-    sMATRIX_TYPE = getMatrixSegmentType();
+    sWIDTH            = getMatrixSegmentWidth();
+    sHEIGHT           = getMatrixSegmentHeight();
+    sMATRIX_TYPE      = getMatrixSegmentType();
     sCONNECTION_ANGLE = getMatrixSegmentAngle();
-    sSTRIP_DIRECTION = getMatrixSegmentDirection();
+    sSTRIP_DIRECTION  = getMatrixSegmentDirection();
 
-    mWIDTH = getMetaMatrixWidth();
-    mHEIGHT = getMetaMatrixHeight();
-    mTYPE = getMetaMatrixType();
-    mANGLE = getMetaMatrixAngle();
-    mDIRECTION = getMetaMatrixDirection();
+    mWIDTH            = getMetaMatrixWidth();
+    mHEIGHT           = getMetaMatrixHeight();
+    mTYPE             = getMetaMatrixType();
+    mANGLE            = getMetaMatrixAngle();
+    mDIRECTION        = getMetaMatrixDirection();
 
-    pWIDTH = sWIDTH * mWIDTH;
-    pHEIGHT = sHEIGHT * mHEIGHT;
-    NUM_LEDS = pWIDTH * pHEIGHT;
-    maxDim   = max(pWIDTH, pHEIGHT);
-    minDim   = min(pWIDTH, pHEIGHT);
+    pWIDTH            = sWIDTH * mWIDTH;
+    pHEIGHT           = sHEIGHT * mHEIGHT;
+    NUM_LEDS          = pWIDTH * pHEIGHT;
+    maxDim            = max(pWIDTH, pHEIGHT);
+    minDim            = min(pWIDTH, pHEIGHT);
 
     #if (BIG_FONT == 0)
       // Шрифт размером 5x8
@@ -174,66 +174,67 @@ void loadSettings() {
     
     globalBrightness = getMaxBrightness();
 
-    autoplayTime = getAutoplayTime();
-    idleTime = getIdleTime();
+    autoplayTime        = getAutoplayTime();
+    idleTime            = getIdleTime();
 
-    useNtp = getUseNtp();
-    timeZoneOffset = getTimeZone();
+    useNtp              = getUseNtp();
+    timeZoneOffset      = getTimeZone();
     clockOverlayEnabled = getClockOverlayEnabled();
-    textOverlayEnabled = getTextOverlayEnabled();
+    textOverlayEnabled  = getTextOverlayEnabled();
 
-    SYNC_TIME_PERIOD = getNtpSyncTime();
-    manualMode = getAutoplay();
-    CLOCK_ORIENT = getClockOrientation();
-    COLOR_MODE = getClockColor();
-    CLOCK_SIZE = getClockSize();
-    COLOR_TEXT_MODE = getTextColor();
-    CURRENT_LIMIT = getPowerLimit();
-    TEXT_INTERVAL = getTextInterval();
+    SYNC_TIME_PERIOD    = getNtpSyncTime();
+    manualMode          = getAutoplay();
+    CLOCK_ORIENT        = getClockOrientation();
+    COLOR_MODE          = getClockColor();
+    CLOCK_SIZE          = getClockSize();
+    COLOR_TEXT_MODE     = getTextColor();
+    CURRENT_LIMIT       = getPowerLimit();
+    TEXT_INTERVAL       = getTextInterval();
     
-    useRandomSequence = getRandomMode();
-    nightClockColor = getNightClockColor();
+    useRandomSequence   = getRandomMode();
+    nightClockColor     = getNightClockColor();
     nightClockBrightness = getNightClockBrightness();
-    showDateInClock = getShowDateInClock();  
-    showDateDuration = getShowDateDuration();
-    showDateInterval = getShowDateInterval();
+    showDateInClock     = getShowDateInClock();  
+    showDateDuration    = getShowDateDuration();
+    showDateInterval    = getShowDateInterval();
 
-    alarmWeekDay = getAlarmWeekDay();
-    alarmEffect = getAlarmEffect();
-    alarmDuration = getAlarmDuration();
-    dawnDuration = getDawnDuration();
+    alarmWeekDay        = getAlarmWeekDay();
+    alarmEffect         = getAlarmEffect();
+    alarmDuration       = getAlarmDuration();
+    dawnDuration        = getDawnDuration();
 
-    needTurnOffClock = getTurnOffClockOnLampOff();
+    needTurnOffClock    = getTurnOffClockOnLampOff();
 
     // Загрузить недельные будильники / часы, минуты /
-    for (byte i=0; i<7; i++) {
+    for (uint8_t i=0; i<7; i++) {
       alarmHour[i] = getAlarmHour(i+1);
       alarmMinute[i] = getAlarmMinute(i+1);
     }
  
     // Загрузить параметры эффектов #1, #2
-    for (byte i=0; i<MAX_EFFECT; i++) {
-      effectScaleParam[i] = getScaleForEffect(i); 
+    for (uint8_t i=0; i<MAX_EFFECT; i++) {
+      effectScaleParam[i]  = getScaleForEffect(i); 
       effectScaleParam2[i] = getScaleForEffect2(i);
-      effectContrast[i] = getEffectContrast(i);
+      effectContrast[i]    = getEffectContrast(i);
+      effectSpeed[i]       = getEffectSpeed(i);
     }
 
     #if (USE_MP3 == 1)
-      useAlarmSound = getUseAlarmSound();
-      alarmSound = getAlarmSound();
-      dawnSound = getDawnSound();
-      maxAlarmVolume = getMaxAlarmVolume();
+      useAlarmSound     = getUseAlarmSound();
+      alarmSound        = getAlarmSound();
+      dawnSound         = getDawnSound();
+      maxAlarmVolume    = getMaxAlarmVolume();
     #endif
 
     #if (USE_E131 == 1)
-      workMode = getSyncWorkMode();
-      syncMode = getSyncDataMode();
-      syncGroup = getSyncGroup();;    
+      workMode          = getSyncWorkMode();
+      syncMode          = getSyncDataMode();
+      syncGroup         = getSyncGroup();;    
     #endif
     
-    globalColor = getGlobalColor();           // цвет лампы, задаваемый пользователем
-    globalClockColor = getGlobalClockColor(); // цвет часов в режиме MC_COLOR, режим цвета "Монохром"
-    globalTextColor = getGlobalTextColor();   // цвет часов бегущей строки в режиме цвета "Монохром"
+    globalColor         = getGlobalColor();         // цвет лампы, задаваемый пользователем
+    globalClockColor    = getGlobalClockColor();    // цвет часов в режиме MC_COLOR, режим цвета "Монохром"
+    globalTextColor     = getGlobalTextColor();     // цвет часов бегущей строки в режиме цвета "Монохром"
 
     useSoftAP = getUseSoftAP();
     getSoftAPName().toCharArray(apName, 10);        //  54-63   - имя точки доступа    ( 9 байт макс) + 1 байт '\0'
@@ -276,13 +277,13 @@ void loadSettings() {
     dusk_effect_id = getAM6effect();
 
   #if (USE_WEATHER == 1)     
-    useWeather = getUseWeather();
-    regionID = getWeatherRegion();
-    regionID2 = getWeatherRegion2();
+    useWeather          = getUseWeather();
+    regionID            = getWeatherRegion();
+    regionID2           = getWeatherRegion2();
     SYNC_WEATHER_PERIOD = getWeatherInterval();
     useTemperatureColor = getUseTemperatureColor();
     useTemperatureColorNight = getUseTemperatureColorNight();
-    showWeatherInClock = getShowWeatherInClock();
+    showWeatherInClock  = getShowWeatherInClock();
   #endif  
 
     loadTexts();
@@ -296,15 +297,16 @@ void loadSettings() {
     // Здесь выполняются только инициализация массивов и некоторых специальных параметров
     clearEEPROM();
 
-    for (byte i=0; i<MAX_EFFECT; i++) {
+    for (uint8_t i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i]  = 50;  // среднее значение для параметра. Конкретное значение зависит от эффекта
       effectScaleParam2[i] = 0;   // второй параметр эффекта по умолчанию равен 0. Конкретное значение зависит от эффекта
       effectContrast[i]    = 192; // контраст эффекта
+      effectSpeed[i]       = 192; // скорость эффекта
     }
 
     // Значения текстовых строк по умолчанию - 
     textLines[0] = "##";
-    for (byte i = 1; i<36; i++) textLines[i] = "";
+    for (uint8_t i = 1; i<36; i++) textLines[i] = "";
 
     // После первой инициализации значений - сохранить их принудительно
     saveDefaults();
@@ -319,7 +321,7 @@ void loadSettings() {
 }
 
 void clearEEPROM() {
-  for (int addr = 1; addr < EEPROM_MAX; addr++) {
+  for (uint16_t addr = 1; addr < EEPROM_MAX; addr++) {
     EEPROM.write(addr, 0);
   }
 }
@@ -368,13 +370,13 @@ void saveDefaults() {
     putAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, dawnSound);
   #endif
 
-  for (byte i=0; i<7; i++) {
+  for (uint8_t i=0; i<7; i++) {
     putAlarmTime(i+1, alarmHour[i], alarmMinute[i]);
   }
 
   // Настройки по умолчанию для эффектов
-  for (int i = 0; i < MAX_EFFECT; i++) {
-    putEffectParams(i, effectSpeed, true, true, true, effectScaleParam[i], effectScaleParam2[i], effectContrast[i]);
+  for (uint8_t i = 0; i < MAX_EFFECT; i++) {
+    putEffectParams(i, effectSpeed[i], true, true, true, effectScaleParam[i], effectScaleParam2[i], effectContrast[i]);
   }
 
   // Специальные настройки отдельных эффектов
@@ -400,7 +402,7 @@ void saveDefaults() {
   putEffectClockOverlayUsage(MC_IMAGE, false);
   #endif
 
-  putClockScrollSpeed(150);
+  putClockScrollSpeed(250);
   putTextScrollSpeed(186);
   
   putScaleForEffect(MC_FIRE, 0);            // Огонь красного цвета
@@ -408,7 +410,7 @@ void saveDefaults() {
   putScaleForEffect2(MC_SWIRL, 1);          // Использовать сегменты для эффекта Водоворот на широких матрицах
   putScaleForEffect2(MC_RAINBOW, 0);        // Использовать рандомный выбор эффекта радуга 0 - random; 1 - диагональная; 2 - горизонтальная; 3 - вертикальная; 4 - вращающаяся  
 
-  byte ball_size = minDim / 4;
+  uint8_t ball_size = minDim / 4;
   if (ball_size > 5) ball_size = 5;
   putScaleForEffect(MC_BALL, ball_size);    // Размер кубика по умолчанию
   
@@ -539,261 +541,247 @@ void saveSettings() {
   eepromModified = false;
 }
 
-void putMatrixSegmentWidth(byte width) {
+void putMatrixSegmentWidth(uint8_t width) {
   if (width == 0 && width > 127) width = 16;
   if (width != getMatrixSegmentWidth()) {
     EEPROMwrite(80, width);
   }  
 }
-byte getMatrixSegmentWidth() {
-  byte value = EEPROMread(80);
+uint8_t getMatrixSegmentWidth() {
+  uint8_t value = EEPROMread(80);
   if (value == 0 || value > 127) value = 16;
   return value;
 }
 
-void putMatrixSegmentHeight(byte height) {
+void putMatrixSegmentHeight(uint8_t height) {
   if (height == 0 && height > 127) height = 16;
   if (height > 0 && height < 128 && height != getMatrixSegmentHeight()) {
     EEPROMwrite(81, height);
   }  
 }
-byte getMatrixSegmentHeight() {
-  byte value = EEPROMread(81);
+uint8_t getMatrixSegmentHeight() {
+  uint8_t value = EEPROMread(81);
   if (value == 0 || value > 127) value = 16;
   return value;
 }
 
-void putMatrixSegmentType(byte type) {
+void putMatrixSegmentType(uint8_t type) {
   if (type > 1) type = 0;
   if (type != getMatrixSegmentType()) {
     EEPROMwrite(82, type);
   }  
 }
-byte getMatrixSegmentType() {
-  byte value = EEPROMread(82);
+uint8_t getMatrixSegmentType() {
+  uint8_t value = EEPROMread(82);
   if (value > 1) value = 0;
   return value;  
 }
 
-void putMatrixSegmentAngle(byte angle) {
+void putMatrixSegmentAngle(uint8_t angle) {
   if (angle > 3) angle = 0;
   if (angle != getMatrixSegmentAngle()) {
     EEPROMwrite(83, angle);
   }  
 }
-byte getMatrixSegmentAngle() {
-  byte value = EEPROMread(83);
+uint8_t getMatrixSegmentAngle() {
+  uint8_t value = EEPROMread(83);
   if (value > 3) value = 0;
   return value;  
 }
 
-void putMatrixSegmentDirection(byte dir) {
+void putMatrixSegmentDirection(uint8_t dir) {
   if (dir > 3) dir = 0;
   if (dir != getMatrixSegmentDirection()) {
     EEPROMwrite(84, dir);
   }  
 }
-byte getMatrixSegmentDirection() {
-  byte value = EEPROMread(84);
+uint8_t getMatrixSegmentDirection() {
+  uint8_t value = EEPROMread(84);
   if (value > 3) value = 0;
   return value;  
 }
 
-void putMetaMatrixWidth(byte width) {
+void putMetaMatrixWidth(uint8_t width) {
   if (width == 0 && width > 15) width = 1;
   if (width != getMetaMatrixWidth()) {
     EEPROMwrite(85, width);
   }  
 }
-byte getMetaMatrixWidth() {
-  byte value = EEPROMread(85);
+uint8_t getMetaMatrixWidth() {
+  uint8_t value = EEPROMread(85);
   if (value == 0 || value > 15) value = 1;
   return value;
 }
 
-void putMetaMatrixHeight(byte height) {
+void putMetaMatrixHeight(uint8_t height) {
   if (height == 0 && height > 15) height = 1;
   if (height != getMetaMatrixHeight()) {
     EEPROMwrite(86, height);
   }  
 }
-byte getMetaMatrixHeight() {
-  byte value = EEPROMread(86);
+uint8_t getMetaMatrixHeight() {
+  uint8_t value = EEPROMread(86);
   if (value == 0 || value > 15) value = 1;
   return value;
 }
 
-void putMetaMatrixType(byte type) {
+void putMetaMatrixType(uint8_t type) {
   if (type > 1) type = 0;
   if (type != getMetaMatrixType()) {
     EEPROMwrite(87, type);
   }  
 }
-byte getMetaMatrixType() {
-  byte value = EEPROMread(87);
+uint8_t getMetaMatrixType() {
+  uint8_t value = EEPROMread(87);
   if (value > 1) value = 0;
   return value;
 }
 
-void putMetaMatrixAngle(byte angle) {
+void putMetaMatrixAngle(uint8_t angle) {
   if (angle > 3) angle = 0;
   if (angle != getMetaMatrixAngle()) {
     EEPROMwrite(88, angle);
   }  
 }
-byte getMetaMatrixAngle() {
-  byte value = EEPROMread(88);
+uint8_t getMetaMatrixAngle() {
+  uint8_t value = EEPROMread(88);
   if (value > 3) value = 0;
   return value;
 }
 
-void putMetaMatrixDirection(byte dir) {
+void putMetaMatrixDirection(uint8_t dir) {
   if (dir > 3) dir = 0;
   if (dir != getMetaMatrixDirection()) {
     EEPROMwrite(89, dir);
   }  
 }
-byte getMetaMatrixDirection() {
-  byte value = EEPROMread(89);
+uint8_t getMetaMatrixDirection() {
+  uint8_t value = EEPROMread(89);
   if (value > 3) value = 0;
   return value;
 }
 
-void putEffectParams(byte effect, int speed, boolean use, boolean use_text_overlay, boolean use_clock_overlay, byte value1, byte value2, byte contrast) {
-  const int addr = EFFECT_EEPROM;  
-  byte value = 0;
+void putEffectParams(uint8_t effect, uint8_t spd, bool use, bool use_text_overlay, bool use_clock_overlay, uint8_t value1, uint8_t value2, uint8_t contrast) {
+  uint8_t value = 0;
 
   if (use)               value |= 0x01;
   if (use_text_overlay)  value |= 0x02;
   if (use_clock_overlay) value |= 0x04;
   
-  EEPROMwrite(addr + effect*5, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта  
-  EEPROMwrite(addr + effect*5 + 1, value);                                                                            // b0 - Вкл/Выкл эффект в демо-режиме; b1 - Вкл/выкл оверлей текста; ; b1 - Вкл/выкл оверлей часов   
-  EEPROMwrite(addr + effect*5 + 2, value1);                                                                           // Параметр эффекта #1 
-  EEPROMwrite(addr + effect*5 + 3, value2);                                                                           // Параметр эффекта #2 
-  EEPROMwrite(addr + effect*5 + 4, contrast);                                                                         // Контраст эффекта 
+  EEPROMwrite(EFFECT_EEPROM + effect*5, constrain(map(spd, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта  
+  EEPROMwrite(EFFECT_EEPROM + effect*5 + 1, value);                                                                            // b0 - Вкл/Выкл эффект в демо-режиме; b1 - Вкл/выкл оверлей текста; ; b1 - Вкл/выкл оверлей часов   
+  EEPROMwrite(EFFECT_EEPROM + effect*5 + 2, value1);                                                                           // Параметр эффекта #1 
+  EEPROMwrite(EFFECT_EEPROM + effect*5 + 3, value2);                                                                           // Параметр эффекта #2 
+  EEPROMwrite(EFFECT_EEPROM + effect*5 + 4, contrast);                                                                         // Контраст эффекта 
   effectScaleParam[effect] = value1;
   effectScaleParam2[effect] = value2;
   effectContrast[effect] = contrast;
+  effectSpeed[effect] = spd;
 }
 
-void putEffectSpeed(byte effect, int speed) {
-  if (speed != getEffectSpeed(effect)) {
-    const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*5, constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));        // Скорость эффекта    
-  }
-}
-
-byte getEffectSpeed(byte effect) {
-  const int addr = EFFECT_EEPROM;
-  return map8(EEPROMread(addr + effect*5),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
-}
-
-boolean getEffectUsage(byte effect) {
+bool getEffectUsage(uint8_t effect) {
   if (effect >= MAX_EFFECT) return false;
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 1);
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 1);
   return (value & 0x01) != 0;                                  // b0 - использовать эффект в демо-режиме
 }
 
-void putEffectUsage(byte effect, boolean use) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 1);
-  byte new_value = use ? (value | 0x01) : (value & ~0x01);
+void putEffectUsage(uint8_t effect, bool use) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 1);
+  uint8_t new_value = use ? (value | 0x01) : (value & ~0x01);
   if (value != new_value) {
-    const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*5 + 1, new_value);               // b0 - использовать эффект в демо-режиме
+    EEPROMwrite(EFFECT_EEPROM + effect*5 + 1, new_value);      // b0 - использовать эффект в демо-режиме
   }
 }
 
-boolean getEffectTextOverlayUsage(byte effect) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 1);
+bool getEffectTextOverlayUsage(uint8_t effect) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 1);
   return (value & 0x02) != 0;                                  // b1 - использовать в эффекте бегущую строку поверх эффекта
 }
 
-void putEffectTextOverlayUsage(byte effect, boolean use) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 1);
-  byte new_value = use ? (value | 0x02) : (value & ~0x02);
+void putEffectTextOverlayUsage(uint8_t effect, bool use) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 1);
+  uint8_t new_value = use ? (value | 0x02) : (value & ~0x02);
   if (value != new_value) {
-    const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*5 + 1, new_value);               // b1 - использовать в эффекте бегущую строку поверх эффекта
+    EEPROMwrite(EFFECT_EEPROM + effect*5 + 1, new_value);               // b1 - использовать в эффекте бегущую строку поверх эффекта
   }
 }
 
-boolean getEffectClockOverlayUsage(byte effect) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 1);
+bool getEffectClockOverlayUsage(uint8_t effect) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 1);
   return (value & 0x04) != 0;                                  // b2 - использовать в эффекте часы поверх эффекта
 }
 
-void putEffectClockOverlayUsage(byte effect, boolean use) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 1);
-  byte new_value = use ? (value | 0x04) : (value & ~0x04);
+void putEffectClockOverlayUsage(uint8_t effect, bool use) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 1);
+  uint8_t new_value = use ? (value | 0x04) : (value & ~0x04);
   if (value != new_value) {
-    const int addr = EFFECT_EEPROM;  
-    EEPROMwrite(addr + effect*5 + 1, new_value);               // b2 - использовать в эффекте часы поверх эффекта
+    EEPROMwrite(EFFECT_EEPROM + effect*5 + 1, new_value);               // b2 - использовать в эффекте часы поверх эффекта
   }
 }
 
-void putScaleForEffect(byte effect, byte value) {
+void putScaleForEffect(uint8_t effect, uint8_t value) {
   if (value != getScaleForEffect(effect)) {
-    const int addr = EFFECT_EEPROM;
-    EEPROMwrite(addr + effect*5 + 2, value);
+    EEPROMwrite(EFFECT_EEPROM + effect*5 + 2, value);
     effectScaleParam[effect] = value;
   }  
 }
 
-byte getScaleForEffect(byte effect) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 2);
+uint8_t getScaleForEffect(uint8_t effect) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 2);
   effectScaleParam[effect] = value;
   return value;
 }
 
-void putScaleForEffect2(byte effect, byte value) {
+void putScaleForEffect2(uint8_t effect, uint8_t value) {
   if (value != getScaleForEffect2(effect)) {
-    const int addr = EFFECT_EEPROM;
-    EEPROMwrite(addr + effect*5 + 3, value);
+    EEPROMwrite(EFFECT_EEPROM + effect*5 + 3, value);
     effectScaleParam2[effect] = value;
   }  
 }
 
-byte getScaleForEffect2(byte effect) {
-  const int addr = EFFECT_EEPROM;
-  byte value = EEPROMread(addr + effect*5 + 3);
+uint8_t getScaleForEffect2(uint8_t effect) {
+  uint8_t value = EEPROMread(EFFECT_EEPROM + effect*5 + 3);
   effectScaleParam2[effect] = value;
   return value;
 }
 
-byte getEffectContrast(byte effect) {
-  const int addr = EFFECT_EEPROM;
-  byte contrast = constrain(EEPROMread(addr + effect*5 + 4),10,255);
+uint8_t getEffectContrast(uint8_t effect) {
+  uint8_t contrast = constrain(EEPROMread(EFFECT_EEPROM + effect*5 + 4),10,255);
   effectContrast[effect] = contrast;
   return contrast;
 }
 
-void putEffectContrast(byte effect, byte contrast) {
+void putEffectContrast(uint8_t effect, uint8_t contrast) {
   if (contrast != getEffectContrast(effect)) {
-    const int addr = EFFECT_EEPROM;
-    EEPROMwrite(addr + effect*5 + 4, contrast);
     effectContrast[effect] = constrain(contrast,10,255);
+    EEPROMwrite(EFFECT_EEPROM + effect*5 + 4, effectContrast[effect]);
   }  
 }
 
-byte getMaxBrightness() {
+void putEffectSpeed(uint8_t effect, uint8_t speed) {
+  if (speed != getEffectSpeed(effect)) {
+    effectSpeed[effect] = constrain(map(speed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255);
+    EEPROMwrite(EFFECT_EEPROM + effect*5, effectSpeed[effect]);        // Скорость эффекта    
+  }
+}
+
+uint8_t getEffectSpeed(uint8_t effect) {
+  uint8_t speed = map8(EEPROMread(EFFECT_EEPROM + effect*5),D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
+  effectSpeed[effect] = speed;
+  return speed; 
+}
+
+uint8_t getMaxBrightness() {
   return EEPROMread(1);
 }
 
-void putMaxBrightness(byte brightness) {
+void putMaxBrightness(uint8_t brightness) {
   if (brightness != getMaxBrightness()) {
     EEPROMwrite(1, brightness);
   }
 }
 
-void putAutoplay(boolean value) {
+void putAutoplay(bool value) {
   if (value != getAutoplay()) {
     EEPROMwrite(2, value ? 1 : 0);
   }  
@@ -803,21 +791,21 @@ bool getAutoplay() {
   return EEPROMread(2) != 0;
 }
 
-void putAutoplayTime(long value) {
+void putAutoplayTime(uint32_t value) {
   if (value != getAutoplayTime()) {
-    EEPROMwrite(3, constrain(value / 1000L, 0, 255));
+    EEPROMwrite(3, constrain(value / 1000UL, 0, 255));
   }
 }
 
-long getAutoplayTime() {
-  long time = EEPROMread(3) * 1000L;  
-  if (time == 0) time = ((long)AUTOPLAY_PERIOD * 1000L);
+uint32_t getAutoplayTime() {
+  uint32_t time = EEPROMread(3) * 1000UL;  
+  if (time == 0) time = ((uint32_t)AUTOPLAY_PERIOD * 1000UL);
   return time;
 }
 
-void putIdleTime(long value) {
+void putIdleTime(uint32_t value) {
   if (value != getIdleTime()) {
-    EEPROMwrite(4, constrain(value / 60L / 1000L, 0, 255));
+    EEPROMwrite(4, constrain(value / 60 / 1000UL, 0, 255));
   }
 }
 
@@ -831,32 +819,32 @@ void putUpTimeSendInterval(uint16_t value) {
   }
 }
 
-long getIdleTime() {
-  long time = EEPROMread(4) * 60 * 1000L;  
+uint32_t getIdleTime() {
+  uint32_t time = EEPROMread(4) * 60 * 1000UL;  
   return time;
 }
 
-boolean getClockOverlayEnabled() {
+bool getClockOverlayEnabled() {
   return EEPROMread(30) != 0;
 }
 
-void putClockOverlayEnabled(boolean enabled) {
+void putClockOverlayEnabled(bool enabled) {
   if (enabled != getClockOverlayEnabled()) {
     EEPROMwrite(30, enabled ? 1 : 0);
   }
 }
 
-boolean getTextOverlayEnabled() {
+bool getTextOverlayEnabled() {
   return (EEPROMread(173) != 0);
 }
 
-void putTextOverlayEnabled(boolean enabled) {
+void putTextOverlayEnabled(bool enabled) {
   if (enabled != getTextOverlayEnabled()) {
     EEPROMwrite(173, enabled ? 1 : 0);
   }
 }
 
-void putUseNtp(boolean value) {
+void putUseNtp(bool value) {
   if (value != getUseNtp()) {
     EEPROMwrite(5, value);
   }
@@ -880,7 +868,7 @@ uint16_t getNtpSyncTime() {
 
 void putTimeZone(int8_t value) {
   if (value != getTimeZone()) {
-    EEPROMwrite(8, (byte)value);
+    EEPROMwrite(8, (uint8_t)value);
   }
 }
 
@@ -898,14 +886,14 @@ void putTurnOffClockOnLampOff(bool flag) {
   }  
 }
 
-byte getClockOrientation() {  
-  byte val = EEPROMread(15) != 0 ? 1 : 0;
+uint8_t getClockOrientation() {  
+  uint8_t val = EEPROMread(15) != 0 ? 1 : 0;
   if (val == 0 && !allowHorizontal) val = 1;
   if (val == 1 && !allowVertical) val = 0;
   return val;
 }
 
-void putClockOrientation(byte orientation) {
+void putClockOrientation(uint8_t orientation) {
   if (orientation != getClockOrientation()) {
     EEPROMwrite(15, orientation != 0 ? 1 : 0);
   }
@@ -916,7 +904,7 @@ bool getShowWeatherInClock() {
   return val;
 }
 
-void putShowWeatherInClock(boolean use) {  
+void putShowWeatherInClock(bool use) {  
   if (use != getShowWeatherInClock()) {
     EEPROMwrite(32, use ? 1 : 0);
   }
@@ -927,43 +915,43 @@ bool getShowDateInClock() {
   return val;
 }
 
-void putShowDateInClock(boolean use) {  
+void putShowDateInClock(bool use) {  
   if (use != getShowDateInClock()) {
     EEPROMwrite(16, use ? 1 : 0);
   }
 }
 
-byte getShowDateDuration() {
+uint8_t getShowDateDuration() {
   return EEPROMread(17);
 }
 
-void putShowDateDuration(byte Duration) {
+void putShowDateDuration(uint8_t Duration) {
   if (Duration != getShowDateDuration()) {
     EEPROMwrite(17, Duration);
   }
 }
 
-byte getShowDateInterval() {
+uint8_t getShowDateInterval() {
   return EEPROMread(18);
 }
 
-void putShowDateInterval(byte Interval) {
+void putShowDateInterval(uint8_t Interval) {
   if (Interval != getShowDateInterval()) {
     EEPROMwrite(18, Interval);
   }
 }
 
-byte getClockSize() {
+uint8_t getClockSize() {
   return EEPROMread(19);
 }
 
-void putClockSize(byte c_size) {
+void putClockSize(uint8_t c_size) {
   if (c_size != getClockSize()) {
     EEPROMwrite(19, c_size);
   }
 }
 
-void putAlarmParams(byte alarmWeekDay, byte dawnDuration, byte alarmEffect, byte alarmDuration) {  
+void putAlarmParams(uint8_t alarmWeekDay, uint8_t dawnDuration, uint8_t alarmEffect, uint8_t alarmDuration) {  
   if (alarmWeekDay != getAlarmWeekDay()) {
     EEPROMwrite(20, alarmWeekDay);
   }
@@ -979,15 +967,15 @@ void putAlarmParams(byte alarmWeekDay, byte dawnDuration, byte alarmEffect, byte
   }
 }
 
-byte getAlarmHour(byte day) { 
+uint8_t getAlarmHour(uint8_t day) { 
   return constrain(EEPROMread(40 + 2 * (day - 1)), 0, 23);
 }
 
-byte getAlarmMinute(byte day) { 
+uint8_t getAlarmMinute(uint8_t day) { 
   return constrain(EEPROMread(40 + 2 * (day - 1) + 1), 0, 59);
 }
 
-void putAlarmTime(byte day, byte hour, byte minute) { 
+void putAlarmTime(uint8_t day, uint8_t hour, uint8_t minute) { 
   if (hour != getAlarmHour(day)) {
     EEPROMwrite(40 + 2 * (day - 1), constrain(hour, 0, 23));
   }
@@ -996,15 +984,15 @@ void putAlarmTime(byte day, byte hour, byte minute) {
   }
 }
 
-byte getAlarmWeekDay() { 
+uint8_t getAlarmWeekDay() { 
   return EEPROMread(20);
 }
 
-byte getDawnDuration() { 
+uint8_t getDawnDuration() { 
   return constrain(EEPROMread(21),1,59);
 }
 
-void putAlarmSounds(boolean useSound, byte maxVolume, int8_t alarmSound, int8_t dawnSound) {
+void putAlarmSounds(bool useSound, uint8_t maxVolume, int8_t alarmSound, int8_t dawnSound) {
   //   23 - Будильник звук: вкл/выкл 1 - вкл; 0 -выкл
   //   25 - Будильник, мелодия будильника
   //   26 - Будильник, мелодия рассвета
@@ -1016,17 +1004,17 @@ void putAlarmSounds(boolean useSound, byte maxVolume, int8_t alarmSound, int8_t 
     EEPROMwrite(23, useSound ? 1 : 0);
   }
   if (alarmSound != getAlarmSound()) {
-    EEPROMwrite(25, (byte)alarmSound);
+    EEPROMwrite(25, (uint8_t)alarmSound);
   }
   if (dawnSound != getDawnSound()) {
-    EEPROMwrite(26, (byte)dawnSound);
+    EEPROMwrite(26, (uint8_t)dawnSound);
   }
   if (maxVolume != getMaxAlarmVolume()) {
     EEPROMwrite(27, maxVolume);
   }
 }
 
-byte getAlarmEffect() { 
+uint8_t getAlarmEffect() { 
   return EEPROMread(22);
 }
 
@@ -1034,11 +1022,11 @@ bool getUseAlarmSound() {
   return EEPROMread(23) != 0;
 }
 
-byte getAlarmDuration() { 
+uint8_t getAlarmDuration() { 
   return constrain(EEPROMread(24),1,10);
 }
 
-byte getMaxAlarmVolume() { 
+uint8_t getMaxAlarmVolume() { 
   return constrain(EEPROMread(27),0,30);
 }
 
@@ -1054,7 +1042,7 @@ bool getUseSoftAP() {
   return EEPROMread(14) != 0;
 }
 
-void putUseSoftAP(boolean use) {  
+void putUseSoftAP(bool use) {  
   if (use != getUseSoftAP()) {
     EEPROMwrite(14, use ? 1 : 0);
   }
@@ -1206,31 +1194,31 @@ void putNtpServer(String server) {
   }
 }
 
-void putAM1params(byte hour, byte minute, int8_t effect) { 
+void putAM1params(uint8_t hour, uint8_t minute, int8_t effect) { 
   putAM1hour(hour);
   putAM1minute(minute);
   putAM1effect(effect);
 }
 
-byte getAM1hour() { 
-  byte hour = EEPROMread(33);
+uint8_t getAM1hour() { 
+  uint8_t hour = EEPROMread(33);
   if (hour>23) hour = 0;
   return hour;
 }
 
-void putAM1hour(byte hour) {
+void putAM1hour(uint8_t hour) {
   if (hour != getAM1hour()) {
     EEPROMwrite(33, hour);
   }
 }
 
-byte getAM1minute() {
-  byte minute = EEPROMread(34);
+uint8_t getAM1minute() {
+  uint8_t minute = EEPROMread(34);
   if (minute > 59) minute = 0;
   return minute;
 }
 
-void putAM1minute(byte minute) {
+void putAM1minute(uint8_t minute) {
   if (minute != getAM1minute()) {
     EEPROMwrite(34, minute);
   }
@@ -1244,35 +1232,35 @@ int8_t getAM1effect() {
 
 void putAM1effect(int8_t effect) {
   if (effect != getAM1effect()) {
-    EEPROMwrite(35, (byte)effect);
+    EEPROMwrite(35, (uint8_t)effect);
   }
 }
 
-void putAM2params(byte hour, byte minute, int8_t effect) { 
+void putAM2params(uint8_t hour, uint8_t minute, int8_t effect) { 
   putAM2hour(hour);
   putAM2minute(minute);
   putAM2effect(effect);
 }
 
-byte getAM2hour() { 
-  byte hour = EEPROMread(36);
+uint8_t getAM2hour() { 
+  uint8_t hour = EEPROMread(36);
   if (hour>23) hour = 0;
   return hour;
 }
 
-void putAM2hour(byte hour) {
+void putAM2hour(uint8_t hour) {
   if (hour != getAM2hour()) {
     EEPROMwrite(36, hour);
   }
 }
 
-byte getAM2minute() {
-  byte minute = EEPROMread(37);
+uint8_t getAM2minute() {
+  uint8_t minute = EEPROMread(37);
   if (minute > 59) minute = 0;
   return minute;
 }
 
-void putAM2minute(byte minute) {
+void putAM2minute(uint8_t minute) {
   if (minute != getAM2minute()) {
     EEPROMwrite(37, minute);
   }
@@ -1286,35 +1274,35 @@ int8_t getAM2effect() {
 
 void putAM2effect(int8_t effect) {
   if (effect != getAM2effect()) {
-    EEPROMwrite(38, (byte)effect);
+    EEPROMwrite(38, (uint8_t)effect);
   }
 }
 
-void putAM3params(byte hour, byte minute, int8_t effect) { 
+void putAM3params(uint8_t hour, uint8_t minute, int8_t effect) { 
   putAM3hour(hour);
   putAM3minute(minute);
   putAM3effect(effect);
 }
 
-byte getAM3hour() { 
-  byte hour = EEPROMread(161);
+uint8_t getAM3hour() { 
+  uint8_t hour = EEPROMread(161);
   if (hour>23) hour = 0;
   return hour;
 }
 
-void putAM3hour(byte hour) {
+void putAM3hour(uint8_t hour) {
   if (hour != getAM3hour()) {
     EEPROMwrite(161, hour);
   }
 }
 
-byte getAM3minute() {
-  byte minute = EEPROMread(162);
+uint8_t getAM3minute() {
+  uint8_t minute = EEPROMread(162);
   if (minute > 59) minute = 0;
   return minute;
 }
 
-void putAM3minute(byte minute) {
+void putAM3minute(uint8_t minute) {
   if (minute != getAM3minute()) {
     EEPROMwrite(162, minute);
   }
@@ -1328,35 +1316,35 @@ int8_t getAM3effect() {
 
 void putAM3effect(int8_t effect) {
   if (effect != getAM3effect()) {
-    EEPROMwrite(163, (byte)effect);
+    EEPROMwrite(163, (uint8_t)effect);
   }
 }
 
-void putAM4params(byte hour, byte minute, int8_t effect) { 
+void putAM4params(uint8_t hour, uint8_t minute, int8_t effect) { 
   putAM4hour(hour);
   putAM4minute(minute);
   putAM4effect(effect);
 }
 
-byte getAM4hour() { 
-  byte hour = EEPROMread(164);
+uint8_t getAM4hour() { 
+  uint8_t hour = EEPROMread(164);
   if (hour>23) hour = 0;
   return hour;
 }
 
-void putAM4hour(byte hour) {
+void putAM4hour(uint8_t hour) {
   if (hour != getAM4hour()) {
     EEPROMwrite(164, hour);
   }
 }
 
-byte getAM4minute() {
-  byte minute = EEPROMread(165);
+uint8_t getAM4minute() {
+  uint8_t minute = EEPROMread(165);
   if (minute > 59) minute = 0;
   return minute;
 }
 
-void putAM4minute(byte minute) {
+void putAM4minute(uint8_t minute) {
   if (minute != getAM4minute()) {
     EEPROMwrite(165, minute);
   }
@@ -1370,7 +1358,7 @@ int8_t getAM4effect() {
 
 void putAM4effect(int8_t effect) {
   if (effect != getAM4effect()) {
-    EEPROMwrite(166, (byte)effect);
+    EEPROMwrite(166, (uint8_t)effect);
   }
 }
 
@@ -1382,7 +1370,7 @@ int8_t getAM5effect() {
 
 void putAM5effect(int8_t effect) {
   if (effect != getAM5effect()) {
-    EEPROMwrite(243, (byte)effect);
+    EEPROMwrite(243, (uint8_t)effect);
   }
 }
 
@@ -1394,7 +1382,7 @@ int8_t getAM6effect() {
 
 void putAM6effect(int8_t effect) {
   if (effect != getAM6effect()) {
-    EEPROMwrite(248, (byte)effect);
+    EEPROMwrite(248, (uint8_t)effect);
   }
 }
 
@@ -1404,7 +1392,7 @@ int8_t getCurrentManualMode() {
 
 void putCurrentManualMode(int8_t mode) {
   if (mode != getCurrentManualMode()) {
-    EEPROMwrite(29, (byte)mode);
+    EEPROMwrite(29, (uint8_t)mode);
   }
 }
 
@@ -1415,7 +1403,7 @@ void getStaticIP() {
   IP_STA[3] = EEPROMread(13);
 }
 
-void putStaticIP(byte p1, byte p2, byte p3, byte p4) {
+void putStaticIP(uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4) {
   EEPROMwrite(10, p1);
   EEPROMwrite(11, p2);
   EEPROMwrite(12, p3);
@@ -1423,7 +1411,7 @@ void putStaticIP(byte p1, byte p2, byte p3, byte p4) {
 }
 
 uint32_t getGlobalColor() {
-  byte r,g,b;
+  uint8_t r,g,b;
   r = EEPROMread(158);
   g = EEPROMread(159);
   b = EEPROMread(160);
@@ -1440,7 +1428,7 @@ void putGlobalColor(uint32_t color) {
 }
 
 uint32_t getGlobalClockColor() {
-  byte r,g,b;
+  uint8_t r,g,b;
   r = EEPROMread(152);
   g = EEPROMread(153);
   b = EEPROMread(154);
@@ -1457,7 +1445,7 @@ void putGlobalClockColor(uint32_t color) {
 }
 
 uint32_t getGlobalTextColor() {
-  byte r,g,b;
+  uint8_t r,g,b;
   r = EEPROMread(155);
   g = EEPROMread(156);
   b = EEPROMread(157);
@@ -1479,7 +1467,7 @@ int8_t getCurrentSpecMode() {
 
 void putCurrentSpecMode(int8_t mode) {
   if (mode != getCurrentSpecMode()) {
-    EEPROMwrite(28, (byte)mode);
+    EEPROMwrite(28, (uint8_t)mode);
   }
 }
 
@@ -1505,14 +1493,14 @@ uint16_t getPowerLimit() {
   return val;
 }
 
-void putNightClockColor(byte clr) {
+void putNightClockColor(uint8_t clr) {
   if (clr != getNightClockColor()) {
     EEPROMwrite(39, clr);
   }  
 }
 
-byte getNightClockColor() {
-  byte clr = EEPROMread(39);
+uint8_t getNightClockColor() {
+  uint8_t clr = EEPROMread(39);
   if (clr > 6) clr=0;
   return clr;
 }
@@ -1532,11 +1520,11 @@ void putTextInterval(uint16_t interval) {
 // Загрузка массива строк "Бегущей строки"
 void loadTexts() {
 
-  int addr = TEXT_EEPROM;  
-  int size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
-  int max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой из EEPROM строки
-  int idx = 0;                           
-  bool finished = false;
+  uint16_t addr = TEXT_EEPROM;  
+  uint16_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  uint16_t max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой из EEPROM строки
+  uint8_t  idx = 0;                           
+  bool     finished = false;
 
   memoryAvail = (EEPROM_MAX - TEXT_EEPROM) / 2;    // UTF8 кирилицы - один символ 2 байта
 
@@ -1546,7 +1534,7 @@ void loadTexts() {
     int16_t i = 0;
    
     while (i < max_text_size) {
-      byte c = EEPROMread(addr++);
+      uint8_t c = EEPROMread(addr++);
       finished = c == '\0' || addr == EEPROM_MAX - 1;
       if (finished || c == '\r') break;
       incomeBuffer[i++] = c;
@@ -1574,13 +1562,13 @@ void loadTexts() {
   DEBUGLN(String(EEPROM_MAX - addr));
 
   // Заполнить оставшиеся строки массивва пустой строкой
-  for (byte i=idx; i<size; i++) {
+  for (uint8_t i=idx; i<size; i++) {
      textLines[i] = "";
   }
 
   /*
   // Контрольная печать загруженных строк
-  for (byte i=0; i<size; i++) {
+  for (uint8_t i=0; i<size; i++) {
      DEBUGLN("Строка " + String(i) + " = '" + textLines[i] + "'");
   }
   */
@@ -1588,7 +1576,7 @@ void loadTexts() {
   // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
   // если флаг eepromModified == true
   crc = 0;
-  for (byte i=0; i<size; i++) {
+  for (uint8_t i=0; i<size; i++) {
     String text = textLines[i];
     uint16_t len = text.length();
     if (len > BUF_MAX_SIZE) len = BUF_MAX_SIZE;
@@ -1651,14 +1639,14 @@ void loadTexts() {
 // Строки массива разделяются символом '\r'; Последний символ сохранения данных - '\0'
 
 bool saveTexts() {
-  int addr = TEXT_EEPROM;  
-  int size = sizeof(textLines) / sizeof(String);
+  uint16_t addr = TEXT_EEPROM;  
+  uint8_t  size = sizeof(textLines) / sizeof(String);
 
   set_memoryAvail((EEPROM_MAX - TEXT_EEPROM) / 2);  // UTF8 кирилицы - один символ 2 байта
 
   // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
   uint16_t new_crc = 0; 
-  for (byte i=0; i<size; i++) {
+  for (uint8_t i=0; i<size; i++) {
     String text = textLines[i];
     uint16_t len = text.length();
     if (len > BUF_MAX_SIZE) len = BUF_MAX_SIZE;
@@ -1671,7 +1659,7 @@ bool saveTexts() {
 
   bool completed = true;
   
-  for (byte i=0; i<size; i++) {
+  for (uint8_t i=0; i<size; i++) {
         
     uint16_t len = textLines[i].length();
     uint16_t j = 0;
@@ -1718,52 +1706,52 @@ bool saveTexts() {
 }
 
 // Режим цвета часов оверлея X: 0,1,2,3
-void putClockColor(byte clr) {
+void putClockColor(uint8_t clr) {
   if (clr != getClockColor()) {
     EEPROMwrite(169, clr);
   }  
 }
 
-byte getClockColor() {
-  byte clr = EEPROMread(169);
+uint8_t getClockColor() {
+  uint8_t clr = EEPROMread(169);
   if (clr > 3) clr=0;
   return clr;
 }
 
 // Скорость прокрутки часов
-void putClockScrollSpeed(byte clr) {
+void putClockScrollSpeed(uint8_t clr) {
   if (clr != getClockScrollSpeed()) {
     EEPROMwrite(170, clr);
   }  
 }
 
-byte getClockScrollSpeed() {
-  byte clr = EEPROMread(170);
+uint8_t getClockScrollSpeed() {
+  uint8_t clr = EEPROMread(170);
   return clr;
 }
 
 // Режим цвета оверлея бегущей строки X: 0,1,2,3
-void putTextColor(byte clr) {
+void putTextColor(uint8_t clr) {
   if (clr != getTextColor()) {
     EEPROMwrite(171, clr);
   }  
 }
 
-byte getTextColor() {
-  byte clr = EEPROMread(171);
+uint8_t getTextColor() {
+  uint8_t clr = EEPROMread(171);
   if (clr > 2) clr=0;
   return clr;
 }
 
 // Скорость прокрутки бегущей строки
-void putTextScrollSpeed(byte clr) {
+void putTextScrollSpeed(uint8_t clr) {
   if (clr != getTextScrollSpeed()) {
     EEPROMwrite(172, clr);
   }  
 }
 
-byte getTextScrollSpeed() {
-  byte clr = EEPROMread(172);
+uint8_t getTextScrollSpeed() {
+  uint8_t clr = EEPROMread(172);
   return clr;
 }
 
@@ -1777,14 +1765,14 @@ void putUseWeather(uint8_t id) {
   }
 }
 
-byte getWeatherInterval() {
-  byte value = EEPROMread(175);
+uint8_t getWeatherInterval() {
+  uint8_t value = EEPROMread(175);
   if (value < 10) value = 10;
   return value;
 }
 
 // Интервал обновления погоды
-void putWeatherInterval(byte interval) {
+void putWeatherInterval(uint8_t interval) {
   if (interval != getWeatherInterval()) {
     EEPROMwrite(175, interval);
   }  
@@ -1812,21 +1800,21 @@ void putWeatherRegion2(uint32_t value) {
   }
 }
 
-boolean getUseTemperatureColor() {
+bool getUseTemperatureColor() {
   return EEPROMread(180) != 0;
 }
 
-void putUseTemperatureColor(boolean use) {
+void putUseTemperatureColor(bool use) {
   if (use != getUseTemperatureColor()) {
     EEPROMwrite(180, use ? 1 : 0);
   }
 }
 
-boolean getUseTemperatureColorNight() {
+bool getUseTemperatureColorNight() {
   return EEPROMread(181) != 0;
 }
 
-void putUseTemperatureColorNight(boolean use) {
+void putUseTemperatureColorNight(bool use) {
   if (use != getUseTemperatureColorNight()) {
     EEPROMwrite(181, use ? 1 : 0);
   }
@@ -1838,7 +1826,7 @@ bool getUseMqtt() {
   return EEPROMread(239) != 0;
 }
 
-void putUseMqtt(boolean use) {  
+void putUseMqtt(bool use) {  
   if (use != getUseMqtt()) {
     EEPROMwrite(239, use ? 1 : 0);
   }
@@ -1900,33 +1888,33 @@ void putMqttPrefix(String prefix) {
 #if (USE_E131 == 1)
 
 eWorkModes getSyncWorkMode() {
-  byte value = EEPROMread(90);
+  uint8_t value = EEPROMread(90);
   if (value > 2) value = 0;
   return (eWorkModes)value;
 }
 void putSyncWorkMode(eWorkModes value) {
-  byte val = (byte)value;
+  uint8_t val = (uint8_t)value;
   if (val > 2) val = 0;
-  if (val != (byte)getSyncWorkMode()) {
+  if (val != (uint8_t)getSyncWorkMode()) {
     EEPROMwrite(90, val);
   }  
 }
 
 eSyncModes getSyncDataMode() {
-  byte value = EEPROMread(91);
+  uint8_t value = EEPROMread(91);
   if (value > 2) value = 1;
   return (eSyncModes)value;
 }
 void putSyncDataMode(eSyncModes value) {
-  byte val = (byte)value;
+  uint8_t val = (uint8_t)value;
   if (val > 2) val = 1;
-  if (val != (byte)getSyncDataMode()) {
+  if (val != (uint8_t)getSyncDataMode()) {
     EEPROMwrite(91, val);
   }  
 }
 
 uint8_t getSyncGroup() {
-  byte value = EEPROMread(92);
+  uint8_t value = EEPROMread(92);
   if (value > 9) value = 9;
   return value;
 }
@@ -1939,13 +1927,13 @@ void putSyncGroup(uint8_t value) {
 
 #endif
 
-byte getNightClockBrightness()   {
-  byte br = EEPROMread(240);
+uint8_t getNightClockBrightness()   {
+  uint8_t br = EEPROMread(240);
   if (br <= 1) br = 2;
   return br;
 }
 
-void putNightClockBrightness(byte brightness) {
+void putNightClockBrightness(uint8_t brightness) {
   if (brightness <= 1) brightness = 2;
   if (brightness != getNightClockBrightness()) {
     EEPROMwrite(240, brightness);
@@ -1954,11 +1942,11 @@ void putNightClockBrightness(byte brightness) {
 
 // ----------------------------------------------------------
 
-byte EEPROMread(uint16_t addr) {    
+uint8_t EEPROMread(uint16_t addr) {    
   return EEPROM.read(addr);
 }
 
-void EEPROMwrite(uint16_t addr, byte value) {    
+void EEPROMwrite(uint16_t addr, uint8_t value) {    
   EEPROM.write(addr, value);
   eepromModified = true;
   saveSettingsTimer.reset();
@@ -1966,32 +1954,32 @@ void EEPROMwrite(uint16_t addr, byte value) {
 
 // чтение uint16_t
 uint16_t EEPROM_int_read(uint16_t addr) {    
-  byte raw[2];
-  for (byte i = 0; i < 2; i++) raw[i] = EEPROMread(addr+i);
+  uint8_t raw[2];
+  for (uint8_t i = 0; i < 2; i++) raw[i] = EEPROMread(addr+i);
   uint16_t &num = (uint16_t&)raw;
   return num;
 }
 
 // запись uint16_t
 void EEPROM_int_write(uint16_t addr, uint16_t num) {
-  byte raw[2];
+  uint8_t raw[2];
   (uint16_t&)raw = num;
-  for (byte i = 0; i < 2; i++) EEPROMwrite(addr+i, raw[i]);
+  for (uint8_t i = 0; i < 2; i++) EEPROMwrite(addr+i, raw[i]);
 }
 
 // чтение uint32_t
 uint32_t EEPROM_long_read(uint16_t addr) {    
-  byte raw[4];
-  for (byte i = 0; i < 4; i++) raw[i] = EEPROMread(addr+i);
+  uint8_t raw[4];
+  for (uint8_t i = 0; i < 4; i++) raw[i] = EEPROMread(addr+i);
   uint32_t &num = (uint32_t&)raw;
   return num;
 }
 
 // запись uint32_t
 void EEPROM_long_write(uint16_t addr, uint32_t num) {
-  byte raw[4];
+  uint8_t raw[4];
   (uint32_t&)raw = num;
-  for (byte i = 0; i < 4; i++) EEPROMwrite(addr+i, raw[i]);
+  for (uint8_t i = 0; i < 4; i++) EEPROMwrite(addr+i, raw[i]);
 }
 
 String EEPROM_string_read(uint16_t addr, int16_t len) {
@@ -1999,7 +1987,7 @@ String EEPROM_string_read(uint16_t addr, int16_t len) {
    memset(buffer,'\0',len+1);
    int16_t i = 0;
    while (i < len) {
-     byte c = EEPROMread(addr+i);
+     uint8_t c = EEPROMread(addr+i);
      if (c == 0) break;
      buffer[i++] = c;
    }

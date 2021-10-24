@@ -24,25 +24,47 @@ void process() {
   parsing();
 
   #if (USE_E131 == 1)
-    bool streaming = e131 != NULL && (workMode == MASTER || workMode == SLAVE && ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)))); 
+    bool streaming = e131 != NULL && (workMode == MASTER || workMode == SLAVE && (e131_wait_command || ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT))))); 
     if (!e131_streaming && streaming) {
       flag_1 = false;
       flag_2 = false;
-      if (workMode == MASTER)
+
+      // Передать на седомые устройства группы начальные установочные параметры синхронизации
+      if (workMode == MASTER) {
         DEBUGLN(F("Запуск вещания E1.31 потока"));
-      else 
-        DEBUGLN(F("Ожидание поступления данных потока E1.31..."));
+        commandSetDimension(pWIDTH, pHEIGHT);
+        commandTurnOnOff(isTurnedOff);
+        commandSetBrightness(globalBrightness);
+        commandSetSpecialBrightness(specialBrightness);
+        if (syncMode == COMMAND) {
+          commandSetCurrentTime(hour(), minute(), second(), day(), month(), year());
+          commandSetGlobalColor(globalColor);
+          commandSetTextSpeed(textScrollSpeed);
+          commandSetClockSpeed(clockScrollSpeed);
+          if (specialMode)
+            commandSetSpecialMode(specialModeId);
+          else
+            commandSetMode(thisMode);
+        }
+      } else {
+        if (syncMode == COMMAND)
+          DEBUGLN(F("Ожидание поступления потока команд E1.31..."));        
+        else
+          DEBUGLN(F("Ожидание поступления потока данных E1.31..."));        
+      }
+
       prevWorkMode = workMode;
       prevSyncMode = syncMode;
       prevSyncGroup = syncGroup;
+      
       #if (USE_MQTT == 1)
         DynamicJsonDocument doc(256);
         String out;
-        doc["act"] = F("E131");
-        doc["mode"] = workMode == MASTER ? F("MASTER") : F("SLAVE");
-        doc["type"] = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
+        doc["act"]   = F("E131");
+        doc["mode"]  = workMode == MASTER ? F("MASTER") : F("SLAVE");
+        doc["type"]  = syncMode == PHYSIC ? F("PHYSIC") : (syncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
         doc["group"] = syncGroup;
-        doc["run"] = true;
+        doc["run"]   = true;
         serializeJson(doc, out);      
         SendMQTT(out, TOPIC_E131);
       #endif
@@ -56,11 +78,11 @@ void process() {
       #if (USE_MQTT == 1)
         DynamicJsonDocument doc(256);
         String out;
-        doc["act"] = F("E131");
-        doc["mode"] = prewWorkMode == MASTER ? F("MASTER") : F("SLAVE");;
-        doc["type"] = prevSyncMode == PHYSIC ? F("PHYSIC") : (prevSyncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
+        doc["act"]   = F("E131");
+        doc["mode"]  = prewWorkMode == MASTER ? F("MASTER") : F("SLAVE");;
+        doc["type"]  = prevSyncMode == PHYSIC ? F("PHYSIC") : (prevSyncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
         doc["group"] = prevSyncGroup;
-        doc["run"] = false;
+        doc["run"]   = false;
         serializeJson(doc, out);      
         SendMQTT(out, TOPIC_E131);
       #endif
@@ -201,8 +223,8 @@ void process() {
     #if (USE_E131 == 1)
         
     // Если сработал будильник - отрабатывать его эффект, даже если идет стриминг с мастера    
-    if (workMode == SLAVE && !isTurnedOff && e131_streaming && (!(isAlarming || isPlayAlarmSound))) {      
-      needProcessEffect = false;
+    if (workMode == SLAVE && /*!isTurnedOff &&*/ (e131_streaming || e131_wait_command) && (!(isAlarming || isPlayAlarmSound))) {      
+      needProcessEffect = e131_wait_command;
       // Если идет прием потока данных с MASTER-устройства - проверить наличие пакета от мастера
       if (e131 && !e131->isEmpty()) {
         // Получен пакет данных. 
@@ -229,9 +251,11 @@ void process() {
         }
         */
 
+        bool isCommand = isCommandPacket(&e131_packet);
+
         // Если задан расчет FPS выводимых данных потока E1.31 - рассчитать и вывести в консоль
-        if (E131_FPS_INTERVAL > 0) {
-          if (CURRENT_UNIVERSE == START_UNIVERSE) frameCnt++;
+        if (syncMode != COMMAND && E131_FPS_INTERVAL > 0) {
+          if (CURRENT_UNIVERSE == START_UNIVERSE && !isCommandPacket) frameCnt++;
           if (millis() - last_fps_time >= E131_FPS_INTERVAL) {
             last_fps_time = millis();
             DEBUG(F("FPS: "));
@@ -240,15 +264,16 @@ void process() {
           }
         }
 
+        // Если пакет содержит команду - обработать ее
+        if (isCommand) {
+          processCommandPacket(&e131_packet);          
+          needProcessEffect = true;
+        } else
         // Если режим стрима - PHYSIC или LOGIC - вывести принятые данные на матрицу
         if (syncMode == PHYSIC || syncMode == LOGIC) {
           if (drawE131frame(&e131_packet, syncMode)) {
             FastLED.show();
           }
-        } else {
-          // Если режим стриминга - прием команд и пришла команда  - получить команду и обработать ее
-          // TODO: проверить что данные в пакете это команда, извлечь ее и выполнить
-          needProcessEffect = true;
         }
       }
     }
@@ -259,7 +284,7 @@ void process() {
       // Сформировать и вывести на матрицу текущий демо-режим
       // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
       // поэтому отображать эффект "ночные часы"
-      byte br = specialMode ? specialBrightness : globalBrightness;
+      uint8_t br = specialMode ? specialBrightness : globalBrightness;
       if (br == 1 && !(loadingFlag || isAlarming || thisMode == MC_TEXT || thisMode == MC_DRAW || thisMode == MC_LOADIMAGE)) {
         if (allowHorizontal || allowVertical) 
           customRoutine(MC_CLOCK);    
@@ -283,7 +308,7 @@ void process() {
     #endif  
 
     butt.tick();  // обязательная функция отработки. Должна постоянно опрашиваться
-    byte clicks = 0;
+    uint8_t clicks = 0;
 
     // Один клик
     if (butt.isSingle()) clicks = 1;    
@@ -418,7 +443,7 @@ void process() {
     if (dfPlayer.available()) {
 
       // Вывести детали об изменении статуса в лог
-      byte msg_type = dfPlayer.readType();      
+      uint8_t msg_type = dfPlayer.readType();      
       printDetail(msg_type, dfPlayer.read());
 
       // Действия, которые нужно выполнить при изменении некоторых статусов:
@@ -515,15 +540,13 @@ void processButtonStep() {
 void parsing() {
   
   // ****************** ОБРАБОТКА *****************
-  String str, str1, str2;
-  byte b_tmp;
-  int8_t tmp_eff;
+  String  str, str1, str2;
   char c;
-  bool err = false;
-  int pntX, pntY, pntColor, pntIdx, idx;
-  String pictureLine;
-  byte alarmHourVal;
-  byte alarmMinuteVal;
+  bool    err = false;
+  int32_t pntX, pntY, pntColor, pntIdx, idx;
+  String  pictureLine;
+  uint8_t alarmHourVal, alarmMinuteVal, b_tmp;
+  int8_t  tmp_eff;
 
   // Программа передает изображение в матрицу по стороне с меньшей длиной, чтобы избежать переполнение буфера приема 
   // Если ширина матрицы больше чем ее высота - передача будет происходить по колонкам слева направо
@@ -1065,7 +1088,7 @@ void parsing() {
                 set_alarmWeekDay(GetToken(str, 3, ' ').toInt());
                 set_alarmDuration(constrain(GetToken(str, 4, ' ').toInt(),1,10));
                 
-                for(byte i=0; i<7; i++) {
+                for(uint8_t i=0; i<7; i++) {
                   alarmHourVal = constrain(GetToken(str, i*2+5, ' ').toInt(), 0, 23);
                   alarmMinuteVal = constrain(GetToken(str, i*2+6, ' ').toInt(), 0, 59);
                   set_alarmTime(i+1, alarmHourVal, alarmMinuteVal);
@@ -1155,7 +1178,7 @@ void parsing() {
                 delay(0);
               }
       
-              for (int i=0; i<pntIdx; i++) {
+              for (int32_t i=0; i<pntIdx; i++) {
                 str = pntPart[i];
                 idx = str.indexOf(" ");
                 str1 = str.substring(0, idx);
@@ -1219,7 +1242,7 @@ void parsing() {
                 delay(0);
               }
       
-              for (int i=0; i<pntIdx; i++) {
+              for (int32_t i=0; i<pntIdx; i++) {
                 str = pntPart[i];
                 idx = str.indexOf(" ");
                 str1 = str.substring(0, idx);
@@ -1249,11 +1272,7 @@ void parsing() {
 
             case 14:
               // текст бегущей строки для немедленного отображения без сохранения 
-              currentText = str;
-              showTextNow = false;
-              ignoreTextOverlaySettingforEffect = true;
-              fullTextFlag = true;
-              textLastTime = 0;
+              setImmediateText(str);
               break;
 
             case 15:
@@ -1420,7 +1439,7 @@ void parsing() {
           } else {
             set_EffectScaleParam(tmp_eff,   intData[3]);
             if (tmp_eff == MC_FILL_COLOR) {  
-              set_globalColor(getColorInt(CHSV(getEffectSpeed(MC_FILL_COLOR), effectScaleParam[MC_FILL_COLOR], 255)));
+              set_globalColor(getColorInt(CHSV(effectSpeed[MC_FILL_COLOR], effectScaleParam[MC_FILL_COLOR], 255)));
             } else 
             if (thisMode == tmp_eff && tmp_eff == MC_BALLS) {
               // При получении параметра эффекта "Шарики" (кол-во шариков) - надо переинициализировать эффект
@@ -1746,7 +1765,7 @@ void parsing() {
           if (intData[1] == 255) intData[1] = 254;
           set_EffectSpeed(thisMode,255 - intData[1]); 
           if (thisMode == MC_FILL_COLOR) { 
-            set_globalColor(getColorInt(CHSV(effectSpeed, effectScaleParam[MC_FILL_COLOR], 255)));
+            set_globalColor(getColorInt(CHSV(effectSpeed[MC_FILL_COLOR], effectScaleParam[MC_FILL_COLOR], 255)));
           }
           setTimersForMode(thisMode);           
           // Для команд, пришедших от MQTT отправлять только ACK;
@@ -1800,8 +1819,8 @@ void parsing() {
       // ----------------------------------------------------
 
       case 17: 
-        set_autoplayTime((long)intData[1] * 1000L);   // секунды -> миллисек 
-        set_idleTime((long)intData[2] * 60 * 1000L);  // минуты -> миллисек
+        set_autoplayTime((uint32_t)intData[1] * 1000UL);   // секунды -> миллисек 
+        set_idleTime((uint32_t)intData[2] * 60 * 1000UL);  // минуты -> миллисек
         idleState = !manualMode;
         if (!manualMode) {
           autoplayTimer = millis();
@@ -1920,12 +1939,7 @@ void parsing() {
              }
              break;
            case 8:               // $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
-             setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
-             init_time = true; refresh_time = false; ntp_cnt = 0;
-             debug_hours = -1;
-             debug_mins = -1;
-             rescanTextEvents();
-             calculateDawnTime();
+             setCurrentTime((uint8_t)intData[5],(uint8_t)intData[6],0,(uint8_t)intData[4],(uint8_t)intData[3],(uint16_t)intData[2]);
              break;
            case 9:               // $19 9 X; - Показывать температуру в режиме часов  X: 0 - нет, 1 - да
              if (allowHorizontal || allowVertical) {
@@ -2361,7 +2375,7 @@ void parsing() {
   
     if (haveIncomeData) {                
       // read the packet into packetBufffer
-      int len = udp.read(incomeBuffer, BUF_MAX_SIZE);
+      int16_t len = udp.read(incomeBuffer, BUF_MAX_SIZE);
       if (len > 0) {          
         incomeBuffer[len] = 0;
       }
@@ -2432,7 +2446,7 @@ void parsing() {
         string_convert += incomingByte;                             // складываем в строку
       } else {                                                      // если это пробел или ; конец пакета
         if (parse_index == 0) {
-          byte cmdMode = string_convert.toInt();
+          uint8_t cmdMode = string_convert.toInt();
           intData[0] = cmdMode;
           if (cmdMode == 6) {
             parseMode = TEXT;
@@ -2479,15 +2493,15 @@ void parsing() {
   }
 }
 
-void sendPageParams(int page) {
+void sendPageParams(uint8_t page) {
   sendPageParams(page, BOTH);
 }
 
-void sendPageParams(int page, eSources src) {
+void sendPageParams(uint8_t page, eSources src) {
 
   String str = "", color, text;
-  CRGB c1, c2;
-  bool err = false;
+  CRGB   c1, c2;
+  bool   err = false;
   
   switch (page) { 
     case 1:  // Настройки
@@ -2600,7 +2614,7 @@ void sendStringData(String &str, eSources src) {
   }
   #endif
   if (src == UDP || src == BOTH) {
-    int max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой / отправляемой строки
+    uint16_t max_text_size = sizeof(incomeBuffer);        // Размер приемного буфера формирования текста загружаемой / отправляемой строки
     memset(incomeBuffer, '\0', max_text_size);
     str.toCharArray(incomeBuffer, str.length() + 1);        
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
@@ -3020,12 +3034,12 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
         value->set("X");
         return "X";
       }  
-      value->set(effectContrast[effect]);
-      return String(effectContrast[effect]);
+      value->set(getEffectContrast(effect));
+      return String(getEffectContrast(effect));
     }
     return str + "BE:" +  (effect == MC_PACIFICA || effect == MC_DAWN_ALARM || effect == MC_MAZE || effect == MC_SNAKE || effect == MC_TETRIS || effect == MC_ARKANOID || effect == MC_CLOCK || effect == MC_SDCARD
          ? "X" 
-         : String(effectContrast[effect]));
+         : String(getEffectContrast(effect)));
   }
 
   // Эффекты не имеющие настройки вариации (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным
@@ -3316,7 +3330,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return String(alarmWeekDay);
     }
     str = "AW:";
-    for (int i=0; i<7; i++) {
+    for (uint8_t i=0; i<7; i++) {
        if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
        if (i<6) str+='.';
     }
@@ -3326,13 +3340,13 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Часы-минуты времени будильника по дням недели
   if (key == "AT") {
     if (value) {
-      for (int i=0; i<7; i++) {      
+      for (uint8_t i=0; i<7; i++) {      
         str += "|" + String(i+1) + " " + String(alarmHour[i]) + " " + String(alarmMinute[i]);
       }
       value->set(str.substring(1));
       return str.substring(1);
     }
-    for (int i=0; i<7; i++) {      
+    for (uint8_t i=0; i<7; i++) {      
       str += "|AT:" + String(i+1) + " " + String(alarmHour[i]) + " " + String(alarmMinute[i]);
     }
     // Убрать первый '|'
@@ -3690,7 +3704,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
 
   // Cписок файлов эффектов с SD-карты, разделенный запятыми, ограничители [] обязательны
   if (key == "LF") {    
-    for (byte i=0; i < countFiles; i++) {
+    for (uint8_t i=0; i < countFiles; i++) {
       tmp += "," + nameFiles[i];
     }
     if (tmp.length() > 0) tmp = tmp.substring(1);
@@ -3704,7 +3718,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
 
   // список текстовых строк
   if (key == "LT") {    
-    for (byte i=0; i < 36; i++) {
+    for (uint8_t i=0; i < 36; i++) {
       tmp += "~" + (textLines[i].length()==0 ? " " : textLines[i]);
     }
     if (tmp.length() > 0) tmp = tmp.substring(1);
@@ -3988,7 +4002,7 @@ String getStateString(String keys) {
 }
 
 // Первый параметр эффекта thisMode для отправки на телефон параметра "SS:"
-String getParamForMode(byte mode) {
+String getParamForMode(uint8_t mode) {
  // Эффекты не имеющие настройки "Вариант" (параметр #1) отправляют значение "Х" - программа делает ползунок настройки недоступным 
  String str; 
  switch (mode) {
@@ -4029,7 +4043,7 @@ String getParamForMode(byte mode) {
 }
 
 // Второй параметр эффекта thisMode для отправки на телефон параметра "SQ:"
-String getParam2ForMode(byte mode) {
+String getParam2ForMode(uint8_t mode) {
  // Эффекты не имеющие настройки вариации (параметр #2) отправляют значение "Х" - программа делает ползунок настройки недоступным 
  String str = "X"; 
  switch (mode) {
@@ -4093,7 +4107,7 @@ void sendAcknowledge(eSources src) {
     bool isCmd = false; 
     if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
     if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
-    byte L = reply.length();
+    uint8_t L = reply.length();
     if (L > 0 && reply[L-1] != ';') reply += ";";
     reply += "ack" + String(ackCounter++) + ";";  
     reply.toCharArray(replyBuffer, reply.length()+1);
@@ -4107,12 +4121,16 @@ void sendAcknowledge(eSources src) {
   }
 }
 
-void setSpecialMode(int spc_mode) {
+void setSpecialMode(int8_t spc_mode) {
         
   loadingFlag = true;
   set_isTurnedOff(false);   // setter
   set_isNightClock(false);  // setter
   specialModeId = -1;
+
+  #if (USE_E131 == 1)
+    commandSetSpecialMode(spc_mode);
+  #endif      
 
   String str;
   int8_t tmp_eff = -1;
@@ -4212,7 +4230,7 @@ void resetModesExt() {
   idleState = true;
 }
 
-void setEffect(byte eff) {
+void setEffect(uint8_t eff) {
 
   resetModes();
   if (eff >= MAX_EFFECT && eff < SPECIAL_EFFECTS_START) {
@@ -4239,7 +4257,7 @@ void setEffect(byte eff) {
     FastLED.setBrightness(globalBrightness);      
 }
 
-void showCurrentIP(boolean autoplay) {
+void showCurrentIP(bool autoplay) {
   setEffect(MC_TEXT);
   textHasMultiColor = false;
   wifi_print_ip = wifi_connected;  
@@ -4256,15 +4274,15 @@ void showCurrentIP(boolean autoplay) {
 }
 
 void setRandomMode() {
-    String s_tmp = String(EFFECT_LIST);    
+    String   s_tmp = String(EFFECT_LIST);    
     uint32_t cnt = CountTokens(s_tmp, ','); 
-    byte ef = random8(0, cnt); 
+    uint8_t  ef = random8(0, cnt); 
     setEffect(ef);
 }
 
 void setRandomMode2() {
   
-  byte newMode, cnt = 0;
+  uint8_t newMode, cnt = 0;
   
   #if (USE_SD == 1)  
   // На SD арте содержится более 40 эффектов плюсом к 40 эффектам, заданных в прошивке
@@ -4329,7 +4347,7 @@ void sendImageLine() {
     if (sendByRow) {
       // Отправка по строкам
       imageLine = "$18 IR:" + String(sendImageRow) + "~";
-      for (byte i=0; i<pWIDTH; i++) {
+      for (uint8_t i=0; i<pWIDTH; i++) {
         delay(0);
         imageLine += IntToHex(gammaCorrectionBack(getPixColorXY(i, sendImageRow))) + " ";
       }
@@ -4338,7 +4356,7 @@ void sendImageLine() {
     } else {
       // Отправка по колонкам
       imageLine = "$18 IC:" + String(sendImageCol) + "~";
-      for (byte i=0; i<pHEIGHT; i++) {
+      for (uint8_t i=0; i<pHEIGHT; i++) {
         delay(0);
         imageLine += IntToHex(gammaCorrectionBack(getPixColorXY(sendImageCol, i))) + " ";
       }
@@ -4393,4 +4411,29 @@ void turnOn() {
       setEffect(saveMode);
     }
   }
+}
+
+void setImmediateText(String str) {
+  // текст бегущей строки для немедленного отображения без сохранения 
+  currentText = str;
+  showTextNow = false;
+  ignoreTextOverlaySettingforEffect = true;
+  fullTextFlag = true;
+  textLastTime = 0;
+  #if (USE_E131 == 1)
+    commandSetImmediateText(str);
+    commandSetTextSpeed(textScrollSpeed);
+  #endif  
+}
+
+void setCurrentTime(uint8_t hh, uint8_t mm, uint8_t ss, uint8_t dd, uint8_t nn, uint16_t yy) {
+  setTime(hh,mm,ss,dd,nn,yy);
+  init_time = true; refresh_time = false; ntp_cnt = 0;
+  debug_hours = -1;  debug_mins = -1;
+  rescanTextEvents();
+  calculateDawnTime();      
+  #if (USE_E131 == 1)
+    commandSetCurrentTime(hh,mm,ss,dd,nn,yy);
+  #endif  
+  
 }

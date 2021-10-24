@@ -3,7 +3,7 @@
 int8_t patternIdx = -1;
 int8_t lineIdx = 0;
 int8_t columnIdx = 0;
-boolean isWhite = false;
+bool   isWhite = false;
 
 // Заполнение матрицы указанным паттерном
 // ptrn - индекс узора в массив узоров patterns[] в patterns.h
@@ -16,11 +16,11 @@ void drawPattern(uint8_t ptrn, uint8_t X, uint8_t Y, uint8_t W, uint8_t H) {
   // Идея "подвижного" смещения узора - (С) Stepko
   // https://editor.soulmatelights.com/gallery/761-patterns
 
-  byte y_offs = 0;
-  byte x_offs = 0;
+  uint8_t y_offs = 0;
+  uint8_t x_offs = 0;
     
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
-  byte variant = map8(effectScaleParam[MC_PATTERNS],0,4);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);
   switch(variant) {
     case 1:
       // снизу вверх
@@ -61,8 +61,8 @@ void drawPattern(uint8_t ptrn, uint8_t X, uint8_t Y, uint8_t W, uint8_t H) {
       break;
   }
   
-  for (byte y = 0; y < pHEIGHT; y++) {
-    for (byte x = 0; x < pWIDTH; x++) {
+  for (uint8_t y = 0; y < pHEIGHT; y++) {
+    for (uint8_t x = 0; x < pWIDTH; x++) {
       uint8_t in = (uint8_t) pgm_read_byte( & (patterns[ptrn][(y_offs + y) % H][(x_offs + x) % W]));
       CHSV color = colorMR[in];
       CHSV color2 = color.v != 0 ? CHSV(color.h, color.s, effectBrightness) : color;
@@ -77,10 +77,10 @@ void drawPicture_XY(uint8_t iconIdx, uint8_t X, uint8_t Y, uint8_t W, uint8_t H)
     loadingFlag = false;
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for (byte x = 0; x < W; x++) {
-    for (byte y = 0; y < H; y++) {
+  for (uint8_t x = 0; x < W; x++) {
+    for (uint8_t y = 0; y < H; y++) {
       uint8_t in = (uint8_t)pgm_read_byte(&(patterns[iconIdx][y][x])); 
       if (in != 0) {
         CHSV color = colorMR[in];        
@@ -94,7 +94,7 @@ void drawPicture_XY(uint8_t iconIdx, uint8_t X, uint8_t Y, uint8_t W, uint8_t H)
 void patternRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
-    patternIdx = (specialTextEffectParam >= 0) ? (specialTextEffectParam - 1) : (effectScaleParam2[MC_PATTERNS] - 1);
+    patternIdx = (specialTextEffectParam >= 0) ? (specialTextEffectParam - 1) : (getEffectScaleParamValue2(MC_PATTERNS) - 1);
     if (patternIdx < 0 || patternIdx > MAX_PATTERN) {
       patternIdx = random8(0,MAX_PATTERN);
     }

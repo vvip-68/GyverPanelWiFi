@@ -44,14 +44,14 @@ const uint8_t font3x5_s[][3] PROGMEM = {
 
 // отображаем счёт для игр
 void displayScore(uint16_t score) {
-  byte score_size = SCORE_SIZE;
-  byte score_width = 0, num_one = 0, X = 0, Y = 0;
-  String str = String(score);
-  byte str_len = str.length();
+  uint8_t score_size = SCORE_SIZE;
+  uint8_t score_width = 0, num_one = 0, X = 0, Y = 0;
+  String  str = String(score);
+  uint8_t str_len = str.length();
   char c;
 
   // Считаем сколько '1' в счете. '1' имеет более узкое знакоместо в шрифте - 5x7 - 3 колонки, 3х5 - 1 колонку
-  for (byte i=0; i<str.length(); i++) {
+  for (uint8_t i=0; i<str.length(); i++) {
     if (str[i] == '1') num_one++; 
   }
   
@@ -63,7 +63,7 @@ void displayScore(uint16_t score) {
       // Позиция начала вывода счета на матрицу
       X = (pWIDTH - score_width) / 2;
       Y = pHEIGHT / 2 - 4;
-      for (byte i=0; i<str.length(); i++) {
+      for (uint8_t i=0; i<str.length(); i++) {
         c = str[i];
         drawDigit5x7((c - '0'), X, Y, GLOBAL_COLOR_2);
         if (c == '1') X += 4; else X += 6; 
@@ -84,7 +84,7 @@ void displayScore(uint16_t score) {
       // Позиция начала вывода счета на матрицу
       X = (pWIDTH - score_width) / 2;
       Y = pHEIGHT / 2 - 3;
-      for (byte i=0; i<str.length(); i++) {
+      for (uint8_t i=0; i<str.length(); i++) {
         c = str[i];
         drawDigit3x5((c - '0'), X, Y, GLOBAL_COLOR_2);
         if (c == '1') X += 2; else X += 4; 
@@ -94,11 +94,11 @@ void displayScore(uint16_t score) {
 }
 
 // нарисовать цифру шрифт 3х5 квадратный
-void drawDigit3x5(byte digit, int8_t X, int8_t Y, CRGB color) {
+void drawDigit3x5(uint8_t digit, int8_t X, int8_t Y, CRGB color) {
   if (digit > 9) return;
-  for (byte x = 0; x < 3; x++) {
-    byte thisByte = pgm_read_byte(&(font3x5[digit][x]));
-    for (byte y = 0; y < 5; y++) {
+  for (uint8_t x = 0; x < 3; x++) {
+    uint8_t thisByte = pgm_read_byte(&(font3x5[digit][x]));
+    for (uint8_t y = 0; y < 5; y++) {
       if (y + Y > pHEIGHT) continue;
       if (thisByte & (1 << y)) drawPixelXY(getClockX(x + X), y + Y, color);
     }
@@ -106,11 +106,11 @@ void drawDigit3x5(byte digit, int8_t X, int8_t Y, CRGB color) {
 }
 
 // нарисовать цифру шрифт 3х5 скруглённый
-void drawDigit3x5_s(byte digit, int8_t X, int8_t Y, CRGB color) {
+void drawDigit3x5_s(uint8_t digit, int8_t X, int8_t Y, CRGB color) {
   if (digit > 9) return;
-  for (byte x = 0; x < 3; x++) {
-    byte thisByte = pgm_read_byte(&(font3x5_s[digit][x]));
-    for (byte y = 0; y < 5; y++) {
+  for (uint8_t x = 0; x < 3; x++) {
+    uint8_t thisByte = pgm_read_byte(&(font3x5_s[digit][x]));
+    for (uint8_t y = 0; y < 5; y++) {
       if (y + Y > pHEIGHT) continue;
       if (thisByte & (1 << y)) drawPixelXY(getClockX(x + X), y + Y, color);
     }
@@ -118,11 +118,11 @@ void drawDigit3x5_s(byte digit, int8_t X, int8_t Y, CRGB color) {
 }
 
 // нарисовать цифру шрифт 5х7
-void drawDigit5x7(byte digit, byte X, byte Y, CRGB color) {
+void drawDigit5x7(uint8_t digit, uint8_t X, uint8_t Y, CRGB color) {
   if (digit > 9) return;
-  for (byte x = 0; x < 5; x++) {
-    byte thisByte = pgm_read_byte(&(font5x7[digit][x]));
-    for (byte y = 0; y < 7; y++) {
+  for (uint8_t x = 0; x < 5; x++) {
+    uint8_t thisByte = pgm_read_byte(&(font5x7[digit][x]));
+    for (uint8_t y = 0; y < 7; y++) {
       if (y + Y > pHEIGHT) continue;
       if (thisByte & (1 << (6 - y))) drawPixelXY(getClockX(x + X), y + Y, color);
     }
@@ -130,7 +130,7 @@ void drawDigit5x7(byte digit, byte X, byte Y, CRGB color) {
 }
 
 // Заглушка чтения кнопок управления игрой
-boolean checkButtons() {
+bool checkButtons() {
   if (buttons != 4) return true;
   return false;
 }
@@ -145,10 +145,10 @@ void fillAll(CRGB color) {
 }
 
 // функция получения цвета пикселя по его номеру
-uint32_t getPixColor(int thisSegm) {
-  int thisPixel = thisSegm;
+uint32_t getPixColor(int16_t thisSegm) {
+  int16_t thisPixel = thisSegm;
   if (thisPixel < 0 || thisPixel > NUM_LEDS - 1) return 0;
-  return (((uint32_t)leds[thisPixel].r << 16) | ((long)leds[thisPixel].g << 8 ) | (long)leds[thisPixel].b);
+  return (((uint32_t)leds[thisPixel].r << 16) | ((uint32_t)leds[thisPixel].g << 8 ) | (uint32_t)leds[thisPixel].b);
 }
 
 // функция получения цвета пикселя в матрице по его координатам
@@ -159,7 +159,7 @@ uint32_t getPixColorXY(int8_t x, int8_t y) {
 // функция отрисовки точки по координатам X Y
 void drawPixelXY(int8_t x, int8_t y, CRGB color) {
   if (x < 0 || x > pWIDTH - 1 || y < 0 || y > pHEIGHT - 1) return;
-  int thisPixel = getPixelNumber(x, y);
+  uint16_t thisPixel = getPixelNumber(x, y);
   leds[thisPixel] = color;
 }
 
@@ -287,7 +287,7 @@ void drawCircleF(float x0, float y0, float radius, CRGB color) {
 
 // получить номер пикселя в ленте по координатам
 uint16_t getPixelNumber(int8_t x, int8_t y) {
-  byte xx,yy,ww,sx,sy,sw,mx,my,mw,snum,num;
+  uint8_t xx,yy,ww,sx,sy,sw,mx,my,mw,snum,num;
 
   // Матрица состоит из одного сегмента
   if (mWIDTH == 1 && mHEIGHT == 1) {
@@ -327,7 +327,7 @@ uint16_t getPixelNumber(int8_t x, int8_t y) {
   return snum * sWIDTH*sHEIGHT + num;
 }
 
-byte THIS_X(byte x, byte y) {
+uint8_t THIS_X(uint8_t x, uint8_t y) {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -343,7 +343,7 @@ byte THIS_X(byte x, byte y) {
     return x;
 }
 
-byte THIS_Y(byte x, byte y) {
+uint8_t THIS_Y(uint8_t x, uint8_t y) {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -359,7 +359,7 @@ byte THIS_Y(byte x, byte y) {
     return y;
 }
 
-byte THIS_W(byte x, byte y) {
+uint8_t THIS_W(uint8_t x, uint8_t y) {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -375,7 +375,7 @@ byte THIS_W(byte x, byte y) {
     return sWIDTH;
 }
 
-byte THIS_SX(byte x, byte y) {
+uint8_t THIS_SX(uint8_t x, uint8_t y) {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -391,7 +391,7 @@ byte THIS_SX(byte x, byte y) {
     return x;
 }
 
-byte THIS_SY(byte x, byte y) {
+uint8_t THIS_SY(uint8_t x, uint8_t y) {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -407,7 +407,7 @@ byte THIS_SY(byte x, byte y) {
     return y;
 }
 
-byte THIS_SW(byte x, byte y) {
+uint8_t THIS_SW(uint8_t x, uint8_t y) {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -424,16 +424,16 @@ byte THIS_SW(byte x, byte y) {
 }
 
 // функция плавного угасания цвета для всех пикселей
-void fader(byte step) {
-  for (byte i = 0; i < pWIDTH; i++) {
-    for (byte j = 0; j < pHEIGHT; j++) {
+void fader(uint8_t step) {
+  for (uint8_t i = 0; i < pWIDTH; i++) {
+    for (uint8_t j = 0; j < pHEIGHT; j++) {
       fadePixel(i, j, step);
     }
   }
 }
 
-void fadePixel(byte i, byte j, byte step) {     // новый фейдер
-  int pixelNum = getPixelNumber(i, j);
+void fadePixel(uint8_t i, uint8_t j, uint8_t step) {     // новый фейдер
+  uint16_t pixelNum = getPixelNumber(i, j);
   if (getPixColor(pixelNum) == 0) return;
 
   if (leds[pixelNum].r >= 5 ||
@@ -457,7 +457,7 @@ uint32_t HEXtoInt(String hexValue) {
     hexValue = hexValue.substring(2);
   }
 
-  byte tens, ones, number1, number2, number3;
+  uint8_t tens, ones, number1, number2, number3;
   tens = (hexValue[0] <= '9') ? hexValue[0] - '0' : hexValue[0] - '7';
   ones = (hexValue[1] <= '9') ? hexValue[1] - '0' : hexValue[1] - '7';
   number1 = (16 * tens) + ones;
@@ -476,7 +476,7 @@ uint32_t HEXtoInt(String hexValue) {
 // uint32_t to Hex string
 String IntToHex(uint32_t value) {
   String sHex = "00000" + String(value, HEX);
-  byte len = sHex.length();
+  uint8_t len = sHex.length();
   if (len > 6) {
     sHex = sHex.substring(len - 6);
     sHex.toUpperCase();
@@ -486,9 +486,9 @@ String IntToHex(uint32_t value) {
 
 String IntToHex(uint32_t value, uint8_t n) {
   String sHex = "";
-  for(int i=0; i<n; i++) sHex += "0";
+  for(uint8_t i=0; i<n; i++) sHex += "0";
   sHex += String(value, HEX);
-  byte len = sHex.length();
+  uint8_t len = sHex.length();
   if (len > n) {
     sHex = sHex.substring(len - n);
     sHex.toUpperCase();
@@ -499,8 +499,8 @@ String IntToHex(uint32_t value, uint8_t n) {
 uint32_t CountTokens(String str, char separator) {
 
   uint32_t count = 0;
-  int pos = 0;
-  String l_str = str;
+  int16_t  pos = 0;
+  String   l_str = str;
 
   l_str.trim();
   if (l_str.length() <= 0) return 0;
@@ -543,12 +543,12 @@ uint32_t getColorInt(CRGB color) {
 // Вычисление значения яркости эффектов по отношению к общей яркости
 // Общая яркость регулируется через FastLED.setBrightness(); 
 // Вычисленная яркость эффекта влияет на комонент яркости V в модели HCSV
-byte getBrightnessCalculated(byte brightness, byte contrast) {
+uint8_t getBrightnessCalculated(uint8_t brightness, uint8_t contrast) {
   // В данном варианте общая яркость не учитывается в расчете
   return map8(contrast, 16, 255);
 }
 
-String getMonthString(byte month) {
+String getMonthString(uint8_t month) {
   String sMnth = "";
   switch (month) {
     case  1: sMnth = F("января");   break;
@@ -567,7 +567,7 @@ String getMonthString(byte month) {
   return sMnth;
 }
 
-String getMonthShortString(byte month) {
+String getMonthShortString(uint8_t month) {
   String sMnth = "";
   switch (month) {
     case  1: sMnth = F("янв"); break;
@@ -586,7 +586,7 @@ String getMonthShortString(byte month) {
   return sMnth;
 }
 
-String getWeekdayString(byte wd) {
+String getWeekdayString(uint8_t wd) {
   String str = "";
   switch (wd) {
     case  1: str = F("понедельник"); break;
@@ -600,7 +600,7 @@ String getWeekdayString(byte wd) {
   return str;
 }
 
-String getWeekdayShortString(byte wd) {
+String getWeekdayShortString(uint8_t wd) {
   String str = "";
   switch (wd) {
     case  1: str = F("пон"); break;
@@ -614,7 +614,7 @@ String getWeekdayShortString(byte wd) {
   return str;
 }
 
-String getWeekdayShortShortString(byte wd) {
+String getWeekdayShortShortString(uint8_t wd) {
   String str = "";
   switch (wd) {
     case  1: str = F("пн"); break;
@@ -631,8 +631,8 @@ String getWeekdayShortShortString(byte wd) {
 
 // ---------- Склонение числительных остатка времени -----------
 
-String WriteDays(int iDays) {
-  int iDays2 = (iDays / 10) % 10;
+String WriteDays(uint16_t iDays) {
+  uint16_t iDays2 = (iDays / 10) % 10;
   iDays = iDays %10;
   if (iDays2 == 1) return F(" дней");  
   if (iDays  == 1) return F(" день");
@@ -640,13 +640,13 @@ String WriteDays(int iDays) {
   return F(" дней");
 }
 
-String WriteHours(int iHours) {
+String WriteHours(uint8_t iHours) {
   if (iHours == 1 || iHours == 21) return F(" час");
   if ((iHours >= 2 && iHours <= 4) || (iHours >= 22 && iHours <= 24))return F(" часа");
   return F(" часов");
 }
 
-String WriteMinutes(int iMinutes){
+String WriteMinutes(uint8_t iMinutes){
   if (iMinutes >= 5 && iMinutes <= 20) return F(" минут");
   iMinutes = iMinutes %10;
   if (iMinutes == 1) return F(" минута");
@@ -654,7 +654,7 @@ String WriteMinutes(int iMinutes){
   return F(" минут");
 }
 
-String WriteSeconds(int iSeconds){
+String WriteSeconds(uint8_t iSeconds){
   if (iSeconds >= 5 && iSeconds <= 20) return F(" секунд");
   iSeconds = iSeconds %10;
   if (iSeconds == 1) return F(" секунда");
@@ -706,8 +706,8 @@ uint8_t wrapY(int8_t y) {
 
 // Сдвиг всей матрицы вниз
 void shiftDown() {
-  for (byte x = 0; x < pWIDTH; x++) {
-    for (byte y = 0; y < pHEIGHT - 1; y++) {
+  for (uint8_t x = 0; x < pWIDTH; x++) {
+    for (uint8_t y = 0; y < pHEIGHT - 1; y++) {
       drawPixelXY(x, y, getPixColorXY(x, y + 1));
     }
   }
@@ -715,8 +715,8 @@ void shiftDown() {
 
 // Сдвиг всей матрицы вверх
 void shiftUp() {
-  for (byte x = 0; x < pWIDTH; x++) {
-    for (byte y = pHEIGHT - 1; y > 0; y--) {
+  for (uint8_t x = 0; x < pWIDTH; x++) {
+    for (uint8_t y = pHEIGHT - 1; y > 0; y--) {
       drawPixelXY(x, y, getPixColorXY(x, y - 1));
     }
   }
@@ -724,14 +724,14 @@ void shiftUp() {
 
 // Сдвиг всей матрицы по диагонали
 void shiftDiag() {
-  for (byte y = 0; y < pHEIGHT - 1; y++) {
-    for (byte x = pWIDTH - 1; x > 0; x--) {
+  for (uint8_t y = 0; y < pHEIGHT - 1; y++) {
+    for (uint8_t x = pWIDTH - 1; x > 0; x--) {
       drawPixelXY(x, y, getPixColorXY(x - 1, y + 1));
     }
   }
 }
 
-String padNum(int16_t num, byte cnt) {
+String padNum(int16_t num, uint8_t cnt) {
   char data[12];
   String fmt = "%0"+ String(cnt) + "d";
   sprintf(data, fmt.c_str(), num);

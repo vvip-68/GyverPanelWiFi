@@ -6,7 +6,44 @@ uint16_t XY(uint8_t x, uint8_t y) {
   return getPixelNumber(x, y);
 }
 
-byte hue;
+// ---------------------------------------------
+
+uint8_t getEffectSpeedValue(int8_t eff) {
+  #if (USE_E131 == 1)
+  if (workMode == SLAVE && e131_streaming) {
+    return syncEffectSpeed;  
+  }
+  #endif
+  return effectSpeed[eff];
+}
+uint8_t getEffectContrastValue(int8_t eff) {
+  #if (USE_E131 == 1)
+  if (workMode == SLAVE && e131_streaming) {
+    return syncEffectContrast;  
+  }
+  #endif
+  return effectContrast[eff];
+}
+uint8_t getEffectScaleParamValue(int8_t eff) {
+  #if (USE_E131 == 1)
+  if (workMode == SLAVE && e131_streaming) {
+    return syncEffectParam1;  
+  }
+  #endif
+  return effectScaleParam[eff];  
+}
+uint8_t getEffectScaleParamValue2(int8_t eff) {
+  #if (USE_E131 == 1)
+  if (workMode == SLAVE && e131_streaming) {
+    return syncEffectParam2;  
+  }
+  #endif
+  return effectScaleParam2[eff];  
+}
+
+// ---------------------------------------------
+
+uint8_t hue;
 
 // *********** снегопад 2.0 ***********
 
@@ -20,12 +57,12 @@ void snowRoutine() {
   // сдвигаем всё вниз
   shiftDown();
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for (byte x = 0; x < pWIDTH; x++) {
+  for (uint8_t x = 0; x < pWIDTH; x++) {
     // заполняем случайно верхнюю строку
     // а также не даём двум блокам по вертикали вместе быть
-    if (getPixColorXY(x, pHEIGHT - 2) == 0 && (random8(0, map8(255 - effectScaleParam[MC_SNOW],5,15)) == 0)) {
+    if (getPixColorXY(x, pHEIGHT - 2) == 0 && (random8(0, map8(255 - getEffectScaleParamValue(MC_SNOW),5,15)) == 0)) {
       CRGB color = CRGB(effectBrightness,effectBrightness,effectBrightness); /*0xE0FFFF*/
       if (color.r > 0x20 && random8(0, 4) == 0) color = color - CRGB(0x10, 0x10, 0x10);
       drawPixelXY(x, pHEIGHT - 1, color);
@@ -52,10 +89,13 @@ void lightBallsRoutine() {
     seg_size = dir_mx == 0 ? pHEIGHT : pWIDTH;                           // Размер квадратного сегмента (высота и ширина равны)
     seg_offset = ((dir_mx == 0 ? pWIDTH : pHEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
     BorderWidth = 0;
-    USE_SEGMENTS_PAINTBALL = effectScaleParam2[MC_PAINTBALL];
+    USE_SEGMENTS_PAINTBALL = getEffectScaleParamValue2(MC_PAINTBALL);
   }
-
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+  
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   // Apply some blurring to whatever's already on the matrix
   // Note that we never actually clear the matrix, we just constantly
@@ -68,15 +108,15 @@ void lightBallsRoutine() {
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();
 
-  byte  cnt = map8(255-effectScaleParam[MC_PAINTBALL],1,4);  // 1..4 шариков
-  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
+  uint8_t  cnt = map8(255-getEffectScaleParamValue(MC_PAINTBALL),1,4);  // 1..4 шариков
+  float spd = (map8(255-getEffectSpeedValue(MC_PAINTBALL), 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
 
-  // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
+  // Отрисовка режима происходит на максимальной скорости. Значение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
-  byte m1 = ( 91.0 * spd) + 0.51;
-  byte m2 = (109.0 * spd) + 0.51;
-  byte m3 = ( 73.0 * spd) + 0.51;
-  byte m4 = (123.0 * spd) + 0.51;
+  uint8_t m1 = ( 91.0 * spd) + 0.51;
+  uint8_t m2 = (109.0 * spd) + 0.51;
+  uint8_t m3 = ( 73.0 * spd) + 0.51;
+  uint8_t m4 = (123.0 * spd) + 0.51;
 
   // Для неквадратных - вычленяем квадратные сегменты, которые равномерно распределяем по ширине / высоте матрицы 
 
@@ -104,8 +144,8 @@ void lightBallsRoutine() {
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
-      byte fade_step = map8(effectBrightness, 1, 15);
-      for (byte i2 = cy; i2 < cy + seg_size; i2++) { 
+      uint8_t fade_step = map8(effectBrightness, 1, 15);
+      for (uint8_t i2 = cy; i2 < cy + seg_size; i2++) { 
         fadePixel(cx + BorderWidth, i2, fade_step);
         fadePixel(cx + seg_size - BorderWidth - 1, i2, fade_step);
       }
@@ -127,8 +167,8 @@ void lightBallsRoutine() {
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
-      byte fade_step = map8(effectBrightness, 1, 15);
-      for (byte i = 0; i < pHEIGHT; i++) { 
+      uint8_t fade_step = map8(effectBrightness, 1, 15);
+      for (uint8_t i = 0; i < pHEIGHT; i++) { 
         fadePixel(0, i, fade_step);
         fadePixel(pWIDTH-1, i, fade_step);
       }
@@ -150,10 +190,13 @@ void swirlRoutine() {
     seg_size = dir_mx == 0 ? pHEIGHT : pWIDTH;                           // Размер квадратного сегмента (высота и ширина равны)
     seg_offset = ((dir_mx == 0 ? pWIDTH : pHEIGHT) - seg_size * seg_num) / (seg_num + 1); // смещение от края матрицы и между сегментами    
     BorderWidth = seg_num == 1 ? 0 : 1;
-    USE_SEGMENTS_SWIRL = effectScaleParam2[MC_SWIRL];
+    USE_SEGMENTS_SWIRL = getEffectScaleParamValue2(MC_SWIRL);
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   // Apply some blurring to whatever's already on the matrix
   // Note that we never actually clear the matrix, we just constantly
@@ -167,12 +210,12 @@ void swirlRoutine() {
   uint32_t ms = millis();  
   int16_t idx;
 
-  float spd = (map8(255-effectSpeed, 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
+  float spd = (map8(255-getEffectSpeedValue(MC_SWIRL), 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
-  byte m1 = (41.0 * spd) + 0.51;
-  byte m2 = (27.0 * spd) + 0.51;
+  uint8_t m1 = (41.0 * spd) + 0.51;
+  uint8_t m2 = (27.0 * spd) + 0.51;
 
   if (USE_SEGMENTS_SWIRL != 0) {
     // Use two out-of-sync sine waves
@@ -207,8 +250,8 @@ void swirlRoutine() {
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
-      byte fade_step = map8(effectBrightness, 1, 15);
-      for (byte i2 = cy; i2 < cy + seg_size; i2++) { 
+      uint8_t fade_step = map8(effectBrightness, 1, 15);
+      for (uint8_t i2 = cy; i2 < cy + seg_size; i2++) { 
         fadePixel(cx, i2, fade_step);
         fadePixel(cx + BorderWidth, i2, fade_step);
         fadePixel(cx + seg_size - 1, i2, fade_step);
@@ -240,8 +283,8 @@ void swirlRoutine() {
       // При соединении матрицы из угла вверх или вниз почему-то слева и справа узора остаются полосы, которые 
       // не гаснут обычным blur - гасим полоски левой и правой стороны дополнительно.
       // При соединении из угла влево или вправо или на неквадратных матрицах такого эффекта не наблюдается
-      byte fade_step = map8(effectBrightness, 1, 15);
-      for (byte i = 0; i < pHEIGHT; i++) { 
+      uint8_t fade_step = map8(effectBrightness, 1, 15);
+      for (uint8_t i = 0; i < pHEIGHT; i++) { 
         fadePixel(0, i, fade_step);
         fadePixel(pWIDTH-1, i, fade_step);
       }
@@ -253,17 +296,17 @@ void swirlRoutine() {
 
 #define RANDOM_COLOR 1    // случайный цвет при отскоке
 
-int    coordB[2];
+int8_t coordB[2];
 int8_t vectorB[2];
 int8_t ballSize;
 CRGB   ballColor;
 
 void ballRoutine() {
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   
   if (loadingFlag) {
-    for (byte i = 0; i < 2; i++) {
+    for (uint8_t i = 0; i < 2; i++) {
       coordB[i] = pWIDTH / 2 * 10;
       vectorB[i] = random8(8, 20);
       ballColor = CHSV(random8(0, 9) * 28, 255, effectBrightness);
@@ -272,9 +315,9 @@ void ballRoutine() {
     loadingFlag = false;
   }
 
-  ballSize = map8(effectScaleParam[MC_BALL],2, max(minDim / 3, 2));
+  ballSize = map8(getEffectScaleParamValue(MC_BALL),2, max(minDim / 3, 2));
 
-  for (byte i = 0; i < 2; i++) {
+  for (uint8_t i = 0; i < 2; i++) {
     coordB[i] += vectorB[i];
     if (coordB[i] < 0) {
       coordB[i] = 0;
@@ -300,20 +343,20 @@ void ballRoutine() {
 
   FastLED.clear();
 
-  for (byte i = 0; i < ballSize; i++)
-    for (byte j = 0; j < ballSize; j++)
+  for (uint8_t i = 0; i < ballSize; i++)
+    for (uint8_t j = 0; j < ballSize; j++)
       leds[getPixelNumber(coordB[0] / 10 + i, coordB[1] / 10 + j)] = ballColor;
 }
 
 // ***************************** РАДУГА *****************************
 
-byte rainbow_type = 0;
+uint8_t rainbow_type = 0;
 
 void rainbowRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     // modeCode = MC_RAINBOW;
-    rainbow_type = (specialTextEffectParam >= 0) ? specialTextEffectParam : effectScaleParam2[MC_RAINBOW];
+    rainbow_type = (specialTextEffectParam >= 0) ? specialTextEffectParam : getEffectScaleParamValue2(MC_RAINBOW);
     // Если авто - генерировать один из типов - 1-Вертикальная радуга, 2-Горизонтальная радуга, 3-Диагональная радуга, 4-Вращающаяся радуга
     if (rainbow_type == 0 || rainbow_type > 4) {
       rainbow_type = random8(1,4);
@@ -332,14 +375,14 @@ void rainbowRoutine() {
 // *********** радуга дигональная ***********
 
 void rainbowDiagonal() {
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   hue += 2;
-  for (byte x = 0; x < pWIDTH; x++) {
-    for (byte y = 0; y < pHEIGHT; y++) {
+  for (uint8_t x = 0; x < pWIDTH; x++) {
+    for (uint8_t y = 0; y < pHEIGHT; y++) {
       float dx = (pWIDTH >= pHEIGHT)
          ? (float)(pWIDTH / pHEIGHT * x + y)
          : (float)(pHEIGHT / pWIDTH * y + x);
-      CRGB thisColor = CHSV((byte)(hue + dx * (float)(255 / maxDim)), 255, effectBrightness);
+      CRGB thisColor = CHSV((uint8_t)(hue + dx * (float)(255 / maxDim)), 255, effectBrightness);
       drawPixelXY(x, y, thisColor); 
     }
   }
@@ -348,11 +391,11 @@ void rainbowDiagonal() {
 // *********** радуга горизонтальная ***********
 
 void rainbowHorizontal() {
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   hue += 2;
-  for (byte j = 0; j < pHEIGHT; j++) {
-    CHSV thisColor = CHSV((byte)(hue + j * map8(effectScaleParam[MC_RAINBOW],1,pWIDTH)), 255, effectBrightness);
-    for (byte i = 0; i < pWIDTH; i++)
+  for (uint8_t j = 0; j < pHEIGHT; j++) {
+    CHSV thisColor = CHSV((uint8_t)(hue + j * map8(getEffectScaleParamValue(MC_RAINBOW),1,pWIDTH)), 255, effectBrightness);
+    for (uint8_t i = 0; i < pWIDTH; i++)
       drawPixelXY(i, j, thisColor);
   }
 }
@@ -360,11 +403,11 @@ void rainbowHorizontal() {
 // *********** радуга вертикальная ***********
 
 void rainbowVertical() {
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   hue += 2;
-  for (byte i = 0; i < pWIDTH; i++) {
-    CHSV thisColor = CHSV((byte)(hue + i * map8(effectScaleParam[MC_RAINBOW],1,pHEIGHT)), 255, effectBrightness);
-    for (byte j = 0; j < pHEIGHT; j++)
+  for (uint8_t i = 0; i < pWIDTH; i++) {
+    CHSV thisColor = CHSV((uint8_t)(hue + i * map8(getEffectScaleParamValue(MC_RAINBOW),1,pHEIGHT)), 255, effectBrightness);
+    for (uint8_t j = 0; j < pHEIGHT; j++)
       drawPixelXY(i, j, thisColor);
   }
 }
@@ -373,19 +416,19 @@ void rainbowVertical() {
 
 void rainbowRotate() {
   uint32_t ms = millis();
-  int32_t yHueDelta32 = ((int32_t)cos16( ms * (27/1) ) * (350 / pWIDTH));
-  int32_t xHueDelta32 = ((int32_t)cos16( ms * (39/1) ) * (310 / pHEIGHT));
+  int32_t  yHueDelta32 = ((int32_t)cos16( ms * (27/1) ) * (350 / pWIDTH));
+  int32_t  xHueDelta32 = ((int32_t)cos16( ms * (39/1) ) * (310 / pHEIGHT));
 
-  byte   lineStartHue = ms / 65536;
-  int8_t yHueDelta8   = yHueDelta32 / 32768;
-  int8_t xHueDelta8   = xHueDelta32 / 32768;
+  uint8_t  lineStartHue = ms / 65536;
+  int8_t   yHueDelta8   = yHueDelta32 / 32768;
+  int8_t   xHueDelta8   = xHueDelta32 / 32768;
   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for( byte y = 0; y < pHEIGHT; y++) {
+  for(uint8_t y = 0; y < pHEIGHT; y++) {
     lineStartHue += yHueDelta8;
-    byte pixelHue = lineStartHue;      
-    for( byte x = 0; x < pWIDTH; x++) {
+    uint8_t pixelHue = lineStartHue;      
+    for(uint8_t x = 0; x < pWIDTH; x++) {
       pixelHue += xHueDelta8;
       leds[ XY(x, y)]  = CHSV( pixelHue, 255, effectBrightness);
     }
@@ -400,10 +443,10 @@ void colorsRoutine() {
     // modeCode = MC_COLORS;
     FastLED.clear();  // очистить
   }
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
-  hue += map8(effectScaleParam[MC_COLORS],1,10);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  hue += map8(getEffectScaleParamValue(MC_COLORS),1,10);
   CHSV hueColor = CHSV(hue, 255, effectBrightness);
-  for (int i = 0; i < NUM_LEDS; i++) {
+  for (uint16_t i = 0; i < NUM_LEDS; i++) {
     leds[i] = hueColor;
   }
 }
@@ -417,7 +460,7 @@ void cyclonRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     // modeCode = MC_CYCLON;
-    USE_SEGMENTS_CYCLON = effectScaleParam2[MC_CYCLON];
+    USE_SEGMENTS_CYCLON = getEffectScaleParamValue2(MC_CYCLON);
     dir_mx = pWIDTH > pHEIGHT ? 0 : 1;                                                                      // 0 - сегменты расположены горизонтально, 1 - вертикально
     seg_num = dir_mx == 0 ? (pWIDTH / pHEIGHT) : (pHEIGHT / pWIDTH);                                        // вычисляем количество сегментов, умещающихся на матрице, в режиме без сигментов ширина одной полоски будет равна кол-ву сегментов
     seg_size = dir_mx == 0 ? pHEIGHT : pWIDTH;                                                              // Размер квадратного сегмента (высота и ширина равны)
@@ -433,13 +476,13 @@ void cyclonRoutine() {
     FastLED.clear();  // очистить
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
-  byte actualBrightness = map(effectBrightness, 32,255, 125,250);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  uint8_t actualBrightness = map(effectBrightness, 32,255, 125,250);
   
   // Использовать отрисовку по сегментам
   // Если сегменты не используется - ширина одной полоски - кол-во сегментов
-  for (byte i=0; i < seg_num; i++) {
-    for (byte k=0; k < inc_cnt; k++) { 
+  for (uint8_t i=0; i < seg_num; i++) {
+    for (uint8_t k=0; k < inc_cnt; k++) { 
       if (USE_SEGMENTS_CYCLON == 1) {
         if (cycle_y + k - seg_offset_y >= seg_size) continue;
         idx = dir_mx == 0
@@ -457,7 +500,7 @@ void cyclonRoutine() {
   hue += inc_cnt;
   
   // Затухание - не на каждый цикл, а регулируется параметром эффекта
-  byte fader_param = map8(255 - effectScaleParam[MC_CYCLON],0,5);
+  uint8_t fader_param = map8(255 - getEffectScaleParamValue(MC_CYCLON),0,5);
   fade_divider++;
   if (fade_divider > fader_param) {
     fade_divider = 0;
@@ -518,12 +561,12 @@ void cyclonRoutine() {
 
 #define SPARKLES 1        // вылетающие угольки вкл выкл
 
-unsigned char matrixValue[8][16];
-unsigned char *line;
-int pcnt = 0;
+uint8_t matrixValue[8][16];
+uint8_t *line;
+uint8_t pcnt = 0;
 
 //these values are substracetd from the generated values to give a shape to the animation
-const unsigned char valueMask[8][16] PROGMEM = {
+const uint8_t valueMask[8][16] PROGMEM = {
   {32 , 0  , 0  , 0  , 0  , 0  , 0  , 32 , 32 , 0  , 0  , 0  , 0  , 0  , 0  , 32 },
   {64 , 0  , 0  , 0  , 0  , 0  , 0  , 64 , 64 , 0  , 0  , 0  , 0  , 0  , 0  , 64 },
   {96 , 32 , 0  , 0  , 0  , 0  , 32 , 96 , 96 , 32 , 0  , 0  , 0  , 0  , 32 , 96 },
@@ -536,7 +579,7 @@ const unsigned char valueMask[8][16] PROGMEM = {
 
 //these are the hues for the fire,
 //should be between 0 (red) to about 25 (yellow)
-const unsigned char hueMask[8][16] PROGMEM = {
+const uint8_t hueMask[8][16] PROGMEM = {
   {1 , 11, 19, 25, 25, 22, 11, 1 , 1 , 11, 19, 25, 25, 22, 11, 1 },
   {1 , 8 , 13, 19, 25, 19, 8 , 1 , 1 , 8 , 13, 19, 25, 19, 8 , 1 },
   {1 , 8 , 13, 16, 19, 16, 8 , 1 , 1 , 8 , 13, 16, 19, 16, 8 , 1 },
@@ -552,7 +595,7 @@ void fireRoutine() {
     loadingFlag = false;
     // modeCode = MC_FIRE;
     FastLED.clear();
-    if (line == NULL) line = new unsigned char[pWIDTH];
+    if (line == NULL) line = new uint8_t[pWIDTH];
     generateLine();
     memset(matrixValue, 0, sizeof(matrixValue));
   }
@@ -601,14 +644,14 @@ void shiftFireUp() {
 // draw a frame, interpolating between 2 "key frames"
 // @param pcnt percentage of interpolation
 
-void drawFrame(int pcnt) {
+void drawFrame(uint8_t pcnt) {
   int nextv;
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   //each row interpolates with the one before it
-  for (unsigned char y = pHEIGHT - 1; y > 0; y--) {
-    for (unsigned char x = 0; x < pWIDTH; x++) {
+  for (uint8_t y = pHEIGHT - 1; y > 0; y--) {
+    for (uint8_t x = 0; x < pWIDTH; x++) {
       uint8_t newX = x;
       if (x > 15) newX = x%16;
       if (y < 8) {
@@ -618,7 +661,7 @@ void drawFrame(int pcnt) {
             - pgm_read_byte(&(valueMask[y][newX]));
 
         CRGB color = CHSV(
-                       map8(effectScaleParam[MC_FIRE],0,230) + pgm_read_byte(&(hueMask[y][newX])), // H
+                       map8(getEffectScaleParamValue(MC_FIRE),0,230) + pgm_read_byte(&(hueMask[y][newX])), // H
                        255, // S
                        (uint8_t)max(0, nextv) // V
                      );
@@ -643,11 +686,11 @@ void drawFrame(int pcnt) {
   }
 
   //first row interpolates with the "next" line
-  for (unsigned char x = 0; x < pWIDTH; x++) {
+  for (uint8_t x = 0; x < pWIDTH; x++) {
     uint8_t newX = x;
     if (x > 15) newX = x%16;
     CRGB color = CHSV(
-                   map8(effectScaleParam[MC_FIRE],0,230) + pgm_read_byte(&(hueMask[0][newX])), // H
+                   map8(getEffectScaleParamValue(MC_FIRE),0,230) + pgm_read_byte(&(hueMask[0][newX])), // H
                    255,           // S
                    (uint8_t)(((100.0 - pcnt) * matrixValue[0][newX] + pcnt * line[newX]) / 100.0) // V
                  );
@@ -667,14 +710,14 @@ void matrixRoutine() {
     FastLED.clear();
   }
   
-  byte     effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t  effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   uint32_t cut_out = pHEIGHT < 10 ? 0x40 : 0x20; // на 0x004000 хвосты мматрицы короткие (4 точки), на 0x002000 - длиннее (8 точек)
 
-  for (byte x = 0; x < pWIDTH; x++) {
+  for (uint8_t x = 0; x < pWIDTH; x++) {
     // заполняем случайно верхнюю строку
     CRGB thisColor = getPixColorXY(x, pHEIGHT - 1);
     if (thisColor.g == 0) {
-      leds[getPixelNumber(x, pHEIGHT - 1)] = random8(0, map8(255 - effectScaleParam[MC_MATRIX],5,15)) == 0 ? CRGB(0, effectBrightness, 0) : CRGB(0,0,0);
+      leds[getPixelNumber(x, pHEIGHT - 1)] = random8(0, map8(255 - getEffectScaleParamValue(MC_MATRIX),5,15)) == 0 ? CRGB(0, effectBrightness, 0) : CRGB(0,0,0);
     } else if (thisColor.g < cut_out)
       drawPixelXY(x, pHEIGHT - 1, 0);
     else
@@ -693,10 +736,10 @@ void matrixRoutine() {
 #define BALL_TRACK 1       // (0 / 1) - вкл/выкл следы шариков
 #define TRACK_STEP 70      // длина хвоста шарика (чем больше цифра, тем хвост короче)
 
-int8_t BALLS_AMOUNT;
-int coord[BALLS_AMOUNT_MAX][2];
-int8_t vector[BALLS_AMOUNT_MAX][2];
-byte ballColors[BALLS_AMOUNT_MAX];
+int8_t  BALLS_AMOUNT;
+int16_t coord[BALLS_AMOUNT_MAX][2];
+int8_t  vector[BALLS_AMOUNT_MAX][2];
+uint8_t ballColors[BALLS_AMOUNT_MAX];
 
 void ballsRoutine() {
   if (loadingFlag) {
@@ -705,10 +748,10 @@ void ballsRoutine() {
     FastLED.clear();
     
     // Текущее количество шариков из настроек
-    BALLS_AMOUNT = map8(effectScaleParam[MC_BALLS],3,6); 
+    BALLS_AMOUNT = map8(getEffectScaleParamValue(MC_BALLS),3,6); 
     
-    for (byte j = 0; j < BALLS_AMOUNT; j++) {
-      int sign;
+    for (uint8_t j = 0; j < BALLS_AMOUNT; j++) {
+      int8_t sign;
 
       // забиваем случайными данными
       coord[j][0] = pWIDTH / 2 * 10;
@@ -721,7 +764,7 @@ void ballsRoutine() {
     }
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   if (!BALL_TRACK)    // если режим БЕЗ следов шариков
     FastLED.clear();  // очистить
@@ -730,10 +773,10 @@ void ballsRoutine() {
   }
 
   // движение шариков
-  for (byte j = 0; j < BALLS_AMOUNT; j++) {
+  for (uint8_t j = 0; j < BALLS_AMOUNT; j++) {
 
     // движение шариков
-    for (byte i = 0; i < 2; i++) {
+    for (uint8_t i = 0; i < 2; i++) {
       coord[j][i] += vector[j][i];
       if (coord[j][i] < 0) {
         coord[j][i] = 0;
@@ -767,11 +810,11 @@ void starfallRoutine() {
     FastLED.clear();  // очистить
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
-  STAR_DENSE = map8(effectScaleParam[MC_SPARKLES],30,90);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  STAR_DENSE = map8(getEffectScaleParamValue(MC_SPARKLES),30,90);
   
   // заполняем головами комет левую и верхнюю линию
-  for (byte i = 4; i < pHEIGHT; i++) {
+  for (uint8_t i = 4; i < pHEIGHT; i++) {
     if (getPixColorXY(0, i) == 0
         && (random8(0, STAR_DENSE) == 0)
         && getPixColorXY(0, i + 1) == 0
@@ -779,9 +822,9 @@ void starfallRoutine() {
       leds[getPixelNumber(0, i)] = CHSV(random8(0, 200), SATURATION, effectBrightness);
   }
   
-  for (byte i = 0; i < pWIDTH-4; i++) {
+  for (uint8_t i = 0; i < pWIDTH-4; i++) {
     if (getPixColorXY(i, pHEIGHT - 1) == 0
-        && (random8(0, map8(effectScaleParam[MC_STARFALL],10,120)) == 0)
+        && (random8(0, map8(getEffectScaleParamValue(MC_STARFALL),10,120)) == 0)
         && getPixColorXY(i + 1, pHEIGHT - 1) == 0
         && getPixColorXY(i - 1, pHEIGHT - 1) == 0)
       leds[getPixelNumber(i, pHEIGHT - 1)] = CHSV(random8(0, 200), SATURATION, effectBrightness);
@@ -791,10 +834,10 @@ void starfallRoutine() {
   shiftDiag();
 
   // уменьшаем яркость левой и верхней линии, формируем "хвосты"
-  for (byte i = 4; i < pHEIGHT; i++) {
+  for (uint8_t i = 4; i < pHEIGHT; i++) {
     fadePixel(0, i, TAIL_STEP);
   }
-  for (byte i = 0; i < pWIDTH-4; i++) {
+  for (uint8_t i = 0; i < pWIDTH-4; i++) {
     fadePixel(i, pHEIGHT - 1, TAIL_STEP);
   }
 
@@ -811,11 +854,11 @@ void sparklesRoutine() {
     FastLED.clear();  // очистить
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for (byte i = 0; i < map8(effectScaleParam[MC_SPARKLES],1,25); i++) {
-    byte x = random8(0, pWIDTH);
-    byte y = random8(0, pHEIGHT);
+  for (uint8_t i = 0; i < map8(getEffectScaleParamValue(MC_SPARKLES),1,25); i++) {
+    uint8_t x = random8(0, pWIDTH);
+    uint8_t y = random8(0, pHEIGHT);
     if (getPixColorXY(x, y) == 0)
       leds[getPixelNumber(x, y)] = CHSV(random8(0, 255), 255, effectBrightness);
   }
@@ -826,21 +869,21 @@ void sparklesRoutine() {
 // ----------------------------- СВЕТЛЯКИ ------------------------------
 
 #define LIGHTERS_AM 100
-int    lightersPos[2][LIGHTERS_AM];
-int8_t lightersSpeed[2][LIGHTERS_AM];
-byte   lightersColor[LIGHTERS_AM];
-byte   loopCounter;
+int16_t lightersPos[2][LIGHTERS_AM];
+int8_t  lightersSpeed[2][LIGHTERS_AM];
+uint8_t lightersColor[LIGHTERS_AM];
+uint8_t loopCounter;
 
-int    angle[LIGHTERS_AM];
-int    speedV[LIGHTERS_AM];
-int8_t angleSpeed[LIGHTERS_AM];
+int16_t angle[LIGHTERS_AM];
+int16_t speedV[LIGHTERS_AM];
+int8_t  angleSpeed[LIGHTERS_AM];
 
 void lightersRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     // modeCode = MC_LIGHTERS;
     randomSeed(millis());
-    for (byte i = 0; i < LIGHTERS_AM; i++) {
+    for (uint8_t i = 0; i < LIGHTERS_AM; i++) {
       lightersPos[0][i] = random(0, pWIDTH * 10);
       lightersPos[1][i] = random(0, pHEIGHT * 10);
       lightersSpeed[0][i] = random(-10, 10);
@@ -849,12 +892,12 @@ void lightersRoutine() {
     }
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   FastLED.clear();
 
   if (++loopCounter > 20) loopCounter = 0;
 
-  for (byte i = 0; i < map8(effectScaleParam[MC_LIGHTERS],5,150); i++) {
+  for (uint8_t i = 0; i < map8(getEffectScaleParamValue(MC_LIGHTERS),5,150); i++) {
     if (loopCounter == 0) {     // меняем скорость каждые 20 отрисовок
       lightersSpeed[0][i] += random(-3, 4);
       lightersSpeed[1][i] += random(-3, 4);
@@ -882,34 +925,34 @@ void lightersRoutine() {
 
 // ********************* БУДИЛЬНИК-РАССВЕТ *********************
 
-int8_t row, col;                   // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (первая змейка для круговой спирали)
-int8_t row2, col2;                 // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (вторая змейка для плоской спирали)
-int8_t dir, dir2;                  // Для эффекта спирали на плоскости - направление движениия змейки: 0 - вниз; 1 - влево; 2 - вверх; 3 - вправо; 
-int8_t range[4], range2[4];        // Для эффекта спирали на плоскости - границы разворачивания спирали; 
+int8_t   row, col;                 // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (первая змейка для круговой спирали)
+int8_t   row2, col2;               // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (вторая змейка для плоской спирали)
+int8_t   dir, dir2;                // Для эффекта спирали на плоскости - направление движениия змейки: 0 - вниз; 1 - влево; 2 - вверх; 3 - вправо; 
+int8_t   range[4], range2[4];      // Для эффекта спирали на плоскости - границы разворачивания спирали; 
 uint16_t tail[8], tail2[8];        // Для эффекта спирали на плоскости - позиции хвоста змейки. HiByte = x, LoByte=y
-CHSV tailColor;                    // Цвет последней точки "хвоста" змейки. Этот же цвет используется для предварительной заливки всей матрицы
-CHSV tailColor2;                   // Предварительная заливка нужна для корректного отображения часов поверх специальных эффектов будильника
-boolean firstRowFlag;              // Флаг начала самого первого ряда первого кадра, чтобы не рисовать "хвост" змейки в предыдущем кадре, которого не было.
-byte dawnBrightness;               // Текущая яркость будильника "рассвет"
-byte tailBrightnessStep;           // Шаг приращения яркости будильника "рассвет"
-byte dawnColorIdx;                 // Индекс в массиве цвета "заливки" матрицы будильника "рассвет" (голова змейки)
-byte dawnColorPrevIdx;             // Предыдущий индекс - нужен для корректного цвета отрисовки "хвоста" змейки, 
+CHSV     tailColor;                // Цвет последней точки "хвоста" змейки. Этот же цвет используется для предварительной заливки всей матрицы
+CHSV     tailColor2;               // Предварительная заливка нужна для корректного отображения часов поверх специальных эффектов будильника
+bool     firstRowFlag;             // Флаг начала самого первого ряда первого кадра, чтобы не рисовать "хвост" змейки в предыдущем кадре, которого не было.
+uint8_t  dawnBrightness;           // Текущая яркость будильника "рассвет"
+uint8_t  tailBrightnessStep;       // Шаг приращения яркости будильника "рассвет"
+uint8_t  dawnColorIdx;             // Индекс в массиве цвета "заливки" матрицы будильника "рассвет" (голова змейки)
+uint8_t  dawnColorPrevIdx;         // Предыдущий индекс - нужен для корректного цвета отрисовки "хвоста" змейки, 
                                    // когда голова начинает новый кадр внизу матрицы, а хвост - вверху от предыдущего кадра
-byte step_cnt;                     // Номер шага эффекта, чтобы определить какой длины "хвост" у змейки
+uint8_t  step_cnt;                 // Номер шага эффекта, чтобы определить какой длины "хвост" у змейки
 
 // "Рассвет" - от красного к желтому - белому - голубому с плавным увеличением яркости;
 // Яркость меняется по таймеру - на каждое срабатывание таймера - +1 к яркости.
 // Диапазон изменения яркости - от MIN_DAWN_BRIGHT до MAX_DAWN_BRIGHT (количество шагов)
 // Цветовой тон матрицы меняется каждые 16 шагов яркости 255 / 16 -> дает 16 индексов в массиве цветов
 // Время таймера увеличения яркости - время рассвета DAWN_NINUTES на количество шагов приращения яркости
-byte dawnColorHue[16]  PROGMEM = {0, 16, 28, 36, 44, 52, 57, 62, 64, 66, 66, 64, 62, 60, 128, 128};              // Цвет заполнения - HUE змейки 1
-byte dawnColorSat[16]  PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170, 155, 130, 105, 80, 50, 25, 80};   // Цвет заполнения - SAT змейки 1
-byte dawnColorHue2[16] PROGMEM = {0, 16, 28, 36, 44, 52, 57, 62, 64, 66, 66, 64, 62, 60, 128, 128};              // Цвет заполнения - HUE змейки 2
-byte dawnColorSat2[16] PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170, 155, 130, 105, 80, 50, 25, 80};   // Цвет заполнения - SAT змейки 2
+uint8_t dawnColorHue[16]  PROGMEM = {0, 16, 28, 36, 44, 52, 57, 62, 64, 66, 66, 64, 62, 60, 128, 128};              // Цвет заполнения - HUE змейки 1
+uint8_t dawnColorSat[16]  PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170, 155, 130, 105, 80, 50, 25, 80};   // Цвет заполнения - SAT змейки 1
+uint8_t dawnColorHue2[16] PROGMEM = {0, 16, 28, 36, 44, 52, 57, 62, 64, 66, 66, 64, 62, 60, 128, 128};              // Цвет заполнения - HUE змейки 2
+uint8_t dawnColorSat2[16] PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170, 155, 130, 105, 80, 50, 25, 80};   // Цвет заполнения - SAT змейки 2
 
 #define MIN_DAWN_BRIGHT   2        // Минимальное значение яркости будильника (с чего начинается)
 #define MAX_DAWN_BRIGHT   255      // Максимальное значение яркости будильника (чем заканчивается)
-byte DAWN_NINUTES = 20;            // Продолжительность рассыета в минутах
+uint8_t DAWN_NINUTES = 20;            // Продолжительность рассыета в минутах
 
 void dawnProcedure() {
 
@@ -921,7 +964,7 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);        
 
     if (realDawnDuration <= 0 || realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
-    long interval = realDawnDuration * 60000L / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT);
+    uint32_t interval = realDawnDuration * 60000UL / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT);
     dawnTimer.setInterval(interval);
   }
 
@@ -931,7 +974,7 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);
   }
 
-  byte effect = isAlarming ? alarmEffect : MC_DAWN_ALARM;
+  uint8_t effect = isAlarming ? alarmEffect : MC_DAWN_ALARM;
   if (effect == MC_DAWN_ALARM) {
     // Если устройство лампа (DEVICE_TYPE == 0) - матрица свернута в "трубу" - рассвет - огонек, бегущий вкруговую по спирали
     // Если устройство плоская матрица в рамке (DEVICE_TYPE == 1) - рассвет - огонек, бегущий по спирали от центра матрицы к краям на плоскости
@@ -940,7 +983,7 @@ void dawnProcedure() {
 
   // Если эффект "Лампа" и цвет - черный (остался от "выключено" - выбрать цвет лампы из сохраненных эффектов "Цветная лампа"
   if (effect == MC_FILL_COLOR && globalColor == 0) {
-     set_globalColor(getColorInt(CHSV(getEffectSpeed(MC_FILL_COLOR), effectScaleParam[MC_FILL_COLOR], 255)));
+     set_globalColor(getColorInt(CHSV(getEffectSpeedValue(MC_FILL_COLOR), getEffectScaleParamValue(MC_FILL_COLOR), 255)));
   }
   if (effect == MC_FILL_COLOR && globalColor == 0) {
      set_globalColor(0xFFFFFF);
@@ -969,15 +1012,15 @@ void dawnLampSpiral() {
     tailColor = CHSV(0, 255, 255 - 8 * tailBrightnessStep); 
   }
 
-  boolean flag = true;
+  bool flag = true;
   int8_t x=col, y=row;
   
   if (!firstRowFlag) {
     fillAll(tailColor);
   }
 
-  byte tail_len = min(8, pWIDTH - 1);  
-  for (byte i=0; i<tail_len; i++) {
+  uint8_t tail_len = min(8, pWIDTH - 1);  
+  for (uint8_t i=0; i<tail_len; i++) {
     x--;
     if (x < 0) { x = pWIDTH - 1; y--; }
     if (y < 0) {
@@ -986,9 +1029,9 @@ void dawnLampSpiral() {
       if (firstRowFlag) break;
     }
 
-    byte idx = y > row ? dawnColorPrevIdx : dawnColorIdx;
-    byte dawnHue = pgm_read_byte(&(dawnColorHue[idx]));
-    byte dawnSat = pgm_read_byte(&(dawnColorSat[idx]));
+    uint8_t idx = y > row ? dawnColorPrevIdx : dawnColorIdx;
+    uint8_t dawnHue = pgm_read_byte(&(dawnColorHue[idx]));
+    uint8_t dawnSat = pgm_read_byte(&(dawnColorSat[idx]));
         
     tailColor = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
     drawPixelXY(x,y, tailColor);  
@@ -1042,19 +1085,19 @@ void dawnLampSquare() {
   
   step_cnt++;
   
-  for (byte i=7; i>0; i--) {
+  for (uint8_t i=7; i>0; i--) {
     tail[i]  = tail[i-1];
     tail2[i] = tail2[i-1];
   }
   tail[0]  = (uint)((int)x <<8 | (int)y);
   tail2[0] = (uint)((int)x2<<8 | (int)y2);
 
-  byte dawnHue  = pgm_read_byte(&(dawnColorHue[dawnColorIdx]));
-  byte dawnSat  = pgm_read_byte(&(dawnColorSat[dawnColorIdx]));
-  byte dawnHue2 = pgm_read_byte(&(dawnColorHue2[dawnColorIdx]));
-  byte dawnSat2 = pgm_read_byte(&(dawnColorSat2[dawnColorIdx]));
+  uint8_t dawnHue  = pgm_read_byte(&(dawnColorHue[dawnColorIdx]));
+  uint8_t dawnSat  = pgm_read_byte(&(dawnColorSat[dawnColorIdx]));
+  uint8_t dawnHue2 = pgm_read_byte(&(dawnColorHue2[dawnColorIdx]));
+  uint8_t dawnSat2 = pgm_read_byte(&(dawnColorSat2[dawnColorIdx]));
 
-  for (byte i=0; i < 8; i++) {
+  for (uint8_t i=0; i < 8; i++) {
     
     tailColor  = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
     tailColor2 = CHSV(dawnHue2, dawnSat2, 255 - i * tailBrightnessStep); 
@@ -1064,7 +1107,7 @@ void dawnLampSquare() {
       y  = tail[i]  & 0xff;
       x2 =  tail2[i]>>8;  
       y2 = tail2[i] & 0xff;
-      for (byte n=0; n < seg_num; n++) {
+      for (uint8_t n=0; n < seg_num; n++) {
         uint8_t cx = dir_mx == 0 ? (seg_offset * (n + 1) + seg_size * n) : 0;
         uint8_t cy = dir_mx == 0 ? 0 : (seg_offset * (n + 1) + seg_size * n);
         drawPixelXY(x + cx,  y + cy,  tailColor);
@@ -1175,9 +1218,9 @@ void fillColorProcedure() {
     loadingFlag = false;
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  byte bright = isAlarming && !isAlarmStopped 
+  uint8_t bright = isAlarming && !isAlarmStopped 
     ? dawnBrightness
     : (specialMode ? specialBrightness : effectBrightness);
 
@@ -1198,22 +1241,22 @@ uint32_t xf,yf,v_time,hue_time,hxy;
 // have!  More octaves will make things slower.
 
 // how many octaves to use for the brightness and hue functions
-uint8_t octaves=1;
-uint8_t hue_octaves=3;
+uint8_t  octaves=1;
+uint8_t  hue_octaves=3;
 
 // the 'distance' between points on the x and y axis
-int xscale=57771;
-int yscale=57771;
+int32_t  xscale=57771;
+int32_t  yscale=57771;
 
 // the 'distance' between x/y points for the hue noise
-int hue_scale=1;
+int32_t  hue_scale=1;
 
 // how fast we move through time & hue noise
-int time_speed=1111;
-int hue_speed=1;
+int32_t  time_speed=1111;
+uint8_t  hue_speed=1;
 
 // adjust these values to move along the x or y axis between frames
-int x_speed, y_speed;
+uint16_t x_speed, y_speed;
 
 void flickerRoutine() {
   if (loadingFlag) {
@@ -1229,7 +1272,10 @@ void flickerRoutine() {
     hue_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();    
   }
 
-  // byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+
+  // uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   // fill the led array 2/16-bit noise values
   fill_2dnoise16(leds, pWIDTH, pHEIGHT, (sMATRIX_TYPE == 0),
@@ -1238,7 +1284,7 @@ void flickerRoutine() {
                 false);
 
   // adjust the intra-frame time values
-  hue_speed  = map8(255-effectSpeed, 1, 10);
+  hue_speed  = map8(255-getEffectSpeedValue(MC_FLICKER), 1, 10);
 
   xf += x_speed;
   yf += y_speed;
@@ -1284,7 +1330,10 @@ void pacificaRoutine()
     loadingFlag = false;
   }
 
-  // byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+
+  // uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   // Increment the four "color index start" counters, one for each wave layer.
   // Each is incremented at a different speed, and the speeds vary over time.
@@ -1378,14 +1427,17 @@ void shadowsRoutine() {
     loadingFlag = false;
   }
 
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
  
-  uint8_t sat8 = beatsin88( 87, 220, 250);
-  uint8_t brightdepth = beatsin88( 341, 96, 224);
+  uint8_t  sat8 = beatsin88( 87, 220, 250);
+  uint8_t  brightdepth = beatsin88( 341, 96, 224);
   uint16_t brightnessthetainc16 = beatsin88( 203, (25 * 256), (40 * 256));
-  uint8_t msmultiplier = beatsin88(147, 23, 60);
+  uint8_t  msmultiplier = beatsin88(147, 23, 60);
 
   uint16_t hue16 = sHue16;//gHue * 256;
   uint16_t hueinc16 = beatsin88(113, 1, 3000);
@@ -1393,7 +1445,7 @@ void shadowsRoutine() {
   uint16_t ms = millis();
   uint16_t deltams = ms - sLastMillis ;
   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t  effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   sLastMillis  = ms;
   sPseudotime += deltams * msmultiplier;
@@ -1427,12 +1479,12 @@ void shadowsRoutine() {
 #define FADE_OUT_STEPS 32  // За сколько шагов плашка убирается с экрана    
 #define BLOCK_ON_START 5   // Сколько блоков сразу появлять в начале эффекта
 
-byte num_x, num_y, off_x, off_y;
+uint8_t num_x, num_y, off_x, off_y;
 
-byte **palette_h; // Н in CHSV
-byte **palette_s; // S in CHSV
-byte **block_sta; // Block state: // 0 - появление; 1 - исчезновение; 2 - пауза перед появлением 3 - пауза перед удалением
-byte **block_dur; // время паузы блока
+uint8_t **palette_h; // Н in CHSV
+uint8_t **palette_s; // S in CHSV
+uint8_t **block_sta; // Block state: // 0 - появление; 1 - исчезновение; 2 - пауза перед появлением 3 - пауза перед удалением
+uint8_t **block_dur; // время паузы блока
 
 void paletteRoutine() {
 
@@ -1448,14 +1500,14 @@ void paletteRoutine() {
     dir_mx = pWIDTH > pHEIGHT ? 0 : 1;                                   // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
     seg_num = dir_mx == 0 ? (pWIDTH / pHEIGHT) : (pHEIGHT / pWIDTH);     // вычисляем количество сегментов, умещающихся на матрице
     
-    if (palette_h == NULL) { palette_h = new byte*[num_x]; for (int i = 0; i < num_x; i++) { palette_h[i] = new byte [num_y]; }}
-    if (palette_s == NULL) { palette_s = new byte*[num_x]; for (int i = 0; i < num_x; i++) { palette_s[i] = new byte [num_y]; }}
-    if (block_sta == NULL) { block_sta = new byte*[num_x]; for (int i = 0; i < num_x; i++) { block_sta[i] = new byte [num_y]; }}
-    if (block_dur == NULL) { block_dur = new byte*[num_x]; for (int i = 0; i < num_x; i++) { block_dur[i] = new byte [num_y]; }}
+    if (palette_h == NULL) { palette_h = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_h[i] = new uint8_t [num_y]; }}
+    if (palette_s == NULL) { palette_s = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_s[i] = new uint8_t [num_y]; }}
+    if (block_sta == NULL) { block_sta = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { block_sta[i] = new uint8_t [num_y]; }}
+    if (block_dur == NULL) { block_dur = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { block_dur[i] = new uint8_t [num_y]; }}
 
     // Для всех блоков определить состояние - "ожидание появления
-    for (byte c = 0; c < num_x; c++) {
-      for (byte r = 0; r < num_y; r++) {
+    for (uint8_t c = 0; c < num_x; c++) {
+      for (uint8_t r = 0; r < num_y; r++) {
         block_sta[c][r] = 2;                // Состояние - пауза перед появлением
         block_dur[c][r] = random8(25,125);  // Длительность паузы
       }
@@ -1463,23 +1515,23 @@ void paletteRoutine() {
 
     // Для некоторого количества начальных - установить "За шаг до появления"
     // При первом же проходе состояние переключится на "появление"
-    for (byte i = 0; i < BLOCK_ON_START * seg_num; i++) {
-      byte c = random8(0, num_x - 1);
-      byte r = random8(0, num_y - 1);
+    for (uint8_t i = 0; i < BLOCK_ON_START * seg_num; i++) {
+      uint8_t c = random8(0, num_x - 1);
+      uint8_t r = random8(0, num_y - 1);
       block_dur[c][r] = 1;                  // Счетчик до начала появления
     }
     FastLED.clear();
   }
   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for (byte c = 0; c < num_x; c++) {
-    byte block_x = off_x + c * BLOCK_SIZE;
-    for (byte r = 0; r < num_y; r++) {    
+  for (uint8_t c = 0; c < num_x; c++) {
+    uint8_t block_x = off_x + c * BLOCK_SIZE;
+    for (uint8_t r = 0; r < num_y; r++) {    
       
-      byte block_y = off_y + r * BLOCK_SIZE;
-      byte h = palette_h[c][r];      
-      byte s = palette_s[c][r];
+      uint8_t block_y = off_y + r * BLOCK_SIZE;
+      uint8_t h = palette_h[c][r];      
+      uint8_t s = palette_s[c][r];
 
       // Проверить состояние блока
       if (block_sta[c][r] > 1) {
@@ -1504,24 +1556,24 @@ void paletteRoutine() {
 
         // В процессе появления или исчезновения (0 или 1)
         // Выполнить один шаг появления / исчезновения блока
-        byte fade_dir = block_sta[c][r]; // 0 - появляться, 1 - исчезать
-        byte fade_step = block_dur[c][r];
+        uint8_t fade_dir = block_sta[c][r]; // 0 - появляться, 1 - исчезать
+        uint8_t fade_step = block_dur[c][r];
 
         // Яркость блока
-        byte bri = fade_dir == 0
+        uint8_t bri = fade_dir == 0
            ? map(fade_step, 0,FADE_IN_STEPS,  0,effectBrightness)
            : map(fade_step, 0,FADE_OUT_STEPS, effectBrightness,0);
 
         // Нарисовать блок   
-        for (byte i=0; i<BLOCK_SIZE; i++) {        
-          for (byte j=0; j<BLOCK_SIZE; j++) {
+        for (uint8_t i=0; i<BLOCK_SIZE; i++) {        
+          for (uint8_t j=0; j<BLOCK_SIZE; j++) {
             
-            //byte k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
-            //byte bri2 = (bri > k ? bri - k : 0);
+            //uint8_t k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
+            //uint8_t bri2 = (bri > k ? bri - k : 0);
             CHSV color = CHSV(h, s, bri); // bri2
 
-            byte xx = block_x + j;
-            byte yy = block_y + BLOCK_SIZE - i - 1;
+            uint8_t xx = block_x + j;
+            uint8_t yy = block_y + BLOCK_SIZE - i - 1;
             if (xx < pWIDTH && yy < pHEIGHT) {
               uint16_t idx = getPixelNumber(xx, yy);
               leds[idx] = color;
@@ -1545,10 +1597,10 @@ void paletteRoutine() {
 }
 
 void paletteRoutineRelease() {
-  if (block_dur != NULL) { for( int i = 0; i < num_x; i++ ) { delete [] block_dur[i];} delete [] block_dur; block_dur = NULL; }
-  if (block_sta != NULL) { for( int i = 0; i < num_x; i++ ) { delete [] block_sta[i];} delete [] block_sta; block_sta = NULL; }
-  if (palette_s != NULL) { for( int i = 0; i < num_x; i++ ) { delete [] palette_s[i];} delete [] palette_s; palette_s = NULL; }
-  if (palette_h != NULL) { for( int i = 0; i < num_x; i++ ) { delete [] palette_h[i];} delete [] palette_h; palette_h = NULL; }
+  if (block_dur != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] block_dur[i];} delete [] block_dur; block_dur = NULL; }
+  if (block_sta != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] block_sta[i];} delete [] block_sta; block_sta = NULL; }
+  if (palette_s != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] palette_s[i];} delete [] palette_s; palette_s = NULL; }
+  if (palette_h != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] palette_h[i];} delete [] palette_h; palette_h = NULL; }
 }
 
 
@@ -1569,17 +1621,17 @@ void paletteRoutineRelease() {
 #define FALL_DELAY 50     // скорость падения точек максимума (задержка, миллисекунды)
 #define FALL_PAUSE 700    // пауза перед падением точек максимума, миллисекунды
 
-unsigned long gainTimer, fallTimer;
-byte  maxValue;
-boolean fallFlag;
+uint32_t gainTimer, fallTimer;
+uint8_t  maxValue;
+bool     fallFlag;
 
-unsigned long *timeLevel;
-byte      *posOffset;   // Массив данных для отображения на матрице
-int16_t   *maxLevel;
-byte      *posLevel_old;
+uint32_t *timeLevel;
+uint8_t  *posOffset;   // Массив данных для отображения на матрице
+int16_t  *maxLevel;
+uint8_t  *posLevel_old;
 
-byte st = 0;
-byte phase = 0;          // фаза эффекта
+uint8_t st = 0;
+uint8_t phase = 0;          // фаза эффекта
     
 // -------------------------------------------------------------------------------------
 
@@ -1593,12 +1645,12 @@ void analyzerRoutine() {
     // modeCode = MC_ANALYZER;
     loadingFlag = false;
 
-    if (timeLevel    == NULL) { timeLevel    = new unsigned long[pWIDTH]; }
-    if (posOffset    == NULL) { posOffset    = new byte[pWIDTH]; }
+    if (timeLevel    == NULL) { timeLevel    = new uint32_t[pWIDTH]; }
+    if (posOffset    == NULL) { posOffset    = new uint8_t[pWIDTH]; }
     if (maxLevel     == NULL) { maxLevel     = new int16_t[pWIDTH]; }
-    if (posLevel_old == NULL) { posLevel_old = new byte[pWIDTH]; }
+    if (posLevel_old == NULL) { posLevel_old = new uint8_t[pWIDTH]; }
     
-    for (int i = 0; i < pWIDTH; i++) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
       maxLevel[i] = 0;
       posLevel_old[i] = 0;
     }
@@ -1610,7 +1662,7 @@ void analyzerRoutine() {
   
   if (phase == 0) {
     // Движение волны слева направо
-    for (int i = 0; i < pWIDTH; i++) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
       posOffset[i] = (i < st || i >= st + SIN_WIDTH - (SIN_WIDTH / 4))
         ? 0
         : map8(sin8(map(i, st,st + SIN_WIDTH, 0,255)), 1, pHEIGHT + pHEIGHT / 2);
@@ -1619,7 +1671,7 @@ void analyzerRoutine() {
 
   if (phase == 2) {
     // Движение волны справа налево
-    for (int i = 0; i < pWIDTH; i++) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
         posOffset[i] = (i < pWIDTH - st || i > pWIDTH - st + SIN_WIDTH)
           ? 0
           : map8(sin8(map(i, pWIDTH - st, pWIDTH - st + SIN_WIDTH, 0, 255)), 1, pHEIGHT + pHEIGHT / 2);
@@ -1628,14 +1680,14 @@ void analyzerRoutine() {
 
   if (phase == 1 || phase == 3) {
     // Пауза, даем "отстояться" пикам
-    for (int i = 0; i < pWIDTH; i++) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
       posOffset[i] = 0;
     }    
   } else
   
   if (phase >= 4) {
     // Случайные двиижения - "музыка"
-    for (int i = 0; i < pWIDTH; i++) {
+    for (uint8_t i = 0; i < pWIDTH; i++) {
       posOffset[i] = random8(1,MAX_LEVEL);    
     }
   }
@@ -1646,13 +1698,13 @@ void analyzerRoutine() {
     st = phase % 2 == 1 ? pWIDTH / 2 : 0;
   }
   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   
   maxValue = 0;
   FastLED.clear();  // очистить матрицу
   
-  for (byte pos = 0; pos < pWIDTH; pos++) {    // для каждого столбца матрицы
-    int posLevel = posOffset[pos];
+  for (uint8_t pos = 0; pos < pWIDTH; pos++) {    // для каждого столбца матрицы
+    uint8_t posLevel = posOffset[pos];
 
     // найти максимум из пачки тонов
     if (posLevel > maxValue) maxValue = posLevel;
@@ -1665,7 +1717,7 @@ void analyzerRoutine() {
     posLevel = constrain(posLevel, 1, pHEIGHT - 1);
 
     if (posLevel > 0) {
-      for (int j = 0; j < posLevel; j++) {
+      for (uint8_t j = 0; j < posLevel; j++) {
         CHSV color;
         if      (j < map( 5, 0,16, 0,pHEIGHT)) color = CHSV(COLOR1, 255, effectBrightness);
         else if (j < map(10, 0,16, 0,pHEIGHT)) color = CHSV(COLOR2, 255, effectBrightness);
@@ -1687,7 +1739,7 @@ void analyzerRoutine() {
     }
 
     if (fallFlag) {                                           // если падаем на шаг
-      if ((long)millis() - timeLevel[pos] > FALL_PAUSE) {     // если максимум держался на своей высоте дольше FALL_PAUSE
+      if ((uint32_t)millis() - timeLevel[pos] > FALL_PAUSE) {     // если максимум держался на своей высоте дольше FALL_PAUSE
         if (maxLevel[pos] >= 0) maxLevel[pos]--;              // уменьшить высоту точки на 1
         // внимание! Принимает минимальное значение -1 !
       }
@@ -1716,6 +1768,9 @@ void prizmataRoutine() {
     dir_mx = pWIDTH >= pHEIGHT ? 0 : 1;                                 // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
     // modeCode = MC_PRIZMATA;
   }
+
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
   
   EVERY_N_MILLIS(33) {
      hue++;
@@ -1724,8 +1779,8 @@ void prizmataRoutine() {
   FastLED.clear();
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
-  byte spd = map8(255-effectSpeed, 12, 64);   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t spd = map8(255-getEffectSpeedValue(MC_PRIZMATA), 12, 64);   
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   if (dir_mx == 0) {
     for (uint8_t x = 0; x < pWIDTH; x++) {
@@ -1746,16 +1801,16 @@ void prizmataRoutine() {
 // (с) проект Aurora "Munch"
 // adopted/updated by kostyamat
 
-int8_t count = 0;
-byte flip = 0;
-byte generation = 0;
-byte rnd = 4; //1-8
-byte mic[2];
-byte minDimLocal = maxDim > 32 ? 32 : 16;
+int8_t  count = 0;
+uint8_t flip = 0;
+uint8_t generation = 0;
+uint8_t rnd = 4; //1-8
+uint8_t mic[2];
+uint8_t minDimLocal = maxDim > 32 ? 32 : 16;
 
-const byte width_adj = (pWIDTH < pHEIGHT ? (pHEIGHT - pWIDTH) / 2 : 0);
-const byte height_adj = (pHEIGHT < pWIDTH ? (pWIDTH - pHEIGHT) / 2 : 0);
-const byte maxDim_steps = 256 / maxDim;
+const uint8_t width_adj = (pWIDTH < pHEIGHT ? (pHEIGHT - pWIDTH) / 2 : 0);
+const uint8_t height_adj = (pHEIGHT < pWIDTH ? (pWIDTH - pHEIGHT) / 2 : 0);
+const uint8_t maxDim_steps = 256 / maxDim;
 
 void munchRoutine() {
   if (loadingFlag) {
@@ -1768,10 +1823,10 @@ void munchRoutine() {
     FastLED.clear();
   }
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for (byte x = 0; x < minDimLocal; x++) {
-    for (byte y = 0; y < minDimLocal; y++) {
+  for (uint8_t x = 0; x < minDimLocal; x++) {
+    for (uint8_t y = 0; y < minDimLocal; y++) {
       CRGB color = (x ^ y ^ flip) < count ? ColorFromPalette(RainbowColors_p, ((x ^ y) << rnd) + generation, effectBrightness) : CRGB::Black;
       if (x < pWIDTH and y < pHEIGHT) leds[XY(x, y)] = color;
       if (x + minDimLocal < pWIDTH and y < pHEIGHT) leds[XY(x + minDimLocal, y)] = color;
@@ -1808,13 +1863,13 @@ uint8_t cloudHeight = pHEIGHT * 0.2 + 1;
 uint8_t **noise3d;
 uint8_t *cloud;
 
-void rain(byte backgroundDepth, byte spawnFreq, byte tailLength, bool splashes, bool clouds, bool storm) {
+void rain(uint8_t backgroundDepth, uint8_t spawnFreq, uint8_t tailLength, bool splashes, bool clouds, bool storm) {
   
   static uint16_t noiseX = random16();
   static uint16_t noiseY = random16();
   static uint16_t noiseZ = random16();
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   
   fadeToBlackBy( leds, NUM_LEDS, 255-tailLength);
 
@@ -1843,8 +1898,8 @@ void rain(byte backgroundDepth, byte spawnFreq, byte tailLength, bool splashes, 
     // Step 4. Add splash if called for
     if (splashes) {
       // FIXME, this is broken
-      byte j = line[x];
-      byte v = noise3d[x][0];
+      uint8_t j = line[x];
+      uint8_t v = noise3d[x][0];
 
       if (j >= backgroundDepth) {
         leds[XY(wrapX(x-2),0)] = ColorFromPalette(rain_p, j/3, effectBrightness);
@@ -1905,9 +1960,9 @@ void rain(byte backgroundDepth, byte spawnFreq, byte tailLength, bool splashes, 
       uint16_t noiseScale = 250;  // A value of 1 will be so zoomed in, you'll mostly see solid colors. A value of 4011 will be very zoomed out and shimmery
       
       if (cloud != NULL) {      
-        int xoffset = noiseScale * x + hue;  
+        int16_t xoffset = noiseScale * x + hue;  
         for(uint8_t z = 0; z < cloudHeight; z++) {
-          int yoffset = noiseScale * z - hue;
+          int16_t yoffset = noiseScale * z - hue;
           uint8_t dataSmoothing = 192;
           uint8_t noiseData = qsub8(inoise8(noiseX + xoffset,noiseY + yoffset,noiseZ),16);
           noiseData = qadd8(noiseData,scale8(noiseData,39));
@@ -1928,12 +1983,12 @@ void rainRoutine() {
     //modeCode = MC_RAIN;
     cloudHeight = pHEIGHT * 0.2 + 1; // это уже 20% c лишеним, но на высоких матрицах будет чуть меньше
     
-    if (noise3d == NULL) { noise3d = new uint8_t*[pWIDTH]; for (int i = 0; i < pWIDTH; i++) { noise3d[i] = new uint8_t [pHEIGHT]; }}
-    if (line == NULL)    { line = new unsigned char[pWIDTH]; }
+    if (noise3d == NULL) { noise3d = new uint8_t*[pWIDTH]; for (uint8_t i = 0; i < pWIDTH; i++) { noise3d[i] = new uint8_t [pHEIGHT]; }}
+    if (line == NULL)    { line = new uint8_t[pWIDTH]; }
     if (cloud == NULL)   { cloud = new uint8_t[pWIDTH * cloudHeight]; }
   }
 
-  byte intensity = beatsin8(map8(effectScaleParam[MC_RAIN],2,6), 4, 60);
+  uint8_t intensity = beatsin8(map8(getEffectScaleParamValue(MC_RAIN),2,6), 4, 60);
   
   // ( Depth of dots, frequency of new dots, length of tails, splashes, clouds, ligthening )
   if (intensity <= 35) 
@@ -1947,7 +2002,7 @@ void rainRoutine() {
 void rainRoutineRelease() {
   if (cloud != NULL)   { delete[] cloud; cloud = NULL; }
   if (line != NULL)    { delete[] line; line = NULL; }
-  if (noise3d != NULL) { for (int i = 0; i < pWIDTH; i++) delete[] noise3d[i]; delete[] noise3d; noise3d = NULL; }
+  if (noise3d != NULL) { for (uint8_t i = 0; i < pWIDTH; i++) delete[] noise3d[i]; delete[] noise3d; noise3d = NULL; }
 }
 
 // ********************** ОГОНЬ-2 (КАМИН) *********************
@@ -1956,18 +2011,21 @@ void fire2Routine() {
   if (loadingFlag) {
     loadingFlag = false;
     //modeCode = MC_FIRE2;
-    if (noise3d == NULL) { noise3d = new uint8_t*[pWIDTH]; for (int i = 0; i < pWIDTH; i++) { noise3d[i] = new uint8_t [pHEIGHT]; } }
+    if (noise3d == NULL) { noise3d = new uint8_t*[pWIDTH]; for (uint8_t i = 0; i < pWIDTH; i++) { noise3d[i] = new uint8_t [pHEIGHT]; } }
   }
 
-  static byte FIRE_BASE = pHEIGHT/6 > 6 ? 6 : pHEIGHT/6+1;
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+
+  static uint8_t FIRE_BASE = pHEIGHT/6 > 6 ? 6 : pHEIGHT/6+1;
   
   // COOLING: How much does the air cool as it rises?
   // Less cooling = taller flames.  More cooling = shorter flames.  
-  byte cooling = map8(effectSpeed, 70, 100);     
+  uint8_t cooling = map8(getEffectSpeedValue(MC_FIRE2), 70, 100);     
   
   // SPARKING: What chance (out of 255) is there that a new spark will be lit?
   // Higher chance = more roaring fire.  Lower chance = more flickery fire.
-  byte sparking = map8(effectScaleParam[MC_FIRE2], 90, 150);
+  uint8_t sparking = map8(getEffectScaleParamValue(MC_FIRE2), 90, 150);
   
   // SMOOTHING; How much blending should be done between frames
   // Lower = more blending and smoother flames. Higher = less blending and flickery flames
@@ -1976,7 +2034,7 @@ void fire2Routine() {
   // Add entropy to random number generator; we use a lot of it.
   random16_add_entropy(random(256));
 
-  byte effectBrightness = map8(getBrightnessCalculated(globalBrightness, effectContrast[thisMode]), 32,128);
+  uint8_t effectBrightness = map8(getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode)), 32,128);
 
   // Loop for each column individually
   for (uint8_t x = 0; x < pWIDTH; x++) {
@@ -2005,22 +2063,22 @@ void fire2Routine() {
 }
 
 void fire2RoutineRelease() {
-  if (noise3d != NULL) { for (int i = 0; i < pWIDTH; i++) delete[] noise3d[i]; delete[] noise3d; noise3d = NULL; }
+  if (noise3d != NULL) { for (uint8_t i = 0; i < pWIDTH; i++) delete[] noise3d[i]; delete[] noise3d; noise3d = NULL; }
 }
 
 // ************************** СТРЕЛКИ *************************
-int8_t  arrow_x[4], arrow_y[4], stop_x[4], stop_y[4];
-byte    arrow_direction;            // 0x01 - слева направо; 0x02 - снизу вверх; 0х04 - справа налево; 0х08 - сверху вниз
-byte    arrow_mode, arrow_mode_orig;// 0 - по очереди все варианты
-                                    // 1 - по очереди от края до края экрана; 
-                                    // 2 - одновременно по горизонтали навстречу к ентру, затем одновременно по вертикали навстречу к центру
-                                    // 3 - одновременно все к центру
-                                    // 4 - по два (горизонталь / вертикаль) все от своего края к противоположному, стрелки смещены от центра на 1/3
-                                    // 5 - одновременно все от своего края к противоположному, стрелки смещены от центра на 1/3
-bool    arrow_complete, arrow_change_mode;
-byte    arrow_hue[4];
-byte    arrow_play_mode_count[6];        // Сколько раз проигрывать полностью каждый режим если вариант 0 - текущий счетчик
-byte    arrow_play_mode_count_orig[6];   // Сколько раз проигрывать полностью каждый режим если вариант 0 - исходные настройки
+int8_t   arrow_x[4], arrow_y[4], stop_x[4], stop_y[4];
+uint8_t  arrow_direction;            // 0x01 - слева направо; 0x02 - снизу вверх; 0х04 - справа налево; 0х08 - сверху вниз
+uint8_t  arrow_mode, arrow_mode_orig;// 0 - по очереди все варианты
+                                     // 1 - по очереди от края до края экрана; 
+                                     // 2 - одновременно по горизонтали навстречу к ентру, затем одновременно по вертикали навстречу к центру
+                                     // 3 - одновременно все к центру
+                                     // 4 - по два (горизонталь / вертикаль) все от своего края к противоположному, стрелки смещены от центра на 1/3
+                                     // 5 - одновременно все от своего края к противоположному, стрелки смещены от центра на 1/3
+bool     arrow_complete, arrow_change_mode;
+uint8_t  arrow_hue[4];
+uint8_t  arrow_play_mode_count[6];        // Сколько раз проигрывать полностью каждый режим если вариант 0 - текущий счетчик
+uint8_t  arrow_play_mode_count_orig[6];   // Сколько раз проигрывать полностью каждый режим если вариант 0 - исходные настройки
 
 void arrowsRoutine() {
   if (loadingFlag) {
@@ -2028,7 +2086,7 @@ void arrowsRoutine() {
     //modeCode = MC_ARROWS;
     FastLED.clear();
     arrow_complete = false;
-    arrow_mode_orig = (specialTextEffectParam >= 0) ? specialTextEffectParam : effectScaleParam2[MC_ARROWS];
+    arrow_mode_orig = (specialTextEffectParam >= 0) ? specialTextEffectParam : getEffectScaleParamValue2(MC_ARROWS);
     
     arrow_mode = (arrow_mode_orig == 0 || arrow_mode_orig > 5) ? random8(1,5) : arrow_mode_orig;
     arrow_play_mode_count_orig[0] = 0;
@@ -2037,13 +2095,13 @@ void arrowsRoutine() {
     arrow_play_mode_count_orig[3] = 4;  // 1 фаза - все к центру (1) повторить по 4 раза -> 4
     arrow_play_mode_count_orig[4] = 4;  // 2 фазы - гориз к центру (1), затем верт к центру (2) - обе фазы повторить по 2 раза -> 4
     arrow_play_mode_count_orig[5] = 4;  // 1 фаза - все сразу (1) повторить по 4 раза -> 4
-    for (byte i=0; i<6; i++) {
+    for (uint8_t i=0; i<6; i++) {
       arrow_play_mode_count[i] = arrow_play_mode_count_orig[i];
     }
     arrowSetupForMode(arrow_mode, true);
   }
   
-  byte effectBrightness = map8(getBrightnessCalculated(globalBrightness, effectContrast[thisMode]), 32,255);  
+  uint8_t effectBrightness = map8(getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode)), 32,255);  
 
   fader(65);
   CHSV color;
@@ -2241,7 +2299,7 @@ void arrowsRoutine() {
 
 }
 
-void arrowSetupForMode(byte mode, bool change) {
+void arrowSetupForMode(uint8_t mode, bool change) {
     switch (mode) {
       case 1:
         if (change) arrow_direction = 1;

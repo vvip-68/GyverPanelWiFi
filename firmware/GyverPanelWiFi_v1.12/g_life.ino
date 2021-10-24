@@ -7,19 +7,19 @@ uint16_t *arr_crc;                           // Служебный массив 
 uint32_t generation_cnt = 0;                 // Счетчик поколений
 uint16_t gen_crc[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // контрольная сумма для выявления зацикливаний
 
-byte  BYTE_WIDTH;                            // Массив должен быть кратен 8 битам (сколько байт по ширине)
-byte  WORLD_WIDTH;                           // Ширина игрового поля в точках с учетом кратности байту
+uint8_t  BYTE_WIDTH;                            // Массив должен быть кратен 8 битам (сколько байт по ширине)
+uint8_t  WORLD_WIDTH;                           // Ширина игрового поля в точках с учетом кратности байту
 
 bool     start_pause;
 uint8_t  offset_x;                           // Ширина игрового поля должна быть кратна 8 бит и меньше ширины матрицы
-unsigned long lastLifeDraw, lastScore;
+uint32_t lastLifeDraw, lastScore;
 
 // -------------------------------------------------------------------------
 
 /*
    Получить значение жив/мертв для клетки с позицией x,у
 */
-boolean getXY (uint8_t **world, uint8_t x, uint8_t y) {
+bool getXY (uint8_t **world, uint8_t x, uint8_t y) {
   uint8_t value = world[y][x / 8];
   uint8_t mask = 0x80 >> (x % 8);
   return (value & mask) > 0;
@@ -28,7 +28,7 @@ boolean getXY (uint8_t **world, uint8_t x, uint8_t y) {
 /*
    Установить значение жив/мертв для клетки с позицией x,у
 */
-void setXY (uint8_t **world, uint8_t x, uint8_t y, boolean val) {
+void setXY (uint8_t **world, uint8_t x, uint8_t y, bool val) {
   uint8_t idx = x / 8;
   uint8_t value = world[y][idx];
   uint8_t mask = 0x80 >> (x % 8);
@@ -43,7 +43,7 @@ void setXY (uint8_t **world, uint8_t x, uint8_t y, boolean val) {
 */
 void init_world(uint8_t **world) {
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   CRGB color = CRGB(effectBrightness, effectBrightness, effectBrightness);
 
   // Отрисовываем имеющимися средствами на игровом боле произвольное двухзначное число
@@ -68,7 +68,7 @@ void init_world(uint8_t **world) {
   }
 
   // Сохранить контрольную сумму нулевого поколения
-  for (byte i = 0; i < pHEIGHT; i++) {
+  for (uint8_t i = 0; i < pHEIGHT; i++) {
     arr_crc[i] = getCrc16((uint8_t*)world[i], BYTE_WIDTH);
   }
   gen_crc[0] = getCrc16((uint8_t*)arr_crc, pHEIGHT * 2);
@@ -78,7 +78,7 @@ void init_world(uint8_t **world) {
    Вывести на экран игровое поле
 */
 void print_world(uint8_t **world) {
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   for (uint8_t x = 0; x < pWIDTH; x++) {
     for (uint8_t y = 0; y < pHEIGHT; y++) {
@@ -220,8 +220,8 @@ void lifeRoutine() {
     // Определяем отступ по ширине поля
     offset_x = (pWIDTH - WORLD_WIDTH) / 2;
 
-    if (world == NULL)   { world   = new uint8_t*[pHEIGHT]; for (int i = 0; i < pHEIGHT; i++) { world[i] = new uint8_t [BYTE_WIDTH]; }}
-    if (gener == NULL)   { gener   = new uint8_t*[pHEIGHT]; for (int i = 0; i < pHEIGHT; i++) { gener[i] = new uint8_t [BYTE_WIDTH]; }}
+    if (world == NULL)   { world   = new uint8_t*[pHEIGHT]; for (uint8_t i = 0; i < pHEIGHT; i++) { world[i] = new uint8_t [BYTE_WIDTH]; }}
+    if (gener == NULL)   { gener   = new uint8_t*[pHEIGHT]; for (uint8_t i = 0; i < pHEIGHT; i++) { gener[i] = new uint8_t [BYTE_WIDTH]; }}
     if (arr_crc == NULL) { arr_crc = new uint16_t[pHEIGHT]; }
 
     init_world(world);                                   // генерируем первое поколение
@@ -234,18 +234,18 @@ void lifeRoutine() {
   if (start_pause && (millis() - lastLifeDraw < 2500)) return;
   start_pause = false;
 
-  byte spd = map8(effectSpeed, 15, 50);
+  uint8_t spd = map8(getEffectSpeedValue(MC_LIFE), 15, 50);
 
   if (millis() - lastLifeDraw < spd * 10) return;
 
   lastLifeDraw = millis();
 
-  for (int i = 0; i < pHEIGHT; i++) {
+  for (uint8_t i = 0; i < pHEIGHT; i++) {
     memcpy(gener[i], world[i], BYTE_WIDTH);              // сохраняем поколение как "предыдущее" для следующих расчетов
   }
   next_generation(world, gener);                         // генерируем следующее поколение
 
-  for (byte i = 0; i < pHEIGHT; i++) {
+  for (uint8_t i = 0; i < pHEIGHT; i++) {
     arr_crc[i] = getCrc16((uint8_t*)world[i], BYTE_WIDTH);
   }
   crc = getCrc16((uint8_t*)arr_crc, pHEIGHT * 2);
@@ -259,7 +259,7 @@ void lifeRoutine() {
   }
 
   bool is_optimal = true;
-  for (int i = 0; i < pHEIGHT; i++) {
+  for (uint8_t i = 0; i < pHEIGHT; i++) {
     is_optimal = memcmp(gener[i], world[i], BYTE_WIDTH) == 0; // Что-то изменилось от предыдущего поколения к новому?
     if (!is_optimal) break;
   }
@@ -278,12 +278,12 @@ void lifeRoutineRelease() {
     arr_crc = NULL;
   }
   if (gener != NULL)   {
-    for (int i = 0; i < pHEIGHT; i++) delete[] gener[i];
+    for (uint8_t i = 0; i < pHEIGHT; i++) delete[] gener[i];
     delete[] gener;
     gener = NULL;
   }
   if (world != NULL)   {
-    for (int i = 0; i < pHEIGHT; i++) delete[] world[i];
+    for (uint8_t i = 0; i < pHEIGHT; i++) delete[] world[i];
     delete[] world;
     world = NULL;
   }

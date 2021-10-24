@@ -1,18 +1,14 @@
 
 // ----------------------------------------------------
 
-byte lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
-unsigned long xxx;
+uint8_t  lastOverlayX, lastOverlayY, lastOverlayW, lastOverlayH;
+uint32_t xxx;
 
-void customRoutine(byte aMode) {
+void customRoutine(uint8_t aMode) {
   doEffectWithOverlay(aMode); 
 }
 
-void doEffectWithOverlay(byte aMode) {
-
-  // Минимальное время вывода кадров на матрицу - 1мс. 
-  // Если совсем задержки нет - матрица мерцает от постоянного обновления
-  delay(1);
+void doEffectWithOverlay(uint8_t aMode) {
 
   bool clockReady = clockTimer.isReady();
   bool textReady = textTimer.isReady();
@@ -72,13 +68,11 @@ void doEffectWithOverlay(byte aMode) {
   bool needStopText = false;
   String out;
 
-  needStopText = false;
-
   // Если команда отображения текущей строки передана из приложения или
   // Если есть активная строка, связанная с текущим отслеживаемым по времени событием или
   // Если пришло время отображения очередной бегущей строки поверх эффекта
   // Переключиться в режим бегущей строки оверлеем
-  if (!showTextNow && textOvEn && thisMode != MC_TEXT && (momentTextIdx >= 0 || ignoreTextOverlaySettingforEffect || ((millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
+  if (!showTextNow && textOvEn && thisMode != MC_TEXT && (momentTextIdx >= 0 || ignoreTextOverlaySettingforEffect || (!e131_wait_command && (millis() - textLastTime) > (TEXT_INTERVAL  * 1000L)))) {
 
     // Обработать следующую строку для отображения, установить параметры;
     // Если нет строк к отображению - продолжать отображать оверлей часов
@@ -89,6 +83,10 @@ void doEffectWithOverlay(byte aMode) {
       showTextNow = true;                  // Флаг переключения в режим текста бегущей строки 
       textCurrentCount = 0;                // Сбросить счетчик количества раз, сколько строка показана на матрице;
       textStartTime = millis();            // Запомнить время начала отображения бегущей строки
+
+      #if (USE_E131 == 1)
+        commandSetImmediateText(syncText); // Присваивается в prepareNextText - currentText из которого НЕ удалены макросы
+      #endif
 
       #if (USE_MQTT == 1)
         String outText;
@@ -115,12 +113,6 @@ void doEffectWithOverlay(byte aMode) {
           delay(10);
           dfPlayer.volume(constrain(maxAlarmVolume,1,30));
           dfPlayer.playFolder(3, runTextSound);
-          /*
-          if (runTextSoundRepeat)
-            dfPlayer.enableLoop(); // Не срабатывае т :( Повтор перенесен на событие "Проигрывание файла завершено)
-          else    
-            dfPlayer.disableLoop();
-          */  
         } else {
           runTextSound = -1;
           runTextSoundRepeat = false;
@@ -173,11 +165,16 @@ void doEffectWithOverlay(byte aMode) {
   }
 
   // Нужно прекратить показ текста бегущей строки
-  if (needStopText) {    
+  if (needStopText || mandatoryStopText) {    
     showTextNow = false; 
+    mandatoryStopText = false;
     currentText = "";
     ignoreTextOverlaySettingforEffect = nextTextLineIdx >= 0;
     specialTextEffectParam = -1;
+
+    #if (USE_E131 == 1)
+      commandStopText();
+    #endif
 
     // Если строка показывалась на фоне специального эффекта для строки или специальной однотонной заливки - восстановить эффект, который был до отображения строки
     if (saveEffectBeforeText >= 0 || useSpecialBackColor) {
@@ -330,7 +327,7 @@ void doEffectWithOverlay(byte aMode) {
     // Если календарь или температура по условиям не могут быть нарисованы - рисовать часы
     if (!cal_or_temp_processed) {
 
-      byte CLK_Y = CLOCK_Y;
+      uint8_t CLK_Y = CLOCK_Y;
 
       #if (USE_WEATHER == 1)       
         // Если температура отрисовывается вместе с часами - позийия рисования такая же как у двухстрочного календаря
@@ -379,7 +376,7 @@ void FastLEDshow() {
   FastLED.show();
 }
 
-void processEffect(byte aMode) {
+void processEffect(uint8_t aMode) {
   // Эффект сменился?  resourcesMode - эффект, который был на предыдущем шаге цикла для которого были выделены ресурсы памяти, aMode - текущий эффект  
   if (resourcesMode != aMode && aMode < MAX_EFFECT) {
     // Освободить ресурсы (в основном динамическое выделение памяти под работу эффекта)    
@@ -473,7 +470,7 @@ void processEffect(byte aMode) {
   #endif
 }
 
-void releaseEffectResources(byte aMode) {
+void releaseEffectResources(uint8_t aMode) {
   #if (DEBUG_MEM == 1)
     int32_t mem_bef, mem_aft, mem_dif;
     mem_bef = ESP.getFreeHeap();
@@ -583,14 +580,14 @@ void nextModeHandler() {
     return;
   }
 
-  byte aCnt = 0;
+  uint8_t aCnt = 0;
   int8_t curMode = thisMode, newMode = thisMode;
 
   while (aCnt < MAX_EFFECT) {
     // Берем следующий режим по циклу режимов
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать следующий файл с SD-карты
     #if (USE_SD == 1)
-      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
+      if (newMode == MC_SDCARD && getEffectScaleParamValue2(MC_SDCARD) == 1) {
         if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = 0;
         else sf_file_idx++;
         if (sf_file_idx >= countFiles) {
@@ -602,7 +599,7 @@ void nextModeHandler() {
         aCnt++;
         newMode++;
         if (newMode >= MAX_EFFECT) newMode = 0;  
-        if (newMode == MC_SDCARD && getEffectUsage(newMode) && effectScaleParam2[MC_SDCARD] == 1) {
+        if (newMode == MC_SDCARD && getEffectUsage(newMode) && getEffectScaleParamValue2(MC_SDCARD) == 1) {
           if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = 0;
           else sf_file_idx++;
           if (sf_file_idx >= countFiles) sf_file_idx = 0;
@@ -640,14 +637,14 @@ void prevModeHandler() {
     return;
   }
 
-  byte aCnt = 0;
+  uint8_t aCnt = 0;
   int8_t curMode = thisMode, newMode = thisMode;
 
   while (aCnt < MAX_EFFECT) {
     // Берем предыдущий режим по циклу режимов
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать предыдущий файл с SD-карты
     #if (USE_SD == 1)
-      if (newMode == MC_SDCARD && effectScaleParam2[MC_SDCARD] == 1) {
+      if (newMode == MC_SDCARD && getEffectScaleParamValue2(MC_SDCARD) == 1) {
         if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = countFiles - 1;
         else sf_file_idx--;
         if (sf_file_idx < 0) {
@@ -659,7 +656,7 @@ void prevModeHandler() {
         aCnt++;
         newMode--;
         if (newMode < 0) newMode = MAX_EFFECT - 1;
-        if (newMode == MC_SDCARD && getEffectUsage(newMode) && effectScaleParam2[MC_SDCARD] == 1) {
+        if (newMode == MC_SDCARD && getEffectUsage(newMode) && getEffectScaleParamValue2(MC_SDCARD) == 1) {
           if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = countFiles - 1;
           else sf_file_idx--;
           if (sf_file_idx < 0) sf_file_idx = countFiles - 1;
@@ -689,11 +686,11 @@ void prevModeHandler() {
   FastLED.clear();
 }
 
-void setTimersForMode(byte aMode) {
+void setTimersForMode(uint8_t aMode) {
 
   if (!(aMode == MC_TEXT || aMode == MC_CLOCK)) {
-    effectSpeed = getEffectSpeed(aMode);
-    if (effectSpeed == 0) effectSpeed = 1;
+    uint8_t efSpeed = getEffectSpeedValue(aMode);
+    if (efSpeed == 0) efSpeed = 1;
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || 
@@ -704,23 +701,26 @@ void setTimersForMode(byte aMode) {
         ) {      
       if (aMode == MC_TETRIS) {
         effectTimer.setInterval(50);
-        gameTimer.setInterval(200 + 4 * effectSpeed);
+        gameTimer.setInterval(200 + 4 * efSpeed);
       } else
       if (aMode == MC_ARKANOID) {
         effectTimer.setInterval(50);
-        gameTimer.setInterval(effectSpeed);  
+        gameTimer.setInterval(efSpeed);  
       } else {
         effectTimer.setInterval(10);
       }
     } else if (aMode == MC_MAZE) {
-      effectTimer.setInterval(50 + 3 * effectSpeed);              
+      effectTimer.setInterval(50 + 3 * efSpeed);              
     }
     else
-      effectTimer.setInterval(effectSpeed);
+      effectTimer.setInterval(efSpeed);
   } else if (aMode == MC_CLOCK) {
       effectTimer.setInterval(250);
   }
-    
+
+  #if (USE_E131 == 1)
+  if (!e131_wait_command)
+  #endif
   set_clockScrollSpeed(getClockScrollSpeed());
   if (clockScrollSpeed < D_CLOCK_SPEED_MIN) set_clockScrollSpeed(D_CLOCK_SPEED_MIN); // Если clockScrollSpeed == 0 - бегущая строка начинает дергаться.
   if (clockScrollSpeed > D_CLOCK_SPEED_MAX) set_clockScrollSpeed(D_CLOCK_SPEED_MAX);
@@ -731,15 +731,18 @@ void setTimersForMode(byte aMode) {
     clockTimer.setInterval(clockScrollSpeed);
   }
 
+  #if (USE_E131 == 1)
+  if (!e131_wait_command)
+  #endif
   set_textScrollSpeed(getTextScrollSpeed());
   if (textScrollSpeed < D_TEXT_SPEED_MIN) set_textScrollSpeed(D_TEXT_SPEED_MIN); // Если textScrollSpeed == 0 - бегущая строка начинает дергаться.
   if (textScrollSpeed > D_TEXT_SPEED_MAX) set_textScrollSpeed(D_TEXT_SPEED_MAX);
   textTimer.setInterval(textScrollSpeed);
 }
 
-int fadeBrightness;
-int fadeStepCount = 10;     // За сколько шагов убирать/добавлять яркость при смене режимов
-int fadeStepValue = 5;      // Шаг убавления яркости
+uint8_t fadeBrightness;
+uint8_t fadeStepCount = 10;     // За сколько шагов убирать/добавлять яркость при смене режимов
+uint8_t fadeStepValue = 5;      // Шаг убавления яркости
 
 #if (SMOOTH_CHANGE == 1)
 void modeFader() {
@@ -780,8 +783,8 @@ void checkIdleState() {
 #endif
   
   if (idleState) {
-    unsigned long ms = millis();
-    if ((ms - autoplayTimer > autoplayTime) && !manualMode) {    // таймер смены режима
+    uint32_t ms = millis();
+    if ((ms - autoplayTimer > autoplayTime) && !(manualMode || e131_wait_command)) {    // таймер смены режима
       bool ok = true;
       if (
          (thisMode == MC_TEXT     && !fullTextFlag) ||   // Эффект "Бегущая строка" (показать IP адрес) не сменится на другой, пока вся строка не будет показана полностью

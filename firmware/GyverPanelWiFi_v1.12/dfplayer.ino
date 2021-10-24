@@ -34,7 +34,7 @@ void InitializeDfPlayer2() {
 }
 
 #if (USE_MP3 == 1)
-void printDetail(uint8_t type, int value){
+void printDetail(uint8_t type, int16_t value){
   switch (type) {
     case TimeOut:
       //DEBUGLN(F("Таймаут!"));
@@ -103,7 +103,7 @@ void refreshDfPlayerFiles() {
   // Для того, чтобы наверняка считать значение - первое прочитанное игнорируем, потом читаем несколько раз до повторения.
 
   // Папка с файлами для будильника
-  int cnt = 0, val = 0, new_val = 0; 
+  int16_t cnt = 0, val = 0, new_val = 0; 
   do {
     val = dfPlayer.readFileCountsInFolder(1);     delay(GUARD_DELAY);
     new_val = dfPlayer.readFileCountsInFolder(1); delay(GUARD_DELAY);    
@@ -204,7 +204,7 @@ void PlayDawnSound() {
   #endif
 }
 
-void StopSound(int duration) {
+void StopSound(int16_t duration) {
 
   if (!isDfPlayerOk) return;
 

@@ -1,7 +1,6 @@
-// Скетч к проекту "Широкоформатная WiFi панель / гирлянда"
 // Гайд по постройке матрицы: https://alexgyver.ru/matrix_guide/
 // Страница проекта на GitHub: https://github.com/vvip-68/GyverPanelWiFi
-// Автор идеи, начальный проект - GyverMatrixBT: AlexGyver Technologies, 2019
+// Автор идеи, начальный проект - GyverMatrixBT: AlexGyver Technologies, 2019 (https://alexgyver.ru/gyvermatrixbt/)
 // Дальнейшее развитие: vvip-68, 2019-2021
 // https://AlexGyver.ru/
 //
@@ -28,7 +27,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1022")
+#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1025")
 
 // --------------------------------------------------------
 
@@ -39,7 +38,7 @@
 
 // ------------------ MQTT CALLBACK -------------------
 
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char* topic, uint8_t* payload, uint32_t length) {
   if (stopMQTT) return;
   // проверяем из нужного ли нам топика пришли данные
   DEBUG("MQTT << topic='" + String(topic) + "'");
@@ -104,9 +103,9 @@ void setup() {
 
   // пинаем генератор случайных чисел
   #if defined(ESP8266) && defined(TRUE_RANDOM)
-  unsigned long seed = (int)RANDOM_REG32;
+  uint32_t seed = (int)RANDOM_REG32;
   #else
-  unsigned long seed = (int)(analogRead(0) ^ micros());
+  uint32_t seed = (int)(analogRead(0) ^ micros());
   #endif
   randomSeed(seed);
   random16_set_seed(seed);
@@ -268,7 +267,7 @@ void setup() {
     DEBUGLN(F("\nОбновление завершено"));
   });
 
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+  ArduinoOTA.onProgress([](uint32_t progress, uint32_t total) {
     #if (DEBUG_SERIAL == 1)
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     #endif
@@ -363,7 +362,7 @@ void loop() {
 
 // -----------------------------------------
 
-void startWiFi(unsigned long waitTime) { 
+void startWiFi(uint32_t waitTime) { 
   
   WiFi.disconnect(true);
   set_wifi_connected(false);
@@ -397,10 +396,10 @@ void startWiFi(unsigned long waitTime) {
     // Такой таймаут нужен в случае, когда отключают электричество, при последующем включении устройство стартует быстрее
     // чем роутер успеет загрузиться и создать сеть. При коротком таймауте устройство не найдет сеть и создаст точку доступа,
     // не сможет получить время, погоду и т.д.
-    bool stop_waiting = false;
-    unsigned long start_wifi_check = millis();
-    unsigned long last_wifi_check = 0;
-    int16_t cnt = 0;
+    bool     stop_waiting = false;
+    uint32_t start_wifi_check = millis();
+    uint32_t last_wifi_check = 0;
+    int16_t  cnt = 0;
     while (!(stop_waiting || wifi_connected)) {
       delay(0);
       if (millis() - last_wifi_check > 250) {
@@ -451,7 +450,7 @@ void startSoftAP() {
   
   ap_connected = WiFi.softAP(apName, apPass);
 
-  for (int j = 0; j < 10; j++ ) {    
+  for (uint8_t j = 0; j < 10; j++ ) {    
     delay(0);
     if (ap_connected) {
       DEBUGLN();

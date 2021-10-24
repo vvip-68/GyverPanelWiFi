@@ -18,11 +18,11 @@ void madnessNoise() {
     loadingFlag = false;
     createNoise();
   }
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
-  scale = map8(effectScaleParam[MC_NOISE_MADNESS],0,100);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  scale = map8(getEffectScaleParamValue(MC_NOISE_MADNESS),0,100);
   fillnoise8();
-  for (int i = 0; i < pWIDTH; i++) {
-    for (int j = 0; j < pHEIGHT; j++) {
+  for (uint8_t i = 0; i < pWIDTH; i++) {
+    for (uint8_t j = 0; j < pHEIGHT; j++) {
       CRGB thisColor = CHSV(noise[j][i], 255, map8(noise[i][j], effectBrightness / 2, effectBrightness));
       drawPixelXY(i, j, thisColor);
     }
@@ -38,7 +38,7 @@ void rainbowNoise() {
     currentPalette = RainbowColors_p;
     colorLoop = 1;
   }
-  scale = map8(effectScaleParam[MC_NOISE_RAINBOW],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_RAINBOW),0,100); 
   fillNoiseLED();
 }
 
@@ -50,7 +50,7 @@ void rainbowStripeNoise() {
     currentPalette = RainbowStripeColors_p;
     colorLoop = 1;
   }
-  scale = map8(effectScaleParam[MC_NOISE_RAINBOW_STRIP],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_RAINBOW_STRIP),0,100); 
   fillNoiseLED();
 }
 
@@ -68,7 +68,7 @@ void zebraNoise() {
     currentPalette[12] = CRGB::White;
     colorLoop = 1;
   }
-  scale = map8(effectScaleParam[MC_NOISE_ZEBRA],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_ZEBRA),0,100); 
   fillNoiseLED();
 }
 
@@ -80,7 +80,7 @@ void forestNoise() {
     currentPalette = ForestColors_p;
     colorLoop = 0;
   }
-  scale = map8(effectScaleParam[MC_NOISE_FOREST],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_FOREST),0,100); 
   fillNoiseLED();
 }
 
@@ -92,7 +92,7 @@ void oceanNoise() {
     currentPalette = OceanColors_p;
     colorLoop = 0;
   }
-  scale = map8(effectScaleParam[MC_NOISE_OCEAN],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_OCEAN),0,100); 
   fillNoiseLED();
 }
 
@@ -104,7 +104,7 @@ void plasmaNoise() {
     currentPalette = PartyColors_p;
     colorLoop = 1;
   }
-  scale = map8(effectScaleParam[MC_NOISE_PLASMA],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_PLASMA),0,100); 
   fillNoiseLED();
 }
 
@@ -116,7 +116,7 @@ void cloudNoise() {
     currentPalette = CloudColors_p;
     colorLoop = 0;
   }
-  scale = map8(effectScaleParam[MC_NOISE_CLOUD],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_CLOUD),0,100); 
   fillNoiseLED();
 }
 
@@ -128,7 +128,7 @@ void lavaNoise() {
     currentPalette = LavaColors_p;
     colorLoop = 0;
   }
-  scale = map8(effectScaleParam[MC_NOISE_LAVA],0,100); 
+  scale = map8(getEffectScaleParamValue(MC_NOISE_LAVA),0,100); 
   fillNoiseLED();
 }
 
@@ -139,10 +139,10 @@ void fillNoiseLED() {
     dataSmoothing = 200 - (speed * 4);
   }
 
-  for (int i = 0; i < maxDim; i++) {
-    int ioffset = scale * i;
-    for (int j = 0; j < maxDim; j++) {
-      int joffset = scale * j;
+  for (uint8_t i = 0; i < maxDim; i++) {
+    uint16_t ioffset = scale * i;
+    for (uint8_t j = 0; j < maxDim; j++) {
+      uint16_t joffset = scale * j;
 
       uint8_t data = inoise8(x + ioffset, y + joffset, z);
 
@@ -164,10 +164,10 @@ void fillNoiseLED() {
   x += speed / 8;
   y -= speed / 16;
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
-  for (int i = 0; i < pWIDTH; i++) {
-    for (int j = 0; j < pHEIGHT; j++) {
+  for (uint8_t i = 0; i < pWIDTH; i++) {
+    for (uint8_t j = 0; j < pHEIGHT; j++) {
       uint8_t index = noise[j][i];
       uint8_t bri =   noise[i][j];
       // if this palette is a 'loop', add a slowly-changing base value
@@ -189,10 +189,10 @@ void fillNoiseLED() {
 }
 
 void fillnoise8() {
-  for (int i = 0; i < maxDim; i++) {
-    int ioffset = scale * i;
-    for (int j = 0; j < maxDim; j++) {
-      int joffset = scale * j;
+  for (uint8_t i = 0; i < maxDim; i++) {
+    int16_t ioffset = scale * i;
+    for (uint8_t j = 0; j < maxDim; j++) {
+      int16_t joffset = scale * j;
       noise[i][j] = inoise8(x + ioffset, y + joffset, z);
     }
   }
@@ -200,9 +200,9 @@ void fillnoise8() {
 }
 
 void createNoise() {
-  if (noise == NULL) { noise = new uint8_t*[maxDim]; for (int i = 0; i < maxDim; i++) noise[i] = new uint8_t[maxDim];  }    
+  if (noise == NULL) { noise = new uint8_t*[maxDim]; for (uint8_t i = 0; i < maxDim; i++) noise[i] = new uint8_t[maxDim];  }    
 }
 
 void releaseNoise() {
-  if (noise != NULL) { for (int i = 0; i < maxDim; i++) delete[] noise[i]; delete[] noise; noise = NULL; }
+  if (noise != NULL) { for (uint8_t i = 0; i < maxDim; i++) delete[] noise[i]; delete[] noise; noise = NULL; }
 }

@@ -12,11 +12,11 @@ int8_t prev_ang, prev_pos, prev_height;
 
 uint32_t colors[6] {0x0000EE, 0xEE0000, 0x00EE00, 0x00EEEE, 0xEE00EE, 0xEEEE00};
 uint32_t color = 0x000088;
-byte color_index;
-byte linesToClear;
-boolean down_flag = true;
-byte lineCleanCounter;
-byte left_offset, right_offset;
+uint8_t  color_index;
+uint8_t  linesToClear;
+bool     down_flag = true;
+uint8_t  lineCleanCounter;
+uint8_t  left_offset, right_offset;
 
 // самая важная часть программы! Координаты пикселей фигур
 //  0 - палка
@@ -88,7 +88,7 @@ void tetrisRoutine() {
 
     // -----------------------------------
     // Рисуем стакан
-    byte center = pWIDTH / 2;
+    uint8_t center = pWIDTH / 2;
     int8_t xl = center;
     int8_t xr = center;
   
@@ -100,7 +100,7 @@ void tetrisRoutine() {
       FastLEDshow();
       xl--; xr++;
     }
-    for (byte i = 0; i < pHEIGHT; i++) {
+    for (uint8_t i = 0; i < pHEIGHT; i++) {
       drawPixelXY(left_offset, i, color);
       drawPixelXY(right_offset, i, color);
       delay(25);
@@ -165,7 +165,7 @@ void tetrisRoutine() {
 
 // Заглушка чтения кнопок управления игрой
 void checkTetrisButtons() {
-  byte value = random(7);
+  uint8_t value = random(7);
   switch (value) {
     case 1: 
       buttons = 1; 
@@ -183,18 +183,18 @@ void checkTetrisButtons() {
 // поиск и очистка заполненных уровней
 void checkAndClear() {
   linesToClear = 1;                 // счётчик заполненных строк по вертикали. Искусственно принимаем 1 для работы цикла
-  boolean full_flag = true;         // флаг заполненности
-  byte y_st = 1;
-  byte x_st = left_offset + 1;
-  byte x_en = right_offset - 1;
+  bool    full_flag = true;         // флаг заполненности
+  uint8_t y_st = 1;
+  uint8_t x_st = left_offset + 1;
+  uint8_t x_en = right_offset - 1;
   
   while (linesToClear != 0) {       // чисти чисти пока не будет чисто!
     linesToClear = 0;
-    byte lineNum = 255;             // высота, с которой начинаются заполненные строки (искусственно увеличена)
-    for (byte Y = y_st; Y < pHEIGHT; Y++) {   // сканируем по высоте
+    uint8_t lineNum = 255;          // высота, с которой начинаются заполненные строки (искусственно увеличена)
+    for (uint8_t Y = y_st; Y < pHEIGHT; Y++) {   // сканируем по высоте
       full_flag = true;                   // поднимаем флаг. Будет сброшен, если найдём чёрный пиксель
-      for (byte X = x_st; X <= x_en; X++) {  // проходимся по строкам
-        if ((long)getPixColorXY(X, Y) == (long)0x000000) {  // если хоть один пиксель чёрный
+      for (uint8_t X = x_st; X <= x_en; X++) {  // проходимся по строкам
+        if ((uint32_t)getPixColorXY(X, Y) == (uint32_t)0x000000) {  // если хоть один пиксель чёрный
           full_flag = false;                                 // считаем строку неполной
         }
       }
@@ -211,8 +211,8 @@ void checkAndClear() {
       lineCleanCounter += linesToClear;   // суммируем количество очищенных линий (игровой "счёт")
 
       // заполняем весь блок найденных строк белым цветом слева направо
-      for (byte X = x_st; X <= x_en; X++) {
-        for (byte i = 0; i < linesToClear; i++) {
+      for (uint8_t X = x_st; X <= x_en; X++) {
+        for (uint8_t i = 0; i < linesToClear; i++) {
           leds[getPixelNumber(X, lineNum + i)] = CHSV(0, 0, 255);         // закрашиваем его белым
         }
         FastLEDshow();
@@ -221,9 +221,9 @@ void checkAndClear() {
       delay(10);
 
       // теперь плавно уменьшаем яркость всего белого блока до нуля
-      for (byte val = 0; val <= 30; val++) {
-        for (byte X = x_st; X <= x_en; X++) {
-          for (byte i = 0; i < linesToClear; i++) {
+      for (uint8_t val = 0; val <= 30; val++) {
+        for (uint8_t X = x_st; X <= x_en; X++) {
+          for (uint8_t i = 0; i < linesToClear; i++) {
             leds[getPixelNumber(X, lineNum + i)] = CHSV(0, 0, 240 - 8 * val);  // гасим белый цвет
           }
         }
@@ -233,9 +233,9 @@ void checkAndClear() {
       delay(10);
 
       // и теперь смещаем вниз все пиксели выше уровня с первой найденной строкой
-      for (byte i = 0; i < linesToClear; i++) {
-        for (byte Y = lineNum; Y < pHEIGHT - 1; Y++) {
-          for (byte X = x_st; X <= x_en; X++) {
+      for (uint8_t i = 0; i < linesToClear; i++) {
+        for (uint8_t Y = lineNum; Y < pHEIGHT - 1; Y++) {
+          for (uint8_t X = x_st; X <= x_en; X++) {
             drawPixelXY(X, Y, getPixColorXY(X, Y + 1));      // сдвигаем вниз
           }
           //FastLEDshow();   // Почему-то этот show() рисует весь "стакан", прижатым к правому краю матрицы, хотя на широких матрицах всё действо происходит по центру
@@ -304,7 +304,7 @@ void newGameTetris() {
 
 // управление фигурами вправо и влево
 void stepRight() {
-  byte x_en = right_offset - 1;
+  uint8_t x_en = right_offset - 1;
   if (checkArea(1)) {
     prev_pos = pos;
     if (++pos >= x_en) pos = x_en;
@@ -321,16 +321,16 @@ void stepLeft() {
 }
 
 // проверка на столкновения
-boolean checkArea(int8_t check_type) {
+bool checkArea(int8_t check_type) {
   // check type:
   // 0 - проверка лежащих фигур и пола
   // 1 - проверка стенки справа и фигур
   // 2 - проверка стенки слева и фигур
   // 3 - проверка обеих стенок и пола
 
-  boolean flag = true;
+  bool   flag = true;
   int8_t X, Y;
-  boolean offset = 1;
+  bool   offset = 1;
   int8_t this_ang = ang;
 
   // этот режим для проверки поворота. Поэтому "поворачиваем"
@@ -341,10 +341,10 @@ boolean checkArea(int8_t check_type) {
     offset = 0;   // разрешаем оказаться вплотную к стенке
   }
 
-  byte x_st = left_offset + 1;
-  byte x_en = right_offset - 1;
+  uint8_t x_st = left_offset + 1;
+  uint8_t x_en = right_offset - 1;
 
-  for (byte i = 0; i < 4; i++) {
+  for (uint8_t i = 0; i < 4; i++) {
     // проверяем точки фигуры
     // pos, height - координаты главной точки фигуры в ГЛОБАЛЬНОЙ системе координат
     // X, Y - координаты остальных трёх точек в ГЛОБАЛЬНОЙ системе координат
@@ -405,10 +405,10 @@ void redrawFigure(int8_t clr_ang, int8_t clr_pos, int8_t clr_height) {
 }
 
 // функция, отрисовывающая фигуру заданным цветом и под нужным углом
-void drawFigure(byte figure, byte angle, byte x, byte y, uint32_t color) {
+void drawFigure(uint8_t figure, uint8_t angle, uint8_t x, uint8_t y, uint32_t color) {
   drawPixelXY(x, y, color);         // рисуем точку начала координат фигуры
   int8_t X, Y;                      // вспомогательные
-  for (byte i = 0; i < 3; i++) {    // рисуем 4 точки фигуры
+  for (uint8_t i = 0; i < 3; i++) {    // рисуем 4 точки фигуры
     // что происходит: рисуем фигуру относительно текущей координаты падающей точки
     // просто прибавляем "смещение" из массива координат фигур
     // для этого идём в прогмем (функция pgm_read_byte)

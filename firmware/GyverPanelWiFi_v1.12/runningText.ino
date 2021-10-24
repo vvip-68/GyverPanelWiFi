@@ -1,6 +1,6 @@
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
 
-int offset;
+int16_t offset;
 
 void runningText() {
   String text = "";
@@ -48,7 +48,7 @@ void fillString(String text) {
   // Задан ли специальный цвет отображения строки?
   // Если режим цвета - монохром (0) или задан неверно (>2) - использовать глобальный или специальный цвет
   
-  byte i = 0, j = 0, pos = 0, modif = 0;
+  uint8_t i = 0, j = 0, pos = 0, modif = 0;
   
   while (text[i] != '\0') {
 
@@ -67,8 +67,8 @@ void fillString(String text) {
     }
 
     // Определились с цветом - выводим очередную букву  
-    if ((byte)text[i] > 191) {    // работаем с русскими буквами!
-      modif = (byte)text[i];
+    if ((uint8_t)text[i] > 191) {    // работаем с русскими буквами!
+      modif = (uint8_t)text[i];
       i++;
     } else {      
       drawLetter(j, text[i], modif, offset + j * (LET_WIDTH + SPACE), color);
@@ -86,7 +86,7 @@ void fillString(String text) {
   }      
 }
 
-byte getTextY() {
+uint8_t getTextY() {
   int8_t LH = LET_HEIGHT;
   if (LH > pHEIGHT) LH = pHEIGHT;
   int8_t offset_y = (pHEIGHT - LH) / 2;     // по центру матрицы по высоте
@@ -101,15 +101,15 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
   int8_t offset_y = getTextY();
   
   CRGB letterColor;
-  if (color == 1) letterColor = CHSV(byte(offset * 10), 255, 255);
-  else if (color == 2) letterColor = CHSV(byte(index * 30), 255, 255);
+  if (color == 1) letterColor = CHSV(uint8_t(offset * 10), 255, 255);
+  else if (color == 2) letterColor = CHSV(uint8_t(index * 30), 255, 255);
   else letterColor = color;
 
   if (offset < -LET_WIDTH || offset > pWIDTH) return;
   if (offset < 0) start_pos = -offset;
   if (offset > (pWIDTH - LET_WIDTH)) finish_pos = pWIDTH - offset;
 
-  for (byte i = start_pos; i < finish_pos; i++) {
+  for (uint8_t i = start_pos; i < finish_pos; i++) {
     uint16_t thisByte; // байт колонки i отображаемого символа шрифта
     uint16_t diasByte; // байт колонки i отображаемого диакритического символа
     int8_t   diasOffs; // смещение по Y отображения диакритического символа: diasOffs > 0 - позиция над основной буквой; diasOffs < 0 - позиция ниже основной буквы
@@ -124,8 +124,8 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
     }
     diasOffs = getDiasOffset(letter, modif);
 
-    for (byte j = 0; j < LH; j++) {
-      boolean thisBit;
+    for (uint8_t j = 0; j < LH; j++) {
+      bool thisBit;
 
       if (MIRR_H) thisBit = thisByte & (1 << j);
       else        thisBit = thisByte & (1 << (LH - 1 - j));
@@ -171,10 +171,10 @@ void shiftTextPosition() {
 //  4 - синий - активная, содержит макрос даты
 //  5 - красный - для строки 0 - это управляющая строка
 String getTextStates() {
-  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   char buf[size + 1];
   memset(buf, '\0', size + 1);
-  for (byte i=0; i < size; i++) {
+  for (uint8_t i=0; i < size; i++) {
     String text = textLines[i];    
     char c = '0';    // статус - пустая
     if (text.length() > 0) {
@@ -359,7 +359,7 @@ int8_t getDiasOffset(uint8_t font, uint8_t modif) {
 
 // Получить / установить настройки отображения очередного текста бегущей строки
 // Если нет строк, готовых к ротображению (например все строки отключены) - вернуть false - энет готовых строк'
-boolean prepareNextText(String text) {  
+bool prepareNextText(String text) {  
   // Если есть активная строка текущего момента - отображать ее 
   int8_t nextIdx = momentTextIdx >= 0 ? momentTextIdx : nextTextLineIdx;
 
@@ -388,16 +388,18 @@ boolean prepareNextText(String text) {
 
   offset = pWIDTH;   // перемотка новой строки в правый край
   if (text.length() != 0) {
+    syncText = text;
     currentText = processMacrosInText(text);
   } else {
     // Размер массива строк
-    byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+    uint8_t sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   
     // Если nextIdx >= 0 - значит в предыдущей строке было указано какую строку показывать следующей - показываем ее
     currentTextLineIdx = nextIdx >= 0 ? nextIdx : getNextLine(currentTextLineIdx);
     if (currentTextLineIdx >= sizeOfTextsArray) currentTextLineIdx = -1;
   
     currentText = currentTextLineIdx < 0 ? "" : textLines[currentTextLineIdx];
+    syncText = currentText;
     // Если выбрана строка для принудительного показа - игнорировать запрет по '-' в начале строки или по макросу {-}
     if (nextIdx >= 0) {
       if (currentText[0] == '-') currentText[0] = ' ';
@@ -437,12 +439,12 @@ int8_t getNextLine(int8_t currentIdx) {
     if (c == '#') {
       // textLines[0] == "##", sequenceIdx всегда 1; textLines[0].charAt(1) == '#';
       // Это значит надо выбрать случайную строку из тех, что заполнены
-      byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
-      byte arr[size], cnt = 0;
+      uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+      uint8_t arr[size], cnt = 0;
       memset(arr, '\0', size + 1);
       // Перебрать весь массив строк, выбрать только заполнненные, у заполненных проверить, что они не отключены, не содержат макроса {P},
       // а если содержат макрос {S}, то текущая дата попадает в диапазон разрешенных дат.
-      for (int i = 0; i < size; i++) {
+      for (uint8_t i = 0; i < size; i++) {
         String text = textLines[i];
         // Строка пустая? 
         // Отключена - в первом символе или наличие макроса {-}?
@@ -462,8 +464,8 @@ int8_t getNextLine(int8_t currentIdx) {
         nextLineIdx = -1;
         textLastTime = millis();
       } else {
-        byte att = 0;
-        byte idx = random8(0,cnt - 1);
+        uint8_t att = 0;
+        uint8_t idx = random8(0,cnt - 1);
         // Выбрать случайную строку. Если выбранная совпадает с текущей - выбрать другую.
         // Если другой нет (в массиве одна строка) - показать её
         while (arr[idx] == nextLineIdx && att < cnt) {
@@ -476,7 +478,7 @@ int8_t getNextLine(int8_t currentIdx) {
       // Последовательное отображение строк как указано в последовательности в textLines[0] - '#12345'
       // здесь 'c' - char - индекс, выдернутый из указанной последовательности в очередной позиции
       nextLineIdx = getTextIndex(c); 
-      byte c_idx = sequenceIdx;
+      uint8_t c_idx = sequenceIdx;
       bool found = false;
       while (!found) {
         // Проверить - доступен ли текст в указанной строке к отображению?
@@ -628,13 +630,13 @@ String processMacrosInText(const String text) {
   // Выполнять цикл поиска подходящей к отображению строки
   // Если ни одной строки не найдено - возвратить false
 
-  boolean found = false;
+  bool    found = false;
   uint8_t attempt = 0;
   int16_t idx, idx2;
-  String tmp, tmp1;
+  String  tmp, tmp1;
 
   // Размер массива строк
-  byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  uint8_t sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
 
   while (!found && (attempt < sizeOfTextsArray)) {
     
@@ -1303,7 +1305,7 @@ String processDateMacrosInText(const String text) {
              iMinutes = s_mins.toInt();
            }
 
-           tmElements_t tm = {0, iMinutes, iHours, 0, iDay, iMonth, (byte)CalendarYrToTm(iYear)};
+           tmElements_t tm = {0, iMinutes, iHours, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)};
            t_event = makeTime(tm);
         }
 
@@ -1322,7 +1324,7 @@ String processDateMacrosInText(const String text) {
               afterEventIdx = s_nn.toInt();
             }
       
-            byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+            uint8_t sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
             if (afterEventIdx >= sizeOfTextsArray) {
               afterEventIdx = -1;
             }
@@ -1378,7 +1380,7 @@ String processDateMacrosInText(const String text) {
             nm = s_nn.toInt();
           }
     
-          byte sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+          uint8_t sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
           if (nm > 0 && nm < sizeOfTextsArray) {
             String s = textLines[nm];
             if (s.length() > 0 && s[0] != '-' && s.indexOf("{-}") < 0) {
@@ -1510,13 +1512,13 @@ String processColorMacros(const String txt) {
 
   String text = txt;
   // Обнулить массивы позиций цвета и самого цвета
-  for (byte i = 0; i<MAX_COLORS; i++) {
+  for (uint8_t i = 0; i<MAX_COLORS; i++) {
     textColorPos[i] = 0;
     textColor[i] = 0xFFFFFF;
   }
 
   // Если макрос цвета указан не с начала строки - начало строки отображать цветом globalTextColor
-  byte cnt = 0;
+  uint8_t cnt = 0;
   int8_t idx, idx2;  
 
   idx = text.indexOf("{C");
@@ -1561,7 +1563,7 @@ String processColorMacros(const String txt) {
 }
 
 // Проверка содержит ли эта строка множественное задание цвета
-boolean checkIsTextMultiColor(const String text) {
+bool checkIsTextMultiColor(const String text) {
 
   // Строка не содержит макроса цвета
   int16_t idx = text.indexOf("{C"), idx_first = idx;
@@ -1571,7 +1573,7 @@ boolean checkIsTextMultiColor(const String text) {
   
   // Строка отображается одним (указанным) цветом, если цвет указан только один раз в самом начале или в самом конце строки
   // Если цвет в середине строки - значит начало строки отображается цветом globalTextColor, а с позиции макроса и до конца - указанным в макросе цветом
-  byte cnt = 0;
+  uint8_t cnt = 0;
   while (idx>=0 && cnt < 2) {
     cnt++;
     idx = text.indexOf("{C", idx + 1);  
@@ -1587,7 +1589,7 @@ boolean checkIsTextMultiColor(const String text) {
 
 // получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
 int8_t getTextIndex(char c) {
-  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   int8_t idx = -1;
   if (c >= '0' && c <= '9') 
     idx = (int8_t)(c - '0');
@@ -1597,8 +1599,8 @@ int8_t getTextIndex(char c) {
 }
 
 // получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
-char getAZIndex(byte idx) {
-  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+char getAZIndex(uint8_t idx) {
+  uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   char c = '-';
   if (idx >= 0 && idx <= 9)             
      c = char('0' + idx);
@@ -1609,14 +1611,14 @@ char getAZIndex(byte idx) {
 
 // получить строку из массива строк текстов бегущей строки по индексу '0'..'9','A'..'Z'
 String getTextByAZIndex(char c) {
-  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+  uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   int8_t idx = getTextIndex(c);
   return (idx < 0 || idx >= size) ? "" : textLines[idx];
 }
 
 // получить строку из массива строк текстов бегущей строки по индексу 0..35
-String getTextByIndex(byte idx) {
-  byte size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
+String getTextByIndex(uint8_t idx) {
+  uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   return (idx < 0 || idx >= size) ? "" : textLines[idx];
 }
 
@@ -1815,17 +1817,17 @@ void rescanTextEvents() {
       if (iYear < year()) continue;
       
       // Сформировать ближайшее время события из полученных компонент
-      tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, (byte)CalendarYrToTm(iYear)}; 
+      tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)}; 
       time_t t_event = makeTime(tm);            
       
       // Если событие уже прошло - это может быть, когда дата опущена или звездочками, а время указано меньше текущего - брать то же время следующего дня/месяца/года
       const uint8_t monthDays[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
-      while ((unsigned long)t_event < (unsigned long)now() && (star_day || star_month || star_year)) {
+      while ((uint32_t)t_event < (uint32_t)now() && (star_day || star_month || star_year)) {
         if (star_day) {
           iDay++;
-          byte daysInMonth = monthDays[iMonth-1];
-          if (daysInMonth == 28) daysInMonth += byte(LEAP_YEAR(iYear - 1970));
+          uint8_t daysInMonth = monthDays[iMonth-1];
+          if (daysInMonth == 28) daysInMonth += uint8_t(LEAP_YEAR(iYear - 1970));
           if (iDay>daysInMonth) {
             iDay = 1;
             if (star_month) {
@@ -1851,12 +1853,12 @@ void rescanTextEvents() {
         else if (star_year) {
           iYear++;          
         }        
-        tm = {0, iMinute, iHour, 0, iDay, iMonth, (byte)CalendarYrToTm(iYear)};
+        tm = {0, iMinute, iHour, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)};
         t_event = makeTime(tm);        
       }
       
       // Если звездочек нет или после перехода к следующему дню время всё равно меньше текущего - событие в прошлом - добавлять не нужно
-      if ((unsigned long)t_event < (unsigned long)now()) continue;
+      if ((uint32_t)t_event < (uint32_t)now()) continue;
 
       // Полученное время события попадает в разрешенные дни недели? Если нет - добавлять не нужно
       int8_t weekDay = weekday(t_event) - 1;    // day of the week, Sunday is day 0   
@@ -1907,7 +1909,7 @@ void checkMomentText() {
     // Не содержит события
     if (moments[i].moment == 0) break;
     // Время за #B секунд до наступления события? - отдать index_b
-    if ((ulong)this_moment >= moments[i].moment - moments[i].before && this_moment < moments[i].moment) {
+    if ((uint32_t)this_moment >= moments[i].moment - moments[i].before && this_moment < moments[i].moment) {
       momentIdx = i;
       momentTextIdx = moments[i].index_b; // before
       break;
@@ -1924,7 +1926,7 @@ void checkMomentText() {
 // Проверить текст, содержащий макрос {S}
 // Возвращает true - если дата в макросе после расшифровки совпадает с текущей датой - текст можно отображаеть
 // Если дата не совпадает - текст отображать сегодня нельзя - еще не пришло (или уже прошло) время для этого текста
-boolean forThisDate(String text) {
+bool forThisDate(String text) {
   /*
      "{S01.01.2020#01.01.2020}"
      "{S01.01.2020 7:00#01.01.2020 19:00}"
@@ -1938,7 +1940,7 @@ boolean forThisDate(String text) {
        Если время конца периода отсутствует  - считается 23:59:59
        Допускается указывать несколько макроыов {S} в строке для определения нескольких разрешенных диапазонов
   */
-  boolean ok = false;
+  bool   ok = false;
   String str;
   int8_t idx2;
   
@@ -2003,8 +2005,8 @@ void extractMacroSDates(String text) {
   uint16_t iYear1 = 0, iYear2 = 0, num = 0;
 
   int8_t   idx = text.indexOf("#");
-  boolean  hasDate2 =  idx > 0; // В строке есть элементы даты даты2 или времени даты2
-  boolean  hasTime2 = false;    // В строке есть элементы времени даты2
+  bool     hasDate2 =  idx > 0; // В строке есть элементы даты даты2 или времени даты2
+  bool     hasTime2 = false;    // В строке есть элементы времени даты2
   String   str;
   
   if (hasDate2) {
@@ -2154,18 +2156,18 @@ void extractMacroSDates(String text) {
     if (iMinute2 == 0 && !hasTime2) { iMinute2 = 59; }
 
     // Сформировать ближайшее время события из полученных компонент
-    tmElements_t tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (byte)CalendarYrToTm(iYear1)}; 
-    tmElements_t tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (byte)CalendarYrToTm(iYear2)}; 
+    tmElements_t tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (uint8_t)CalendarYrToTm(iYear1)}; 
+    tmElements_t tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (uint8_t)CalendarYrToTm(iYear2)}; 
     
     time_t t_event1 = makeTime(tm1);
     time_t t_event2 = makeTime(tm2);
 
     if (t_event2 < t_event1) {
       if (starYear2) {
-        tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (byte)CalendarYrToTm(iYear2 + 1)};     
+        tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (uint8_t)CalendarYrToTm(iYear2 + 1)};     
         t_event2 = makeTime(tm2);
       } else if (starYear1) {
-        tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (byte)CalendarYrToTm(iYear1 - 1)}; 
+        tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (uint8_t)CalendarYrToTm(iYear1 - 1)}; 
         t_event1 = makeTime(tm1);
       }
     }

@@ -1,6 +1,9 @@
 // Спецификация протокола E1.31 - https://tsp.esta.org/tsp/documents/docs/ANSI_E1-31-2018.pdf
 #if (USE_E131 == 1)
 
+// ---------------------------------------------------
+// Инициализация протокола E1.31 для устройства в роли приемника или передатчика
+// ---------------------------------------------------
 void InitializeE131() {
   printWorkMode();
   if (workMode == MASTER) {    
@@ -26,7 +29,7 @@ void InitializeE131() {
     #endif    
     // Инициализировать передатчик E1.31 пакетов
     e131 = new ESPAsyncE131();
-    if (!e131) {  // Listen via Multicast
+    if (!e131) {
       DEBUGLN(F("Ошибка запуска вещателя E1.31 потока"));        
       DisposeE131();
     }
@@ -51,11 +54,15 @@ void InitializeE131() {
 
     flag_1 = false;
     flag_2 = false;
+    e131_wait_command = syncMode == COMMAND;
     
     DEBUGLN();
   }
 } 
 
+// ---------------------------------------------------
+// Отключение протокола E1.31 с освобождением ресурсов
+// ---------------------------------------------------
 void DisposeE131() {
   if (e131) {
     delete e131;
@@ -65,18 +72,22 @@ void DisposeE131() {
     else if (workMode == SLAVE)
       DEBUGLN(F("Cлушатель потока E1.31 остановлен."));
   }
+  e131_wait_command = false;
 }
 
+// ---------------------------------------------------
+// Печать отладочной информации - структуры и содержимого пакета E1.31
+// ---------------------------------------------------
 void printE131packet(e131_packet_t *packet) {
   int16_t val;
   DEBUGLN(F("-------------------------------------------"));
   // Root Layer
   DEBUG(F("preamble_size="));         DEBUGLN("0x" + IntToHex(htons(packet->preamble_size),4));
   DEBUG(F("postamble_size="));        DEBUGLN("0x" + IntToHex(htons(packet->postamble_size),4));
-  DEBUG(F("acn_id="));                for(int i=0; i<12; i++) DEBUG("0x" + IntToHex(packet->acn_id[i],2) + ", "); DEBUGLN();
+  DEBUG(F("acn_id="));                for(uint8_t i=0; i<12; i++) DEBUG("0x" + IntToHex(packet->acn_id[i],2) + ", "); DEBUGLN();
   DEBUG(F("root_flength="));          val = htons(packet->root_flength); DEBUG(val & 0x0FFF); DEBUG(", Flag="); DEBUGLN("0x" + IntToHex((val & 0xF000) >> 12, 2));
   DEBUG(F("root_vector="));           DEBUGLN("0x" + IntToHex(htonl(packet->root_vector),8));
-  DEBUG(F("cid="));                   for(int i=0; i<16; i++) DEBUG(IntToHex(packet->cid[i],2)); DEBUGLN();
+  DEBUG(F("cid="));                   for(uint8_t i=0; i<16; i++) DEBUG(IntToHex(packet->cid[i],2)); DEBUGLN();
   DEBUGLN();
   // Frame Layer
   DEBUG(F("frame_flength="));         val = htons(packet->frame_flength); DEBUG(val & 0x0FFF); DEBUG(", Flag="); DEBUGLN("0x" + IntToHex((val & 0xF000) >> 12, 2));
@@ -95,10 +106,13 @@ void printE131packet(e131_packet_t *packet) {
   DEBUG(F("first_address="));         DEBUGLN("0x" + IntToHex(htons(packet->first_address),4));
   DEBUG(F("address_increment="));     DEBUGLN("0x" + IntToHex(htons(packet->address_increment),4));
   DEBUG(F("property_value_count="));  DEBUGLN(htons(packet->property_value_count));
-  DEBUG(F("property_values[0]="));    DEBUGLN(packet->property_values[0]);
+  DEBUG(F("property_values="));       for(uint8_t i=0; i<32; i++) DEBUG("0x" + IntToHex(packet->property_values[i],2) + ", "); DEBUGLN();
   DEBUGLN(F("-------------------------------------------"));  
 }
 
+// ---------------------------------------------------
+// Отображение информации из полученного пакета E1.31 на матрицу
+// ---------------------------------------------------
 bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
   uint16_t CURRENT_UNIVERSE = htons(packet->universe);      
   uint16_t offset = (CURRENT_UNIVERSE - START_UNIVERSE) * 170; // if more than 170 LEDs (510 channels), client will send in next higher universe    
@@ -113,10 +127,10 @@ bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
     // Режим вывода LOGIC - начало картинки X,Y = 0,0; Далее по строке слева направо, затем строки сверху вниз
     // Порядок следования светодиодов на матрице должен соответствовать порядку следования пикселей на MASTER-устройстве
     uint16_t len = (170 + offset > NUM_LEDS) ? (NUM_LEDS - offset) : 170;  
-    for (int i = 0; i<len; i++) {
+    for (uint16_t i = 0; i<len; i++) {
       uint16_t idx = offset + i;
-      uint8_t x = idx % pWIDTH;
-      uint8_t y = pHEIGHT - idx / pWIDTH - 1;
+      uint8_t  x = idx % pWIDTH;
+      uint8_t  y = pHEIGHT - idx / pWIDTH - 1;
       uint16_t n = i * 3;
       CRGB color = CRGB(data[n], data[n+1], data[n+2]);
       drawPixelXY(x,y,color);
@@ -125,6 +139,9 @@ bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
   return true;
 }
 
+// ---------------------------------------------------
+// Вывод информаци о режиме работы устройства / использовании протокола E1.31 в монитор порта
+// ---------------------------------------------------
 void printWorkMode() {
   if (workMode == STANDALONE) {
     DEBUGLN(F("\nРежим работы: АВТОНОМНЫЙ, синхронизация E1.31 отключена\n"));
@@ -166,6 +183,9 @@ void printWorkMode() {
   }
 }
 
+// ---------------------------------------------------
+// Отправка изображения с матрицы на устройства-получатели
+// ---------------------------------------------------
 void sendE131Screen() {  
   if (!e131) return;
   if (!(syncMode == PHYSIC || syncMode == LOGIC)) return;
@@ -207,5 +227,405 @@ void sendE131Screen() {
 
   // Освободить память, выделенную под пакет
   if (packet) free(packet);  
+}
+
+// ---------------------------------------------------
+// Проверка, что пакет E1.31 содержит команду к исполнению
+// ---------------------------------------------------
+bool isCommandPacket(e131_packet_t *packet) {
+  // Команда всегда приходит в universe == 1
+  // 1 - 0xAA  - сигнатура 1
+  // 2 - 0x55  - сигнатура 2
+  // 3 -       - ID команды
+  // 4 и далее - параметры команды (зависит от команды)
+  return packet != NULL && htons(packet->universe) == 1 && packet->property_values[1] == 0xAA && packet->property_values[2] == 0x55;
+}
+
+#define CMD_TURNONOFF     0
+#define CMD_BRIGHTNESS    1
+#define CMD_SPCBRIGHTNESS 2
+#define CMD_EFFECT        3
+#define CMD_SPCEFFECT     4
+#define CMD_RUNTEXT       5
+#define CMD_STOPTEXT      6
+#define CMD_TIME          7
+#define CMD_SPEED         8
+#define CMD_CONTRAST      9
+#define CMD_PARAM1       10
+#define CMD_PARAM2       11
+#define CMD_COLOR        12
+#define CMD_DIMENSION    13
+#define CMD_TEXTSPEED    14
+#define CMD_CLOCKSPEED   15
+
+// ---------------------------------------------------
+// Обработать команду, полученную в пакете E1.31
+// ---------------------------------------------------
+void processCommandPacket(e131_packet_t *packet) {
+  if (!packet) return;
+  /*  
+   Команда содержится в каналах:
+     3 -       - ID команды
+     4 и далее - параметры команды (зависит от команды)
+  
+   Команды:
+     Канал 3 = 0 - Вкл/выкл устройства
+     Канал 4 = x - 0 - выключить 1 - включить
+     ---
+     Канал 3 = 1 - Установить текущую яркость
+     Канал 4 = x - Значение яркости
+     ---
+     Канал 3 = 1 - Установить текущую яркость специальных эффектов
+     Канал 4 = x - Значение яркости
+     ---
+     Канал 3 = 3 - Включить эффект
+     Канал 4 = x - ID эффекта
+     Канал 5 = x - скорость эффекта
+     Канал 6 = x - контраст эффекта
+     Канал 7 = x - спец.параметр №1
+     Канал 8 = x - спец.параметр №2
+     ---
+     Канал 3 = 4 - Включить указанный специальный эффект
+     Канал 4 = x - ID специального эффекта
+     ---
+     Канал 3 = 5 - Включить отображение текста, переданного в параметре
+     Канал 4 = x - char* null-terminated текст
+     ---
+     Канал 3 = 6 - Остановить отображение бегущей строки, если оно выполняется
+     ---
+     Канал 3 = 7 - Установить время
+     Канал 4 = x - год (без века) -  20xx
+     Канал 5 = x - месяц
+     Канал 6 = x - день
+     Канал 7 = x - часы
+     Канал 8 = x - минуты
+     Канал 9 = x - секунды
+     ---
+     Канал 3 = 8 - Установить скорость эффекта
+     Канал 4 = x - скорость
+     ---
+     Канал 3 = 9 - Установить контрастность эффекта
+     Канал 4 = x - контрастность
+     ---
+     Канал 3 = 10 - Установить параметр 1 эффекта
+     Канал 4 = x  - значение
+     ---
+     Канал 3 = 11 - Установить параметр 2 эффекта
+     Канал 4 = x  - значение
+     ---
+     Канал 3 = 12 - Установить globalColor
+     Канал 4 = r  - значение R
+     Канал 5 = g  - значение G
+     Канал 6 = b  - значение B
+     ---
+     Канал 3 = 13 - Ширина и высота ранели Мастера
+     Канал 4 = W  - ширина
+     Канал 5 = H  - высота
+  */  
+
+  switch (packet->property_values[3]) {
+
+    // вкл/выкл устройство
+    case CMD_TURNONOFF:
+      set_isTurnedOff(packet->property_values[4] == 0);
+      //DEBUGLN("GOT CMD_TURNONOFF");
+      break;
+
+    // Установить яркость
+    case CMD_BRIGHTNESS:
+      set_globalBrightness(packet->property_values[4]);
+      //DEBUGLN("GOT CMD_BRIGHTNESS");
+      break;
+
+    // Установить яркость
+    case CMD_SPCBRIGHTNESS:
+      set_specialBrightness(packet->property_values[4]);
+      //DEBUGLN("GOT CMD_SPCBRIGHTNESS");
+      break;
+
+    // Включить эффект  
+    case CMD_EFFECT:
+      syncEffectSpeed    = packet->property_values[5];              // Скорость эффекта
+      syncEffectContrast = packet->property_values[6];              // Контраст эффекта 
+      syncEffectParam1   = packet->property_values[7];              // Параметр эффекта 1
+      syncEffectParam2   = packet->property_values[8];              // Параметр эффекта 2
+      setEffect(packet->property_values[4]);        
+      //DEBUGLN("GOT CMD_EFFECT");
+      break;
+
+    // Включить специальный эффект  
+    case CMD_SPCEFFECT:
+      setSpecialMode(packet->property_values[4]);
+      //DEBUGLN("GOT CMD_SPCEFFECT");
+      break;
+
+    // Включить отображение текста, переданного в параметре 4 и далее
+    case CMD_RUNTEXT: {
+      // property_values[4] - char* null terminated string 
+      char* buf = (char*)(&packet->property_values[4]);
+      String text = String(buf);
+      Serial.println(text);
+      setImmediateText(text);
+      //DEBUGLN("GOT CMD_RUNTEXT");
+      break;
+     }
+
+    // Остановить бегущую строку, если она отображается
+    case CMD_STOPTEXT:
+      mandatoryStopText = true;
+      //DEBUGLN("GOT CMD_STOPTEXT");
+      break;
+
+    case CMD_TIME:
+      // Установка текущего времени
+      //   Канал 4 = x - год (без века) -  20xx
+      //   Канал 5 = x - месяц
+      //   Канал 6 = x - день
+      //   Канал 7 = x - часы
+      //   Канал 8 = x - минуты
+      //   Канал 9 = x - секунды
+      setCurrentTime(packet->property_values[7],packet->property_values[8],packet->property_values[9],
+                     packet->property_values[6],packet->property_values[5],2000+packet->property_values[4]);
+      //DEBUGLN("GOT CMD_TIME");
+      break;      
+
+    case CMD_SPEED:
+      // Скорость текущего эффекта
+      syncEffectSpeed    = packet->property_values[4];              // Скорость эффекта
+      setTimersForMode(thisMode);
+      //DEBUGLN("GOT CMD_SPEED");
+      break;      
+
+    case CMD_CONTRAST:
+      // Контрастность текущего эффекта
+      syncEffectContrast = packet->property_values[4];              // Контраст эффекта 
+      //DEBUGLN("GOT CMD_CONTRAST");
+      break;      
+
+    case CMD_PARAM1:
+      // Параметр-1 текущего эффекта
+      syncEffectParam1   = packet->property_values[4];              // Параметр эффекта 1
+      //DEBUGLN("GOT CMD_PARAM1");
+      break;      
+
+    case CMD_PARAM2:
+      // Параметр-2 текущего эффекта
+      syncEffectParam2   = packet->property_values[4];              // Параметр эффекта 2
+      //DEBUGLN("GOT CMD_PARAM2");
+      break;      
+
+    case CMD_COLOR:
+      // globalColor
+      globalColor = CRGB(packet->property_values[4],packet->property_values[5],packet->property_values[6]);
+      //DEBUGLN("GOT CMD_COLOR");
+      break;      
+
+    case CMD_DIMENSION:
+      // Ширина и высота MASTER - матрицы
+      masterWidth  = packet->property_values[4];
+      masterHeight = packet->property_values[5];
+      //DEBUGLN("GOT CMD_DIMENSION");
+      break;      
+
+    case CMD_TEXTSPEED:
+      // Скорость прокрутки текста
+      textScrollSpeed = packet->property_values[4];
+      setTimersForMode(thisMode);
+      //DEBUGLN("GOT CMD_TEXTSPEED");
+      break;      
+
+    case CMD_CLOCKSPEED:
+      // Скорость прокрутки текста
+      clockScrollSpeed = packet->property_values[4];
+      setTimersForMode(thisMode);
+      //DEBUGLN("GOT CMD_CLOCKSPEED");
+      break;      
+  }
+}
+
+// ---------------------------------------------------
+// Отправка команд в пакете E1.31 клиентам
+// ---------------------------------------------------
+
+e131_packet_t* makeCommandPacket(uint8_t cmd) {
+  e131_packet_t *packet = e131->createPacket(host_name.c_str(), e131_cid);
+  if (packet) {
+    packet->property_values[1] = 0xAA;
+    packet->property_values[2] = 0x55;
+    packet->property_values[3] = cmd;
+  }
+  return packet;
+}
+
+void commandTurnOnOff(bool value) {
+  if (workMode != MASTER) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_TURNONOFF);
+  if (!packet) return;
+  packet->property_values[4] = value ? 1 :0;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);  
+  //DEBUGLN("SEND CMD_TURNONOFF");
+}
+
+void commandSetBrightness(uint8_t value) {
+  if (workMode != MASTER) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_BRIGHTNESS);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_BRIGHTNESS");
+}
+
+void commandSetSpecialBrightness(uint8_t value) {
+  if (workMode != MASTER) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_SPCBRIGHTNESS);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_SPCBRIGHTNESS");
+}
+
+void commandSetImmediateText(String str) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_RUNTEXT);
+  if (!packet) return;
+  str.getBytes(&packet->property_values[4], str.length() + 1);  
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_RUNTEXT");
+}
+
+void commandStopText() {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_STOPTEXT);
+  if (!packet) return;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);      
+  //DEBUGLN("SEND CMD_STOPTEXT");
+}
+
+void commandSetCurrentTime(uint8_t hh, uint8_t mm, uint8_t ss, uint8_t dd, uint8_t nn, uint16_t yy) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_SPCBRIGHTNESS);
+  if (!packet) return;
+  packet->property_values[4] = hh;
+  packet->property_values[5] = mm;
+  packet->property_values[6] = ss;
+  packet->property_values[7] = dd;
+  packet->property_values[8] = nn;
+  packet->property_values[9] = yy % 100;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_SPCBRIGHTNESS");
+}
+
+void commandSetMode(int8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_EFFECT);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  packet->property_values[5] = effectSpeed[value];
+  packet->property_values[6] = effectContrast[value];
+  packet->property_values[7] = effectScaleParam[value];
+  packet->property_values[8] = effectScaleParam2[value];
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_EFFECT");
+}
+
+void commandSetSpecialMode(int8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_SPCEFFECT);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_SPCEFFECT");
+}
+
+void commandSetEffectSpeed(uint8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_SPEED);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_SPEED");
+}
+
+void commandSetEffectContrast(uint8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_CONTRAST);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_CONTRAST");
+}
+
+void commandSetEffectParam(uint8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_PARAM1);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_PARAM1");
+}
+
+void commandSetEffectParam2(uint8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_PARAM2);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_PARAM2");
+}
+
+void commandSetGlobalColor(uint32_t col) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_COLOR);
+  if (!packet) return;
+  CRGB color = CRGB(color);
+  packet->property_values[4] = color.r;
+  packet->property_values[5] = color.g;
+  packet->property_values[6] = color.b;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);    
+  //DEBUGLN("SEND CMD_COLOR");
+}
+
+void commandSetDimension(int8_t w, int8_t h) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_DIMENSION);
+  if (!packet) return;
+  packet->property_values[4] = pWIDTH;
+  packet->property_values[5] = pHEIGHT;
+    e131->sendPacket(packet, 1, 512);
+    free(packet);    
+  //DEBUGLN("SEND CMD_DIMENSION");
+}
+
+void commandSetTextSpeed(uint8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_TEXTSPEED);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);      
+  //DEBUGLN("SEND CMD_TEXTSPEED");
+}
+
+void commandSetClockSpeed(uint8_t value) {
+  if (!(workMode == MASTER && syncMode == COMMAND)) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_CLOCKSPEED);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 512);
+  free(packet);      
+  //DEBUGLN("SEND CMD_CLOCKSPEED");
 }
 #endif

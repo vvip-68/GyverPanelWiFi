@@ -51,24 +51,24 @@ int8_t currentImageIdx = 1;               // Текущая отрисовыва
 
 animation_t image_desc;                   // Структура с параметрами отрисовки анимации
 
-int8_t  pos_x = 0, pos_y = 0;             // Текущая позиция вывода изображения
-int8_t  edge_left = 0, edge_right = 0;    // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разворачивается обратно, когда еще видима
-int8_t  edge_bottom = 0, edge_top = 0;    // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разворачивается обратно, когда еще видима
-int8_t  rcNum = 0;                        // Номер строки/колонки в кадре, если идет отрисовка по строкам/колонкам
-uint8_t frameNum = 0;                     // Номер кадра в анимации
-uint8_t frames_in_image = 0;              // Количество фреймов в картинке
-bool    first_draw = false;               // Отрисовка самого первого кадра после включения эффекта   
-bool    frame_completed = false;          // Отрисовка кадра завершена (при каждом кадре если рисуется покадрово или после отрисовки всех строк кадра, если рисуется построчно)
-bool    image_completed = false;          // Отрисовка всех кадров изображения завершена
-bool    draw_by_row = false;              // Эта картинка рисуется построчно, а не покадров
-bool    flip_x = false;                   // Картинка зеркально отражена по оси X
-bool    flip_y = false;                   // Картинка зеркально отражена по оси Y
-bool    inverse_dir_x = false;            // Произошла смена направления движения при движении по горизонтали
-bool    inverse_dir_y = false;            // Произошла смена направления движения при движении по горизонтали
-unsigned long last_draw_row = 0;          // Время последнего обращения к процедуре отрисовки строки изображения, если рисуем картинку построчно
-unsigned long last_draw_frame = 0;        // Время последней отрисовки полного кадра изображения
-unsigned long last_move_x = 0;            // Время последнего смещения картинки по оси X
-unsigned long last_move_y = 0;            // Время последнего смещения картинки по оси Y
+int8_t   pos_x = 0, pos_y = 0;            // Текущая позиция вывода изображения
+int8_t   edge_left = 0, edge_right = 0;   // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разворачивается обратно, когда еще видима
+int8_t   edge_bottom = 0, edge_top = 0;   // Граница где происходит разворот движения. Зависит от того выходит картинка ЗА размеры матрицы или разворачивается обратно, когда еще видима
+int8_t   rcNum = 0;                       // Номер строки/колонки в кадре, если идет отрисовка по строкам/колонкам
+uint8_t  frameNum = 0;                    // Номер кадра в анимации
+uint8_t  frames_in_image = 0;             // Количество фреймов в картинке
+bool     first_draw = false;              // Отрисовка самого первого кадра после включения эффекта   
+bool     frame_completed = false;         // Отрисовка кадра завершена (при каждом кадре если рисуется покадрово или после отрисовки всех строк кадра, если рисуется построчно)
+bool     image_completed = false;         // Отрисовка всех кадров изображения завершена
+bool     draw_by_row = false;             // Эта картинка рисуется построчно, а не покадров
+bool     flip_x = false;                  // Картинка зеркально отражена по оси X
+bool     flip_y = false;                  // Картинка зеркально отражена по оси Y
+bool     inverse_dir_x = false;           // Произошла смена направления движения при движении по горизонтали
+bool     inverse_dir_y = false;           // Произошла смена направления движения при движении по горизонтали
+uint32_t last_draw_row = 0;               // Время последнего обращения к процедуре отрисовки строки изображения, если рисуем картинку построчно
+uint32_t last_draw_frame = 0;             // Время последней отрисовки полного кадра изображения
+uint32_t last_move_x = 0;                 // Время последнего смещения картинки по оси X
+uint32_t last_move_y = 0;                 // Время последнего смещения картинки по оси Y
 
 #define    MAX_IMAGE_WIDTH   16           // Здесь указаны максимальные размеры картинки, используемые в прошивке для которого нужен оверлей
 #define    MAX_IMAGE_HEIGHT  16           // Если картинка не использует эффекты в качестве бакграунда - оверлей не нужен
@@ -81,16 +81,16 @@ void loadDescriptor(const animation_t (*src_desc)) {
 }
 
 // Отрисовка строки изображения
-void drawImageRow(byte row, const uint16_t (*frame)) {  
+void drawImageRow(uint8_t row, const uint16_t (*frame)) {  
   
   if (!frame) return;  
 
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   int8_t y = flip_y ? pos_y + image_desc.frame_height - row - 1 : pos_y + row;
   if (y < 0  || y > pHEIGHT - 1) return;
   
-  for (byte i = 0; i < image_desc.frame_width; i++) {
+  for (uint8_t i = 0; i < image_desc.frame_width; i++) {
     
     int8_t x = flip_x ? pos_x + image_desc.frame_width - i - 1 : pos_x + i;
     if (x < 0 || x > pWIDTH - 1) continue;
@@ -110,16 +110,16 @@ void drawImageRow(byte row, const uint16_t (*frame)) {
 }
 
 // Отрисовка колонки изображения
-void drawImageCol(byte col, const uint16_t (*frame)) {  
+void drawImageCol(uint8_t col, const uint16_t (*frame)) {  
 
   if (!frame) return;
   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
   int8_t x = flip_x ? pos_x + image_desc.frame_width - col - 1 : pos_x + col;
   if (x < 0  || x > pWIDTH - 1) return;
   
-  for (byte i = 0; i < image_desc.frame_width; i++) {
+  for (uint8_t i = 0; i < image_desc.frame_width; i++) {
     
     int8_t y = flip_y ? pos_y + image_desc.frame_height - i - 1 : pos_y + i;
     if (y < 0 || y > pHEIGHT - 1) continue;
@@ -141,7 +141,7 @@ void drawImageCol(byte col, const uint16_t (*frame)) {
 // Отрисовка кадра изображения целиком
 void loadImageFrame(const uint16_t (*frame)) { 
   rcNum = 0;
-  for (byte j = 0; j < image_desc.frame_height; j++) {
+  for (uint8_t j = 0; j < image_desc.frame_height; j++) {
     drawImageRow(j, frame);
   }      
 }
@@ -150,14 +150,14 @@ void animationRoutine() {
   
   const uint16_t *ppFrame;
   
-  byte effectBrightness = getBrightnessCalculated(globalBrightness, effectContrast[thisMode]);  
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));  
 
   // ------------- ИНИЦИАЛИЗАЦИЯ ПАРАМЕТРОВ --------------
 
   if (loadingFlag) {
     FastLED.clear();
 
-    currentImageIdx = (specialTextEffectParam >= 0) ? specialTextEffectParam : effectScaleParam2[thisMode];
+    currentImageIdx = (specialTextEffectParam >= 0) ? specialTextEffectParam : getEffectScaleParamValue2(thisMode);
     
     // Индексы доступных картинок - от  1 до MAX_IMAGE_NUM;
     // Eсли currentImageIdx == 0 - брать случайную картинку
@@ -166,8 +166,8 @@ void animationRoutine() {
       // То есть всё время будет отображаться одна и та же картинка с индексом 1
       // Чтобы они отображались хотя бы попеременно - проверяем - если очередная генерация выдала тот же номер, что отображался последним - брать другой.
       // Делаем 6 попыток.
-      byte att = 0;
-      byte idx = random8(1,MAX_IMAGE_NUM);
+      uint8_t att = 0;
+      uint8_t idx = random8(1,MAX_IMAGE_NUM);
       while (MAX_IMAGE_NUM > 1 && idx == currentImageIdx && att < 6) {
         att++; idx++;
         if (idx > MAX_IMAGE_NUM) idx = 1;
@@ -554,9 +554,9 @@ const uint8_t PROGMEM gammaB[] = {
 
 // гамма-коррекция цвет плашки в цвет светодиода (более натуральные цвета)
 uint32_t gammaCorrection(uint32_t color) {
-  byte r = (color >> 16) & 0xFF;  // Extract the RR byte
-  byte g = (color >> 8) & 0xFF;   // Extract the GG byte
-  byte b = color & 0xFF;          // Extract the BB byte
+  uint8_t r = (color >> 16) & 0xFF;  // Extract the RR byte
+  uint8_t g = (color >> 8) & 0xFF;   // Extract the GG byte
+  uint8_t b = color & 0xFF;          // Extract the BB byte
 
   r = pgm_read_byte(&gammaR[r]);
   g = pgm_read_byte(&gammaG[g]);
@@ -568,10 +568,10 @@ uint32_t gammaCorrection(uint32_t color) {
 
 // обратная гамма-коррекция - из цвета светодиода в цвет плашки в программе
 uint32_t gammaCorrectionBack(uint32_t color) {
-  byte r = (color >> 16) & 0xFF;  // Extract the RR byte
-  byte g = (color >> 8) & 0xFF;   // Extract the GG byte
-  byte b = color & 0xFF;          // Extract the BB byte
-  byte idx, tmp;
+  uint8_t r = (color >> 16) & 0xFF;  // Extract the RR byte
+  uint8_t g = (color >> 8) & 0xFF;   // Extract the GG byte
+  uint8_t b = color & 0xFF;          // Extract the BB byte
+  uint8_t idx, tmp;
 
   idx = r;
   tmp = pgm_read_byte(&gammaR[idx]);
@@ -686,8 +686,8 @@ String openImage(String storage, String fName) {
     return message;
   }
 
-  byte w = buf[1];
-  byte h = buf[2];
+  uint8_t w = buf[1];
+  uint8_t h = buf[2];
   int8_t offset_x = (pWIDTH - w) / 2;
   int8_t offset_y = (pHEIGHT - h) / 2;
 
@@ -707,9 +707,9 @@ String openImage(String storage, String fName) {
       int8_t cy = y + offset_y;
       if (cx >= 0 && cy >= 0 && cx < pWIDTH && cy < pHEIGHT) {
         uint16_t idx = getPixelNumber(cx, cy);
-        byte r = buf[0];
-        byte g = buf[1];
-        byte b = buf[2];
+        uint8_t r = buf[0];
+        uint8_t g = buf[1];
+        uint8_t b = buf[2];
         leds[idx] = CRGB(r << 16 | g << 8 | b);
       }
     }

@@ -4,13 +4,13 @@
 #define MAX_LENGTH  80    // максимальная длина змейки
 
 // **************** ДЛЯ РАЗРАБОТЧИКОВ ****************
-int8_t vectorX, vectorY;
-int8_t headX, headY, buttX, buttY;
-int8_t appleX, appleY;
-int8_t buttVector[MAX_LENGTH];
-int snakeLength;
-boolean butt_flag, pizdetc, missDelete = false;
-volatile boolean apple_flag;
+int8_t  vectorX, vectorY;
+int8_t  headX, headY, buttX, buttY;
+int8_t  appleX, appleY;
+int8_t  buttVector[MAX_LENGTH];
+uint8_t snakeLength;
+bool    butt_flag, pizdetc, missDelete = false;
+volatile bool apple_flag;
 
 void snakeRoutine() {
   if (loadingFlag || gameOverFlag) {
@@ -42,12 +42,12 @@ void snakeRoutine() {
 
   if (!pizdetc) {
     // проверка на pizdetc
-    if ((long)(getPixColorXY(headX, headY) != 0 && (long)getPixColorXY(headX, headY) != GLOBAL_COLOR_2)) {   // если змея врезалась во что то, но не в яблоко
+    if ((uint32_t)(getPixColorXY(headX, headY) != 0 && (uint32_t)getPixColorXY(headX, headY) != GLOBAL_COLOR_2)) {   // если змея врезалась во что то, но не в яблоко
       pizdetc = true;                           // флаг на отработку
     }
 
     // БЛОК ОТРАБОТКИ ПОЕДАНИЯ ЯБЛОКА
-    if (!pizdetc && (long)getPixColorXY(headX, headY) == (long)GLOBAL_COLOR_2) { // если попали головой в яблоко
+    if (!pizdetc && (uint32_t)getPixColorXY(headX, headY) == (uint32_t)GLOBAL_COLOR_2) { // если попали головой в яблоко
       apple_flag = false;                       // флаг что яблока больше нет
       snakeLength++;                            // увеличить длину змеи
       buttVector[snakeLength] = 4;              // запоминаем, что надо будет не стирать хвост
@@ -68,7 +68,7 @@ void snakeRoutine() {
     }
 
     // смещаем весь массив векторов хвоста ВЛЕВО
-    for (byte i = 0; i < snakeLength; i++) {
+    for (uint8_t i = 0; i < snakeLength; i++) {
       buttVector[i] = buttVector[i + 1];
     }
 
@@ -90,9 +90,9 @@ void snakeRoutine() {
     pizdetc = false;
 
     // ну в общем плавно моргнуть, типо змейке "больно"
-    for (byte bright = 0; bright < 15; bright++) {
+    for (uint8_t bright = 0; bright < 15; bright++) {
       FastLED.setBrightness(bright);
-      for (int i = 0; i < NUM_LEDS; i++) {
+      for (uint16_t i = 0; i < NUM_LEDS; i++) {
         leds[i] = CRGB::Red;
       }
       FastLEDshow();
@@ -118,7 +118,7 @@ void putApple() {
     appleY = random(0, pHEIGHT-1);
 
     // проверить, не совпадает ли координата с телом змеи
-    if ((long)getPixColorXY(appleX, appleY) == 0) {
+    if ((uint32_t)getPixColorXY(appleX, appleY) == 0) {
       apple_flag = true;                                  // если не совпадает, считаем что яблоко создано
       drawPixelXY(appleX, appleY, GLOBAL_COLOR_2);        // и рисуем
     }
@@ -206,7 +206,7 @@ void newGameSnake() {
   buttons = 4;
 
   // первоначальная отрисовка змейки и забивка массива векторов для хвоста
-  for (byte i = 0; i < snakeLength; i++) {
+  for (uint8_t i = 0; i < snakeLength; i++) {
     drawPixelXY(headX - i, headY, GLOBAL_COLOR_1);
     buttVector[i] = 0;
   }

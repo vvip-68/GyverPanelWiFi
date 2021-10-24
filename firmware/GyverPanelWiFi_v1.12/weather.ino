@@ -120,7 +120,7 @@ bool getWeather() {
     */        
     temperature  = jsn["clocks"][regId]["weather"]["temp"].as<int8_t>();  // Достаём температуру - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
     skyColor     = jsn["clocks"][regId]["skyColor"].as<String>();         // Рекомендованный цвет фона
-    isNight      = jsn["clocks"][regId]["isNight"].as<boolean>();
+    isNight      = jsn["clocks"][regId]["isNight"].as<bool>();
     icon         = jsn["clocks"][regId]["weather"]["icon"].as<String>();  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
     town         = jsn["clocks"][regId]["name"].as<String>();             // Город
     sunrise      = jsn["clocks"][regId]["sunrise"].as<String>();          // Время рассвета
@@ -521,9 +521,9 @@ void weatherRoutine() {
     // Есть ли возможность отрисовки температуры большим шрифтом?
     bool big_font = c_size == 2 && (pWIDTH > image_desc.frame_width + 10 || pHEIGHT > image_desc.frame_height + 7);
 
-    byte t = abs(temperature);
-    byte dec_t = t / 10;
-    byte edc_t = t % 10;
+    uint8_t t = abs(temperature);
+    uint8_t dec_t = t / 10;
+    uint8_t edc_t = t % 10;
 
     // ширина текста температуры
     int8_t temp_width = t == 0
@@ -568,6 +568,9 @@ void weatherRoutine() {
           
     fade_weather_phase = init_weather ? 1 : 0;                         // плавное появление картинки
   }  
+
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
 
   #if (USE_WEATHER == 1)     
     if (useWeather > 0) {
@@ -624,7 +627,7 @@ void weatherRoutine() {
   // Нарисовать картинку
   loadImageFrame(weather_array[weather_frame_num]);
   
-  byte spd = map8(255-effectSpeed, 2, 24);   
+  uint8_t spd = map8(255-getEffectSpeedValue(MC_WEATHER), 2, 24);   
 
   // Если находимся в фазе 0 - плавное появление картинки - затенить только что отрисованную картинку, постепенно уменьшая затенение
   if (fade_weather_phase == 0) {
@@ -686,14 +689,14 @@ void weatherRoutine() {
       if (big_font) {
         temp_x -= 4;  
         // Для больших часов рисуем значок градуса
-        for(int i = 0; i < 2; i++) drawPixelXY(getClockX(temp_x), temp_y + 4 + i, color);      
+        for(uint8_t i = 0; i < 2; i++) drawPixelXY(getClockX(temp_x), temp_y + 4 + i, color);      
         drawPixelXY(getClockX(temp_x + 1), temp_y+3, color);      
         drawPixelXY(getClockX(temp_x + 1), temp_y+6, color);      
-        for(int i = 0; i < 2; i++) drawPixelXY(getClockX(temp_x+2), temp_y + 4 + i, color);      
+        for(uint8_t i = 0; i < 2; i++) drawPixelXY(getClockX(temp_x+2), temp_y + 4 + i, color);      
       } else {
         temp_x -= 3;  
         // При температуре = 0 - рисуем маленький значок C
-        for(int i = 0; i < 3; i++) {
+        for(uint8_t i = 0; i < 3; i++) {
           drawPixelXY(getClockX(temp_x), temp_y + i, color);      
         }
         drawPixelXY(getClockX(temp_x + 1), temp_y, color);      
@@ -728,7 +731,7 @@ void weatherRoutine() {
     if (temperature != 0) {
       bool dy = big_font ? 2 : 0;
       temp_x -= 4;
-      for(int i = 0; i < 3; i++) {
+      for(uint8_t i = 0; i < 3; i++) {
         drawPixelXY(getClockX(temp_x + i), temp_y + 2 + dy, color);      
       }      
       // Для плюcа - вертикальная черта

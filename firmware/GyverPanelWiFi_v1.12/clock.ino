@@ -14,7 +14,7 @@
 #define HUE_GAP 30          // шаг цвета между цифрами в режиме радужной смены
 
 // ****************** ДЛЯ РАЗРАБОТЧИКОВ ****************
-byte clockHue;
+uint8_t clockHue;
 
 CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
@@ -70,8 +70,8 @@ void parseNTP() {
   DEBUGLN(t2);
 
   setTime(t);  
-  calculateDawnTime();
-  rescanTextEvents();
+  // этот вызов нужен, чтобы отработали сопутствующие установке времени процедуры
+  setCurrentTime(hour(),minute(),second(),day(),month(),year());
 
   // Если время запуска еще не определено - инициализировать его
   if (upTime == 0) {
@@ -186,21 +186,21 @@ void clockColor() {
   if (color_idx == -2) {
     // Цвет по индексу настроек текущего ночного цвета     
     CRGB color = getNightClockColorByIndex(nightClockColor);
-    for (byte i = 0; i < 5; i++) clockLED[i] = color;
+    for (uint8_t i = 0; i < 5; i++) clockLED[i] = color;
   } else if (color_idx == -1) {     
     // Инверсный от основного цвет
     CRGB color = globalColor == 0xFFFFFF
       ? color = CRGB::Navy
       : -CRGB(globalColor);
-    for (byte i = 0; i < 5; i++) clockLED[i] = color;  
+    for (uint8_t i = 0; i < 5; i++) clockLED[i] = color;  
   } else if (color_idx == 0) {     
     // Монохромные часы  
-    byte hue = effectScaleParam[MC_CLOCK];
+    uint8_t hue = effectScaleParam[MC_CLOCK];
     CHSV color = hue <= 1 ? CHSV(255, 0, 255): CHSV(hue, 255, 255);
-    for (byte i = 0; i < 5; i++) clockLED[i] = color;
+    for (uint8_t i = 0; i < 5; i++) clockLED[i] = color;
   } else if (color_idx == 1) {
     // Каждая цифра своим цветом, плавная смена цвета
-    for (byte i = 0; i < 5; i++) clockLED[i] = CHSV(clockHue + HUE_GAP * i, 255, 255);
+    for (uint8_t i = 0; i < 5; i++) clockLED[i] = CHSV(clockHue + HUE_GAP * i, 255, 255);
     clockLED[2] = CHSV(clockHue + 128 + HUE_GAP * 1, 255, 255); // точки делаем другой цвет
   } else if (color_idx == 2) {
     // Часы, точки, минуты своим цветом, плавная смена цвета
@@ -211,12 +211,12 @@ void clockColor() {
     clockLED[4] = CHSV(clockHue + HUE_GAP * 2, 255, 255);
   } else {
     CRGB color = getGlobalClockColor();
-    for (byte i = 0; i < 5; i++) clockLED[i] = color;
+    for (uint8_t i = 0; i < 5; i++) clockLED[i] = color;
   }
 }
 
-byte getClockSizeType() {
-  byte clock_size = CLOCK_SIZE;
+uint8_t getClockSizeType() {
+  uint8_t clock_size = CLOCK_SIZE;
   // Если часы авто или большие - определить - а поместятся ли они на матрицу по ширине при горизонтальном режиме / по высоте при вертикальном
   // Большие часы для шрифта 5x7 требуют 4*5 /цифры/ + 4 /двоеточие/ + 2 /пробел между цифрами часов и минут / = 23, 25 или 26 колонки (одинарные / двойные точки в часах) если 23 - нет пробела вокруг точек
   if ((clock_size == 0 || clock_size == 2) && ((CLOCK_ORIENT == 0 && pWIDTH < 23) || (CLOCK_ORIENT == 1 && pHEIGHT < 15))) clock_size = 1;
@@ -234,7 +234,7 @@ int8_t getClockX(int8_t x) {
 }
 
 // нарисовать часы
-void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
+void drawClock(uint8_t hrs, uint8_t mins, bool dots, int8_t X, int8_t Y) {
 
   // Для отладки позиционирования часов с температурой
   bool debug = debug_hours >= 0 && debug_mins >= 0;
@@ -247,22 +247,22 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
   int8_t x = X;
 
-  byte h10 = hrs / 10;
-  byte h01 = hrs % 10;
-  byte m10 = mins / 10;
-  byte m01 = mins % 10;
+  uint8_t h10 = hrs / 10;
+  uint8_t h01 = hrs % 10;
+  uint8_t m10 = mins / 10;
+  uint8_t m01 = mins % 10;
 
   #if (USE_WEATHER == 1)
-  byte t = abs(temperature);
-  byte dec_t = t / 10;
+  uint8_t t = abs(temperature);
+  uint8_t dec_t = t / 10;
   #endif
   
   // Старший байт - ширина часов, младший - ширина температуры
   // Выбираем бОльшую из значений ширины и центрируем ее относительно ширины матрицы
   uint16_t ww = getClockWithTempWidth(hrs, mins);
-  byte   cw = ((ww & 0xff00) >> 8);
-  byte   tw = ( ww & 0x00ff);
-  int8_t dx = tw - cw;  
+  uint8_t  cw = ((ww & 0xff00) >> 8);
+  uint8_t  tw = ( ww & 0x00ff);
+  int8_t   dx = tw - cw;  
 
   if (tw > cw) cw = tw;
   CLOCK_W = cw;
@@ -421,7 +421,7 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
       drawDigit5x7(h10, X + x, Y + 8, clockLED[0]);
       drawDigit5x7(h01, X + x + 6, Y + 8, clockLED[1]);
       if (dots) { // Мигающие точки легко ассоциируются с часами
-        for (byte i=0; i<3; i++) drawPixelXY(getClockX(X + x + 4 + i), Y + 7, clockLED[2]);
+        for (uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + x + 4 + i), Y + 7, clockLED[2]);
       }
       drawDigit5x7(m10, X + x, Y, clockLED[3]);
       drawDigit5x7(m01, X + x + 6, Y, clockLED[4]);
@@ -437,19 +437,19 @@ void drawClock(byte hrs, byte mins, boolean dots, int8_t X, int8_t Y) {
 
 // Вычисляет ширину, требуемую для отображения текущей температуры и часов.
 // Возврат - старший байт - ширина часов, младший байт - ширина температуры
-uint16_t getClockWithTempWidth(byte hrs, byte mins) {
-  byte cw= 0;
-  byte tw = 0;  
+uint16_t getClockWithTempWidth(uint8_t hrs, uint8_t mins) {
+  uint8_t cw= 0;
+  uint8_t tw = 0;  
 
-  byte h10 = hrs / 10;
-  byte h01 = hrs % 10;
-  byte m10 = mins / 10;
-  byte m01 = mins % 10;  
+  uint8_t h10 = hrs / 10;
+  uint8_t h01 = hrs % 10;
+  uint8_t m10 = mins / 10;
+  uint8_t m01 = mins % 10;  
 
 #if (USE_WEATHER == 1)      
-  byte t = abs(temperature);
-  byte dec_t = t / 10;
-  byte edc_t = t % 10;
+  uint8_t t = abs(temperature);
+  uint8_t dec_t = t / 10;
+  uint8_t edc_t = t % 10;
 
   // Ширина отображения температуры
   // На вертикальных часах температура не показывается
@@ -525,18 +525,18 @@ void drawTemperature(int8_t X) {
   // Если единицы градусов = 1 - сместить на колонку вправо
   // Если десятки градусов = 0 - сместить на 4 колонки вправо и 0 не рисовать
   // Если температура 0 - рисовать 0C
-  volatile byte temp_x = CLOCK_LX; 
-  byte temp_y = CLOCK_WY;
+  volatile uint8_t temp_x = CLOCK_LX; 
+  uint8_t temp_y = CLOCK_WY;
 
   if (clockScrollSpeed >= 240) X = 0; 
 
-  byte t = abs(temperature);
-  byte dec_t = t / 10;
-  byte edc_t = t % 10;
+  uint8_t t = abs(temperature);
+  uint8_t dec_t = t / 10;
+  uint8_t edc_t = t % 10;
 
   if (!allow_two_row) {
     temp_y = CLOCK_Y;
-    byte width = 0;
+    uint8_t width = 0;
     if (temperature == 0) {
       width = (c_size == 1 ? 6 : 15);
     } else {
@@ -563,7 +563,7 @@ void drawTemperature(int8_t X) {
       // При температуре = 0 - рисуем маленький значок C
       if (!(useTemperatureColor || isNightClock)) color = clockLED[1]; 
       temp_x -= 1;  
-      for(int i = 0; i < 3; i++) {
+      for(uint8_t i = 0; i < 3; i++) {
         drawPixelXY(getClockX(X + temp_x), temp_y + i, color);      
       }
       drawPixelXY(getClockX(X + temp_x + 1), temp_y, color);      
@@ -571,7 +571,7 @@ void drawTemperature(int8_t X) {
       temp_x -= 2;
     }
 
-    byte last_digit = edc_t;
+    uint8_t last_digit = edc_t;
     // Единицы градусов
     if (!(useTemperatureColor || isNightClock)) color = clockLED[0]; 
     temp_x -= (edc_t == 1 ? 1 : 2);
@@ -590,7 +590,7 @@ void drawTemperature(int8_t X) {
     if (temperature != 0) {
       if (!(useTemperatureColor || isNightClock)) color = clockLED[2]; 
       temp_x -= (last_digit == 1 ? 3 : 4);
-      for(int i = 0; i < 3; i++) {
+      for(uint8_t i = 0; i < 3; i++) {
         drawPixelXY(getClockX(X + temp_x + i), temp_y + 2, color);      
       }
       
@@ -610,9 +610,9 @@ void drawTemperature(int8_t X) {
     // Буква 'C'
     temp_x -= 4;
     if (!(useTemperatureColor || isNightClock))color = clockLED[1]; 
-    for(byte i=0; i<5; i++) drawPixelXY(getClockX(X + temp_x), temp_y + 1 + i, color);
-    for(byte i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + 1 + i), temp_y, color);
-    for(byte i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + 1 + i), temp_y + 6, color);
+    for(uint8_t i=0; i<5; i++) drawPixelXY(getClockX(X + temp_x), temp_y + 1 + i, color);
+    for(uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + 1 + i), temp_y, color);
+    for(uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + 1 + i), temp_y + 6, color);
     drawPixelXY(getClockX(X + temp_x + 4), temp_y + 5, color);
     drawPixelXY(getClockX(X + temp_x + 4), temp_y + 1, color);
 
@@ -644,9 +644,9 @@ void drawTemperature(int8_t X) {
     if (t != 0) {
       if (!(useTemperatureColor || isNightClock))color = clockLED[2]; 
       temp_x -= 3;
-      for(byte i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + i), temp_y + 3, color);
+      for(uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + i), temp_y + 3, color);
       if (temperature > 0) {
-        for(byte i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + 1), temp_y + 2 + i, color);
+        for(uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + temp_x + 1), temp_y + 2 + i, color);
       }
     }
   }
@@ -654,14 +654,14 @@ void drawTemperature(int8_t X) {
 }
 
 // нарисовать дату календаря
-void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, int8_t Y) {
+void drawCalendar(uint8_t aday, uint8_t amnth, int16_t ayear, bool dots, int8_t X, int8_t Y) {
 
-  byte d10 = aday / 10;
-  byte d01 = aday % 10;
-  byte m10 = amnth / 10;
-  byte m01 = amnth % 10;
+  uint8_t d10 = aday / 10;
+  uint8_t d01 = aday % 10;
+  uint8_t m10 = amnth / 10;
+  uint8_t m01 = amnth % 10;
 
-  byte cx = 0, dy = 0;
+  uint8_t cx = 0, dy = 0;
   
   if (!allow_two_row) {
     Y = CLOCK_Y;
@@ -703,9 +703,9 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
     
 
     // Отрисовка календаря в больщих часах
-    int8_t x = X;
-    int8_t y = Y;
-    byte width = 0;
+    int8_t  x = X;
+    int8_t  y = Y;
+    uint8_t width = 0;
 
     if (CLOCK_ORIENT == 0 || !allow_two_row) {
       
@@ -755,10 +755,10 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
       // Отрисовку проводить справа налево, чтобы выравнивать по правому краю даты (день/месяц)
       if (allow_two_row) {
         x = X + width - 2;
-        byte d1 = ayear / 1000;
-        byte d2 = (ayear / 100) % 10;
-        byte d3 = (ayear / 10) % 10;
-        byte d4 = ayear % 10;
+        uint8_t d1 = ayear / 1000;
+        uint8_t d2 = (ayear / 100) % 10;
+        uint8_t d3 = (ayear / 10) % 10;
+        uint8_t d4 = ayear % 10;
         x -= (d4 == 1 ? 4 : 6);
         drawDigit5x7(d4, x, y, clockLED[0]);
         x -= (d3 == 1 ? 4 : 6);
@@ -775,7 +775,7 @@ void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, int8_t X, 
       drawDigit5x7(d10, X, Y + 9, clockLED[0]);
       drawDigit5x7(d01, X + 6, Y + 9, clockLED[1]);
       if (dots) { // Мигающие точки легко ассоциируются с часами
-        for (byte i=0; i<3; i++) drawPixelXY(getClockX(X + 4 + i), Y + 8, clockLED[2]);
+        for (uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + 4 + i), Y + 8, clockLED[2]);
       }
       drawDigit5x7(m10, X, Y + 1, clockLED[3]);
       drawDigit5x7(m01, X + 6, Y + 1, clockLED[4]);
@@ -825,17 +825,17 @@ void clockTicker() {
     // отображать показание текущего значения яркости в процентах 0..99
     if (isButtonHold) bCounter = 4;
     if (!isButtonHold && bCounter > 0 && halfSec) bCounter--;
-    byte prcBrightness = map8(globalBrightness,0,99);
-    byte m10 = getByteForDigit(prcBrightness / 10);
-    byte m01 = getByteForDigit(prcBrightness % 10);
+    uint8_t prcBrightness = map8(globalBrightness,0,99);
+    uint8_t m10 = getByteForDigit(prcBrightness / 10);
+    uint8_t m01 = getByteForDigit(prcBrightness % 10);
     display.displayByte(_b_, _r_, m10, m01);
     display.point(false);
   } else if (wifi_print_ip) {
     // Четырехкратное нажатие кнопки запускает отображение по частям текущего IP лампы  
     if (dotFlag && halfSec) {
       if (wifi_print_idx<=3) {
-        String ip = WiFi.localIP().toString();
-        int value = atoi(GetToken(ip, wifi_print_idx + 1, '.').c_str()); 
+        String  ip = WiFi.localIP().toString();
+        int16_t value = atoi(GetToken(ip, wifi_print_idx + 1, '.').c_str()); 
         display.displayInt(value);
         display.point(false);
         wifi_print_idx++;
@@ -868,7 +868,7 @@ void clockTicker() {
       #if (USE_WEATHER == 1)
       // RailWar Evgeny (C)
       if (((useWeather > 0)) && weather_ok && (((second() + 10) % 30) >= 28)) {
-        byte t = abs(temperature);
+        uint8_t t = abs(temperature);
         uint8_t atH = t / 10;
         uint8_t atL = t % 10;
         display.point(false);
@@ -932,22 +932,22 @@ void checkCalendarState() {
 }
 
 void contrastClock() {  
-  for (byte i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
+  for (uint8_t i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
 }
 
 void contrastClockA() {  
-  for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_1;
+  for (uint8_t i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_1;
 }
 
 void contrastClockB() {
-  for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_2;
+  for (uint8_t i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_2;
 }
 
 void contrastClockC(){
   CRGB color = CONTRAST_COLOR_3;
   CRGB gc = CRGB(globalColor);
   if (color == gc) color = -color;
-  for (byte i = 0; i < 5; i++) clockLED[i] = color;  
+  for (uint8_t i = 0; i < 5; i++) clockLED[i] = color;  
 }
 
 void setOverlayColors() {
@@ -979,8 +979,8 @@ void setOverlayColors() {
 
 void calculateDawnTime() {
 
-  byte alrmHour;
-  byte alrmMinute;
+  uint8_t alrmHour;
+  uint8_t alrmMinute;
   
   dawnWeekDay = 0;
   if (!init_time || alarmWeekDay == 0) return;       // Время инициализировано? Хотя бы на один день будильник включен?
@@ -988,12 +988,12 @@ void calculateDawnTime() {
   int8_t alrmWeekDay = weekday()-1;                  // day of the week, Sunday is day 0   
   if (alrmWeekDay == 0) alrmWeekDay = 7;             // Sunday is day 7, Monday is day 1;
 
-  byte h = hour();
-  byte m = minute();
-  byte w = weekday()-1;
+  uint8_t h = hour();
+  uint8_t m = minute();
+  uint8_t w = weekday()-1;
   if (w == 0) w = 7;
 
-  byte cnt = 0;
+  uint8_t cnt = 0;
   while (cnt < 2) {
     cnt++;
     while ((alarmWeekDay & (1 << (alrmWeekDay - 1))) == 0) {
@@ -1040,18 +1040,18 @@ void calculateDawnTime() {
 // Проверка времени срабатывания будильника
 void checkAlarmTime() {
 
-  byte h = hour();
-  byte m = minute();
-  byte w = weekday()-1;
+  uint8_t h = hour();
+  uint8_t m = minute();
+  uint8_t w = weekday()-1;
   if (w == 0) w = 7;
 
   // Будильник включен?
   if (init_time && dawnWeekDay > 0) {
 
     // Время срабатывания будильника после завершения рассвета
-    byte alrmWeekDay = dawnWeekDay;
-    byte alrmHour = dawnHour;
-    byte alrmMinute = dawnMinute + dawnDuration;
+    uint8_t alrmWeekDay = dawnWeekDay;
+    uint8_t alrmHour = dawnHour;
+    uint8_t alrmMinute = dawnMinute + dawnDuration;
     if (alrmMinute >= 60) {
       alrmMinute = 60 - alrmMinute;
       alrmHour++;
@@ -1385,9 +1385,9 @@ void checkAutoMode6Time() {
 
 // Выполнение включения режима 1,2,3,4,5,6 (amode) по установленному времени
 // -3 - не используется; -2 - выключить матрицу; -1 - ночные часы, 0 - включить случайный с автосменой; 1 - номер режима из списка EFFECT_LIST
-void SetAutoMode(byte amode) {
+void SetAutoMode(uint8_t amode) {
 
-  byte   AM_hour, AM_minute;
+  uint8_t   AM_hour, AM_minute;
   int8_t AM_effect_id;
   switch(amode) {
     case 1:  AM_hour = AM1_hour;  AM_minute = AM1_minute;  AM_effect_id = AM1_effect_id;  break;
@@ -1479,7 +1479,7 @@ void SetAutoMode(byte amode) {
 }
 
 #if (USE_TM1637 == 1)
-byte getByteForDigit(byte digit) {
+uint8_t getByteForDigit(uint8_t digit) {
   switch (digit) {
     case 0: return _0_;
     case 1: return _1_;
@@ -1525,12 +1525,12 @@ void checkClockOrigin() {
         // Малые часы 
         CLOCK_W = (4*3 + 3*1);
         CLOCK_H = (1*5);
-        CLOCK_X = (byte((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр  
-        CLOCK_Y = (byte((pHEIGHT - CLOCK_H) / 2.0 + 0.51));        // Одна строка цифр 5 пикс высотой  / 2 - в центр
+        CLOCK_X = (uint8_t((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр  
+        CLOCK_Y = (uint8_t((pHEIGHT - CLOCK_H) / 2.0 + 0.51));        // Одна строка цифр 5 пикс высотой  / 2 - в центр
         CALENDAR_W = (4*3 + 1);
         CALENDAR_H = (2*5 + 1);
-        CALENDAR_X = (byte((pWIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-        CALENDAR_Y = (byte((pHEIGHT - CALENDAR_H) / 2.0) + 0.51);  // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр      
+        CALENDAR_X = (uint8_t((pWIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+        CALENDAR_Y = (uint8_t((pHEIGHT - CALENDAR_H) / 2.0) + 0.51);  // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр      
       } else {
         // Большие часы       
         // Если ширина матрицы - 25 колонок - ширина точки, разделяющих часы /минуты и день/месяц - не 2 колонки, а одна
@@ -1550,10 +1550,10 @@ void checkClockOrigin() {
         }
         CLOCK_H = (1*7);
         CALENDAR_H = (2*7 + 2);                                   // В больших часах календарь - две строки высотой 7 + 2 пробела между строкамми
-        CLOCK_X = (byte((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
-        CLOCK_Y = (byte((pHEIGHT - CLOCK_H) / 2.0 + 0.51));        // Одна строка цифр 7 пикс высотой  / 2 - в центр
-        CALENDAR_X = (byte((pWIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
-        CALENDAR_Y = (byte((pHEIGHT - CALENDAR_H) / 2.0) + 0.51);  // Одна строка цифр 7 пикс высотой  / 2 - в центр
+        CLOCK_X = (uint8_t((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
+        CLOCK_Y = (uint8_t((pHEIGHT - CLOCK_H) / 2.0 + 0.51));        // Одна строка цифр 7 пикс высотой  / 2 - в центр
+        CALENDAR_X = (uint8_t((pWIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 5 пикс шириной) 3 + пробела между цифрами) + 4 - ширина точек-разделителей, /2 - в центр 
+        CALENDAR_Y = (uint8_t((pHEIGHT - CALENDAR_H) / 2.0) + 0.51);  // Одна строка цифр 7 пикс высотой  / 2 - в центр
       }     
     } else {
       // Вериткальные часы, календарь
@@ -1561,18 +1561,18 @@ void checkClockOrigin() {
         // Малые часы 
         CLOCK_W = (2*3 + 1);
         CLOCK_H = (2*5 + 1);
-        CLOCK_X = (byte((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-        CLOCK_Y = (byte((pHEIGHT - CLOCK_H) / 2.0 + 0.51));        // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр
+        CLOCK_X = (uint8_t((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+        CLOCK_Y = (uint8_t((pHEIGHT - CLOCK_H) / 2.0 + 0.51));        // Две строки цифр 5 пикс высотой + 1 пробел между строками / 2 - в центр
         CALENDAR_W = (4*3 + 1);
         CALENDAR_H = (2*5 + 1);        
-        CALENDAR_X = (byte((pWIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+        CALENDAR_X = (uint8_t((pWIDTH - CALENDAR_W) / 2.0));          // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
         CALENDAR_Y = CLOCK_Y;                                     // Вертикальные часы имеют тот же размер, что и календарь
       } else {
         // Большие часы     
         CLOCK_W = (2*5 + 1);
         CLOCK_H = (2*7 + 1);
-        CLOCK_X = (byte((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 2 цифры * (шрифт 5 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-        CLOCK_Y = (byte((pHEIGHT - CLOCK_H) / 2.0 + 1));           // Две строки цифр 7 пикс высотой + 1 пробел между строками / 2 - в центр
+        CLOCK_X = (uint8_t((pWIDTH - CLOCK_W) / 2.0 + 0.51));         // 2 цифры * (шрифт 5 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+        CLOCK_Y = (uint8_t((pHEIGHT - CLOCK_H) / 2.0 + 1));           // Две строки цифр 7 пикс высотой + 1 пробел между строками / 2 - в центр
         CALENDAR_W = (2*5 + 1);
         CALENDAR_H = (2*7 + 2);
         CALENDAR_X = CLOCK_X;                                     // Вертикальные часы имеют тот же размер, что и календарь
@@ -1615,7 +1615,7 @@ void checkClockOrigin() {
   }
 }
 
-uint32_t getNightClockColorByIndex(byte idx) {
+uint32_t getNightClockColorByIndex(uint8_t idx) {
   // nightClockBrightness - яркость каждой компоненты цвета ночных часов - R,G,B
   // Нужный свет получаем комбинируя яркость каждого из компонентов RGB цвета
   uint32_t color = nightClockBrightness << 16;  // Red

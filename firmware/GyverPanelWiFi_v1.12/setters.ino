@@ -21,6 +21,9 @@ void set_isTurnedOff(bool value) {
   if (isTurnedOff == value) return;
   isTurnedOff = value;
   addKeyToChanged("PS");
+  #if (USE_E131 == 1)
+    commandTurnOnOff(value);
+  #endif
 }
 
 // BR isNightClock
@@ -31,18 +34,29 @@ void set_isNightClock(bool value) {
 }
 
 // BR globalBrightness
-void set_globalBrightness(byte value) {
+void set_globalBrightness(uint8_t value) {
+  #if (USE_E131 == 1)
+    commandSetBrightness(value);
+  #endif
   if (globalBrightness == value) return;
   putMaxBrightness(value);
   globalBrightness = getMaxBrightness();
   addKeyToChanged("BR");
+  #if (USE_E131 ==1)
+  #endif
 }
 
 // BR specialBrightness
-void set_specialBrightness(byte value) {
+void set_specialBrightness(uint8_t value) {
+  #if (USE_E131 == 1)
+    commandSetSpecialBrightness(value);
+  #endif
   if (specialBrightness == value) return;;
   specialBrightness = value;
   addKeyToChanged("BR");
+  #if (USE_E131 ==1)
+    commandSetSpecialBrightness(value);
+  #endif
 }
 
 // DM manualMode
@@ -108,7 +122,7 @@ void set_CURRENT_LIMIT(uint16_t value) {
 
 #if (USE_WEATHER == 1)
 // WU useWeather
-void set_useWeather(byte value) {
+void set_useWeather(uint8_t value) {
   if (useWeather == value) return;
   putUseWeather(value);
   useWeather = getUseWeather();
@@ -227,10 +241,14 @@ void set_thisMode(int8_t value) {
   if (value < 0 || (valid && old_BE != getStateValue(keyBE, value)))  addKeyToChanged("BE");
   if (value < 0 || (valid && old_SS != getParamForMode(value)))       addKeyToChanged("SS");
   if (value < 0 || (valid && old_SQ != getParam2ForMode(value)))      addKeyToChanged("SQ");
+
+  #if (USE_E131 == 1)
+    commandSetMode(thisMode);
+  #endif      
 }
 
 // UE
-void set_EffectUsage(byte effect, bool value) {
+void set_EffectUsage(uint8_t effect, bool value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   bool old_value = getEffectUsage(effect);
@@ -241,7 +259,7 @@ void set_EffectUsage(byte effect, bool value) {
 }
 
 // UT 
-void set_EffectTextOverlayUsage(byte effect, bool value) {
+void set_EffectTextOverlayUsage(uint8_t effect, bool value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   String key = "UT";
@@ -254,7 +272,7 @@ void set_EffectTextOverlayUsage(byte effect, bool value) {
 }
 
 // UC
-void set_EffectClockOverlayUsage(byte effect, bool value) {
+void set_EffectClockOverlayUsage(uint8_t effect, bool value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   String key = "UC";
@@ -267,56 +285,69 @@ void set_EffectClockOverlayUsage(byte effect, bool value) {
 }
 
 // SE
-void set_EffectSpeed(byte effect, byte value) {
+void set_EffectSpeed(uint8_t effect, uint8_t value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   String key = "SE";
-  byte old_value = getEffectSpeed(effect);
+  uint8_t old_value = effectSpeed[effect];
   String old_s_value = getStateValue(key, effect);
   if (old_value != value) {
+    effectSpeed[effect] = value;
     putEffectSpeed(effect, value);
   }
   if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("SE");
+  #if (USE_E131 == 1)
+    commandSetEffectSpeed(value);
+  #endif
 }
 
 // BE
-void set_EffectContrast(byte effect, byte value) {
+void set_EffectContrast(uint8_t effect, uint8_t value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
   String key = "BE";
-  byte old_value = effectContrast[effect];
+  uint8_t old_value = effectContrast[effect];
   String old_s_value = getStateValue(key, effect);
   if (old_value != value) {
     effectContrast[effect] = value;
     putEffectContrast(effect, value);
   }
   if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("BE");
+  #if (USE_E131 == 1)
+    commandSetEffectContrast(value);
+  #endif
 }
 
 // SS
-void set_EffectScaleParam(byte effect, byte value) {
+void set_EffectScaleParam(uint8_t effect, uint8_t value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
-  byte old_value = effectScaleParam[effect];
+  uint8_t old_value = effectScaleParam[effect];
   String old_s_value = getParamForMode(effect);
   if (old_value != value) {
     effectScaleParam[effect] = value;
     putScaleForEffect(effect, value);
     if (effect == thisMode && old_s_value != getParamForMode(effect)) addKeyToChanged("SS");
   }
+  #if (USE_E131 == 1)
+    commandSetEffectParam(value);
+  #endif
 }
 
 // SQ
-void set_EffectScaleParam2(byte effect, byte value) {
+void set_EffectScaleParam2(uint8_t effect, uint8_t value) {
   bool valid = effect >= 0 && effect < MAX_EFFECT;
   if (!valid) return;
-  byte old_value = effectScaleParam2[effect];
+  uint8_t old_value = effectScaleParam2[effect];
   String old_s_value = getParam2ForMode(effect);
   if (old_value != value) {
     effectScaleParam2[effect] = value;
     putScaleForEffect2(effect, value);
     if (effect == thisMode && old_s_value != getParam2ForMode(effect)) addKeyToChanged("SQ");
   }
+  #if (USE_E131 == 1)
+    commandSetEffectParam2(value);
+  #endif
 }
 
 // TE textOverlayEnabled
@@ -336,7 +367,7 @@ void set_TEXT_INTERVAL(uint16_t value) {
 }
 
 // CT COLOR_TEXT_MODE
-void set_COLOR_TEXT_MODE(byte value) {
+void set_COLOR_TEXT_MODE(uint8_t value) {
   if (COLOR_TEXT_MODE == value) return;
   putTextColor(value);
   COLOR_TEXT_MODE = getTextColor();
@@ -344,11 +375,14 @@ void set_COLOR_TEXT_MODE(byte value) {
 }
 
 // ST textScrollSpeed
-void set_textScrollSpeed(byte value) {
+void set_textScrollSpeed(uint8_t value) {
   if (textScrollSpeed == value) return;
   putTextScrollSpeed(value);
   textScrollSpeed = getTextScrollSpeed();
   addKeyToChanged("ST");
+  #if (USE_E131 == 1)
+    commandSetTextSpeed(value);
+  #endif
 }
 
 // ?? globalColor
@@ -356,6 +390,9 @@ void set_globalColor(uint32_t value) {
   if (globalColor == value) return;
   putGlobalColor(value);
   globalColor = getGlobalColor();
+  #if (USE_E131 == 1)
+    commandSetGlobalColor(globalColor);
+  #endif
 }
 
 // C1 globalClockColor
@@ -394,7 +431,7 @@ void set_clockOverlayEnabled(bool value) {
 }
 
 // CC COLOR_MODE
-void set_COLOR_MODE(byte value) {
+void set_COLOR_MODE(uint8_t value) {
   if (COLOR_MODE == value) return;
   putClockColor(value);
   COLOR_MODE = getClockColor();
@@ -409,9 +446,9 @@ void set_drawColor(uint32_t value) {
 }
 
 // CO CLOCK_ORIENT
-void set_CLOCK_ORIENT(byte value) {
+void set_CLOCK_ORIENT(uint8_t value) {
   String key = "CO";
-  byte old_value = CLOCK_ORIENT;
+  uint8_t old_value = CLOCK_ORIENT;
   String old_s_value = getStateValue(key, thisMode);
   if (old_value != value) {
     putClockOrientation(value);
@@ -421,7 +458,7 @@ void set_CLOCK_ORIENT(byte value) {
 }
 
 // CK CLOCK_SIZE
-void set_CLOCK_SIZE(byte value) {
+void set_CLOCK_SIZE(uint8_t value) {
   if (CLOCK_SIZE == value) return;
   putClockSize(value);
   CLOCK_SIZE = getClockSize();
@@ -429,7 +466,7 @@ void set_CLOCK_SIZE(byte value) {
 }
 
 // NB nightClockBrightness
-void set_nightClockBrightness(byte value) {
+void set_nightClockBrightness(uint8_t value) {
   if (nightClockBrightness == value) return;
   putNightClockBrightness(value);
   nightClockBrightness = getNightClockBrightness();
@@ -438,7 +475,7 @@ void set_nightClockBrightness(byte value) {
 }
 
 // NC nightClockColor
-void set_nightClockColor(byte value) {
+void set_nightClockColor(uint8_t value) {
   if (nightClockColor == value) return;
   putNightClockColor(value);
   nightClockColor = getNightClockColor();
@@ -446,11 +483,14 @@ void set_nightClockColor(byte value) {
 }
 
 // SC clockScrollSpeed
-void set_clockScrollSpeed(byte value) {
+void set_clockScrollSpeed(uint8_t value) {
   if (clockScrollSpeed == value) return;
   putClockScrollSpeed(value);
   clockScrollSpeed = getClockScrollSpeed();
   addKeyToChanged("SC");
+  #if (USE_E131 == 1)
+    commandSetClockSpeed(value);
+  #endif
 }
 
 // DC showDateInClock
@@ -462,7 +502,7 @@ void set_showDateInClock(bool value) {
 }
 
 // DD showDateDuration
-void set_showDateDuration(byte value) {
+void set_showDateDuration(uint8_t value) {
   if (showDateDuration == value) return;
   putShowDateDuration(value);
   showDateDuration = getShowDateDuration();
@@ -470,7 +510,7 @@ void set_showDateDuration(byte value) {
 }
 
 // DI showDateInterval
-void set_showDateInterval(byte value) {
+void set_showDateInterval(uint8_t value) {
   if (showDateInterval == value) return;
   putShowDateInterval(value);
   showDateInterval = getShowDateInterval();
@@ -547,7 +587,7 @@ void set_wifi_connected(bool value) {
 }              
 
 // IP IP_STA[]
-void set_StaticIP(byte p1, byte p2, byte p3, byte p4) {
+void set_StaticIP(uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4) {
   IP_STA[0] = p1; 
   IP_STA[1] = p2; 
   IP_STA[2] = p3; 
@@ -573,53 +613,53 @@ void set_needTurnOffClock(bool value) {
 }
 
 // AD dawnDuration
-void set_dawnDuration(byte value) {
+void set_dawnDuration(uint8_t value) {
   if (dawnDuration == value) return;
-  byte alarmWeekDay = getAlarmWeekDay();
-  byte alarmEffect = getAlarmEffect();
-  byte alarmDuration = getAlarmDuration();  
+  uint8_t alarmWeekDay = getAlarmWeekDay();
+  uint8_t alarmEffect = getAlarmEffect();
+  uint8_t alarmDuration = getAlarmDuration();  
   putAlarmParams(alarmWeekDay,value,alarmEffect,alarmDuration);
   dawnDuration = getDawnDuration();
   addKeyToChanged("AD");
 }
 
 // AW alarmWeekDay
-void set_alarmWeekDay(byte value) {
+void set_alarmWeekDay(uint8_t value) {
   if (alarmWeekDay == value) return;
-  byte dawnDuration = getDawnDuration();
-  byte alarmEffect = getAlarmEffect();
-  byte alarmDuration = getAlarmDuration();  
+  uint8_t dawnDuration = getDawnDuration();
+  uint8_t alarmEffect = getAlarmEffect();
+  uint8_t alarmDuration = getAlarmDuration();  
   putAlarmParams(value,dawnDuration,alarmEffect,alarmDuration);
   alarmWeekDay = getAlarmWeekDay();
   addKeyToChanged("AW");
 }
 
 // AE alarmEffect
-void set_alarmEffect(byte value) {
+void set_alarmEffect(uint8_t value) {
   if (alarmEffect == value) return;
-  byte alarmWeekDay = getAlarmWeekDay();
-  byte dawnDuration = getDawnDuration();
-  byte alarmDuration = getAlarmDuration();  
+  uint8_t alarmWeekDay = getAlarmWeekDay();
+  uint8_t dawnDuration = getDawnDuration();
+  uint8_t alarmDuration = getAlarmDuration();  
   putAlarmParams(alarmWeekDay,dawnDuration,value,alarmDuration);
   alarmEffect = getAlarmEffect();
   addKeyToChanged("AE");
 }
 
 // MD alarmDuration
-void set_alarmDuration(byte value) {
+void set_alarmDuration(uint8_t value) {
   if (alarmDuration == value) return;
-  byte alarmWeekDay = getAlarmWeekDay();
-  byte dawnDuration = getDawnDuration();
-  byte alarmEffect = getAlarmEffect();
+  uint8_t alarmWeekDay = getAlarmWeekDay();
+  uint8_t dawnDuration = getDawnDuration();
+  uint8_t alarmEffect = getAlarmEffect();
   putAlarmParams(alarmWeekDay,dawnDuration,alarmEffect,value);
   alarmDuration = getAlarmDuration();  
   addKeyToChanged("MD");
 }
 
 // AT alarmHour[], alarmMinute[]
-void set_alarmTime(byte wd, byte hour_value, byte minute_value) {
-  byte old_hour   = getAlarmHour(wd);
-  byte old_minute = getAlarmMinute(wd);
+void set_alarmTime(uint8_t wd, uint8_t hour_value, uint8_t minute_value) {
+  uint8_t old_hour   = getAlarmHour(wd);
+  uint8_t old_minute = getAlarmMinute(wd);
   if (old_hour == hour_value && old_minute == minute_value) return;
   putAlarmTime(wd, hour_value, minute_value);
   alarmHour[wd-1] = getAlarmHour(wd);
@@ -638,20 +678,20 @@ void set_isDfPlayerOk(bool value) {
 // MU useAlarmSound
 void set_useAlarmSound(bool value) {
   if (useAlarmSound == value) return;  
-  byte alarmSound = getAlarmSound();
-  byte dawnSound = getDawnSound();
-  byte maxAlarmVolume = getMaxAlarmVolume();
+  uint8_t alarmSound = getAlarmSound();
+  uint8_t dawnSound = getDawnSound();
+  uint8_t maxAlarmVolume = getMaxAlarmVolume();
   putAlarmSounds(value, maxAlarmVolume, alarmSound, dawnSound);
   useAlarmSound = getUseAlarmSound();
   addKeyToChanged("MU");
 }
 
 // MV maxAlarmVolume
-void set_maxAlarmVolume(byte value) {
+void set_maxAlarmVolume(uint8_t value) {
   if (maxAlarmVolume == value) return;  
-  bool useAlarmSound = getUseAlarmSound();
-  byte alarmSound = getAlarmSound();
-  byte dawnSound = getDawnSound();
+  bool    useAlarmSound = getUseAlarmSound();
+  uint8_t alarmSound = getAlarmSound();
+  uint8_t dawnSound = getDawnSound();
   putAlarmSounds(useAlarmSound, value, alarmSound, dawnSound);
   maxAlarmVolume = getMaxAlarmVolume();
   addKeyToChanged("MV");
@@ -661,8 +701,8 @@ void set_maxAlarmVolume(byte value) {
 void set_alarmSound(int8_t value) {
   if (alarmSound == value) return;  
   bool useAlarmSound = getUseAlarmSound();
-  byte dawnSound = getDawnSound();
-  byte maxAlarmVolume = getMaxAlarmVolume();
+  uint8_t dawnSound = getDawnSound();
+  uint8_t maxAlarmVolume = getMaxAlarmVolume();
   putAlarmSounds(useAlarmSound, maxAlarmVolume, value, dawnSound);
   alarmSound = getAlarmSound();
   addKeyToChanged("MA");
@@ -671,23 +711,23 @@ void set_alarmSound(int8_t value) {
 // MB dawnSound
 void set_dawnSound(int8_t value) {
   if (dawnSound == value) return;  
-  bool useAlarmSound = getUseAlarmSound();
-  byte alarmSound = getAlarmSound();
-  byte maxAlarmVolume = getMaxAlarmVolume();
+  bool    useAlarmSound = getUseAlarmSound();
+  uint8_t alarmSound = getAlarmSound();
+  uint8_t maxAlarmVolume = getMaxAlarmVolume();
   putAlarmSounds(useAlarmSound, maxAlarmVolume, alarmSound, value);
   dawnSound = getDawnSound();
   addKeyToChanged("MB");
 }
 
 // MP soundFolder
-void set_soundFolder(byte value) {
+void set_soundFolder(uint8_t value) {
   if (soundFolder == value) return;  
   soundFolder = value;
   addKeyToChanged("MP");
 }
 
 // MP soundFile
-void set_soundFile(byte value) {
+void set_soundFile(uint8_t value) {
   if (soundFile == value) return;  
   soundFile = value;
   addKeyToChanged("MP");
@@ -703,7 +743,7 @@ void set_useSoftAP(bool value) {
 }
 
 // AM1T AM1_hour
-void set_AM1_hour(byte value) {
+void set_AM1_hour(uint8_t value) {
   if (AM1_hour == value) return;
   putAM1hour(value);
   AM1_hour = getAM1hour();
@@ -711,7 +751,7 @@ void set_AM1_hour(byte value) {
 }
 
 // AM1T AM1_minute
-void set_AM1_minute(byte value) {
+void set_AM1_minute(uint8_t value) {
   if (AM1_minute == value) return;
   putAM1minute(value);
   AM1_minute = getAM1minute();
@@ -727,7 +767,7 @@ void set_AM1_effect_id(int8_t value) {
 }
 
 // AM2T AM2_hour
-void set_AM2_hour(byte value) {
+void set_AM2_hour(uint8_t value) {
   if (AM2_hour == value) return;
   putAM2hour(value);
   AM2_hour = getAM2hour();
@@ -735,7 +775,7 @@ void set_AM2_hour(byte value) {
 }
 
 // AM2T AM2_minute
-void set_AM2_minute(byte value) {
+void set_AM2_minute(uint8_t value) {
   if (AM2_minute == value) return;
   putAM2minute(value);
   AM2_minute = getAM2minute();
@@ -751,7 +791,7 @@ void set_AM2_effect_id(int8_t value) {
 }
 
 // AM3T AM3_hour
-void set_AM3_hour(byte value) {
+void set_AM3_hour(uint8_t value) {
   if (AM3_hour == value) return;
   putAM3hour(value);
   AM3_hour = getAM3hour();
@@ -759,7 +799,7 @@ void set_AM3_hour(byte value) {
 }
 
 // AM3T AM3_minute
-void set_AM3_minute(byte value) {
+void set_AM3_minute(uint8_t value) {
   if (AM3_minute == value) return;
   putAM3minute(value);
   AM3_minute = getAM3minute();
@@ -775,7 +815,7 @@ void set_AM3_effect_id(int8_t value) {
 }
 
 // AM4T AM4_hour
-void set_AM4_hour(byte value) {
+void set_AM4_hour(uint8_t value) {
   if (AM4_hour == value) return;
   putAM4hour(value);
   AM4_hour = getAM4hour();
@@ -783,7 +823,7 @@ void set_AM4_hour(byte value) {
 }
 
 // AM4T AM4_minute
-void set_AM4_minute(byte value) {
+void set_AM4_minute(uint8_t value) {
   if (AM4_minute == value) return;
   putAM4minute(value);
   AM4_minute = getAM4minute();

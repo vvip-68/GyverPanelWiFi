@@ -10,13 +10,13 @@
 // не рекомендуется ставить больше, чем треть количества светодиодов на матрице!
 
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
-byte MAZE_WIDTH, MAZE_HEIGHT;
-int8_t playerPos[2];
+uint8_t  MAZE_WIDTH, MAZE_HEIGHT;
+int8_t   playerPos[2];
 uint32_t labTimer;
-boolean mazeMode = false;
-boolean mazeStarted = false;
+bool     mazeMode = false;
+bool     mazeStarted = false;
 uint16_t maxSolves;
-char *maze;
+char    *maze;
 
 void newGameMaze() {
   playerPos[0] = !SHIFT;
@@ -30,8 +30,8 @@ void newGameMaze() {
   SolveMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);       // найти путь
 
   if (!(GAMEMODE || mazeMode)) {
-    for (byte y = 0; y < MAZE_HEIGHT; y++) {
-      for (byte x = 0; x < MAZE_WIDTH; x++) {
+    for (uint8_t y = 0; y < MAZE_HEIGHT; y++) {
+      for (uint8_t x = 0; x < MAZE_WIDTH; x++) {
         switch (maze[(y + SHIFT) * MAZE_WIDTH + (x + SHIFT)]) {
           case 1:  drawPixelXY(x, y, GLOBAL_COLOR_1); break;
           case 2:
@@ -45,8 +45,8 @@ void newGameMaze() {
       delay(25);
     }
   } else {
-    for (byte y = 0; y < FOV; y++) {
-      for (byte x = 0; x < FOV; x++) {
+    for (uint8_t y = 0; y < FOV; y++) {
+      for (uint8_t x = 0; x < FOV; x++) {
         switch (maze[(y + SHIFT) * MAZE_WIDTH + (x + SHIFT)]) {
           case 1:  drawPixelXY(x, y, GLOBAL_COLOR_1);  break;
           case 2:
@@ -181,7 +181,7 @@ void demoMaze() {
   if (checkPath(-1, 0)) buttons = 3;
 }
 
-boolean checkPath(int8_t x, int8_t y) {
+bool checkPath(int8_t x, int8_t y) {
   // если проверяемая клетка является путью к выходу
   if ( (maze[(playerPos[1] + y + SHIFT) * MAZE_WIDTH + (playerPos[0] + x + SHIFT)]) == 2) {
     maze[(playerPos[1] + SHIFT) * MAZE_WIDTH + (playerPos[0] + SHIFT)] = 4;   // убираем текущую клетку из пути (2 - метка пути, ставим любое число, например 4)
@@ -193,18 +193,20 @@ boolean checkPath(int8_t x, int8_t y) {
 // функция, перегенерирующая лабиринт до тех пор,
 // пока он не будет соответствовать требованиям "интересности"
 void smartMaze() {
-  byte sum = 0, line;
-  int attempt;
+  uint8_t sum = 0, line;
+  uint8_t attempt;
   while (sum < MIN_PATH) {                          // пока длина пути меньше заданной
     attempt++;
+    if (attempt > 200) break;                       // если совершено более 200 попыток, завершить алгоритм (если зависнет)
+    
     //randomSeed(millis());                         // зерно для генератора псевдослучайных чисел
     GenerateMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);    // генерировать лабиринт
     SolveMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);       // найти путь
 
     // подсчёт длины пути
     sum = 0;
-    for (byte y = 0; y < MAZE_HEIGHT; y++) {        // перебор всех пикселей (элементов массива maze)
-      for (byte x = 0; x < MAZE_WIDTH; x++) {
+    for (uint8_t y = 0; y < MAZE_HEIGHT; y++) {        // перебор всех пикселей (элементов массива maze)
+      for (uint8_t x = 0; x < MAZE_WIDTH; x++) {
         if (maze[y * MAZE_WIDTH + x] == 2) sum++;   // в массиве maze пиксель "правильного пути" имеет значение 2
       }
     }
@@ -212,29 +214,30 @@ void smartMaze() {
       // подсчёт длины путей у краёв
       // если сумма превышает настройку, обнулить sum, таким образом цикл начнётся по новой
       line = 0;
-      for (byte y = 0; y < MAZE_HEIGHT; y++)
+      for (uint8_t y = 0; y < MAZE_HEIGHT; y++)
         if (maze[y * MAZE_WIDTH + MAZE_WIDTH - 2] == 2) line++;
       if (line > MAX_STRAIGHT) sum = 0;
 
       line = 0;
-      for (byte x = 0; x < MAZE_WIDTH; x++)
+      for (uint8_t x = 0; x < MAZE_WIDTH; x++)
         if (maze[MAZE_WIDTH + x] == 2) line++;
       if (line > MAX_STRAIGHT) sum = 0;
     }
+    delay(0);
   }
 }
 
 // функция, делающая отверстия в стенках для "неидеальности" лабиринта
 void makeHoles() {
-  byte holes = 0;
-  byte attempt = 0;
+  uint8_t holes = 0;
+  uint8_t attempt = 0;
   while (holes < HOLES) {                           // пока текущее число дыр меньше заданного
     attempt++;                                      // прибавляем число попыток
     if (attempt > 200) break;                       // если совершено более 200 попыток, завершить алгоритм (если зависнет)
 
     // берём случайные координаты внутри лабиринта
-    byte x = random(1, MAZE_WIDTH - 1);
-    byte y = random(1, MAZE_HEIGHT - 1);
+    uint8_t x = random(1, MAZE_WIDTH - 1);
+    uint8_t y = random(1, MAZE_HEIGHT - 1);
 
     // итак, элемент массива maze, имеющий значение 1, является "стенкой" лабиринта. Погнали:
     if (maze[y * MAZE_WIDTH + x] == 1                   // если текущий пиксель является стенкой
@@ -243,24 +246,25 @@ void makeHoles() {
         && maze[(y - 1) * MAZE_WIDTH + x] != 1          // а по оси У нет ни одного соседа
         && maze[(y + 1) * MAZE_WIDTH + x] != 1) {       // (это чтобы не дырявить угловые стенки)
       maze[y * MAZE_WIDTH + x] = 0;                     // сделать стенку проходом (пробить дыру)
-      holes++;                                      // увеличить счётчик число дыр в стенах
+      holes++;                                          // увеличить счётчик число дыр в стенах
     } else if (maze[y * MAZE_WIDTH + x] == 1            // если нет, проверим ещё раз
                && maze[(y - 1) * MAZE_WIDTH + x] == 1   // и если рядом с ним по оси У есть сосед
                && maze[(y + 1) * MAZE_WIDTH + x] == 1   // и с другой стороны тоже есть
                && maze[y * MAZE_WIDTH + (x - 1)] != 1   // а по оси X нет ни одного соседа
                && maze[y * MAZE_WIDTH + (x + 1)] != 1) {
       maze[y * MAZE_WIDTH + x] = 0;                     // сделать стенку проходом (пробить дыру)
-      holes++;                                      // увеличить счётчик число дыр в стенах
+      holes++;                                          // увеличить счётчик число дыр в стенах
     }
+    delay(0);
   }
 }
 
 // копаем лабиринт
-void CarveMaze(char *maze, int width, int height, int x, int y) {
-  int x1, y1;
-  int x2, y2;
-  int dx, dy;
-  int dir, count;
+void CarveMaze(char *maze, int8_t width, int8_t height, int8_t x, int8_t y) {
+  int8_t x1, y1;
+  int8_t x2, y2;
+  int8_t dx, dy;
+  int8_t dir, count;
 
   dir = random(10) % 4;
   count = 0;
@@ -291,8 +295,8 @@ void CarveMaze(char *maze, int width, int height, int x, int y) {
 }
 
 // генерацтор лабиринта
-void GenerateMaze(char *maze, int width, int height) {
-  int x, y;
+void GenerateMaze(char *maze, int8_t width, int8_t height) {
+  uint16_t x, y;
   for (x = 0; x < width * height; x++) {
     maze[x] = 1;
   }
@@ -308,11 +312,11 @@ void GenerateMaze(char *maze, int width, int height) {
 }
 
 // решатель (ищет путь)
-void SolveMaze(char *maze, int width, int height) {
-  int dir, count;
-  int x, y;
-  int dx, dy;
-  int forward;
+void SolveMaze(char *maze, int8_t width, int8_t height) {
+  int8_t dir, count;
+  int8_t x, y;
+  int8_t dx, dy;
+  int8_t forward;
   // Remove the entry and exit. 
   maze[0 * width + 1] = 1;
   maze[(height - 1) * width + (width - 2)] = 1;
@@ -322,7 +326,7 @@ void SolveMaze(char *maze, int width, int height) {
   count = 0;
   x = 1;
   y = 1;
-  unsigned int attempts = 0;
+  uint32_t attempts = 0;
   while (x != width - 2 || y != height - 2) {
     if (attempts++ > maxSolves) {   // если решатель не может найти решение (maxSolves в 5 раз больше числа клеток лабиринта)
       gameOverFlag = true;          // перегенерировать лабиринт
@@ -352,7 +356,7 @@ void SolveMaze(char *maze, int width, int height) {
       }
     }
   }
-  
+
   // Replace the entry and exit.
   maze[(height - 2) * width + (width - 2)] = 2;
   maze[(height - 1) * width + (width - 2)] = 2;

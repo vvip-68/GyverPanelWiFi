@@ -37,13 +37,13 @@ void loadDirectory() {
     return;
   }
 
-  String file_name, fn;
+  String   file_name, fn;
   uint32_t file_size;
-  float fsize;
-  byte sz = 0;
-  String fs_name;
+  float    fsize;
+  uint8_t  sz = 0;
+  String   fs_name;
   
-  boolean first = true;
+  bool     first = true;
   folder = SD.open(directoryName);
     
   while (folder) {
@@ -133,12 +133,12 @@ void sdcardRoutine() {
      if (specialTextEffectParam >= 0)
        currentFile = specialTextEffectParam - 1;
      // Указано случайное воспроизведение файлов с карты?
-     else if (effectScaleParam2[MC_SDCARD] == 0)
+     else if (getEffectScaleParamValue2(MC_SDCARD) == 0)
        currentFile = -2;                               // Случайный порядок
-     else if (effectScaleParam2[MC_SDCARD] == 1)
+     else if (getEffectScaleParamValue2(MC_SDCARD) == 1)
        currentFile = -1;                               // Последоватедбное воспроизведение
      else
-       currentFile = effectScaleParam2[MC_SDCARD] - 2; // Указанный выбранный файл эффектов
+       currentFile = getEffectScaleParamValue2(MC_SDCARD) - 2; // Указанный выбранный файл эффектов
 
      if (currentFile < 0 || currentFile >= countFiles) {
         if (countFiles == 1) {
