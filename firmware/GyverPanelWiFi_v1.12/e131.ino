@@ -276,12 +276,17 @@ void processCommandPacket(e131_packet_t *packet) {
      Канал 3 = 1 - Установить текущую яркость специальных эффектов
      Канал 4 = x - Значение яркости
      ---
-     Канал 3 = 3 - Включить эффект
-     Канал 4 = x - ID эффекта
-     Канал 5 = x - скорость эффекта
-     Канал 6 = x - контраст эффекта
-     Канал 7 = x - спец.параметр №1
-     Канал 8 = x - спец.параметр №2
+     Канал 3  = 3 - Включить эффект
+     Канал 4  = x - ID эффекта
+     Канал 5  = x - скорость эффекта
+     Канал 6  = x - контраст эффекта
+     Канал 7  = x - спец.параметр №1
+     Канал 8  = x - спец.параметр №2
+     Канал 9  = r  - значение R от globalColor
+     Канал 10 = g  - значение G от globalColor
+     Канал 11 = b  - значение B от globalColor
+     Канал 12 = W  - ширина матрицы Мастера
+     Канал 13 = H  - высота матрицы Мастера
      ---
      Канал 3 = 4 - Включить указанный специальный эффект
      Канал 4 = x - ID специального эффекта
@@ -347,6 +352,9 @@ void processCommandPacket(e131_packet_t *packet) {
       syncEffectContrast = packet->property_values[6];              // Контраст эффекта 
       syncEffectParam1   = packet->property_values[7];              // Параметр эффекта 1
       syncEffectParam2   = packet->property_values[8];              // Параметр эффекта 2
+      masterWidth        = packet->property_values[12];
+      masterHeight       = packet->property_values[13];
+      globalColor = CRGB(packet->property_values[9],packet->property_values[10],packet->property_values[11]);
       setEffect(packet->property_values[4]);        
       //DEBUGLN("GOT CMD_EFFECT");
       break;
@@ -536,11 +544,20 @@ void commandSetMode(int8_t value) {
   if (!(workMode == MASTER && syncMode == COMMAND)) return;
   e131_packet_t *packet = makeCommandPacket(CMD_EFFECT);
   if (!packet) return;
-  packet->property_values[4] = value;
-  packet->property_values[5] = effectSpeed[value];
-  packet->property_values[6] = effectContrast[value];
-  packet->property_values[7] = effectScaleParam[value];
-  packet->property_values[8] = effectScaleParam2[value];
+  packet->property_values[4]  = value;
+  packet->property_values[5]  = effectSpeed[value];
+  packet->property_values[6]  = effectContrast[value];
+  packet->property_values[7]  = effectScaleParam[value];
+  packet->property_values[8]  = effectScaleParam2[value];
+
+  CRGB color = CRGB(color);
+  packet->property_values[9]  = color.r;
+  packet->property_values[10] = color.g;
+  packet->property_values[11] = color.b;
+
+  packet->property_values[12] = pWIDTH;
+  packet->property_values[13] = pHEIGHT;
+  
   e131->sendPacket(packet, 1, 512);
   delay(5);
   free(packet);    

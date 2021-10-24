@@ -243,7 +243,6 @@ void set_thisMode(int8_t value) {
   if (value < 0 || (valid && old_SQ != getParam2ForMode(value)))      addKeyToChanged("SQ");
 
   #if (USE_E131 == 1)
-    commandSetDimension(pWIDTH, pHEIGHT);
     commandSetMode(thisMode);
   #endif      
 }
