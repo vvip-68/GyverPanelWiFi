@@ -813,6 +813,7 @@ void checkIdleState() {
     }
   } else {
     if (idleTimer.isReady()) {      // таймер холостого режима. Если время наступило - включить автосмену режимов 
+      e131_wait_command = false;
       setManualModeTo(false);
       nextMode();
     }

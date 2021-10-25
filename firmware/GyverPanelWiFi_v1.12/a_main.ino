@@ -71,6 +71,7 @@ void process() {
       FastLED.clear();
     }
     if (e131_streaming && !streaming) {
+      idleState = true;
       if (prevWorkMode == MASTER)
         DEBUGLN(F("Останов вещания E1.31 потока"));
       else
@@ -227,14 +228,17 @@ void process() {
     #if (USE_E131 == 1)
         
     // Если сработал будильник - отрабатывать его эффект, даже если идет стриминг с мастера    
-    if (workMode == SLAVE && /*!isTurnedOff &&*/ (e131_streaming || e131_wait_command) && (!(isAlarming || isPlayAlarmSound))) {      
+    if (workMode == SLAVE && (e131_streaming || e131_wait_command) && (!(isAlarming || isPlayAlarmSound))) {      
       needProcessEffect = e131_wait_command;
       // Если идет прием потока данных с MASTER-устройства - проверить наличие пакета от мастера
       if (e131 && !e131->isEmpty()) {
         // Получен пакет данных. 
         e131_last_packet = millis();
         e131->pull(&e131_packet);
-
+        
+        idleState = false;
+        idleTimer.reset();
+        
         uint16_t CURRENT_UNIVERSE = htons(e131_packet.universe);      
 
         /*
@@ -256,6 +260,7 @@ void process() {
         */
 
         bool isCommand = isCommandPacket(&e131_packet);
+        if (isCommand && syncMode == COMMAND) e131_wait_command = true;
 
         // Если задан расчет FPS выводимых данных потока E1.31 - рассчитать и вывести в консоль
         if (syncMode != COMMAND && E131_FPS_INTERVAL > 0) {

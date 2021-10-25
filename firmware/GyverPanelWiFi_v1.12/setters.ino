@@ -42,8 +42,6 @@ void set_globalBrightness(uint8_t value) {
   putMaxBrightness(value);
   globalBrightness = getMaxBrightness();
   addKeyToChanged("BR");
-  #if (USE_E131 ==1)
-  #endif
 }
 
 // BR specialBrightness
@@ -54,9 +52,6 @@ void set_specialBrightness(uint8_t value) {
   if (specialBrightness == value) return;;
   specialBrightness = value;
   addKeyToChanged("BR");
-  #if (USE_E131 ==1)
-    commandSetSpecialBrightness(value);
-  #endif
 }
 
 // DM manualMode
@@ -298,6 +293,7 @@ void set_EffectSpeed(uint8_t effect, uint8_t value) {
   if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("SE");
   #if (USE_E131 == 1)
     commandSetEffectSpeed(value);
+    syncEffectSpeed = value;
   #endif
 }
 
@@ -315,6 +311,7 @@ void set_EffectContrast(uint8_t effect, uint8_t value) {
   if (effect == thisMode && old_s_value != getStateValue(key, effect)) addKeyToChanged("BE");
   #if (USE_E131 == 1)
     commandSetEffectContrast(value);
+    syncEffectContrast = value;
   #endif
 }
 
@@ -331,6 +328,7 @@ void set_EffectScaleParam(uint8_t effect, uint8_t value) {
   }
   #if (USE_E131 == 1)
     commandSetEffectParam(value);
+    syncEffectParam1 = value;
   #endif
 }
 
@@ -347,6 +345,7 @@ void set_EffectScaleParam2(uint8_t effect, uint8_t value) {
   }
   #if (USE_E131 == 1)
     commandSetEffectParam2(value);
+    syncEffectParam2 = value;
   #endif
 }
 
