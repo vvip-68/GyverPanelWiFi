@@ -80,7 +80,7 @@ void process() {
         DynamicJsonDocument doc(256);
         String out;
         doc["act"]   = F("E131");
-        doc["mode"]  = prewWorkMode == MASTER ? F("MASTER") : F("SLAVE");;
+        doc["mode"]  = prevWorkMode == MASTER ? F("MASTER") : F("SLAVE");
         doc["type"]  = prevSyncMode == PHYSIC ? F("PHYSIC") : (prevSyncMode == LOGIC ? F("LOGIC"): F("COMMAND"));
         doc["group"] = prevSyncGroup;
         doc["run"]   = false;
