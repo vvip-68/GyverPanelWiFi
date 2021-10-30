@@ -20,6 +20,12 @@
 [Три шага к успеху. Некоторые особенности настроек...](https://github.com/vvip-68/GyverPanelWiFi/wiki/Три-шага-к-успеху.-Некоторые-особенности-настроек...)  
 [Большие буквы в бегущей строке](https://github.com/vvip-68/GyverPanelWiFi/wiki/Большие-буквы-в-бегущей-строке)  
 
+#### [Синхронизация устройств](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств)  
+- [Общие понятия](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Общие-понятия)  
+- [Внешние эффекты Jinx!](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Внешние-эффекты-jinx)  
+- [Настройка синхронизации](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Настройка-синхронизации)  
+- [Технические аспекты](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Технические-аспекты)  
+
 [Продвинутый уровень. Использование портов МК](https://github.com/vvip-68/GyverPanelWiFi/wiki/Продвинутый-уровень.-Использование-портов-микроконтроллера.) 
 
 [FAQ](https://github.com/vvip-68/GyverPanelWiFi/wiki/FAQ)  
