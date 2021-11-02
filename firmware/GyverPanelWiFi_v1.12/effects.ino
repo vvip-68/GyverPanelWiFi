@@ -296,10 +296,10 @@ void swirlRoutine() {
 
 #define RANDOM_COLOR 1    // случайный цвет при отскоке
 
-int8_t coordB[2];
-int8_t vectorB[2];
-int8_t ballSize;
-CRGB   ballColor;
+int16_t coordB[2];
+int8_t  vectorB[2];
+int8_t  ballSize;
+CRGB    ballColor;
 
 void ballRoutine() {
 

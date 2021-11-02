@@ -22,7 +22,7 @@
 
 #### [Синхронизация устройств](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств)  
 - [Общие понятия](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Общие-понятия)  
-- [Внешние эффекты Jinx!](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Внешние-эффекты-jinx)  
+- [Внешние эффекты Jinx!](https://github.com/vvip-68/GyverPanelWiFi/wiki/Настройка-ПО-управления-эффектами-%22Jinx!%22-как-источника-синхронизации-устройств-в-группе)  
 - [Настройка синхронизации](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Настройка-синхронизации)  
 - [Технические аспекты](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств#Технические-аспекты)  
 

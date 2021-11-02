@@ -277,6 +277,6 @@
 ![Start output](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/E131/030.png)  
 
 ƒл€ начала трансл€ции эффекта на устройства-приемники выберите в меню **"Setup"** пункт **"Start Output"**. 
-ƒл€ остановке трансл€ции повторно выберите этот же пункт меню.  
+ƒл€ остановки трансл€ции повторно выберите этот же пункт меню.  
 
 ![Start output](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/E131/031.png)  
