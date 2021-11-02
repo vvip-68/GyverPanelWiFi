@@ -32,11 +32,13 @@ constexpr uint8_t BYTE_ALL_BITS_SET = ~static_cast<uint8_t>(0);
 
 SoftwareSerial::SoftwareSerial() {
     m_isrOverflow = false;
+    m_rxGPIOPullupEnabled = true;
 }
 
 SoftwareSerial::SoftwareSerial(int8_t rxPin, int8_t txPin, bool invert)
 {
     m_isrOverflow = false;
+    m_rxGPIOPullupEnabled = true;
     m_rxPin = rxPin;
     m_txPin = txPin;
     m_invert = invert;
@@ -107,6 +109,12 @@ bool SoftwareSerial::hasRxGPIOPullUp(int8_t pin) {
 #endif
 }
 
+void SoftwareSerial::setRxGPIOPullUp() {
+    if (m_rxValid) {
+        pinMode(m_rxPin, hasRxGPIOPullUp(m_rxPin) && m_rxGPIOPullupEnabled ? INPUT_PULLUP : INPUT);
+    }
+}
+
 void SoftwareSerial::begin(uint32_t baud, SoftwareSerialConfig config,
     int8_t rxPin, int8_t txPin,
     bool invert, int bufCapacity, int isrBufCapacity) {
@@ -131,7 +139,7 @@ void SoftwareSerial::begin(uint32_t baud, SoftwareSerialConfig config,
             isrBufCapacity : m_buffer->capacity() * (2 + m_dataBits + static_cast<bool>(m_parityMode))));
         if (m_buffer && (!m_parityMode || m_parityBuffer) && m_isrBuffer) {
             m_rxValid = true;
-            pinMode(m_rxPin, hasRxGPIOPullUp(m_rxPin) ? INPUT_PULLUP : INPUT);
+            setRxGPIOPullUp();
         }
     }
     if (isValidTxGPIOpin(m_txPin)) {
@@ -177,6 +185,11 @@ void SoftwareSerial::enableIntTx(bool on) {
     m_intTxEnabled = on;
 }
 
+void SoftwareSerial::enableRxGPIOPullup(bool on) {
+    m_rxGPIOPullupEnabled = on;
+    setRxGPIOPullUp();
+}
+
 void SoftwareSerial::enableTx(bool on) {
     if (m_txValid && m_oneWire) {
         if (on) {
@@ -185,7 +198,7 @@ void SoftwareSerial::enableTx(bool on) {
             digitalWrite(m_txPin, !m_invert);
         }
         else {
-            pinMode(m_rxPin, hasRxGPIOPullUp(m_rxPin) ? INPUT_PULLUP : INPUT);
+            setRxGPIOPullUp();
             enableRx(true);
         }
     }
