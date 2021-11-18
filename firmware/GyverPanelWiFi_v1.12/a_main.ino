@@ -264,7 +264,7 @@ void process() {
 
         // Если задан расчет FPS выводимых данных потока E1.31 - рассчитать и вывести в консоль
         if (syncMode != COMMAND && E131_FPS_INTERVAL > 0) {
-          if (CURRENT_UNIVERSE == START_UNIVERSE && !isCommandPacket) frameCnt++;
+          if (CURRENT_UNIVERSE == START_UNIVERSE && !isCommand) frameCnt++;
           if (millis() - last_fps_time >= E131_FPS_INTERVAL) {
             last_fps_time = millis();
             DEBUG(F("FPS: "));

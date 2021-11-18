@@ -148,6 +148,7 @@ void printWorkMode() {
     UNIVERSE_COUNT = NUM_LEDS / 170;  
     if ((NUM_LEDS % 170) > 0) UNIVERSE_COUNT++;
     if (UNIVERSE_COUNT > 7) UNIVERSE_COUNT = 7;    
+
     uint8_t END_UNIVERSE = START_UNIVERSE + UNIVERSE_COUNT - 1;
     IPAddress address  = IPAddress(239, 255, ((START_UNIVERSE >> 8) & 0xff), ((START_UNIVERSE >> 0) & 0xff));
     IPAddress address2 = IPAddress(239, 255, ((END_UNIVERSE >> 8) & 0xff), ((END_UNIVERSE >> 0) & 0xff));
