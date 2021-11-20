@@ -34,7 +34,7 @@ void InitializeDfPlayer2() {
 }
 
 #if (USE_MP3 == 1)
-void printDetail(uint8_t type, int16_t value){
+void printDetail(uint8_t type, uint16_t value){
   switch (type) {
     case TimeOut:
       //DEBUGLN(F("Таймаут!"));
