@@ -244,7 +244,7 @@ void set_thisMode(int8_t value) {
 
 // UE
 void set_EffectUsage(uint8_t effect, bool value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   bool old_value = getEffectUsage(effect);
   if (old_value != value) {
@@ -255,7 +255,7 @@ void set_EffectUsage(uint8_t effect, bool value) {
 
 // UT 
 void set_EffectTextOverlayUsage(uint8_t effect, bool value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   String key = "UT";
   bool old_value = getEffectTextOverlayUsage(effect);
@@ -268,7 +268,7 @@ void set_EffectTextOverlayUsage(uint8_t effect, bool value) {
 
 // UC
 void set_EffectClockOverlayUsage(uint8_t effect, bool value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   String key = "UC";
   bool old_value = getEffectClockOverlayUsage(effect);
@@ -281,7 +281,7 @@ void set_EffectClockOverlayUsage(uint8_t effect, bool value) {
 
 // SE
 void set_EffectSpeed(uint8_t effect, uint8_t value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   String key = "SE";
   uint8_t old_value = effectSpeed[effect];
@@ -299,7 +299,7 @@ void set_EffectSpeed(uint8_t effect, uint8_t value) {
 
 // BE
 void set_EffectContrast(uint8_t effect, uint8_t value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   String key = "BE";
   uint8_t old_value = effectContrast[effect];
@@ -317,7 +317,7 @@ void set_EffectContrast(uint8_t effect, uint8_t value) {
 
 // SS
 void set_EffectScaleParam(uint8_t effect, uint8_t value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   uint8_t old_value = effectScaleParam[effect];
   String old_s_value = getParamForMode(effect);
@@ -334,7 +334,7 @@ void set_EffectScaleParam(uint8_t effect, uint8_t value) {
 
 // SQ
 void set_EffectScaleParam2(uint8_t effect, uint8_t value) {
-  bool valid = effect >= 0 && effect < MAX_EFFECT;
+  bool valid = effect < MAX_EFFECT;
   if (!valid) return;
   uint8_t old_value = effectScaleParam2[effect];
   String old_s_value = getParam2ForMode(effect);

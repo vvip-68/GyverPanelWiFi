@@ -24,7 +24,7 @@ void process() {
   parsing();
 
   #if (USE_E131 == 1)
-    bool streaming = e131 != NULL && (workMode == MASTER || workMode == SLAVE && (e131_wait_command || ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT))))); 
+    bool streaming = e131 != NULL && (workMode == MASTER || (workMode == SLAVE && (e131_wait_command || ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)))))); 
     if (!e131_streaming && streaming) {
       flag_1 = false;
       flag_2 = false;

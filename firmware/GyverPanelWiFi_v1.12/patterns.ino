@@ -7,11 +7,9 @@ bool   isWhite = false;
 
 // Заполнение матрицы указанным паттерном
 // ptrn - индекс узора в массив узоров patterns[] в patterns.h
-// X   - позиция X вывода узора
-// Y   - позиция Y вывода узора
 // W   - ширина паттерна
 // H   - высота паттерна
-void drawPattern(uint8_t ptrn, uint8_t X, uint8_t Y, uint8_t W, uint8_t H) {
+void drawPattern(uint8_t ptrn, uint8_t W, uint8_t H) {
 
   // Идея "подвижного" смещения узора - (С) Stepko
   // https://editor.soulmatelights.com/gallery/761-patterns
@@ -116,5 +114,5 @@ void patternRoutine() {
   colorMR[7] = CHSV(hue + 80, 255, 255);
   colorMR[8] = CHSV(hue + 160, 255, 255);
 
-  drawPattern(patternIdx, 0, 0, 10, 10);  
+  drawPattern(patternIdx, 10, 10);  
 }

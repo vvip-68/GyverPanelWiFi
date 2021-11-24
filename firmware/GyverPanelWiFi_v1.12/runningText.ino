@@ -113,7 +113,7 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
     uint16_t thisByte; // байт колонки i отображаемого символа шрифта
     uint16_t diasByte; // байт колонки i отображаемого диакритического символа
     int8_t   diasOffs; // смещение по Y отображения диакритического символа: diasOffs > 0 - позиция над основной буквой; diasOffs < 0 - позиция ниже основной буквы
-    int16_t  pn;       // номер пикселя в массиве leds[]
+    uint16_t pn;       // номер пикселя в массиве leds[]
     
     if (MIRR_V) {
       thisByte = getFont(letter, modif, LET_WIDTH - 1 - i);
@@ -135,7 +135,7 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
         int8_t y = offset_y + j;
         if (y >= 0 && y < pHEIGHT) {
           pn = getPixelNumber(offset + i, offset_y + j);
-          if (pn >= 0 && pn < NUM_LEDS) {
+          if (pn < NUM_LEDS) {
             leds[pn] = letterColor;
           }
         }
@@ -149,7 +149,7 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
         int8_t y = offset_y + j + diasOffs;
         if (y >= 0 && y < pHEIGHT) {
           pn = getPixelNumber(offset + i, y);
-          if (pn >= 0 && pn < NUM_LEDS) {
+          if (pn < NUM_LEDS) {
             leds[pn] = letterColor;
           }
         }
@@ -1267,7 +1267,7 @@ String processDateMacrosInText(const String text) {
 
         // Точка вставки строки остатка
         uint16_t insertPoint = idx;
-        uint8_t  afterEventIdx = -1;
+        int8_t  afterEventIdx = -1;
 
         // Здесь - str - дата (и время) события, s_nn - номер строки замены или пустая строка, если строки замены нет
         // Получить дату наступления события из строки 'ДД.ММ.ГГГГ'
@@ -1602,7 +1602,7 @@ int8_t getTextIndex(char c) {
 char getAZIndex(uint8_t idx) {
   uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
   char c = '-';
-  if (idx >= 0 && idx <= 9)             
+  if (idx <= 9)             
      c = char('0' + idx);
   else if (idx >= 10 && idx < size)               
      c = char('A' + idx - 10);
@@ -1619,7 +1619,7 @@ String getTextByAZIndex(char c) {
 // получить строку из массива строк текстов бегущей строки по индексу 0..35
 String getTextByIndex(uint8_t idx) {
   uint8_t size = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
-  return (idx < 0 || idx >= size) ? "" : textLines[idx];
+  return (idx >= size) ? "" : textLines[idx];
 }
 
 // Сканировать массив текстовых строк на наличие событий постоянного отслеживания - макросов {P}
@@ -1942,9 +1942,9 @@ bool forThisDate(String text) {
   */
   bool   ok = false;
   String str;
-  int8_t idx2;
+  int16_t idx2;
   
-  idx = text.indexOf("{S");
+  int16_t idx = text.indexOf("{S");
   while (idx >= 0) {
     // Строка с событием проверки текущей даты - выводится только при совпадении текущей даты с указанной (вычисленной по маске)
     // Проверка строки производится раньше при решении какую строку показывать в getNextLine(). Если сюда попали - значит строка 

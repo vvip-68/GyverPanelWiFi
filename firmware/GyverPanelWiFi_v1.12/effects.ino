@@ -77,7 +77,7 @@ void snowRoutine() {
 uint8_t USE_SEGMENTS_PAINTBALL = 0;
 uint8_t BorderWidth = 0;
 uint8_t dir_mx, seg_num, seg_size, seg_offset, seg_offset_x, seg_offset_y;
-int16_t idx;
+uint16_t idx;
 
 void lightBallsRoutine() {
   if (loadingFlag) {
@@ -208,8 +208,6 @@ void swirlRoutine() {
   blur2d(leds, pWIDTH, pHEIGHT, blurAmount);
 
   uint32_t ms = millis();  
-  int16_t idx;
-
   float spd = (map8(255-getEffectSpeedValue(MC_SWIRL), 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
 
   // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
@@ -481,7 +479,7 @@ void cyclonRoutine() {
   
   // Использовать отрисовку по сегментам
   // Если сегменты не используется - ширина одной полоски - кол-во сегментов
-  for (uint8_t i=0; i < seg_num; i++) {
+  for (uint8_t i=0; i < seg_num; i++) {  
     for (uint8_t k=0; k < inc_cnt; k++) { 
       if (USE_SEGMENTS_CYCLON == 1) {
         if (cycle_y + k - seg_offset_y >= seg_size) continue;
@@ -492,7 +490,7 @@ void cyclonRoutine() {
         if (cycle_y + k  >= pHEIGHT) continue;
         idx = getPixelNumber(cycle_x + i, cycle_y + k);
       }
-      if (idx >= 0 && idx < NUM_LEDS) 
+      if (idx < NUM_LEDS) 
           leds[idx] = CHSV(hue + k + (USE_SEGMENTS_CYCLON == 1 ? i * 85 : 0), 255, actualBrightness);              
     }
   }  

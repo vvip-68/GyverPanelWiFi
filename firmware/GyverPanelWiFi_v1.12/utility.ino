@@ -145,8 +145,7 @@ void fillAll(CRGB color) {
 }
 
 // функция получения цвета пикселя по его номеру
-uint32_t getPixColor(int16_t thisSegm) {
-  int16_t thisPixel = thisSegm;
+uint32_t getPixColor(int16_t thisPixel) {
   if (thisPixel < 0 || thisPixel > NUM_LEDS - 1) return 0;
   return (((uint32_t)leds[thisPixel].r << 16) | ((uint32_t)leds[thisPixel].g << 8 ) | (uint32_t)leds[thisPixel].b);
 }
@@ -287,13 +286,13 @@ void drawCircleF(float x0, float y0, float radius, CRGB color) {
 
 // получить номер пикселя в ленте по координатам
 uint16_t getPixelNumber(int8_t x, int8_t y) {
-  uint8_t xx,yy,ww,sx,sy,sw,mx,my,mw,snum,num;
+  uint8_t xx,yy,ww,sx,sy,mx,my,mw,snum,num;
 
   // Матрица состоит из одного сегмента
   if (mWIDTH == 1 && mHEIGHT == 1) {
     xx = THIS_X(x, y);
     yy = THIS_Y(x, y);
-    ww = THIS_W(x, y);
+    ww = THIS_W();
   
     return (yy % 2 == 0 || sMATRIX_TYPE == 1)
         ? yy * ww + xx // если чётная строка
@@ -309,7 +308,7 @@ uint16_t getPixelNumber(int8_t x, int8_t y) {
   // Номер сегмента в последовательности сборной матрицы
   mx = THIS_SX(sx, sy);
   my = THIS_SY(sx, sy);
-  mw = THIS_SW(sx, sy);
+  mw = THIS_SW();
 
   snum = (my % 2 == 0 || mTYPE == 1)
       ? my * mw + mx           // если чётная строка мета-матрицы
@@ -318,7 +317,7 @@ uint16_t getPixelNumber(int8_t x, int8_t y) {
   // Номер дода в сегменте
   xx = THIS_X(x, y);
   yy = THIS_Y(x, y);
-  ww = THIS_W(x, y);
+  ww = THIS_W();
   
   num = (yy % 2 == 0 || sMATRIX_TYPE == 1)
       ? yy * ww + xx           // если чётная строка 
@@ -359,7 +358,7 @@ uint8_t THIS_Y(uint8_t x, uint8_t y) {
     return y;
 }
 
-uint8_t THIS_W(uint8_t x, uint8_t y) {
+uint8_t THIS_W() {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
@@ -407,7 +406,7 @@ uint8_t THIS_SY(uint8_t x, uint8_t y) {
     return y;
 }
 
-uint8_t THIS_SW(uint8_t x, uint8_t y) {
+uint8_t THIS_SW() {
     /*
         CONNECTION_ANGLE; // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
         STRIP_DIRECTION;  // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз

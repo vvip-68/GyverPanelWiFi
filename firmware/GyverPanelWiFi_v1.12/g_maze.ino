@@ -194,7 +194,7 @@ bool checkPath(int8_t x, int8_t y) {
 // пока он не будет соответствовать требованиям "интересности"
 void smartMaze() {
   uint8_t sum = 0, line;
-  uint8_t attempt;
+  uint8_t attempt = 0;
   while (sum < MIN_PATH) {                          // пока длина пути меньше заданной
     attempt++;
     if (attempt > 200) break;                       // если совершено более 200 попыток, завершить алгоритм (если зависнет)

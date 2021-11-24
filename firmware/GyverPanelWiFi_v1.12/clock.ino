@@ -525,8 +525,8 @@ void drawTemperature(int8_t X) {
   // Если единицы градусов = 1 - сместить на колонку вправо
   // Если десятки градусов = 0 - сместить на 4 колонки вправо и 0 не рисовать
   // Если температура 0 - рисовать 0C
-  volatile uint8_t temp_x = CLOCK_LX; 
-  uint8_t temp_y = CLOCK_WY;
+  volatile int8_t temp_x = CLOCK_LX; 
+  int8_t temp_y = CLOCK_WY;
 
   if (clockScrollSpeed >= 240) X = 0; 
 
@@ -895,8 +895,8 @@ void overlayWrap() {
   int16_t thisLED = 0;  
   for (uint8_t i = 0; i < pWIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
-      int16_t pn = getPixelNumber(i,j);
-      if (pn >= 0 && pn < NUM_LEDS) {
+      uint16_t pn = getPixelNumber(i,j);
+      if (pn < NUM_LEDS) {
         overlayLEDs[thisLED] = leds[pn];
       }
       thisLED++;
@@ -908,8 +908,8 @@ void overlayUnwrap() {
   int16_t thisLED = 0;  
   for (uint8_t i = 0; i < pWIDTH; i++) {
     for (uint8_t j = y_overlay_low; j <= y_overlay_high; j++) {
-      int16_t pn = getPixelNumber(i,j);
-      if (pn >= 0 && pn < NUM_LEDS) {
+      uint16_t pn = getPixelNumber(i,j);
+      if (pn < NUM_LEDS) {
         leds[pn] = overlayLEDs[thisLED];
       }  
       thisLED++; 
@@ -1580,12 +1580,6 @@ void checkClockOrigin() {
         CALENDAR_Y = CLOCK_Y;                                     // Вертикальные часы имеют тот же размер, что и календарь
       }     
     }
-
-    // Проверить, что не выходим за габариты поля матрицы
-    if (CLOCK_X < 0)    CLOCK_X = 0;
-    if (CLOCK_Y < 0)    CLOCK_Y = 0;
-    if (CALENDAR_X < 0) CALENDAR_X = 0;
-    if (CALENDAR_Y < 0) CALENDAR_Y = 0;
     
     while (CLOCK_X > 0 && CLOCK_X + CLOCK_W > pWIDTH)  CLOCK_X--;
     while (CLOCK_Y > 0 && CLOCK_Y + CLOCK_H > pHEIGHT) CLOCK_Y--;
