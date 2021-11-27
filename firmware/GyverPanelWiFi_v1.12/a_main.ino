@@ -1464,7 +1464,10 @@ void parsing() {
         
         if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
-          set_EffectUsage(tmp_eff, intData[3] == 1);           
+          set_EffectUsage(tmp_eff, intData[3] == 1);   
+          if (tmp_eff == MC_PATTERNS) {  
+            setTimersForMode(thisMode);      
+          }  
         } else 
         
         if (intData[1] == 3) {

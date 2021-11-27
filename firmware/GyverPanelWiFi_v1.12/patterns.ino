@@ -19,6 +19,9 @@ void drawPattern(uint8_t ptrn, uint8_t W, uint8_t H) {
     
   uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);
+  uint8_t spd1 = map8(255-getEffectSpeedValue(MC_PATTERNS), 6, 15);
+  uint8_t spd2 = map8(255-getEffectSpeedValue(MC_PATTERNS), 7, 20);
+
   switch(variant) {
     case 1:
       // снизу вверх
@@ -54,8 +57,8 @@ void drawPattern(uint8_t ptrn, uint8_t W, uint8_t H) {
       break;
     default:
       // Переменное движение
-      y_offs = beatsin8(5, 1, 32); // for X and Y texture move
-      x_offs = beatsin8(6, 1, 32); // for X and Y texture move
+      y_offs = beatsin8(spd1, 1, 32); // for X and Y texture move
+      x_offs = beatsin8(spd2, 1, 32); // for X and Y texture move
       break;
   }
   

@@ -695,11 +695,16 @@ void setTimersForMode(uint8_t aMode) {
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || 
-        aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS
+        aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || aMode == MC_PATTERNS
         #ifdef MC_IMAGE
          || aMode == MC_IMAGE
         #endif  
         ) {      
+      if (aMode == MC_PATTERNS) {
+         uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);
+         if (variant == 0) effectTimer.setInterval(50);
+         else effectTimer.setInterval(efSpeed);
+      } else
       if (aMode == MC_TETRIS) {
         effectTimer.setInterval(50);
         gameTimer.setInterval(200 + 4 * efSpeed);
