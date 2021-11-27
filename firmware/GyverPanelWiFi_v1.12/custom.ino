@@ -685,6 +685,7 @@ void prevModeHandler() {
   setTimersForMode(thisMode);
   
   FastLED.clear();
+  FastLED.setBrightness(globalBrightness);
 }
 
 void setTimersForMode(uint8_t aMode) {
