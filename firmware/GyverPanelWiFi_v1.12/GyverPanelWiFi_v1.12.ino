@@ -49,7 +49,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1127")
+#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1128")
 
 // --------------------------------------------------------
 
@@ -379,6 +379,9 @@ void loop() {
       }
     #endif
   }
+  #if (USE_MP3 == 1)
+    dfPlayer.loop();  
+  #endif
   process();
 }
 

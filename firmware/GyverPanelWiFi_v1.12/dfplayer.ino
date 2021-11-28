@@ -8,15 +8,15 @@
 // однако отправка команды "играть" из приложения, страница настройки будильника, комбобокс выбора зввука  
 // не начинает воспроизведение звука - увеличьте значение задержки.
 
-#define GUARD_DELAY 75
+#define GUARD_DELAY 25
 
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
   mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
-  dfPlayer.begin(mp3Serial, false, true);
-  dfPlayer.setTimeOut(1000);
-  dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
-  dfPlayer.volume(1);
+  dfPlayer.begin();
+  dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd);
+  dfPlayer.setEq(DfMp3_Eq_Normal);
+  dfPlayer.setVolume(1);
 #endif  
 }
 
@@ -34,69 +34,6 @@ void InitializeDfPlayer2() {
 }
 
 #if (USE_MP3 == 1)
-void printDetail(uint8_t type, uint16_t value){
-  switch (type) {
-    case TimeOut:
-      //DEBUGLN(F("Таймаут!"));
-      break;
-    case WrongStack:
-      //DEBUGLN(F("Ошибка стека!"));
-      break;
-    case DFPlayerCardInserted:
-      DEBUGLN(F("Карта вставлена."));
-      break;
-    case DFPlayerCardRemoved:
-      DEBUGLN(F("Карта удалена."));
-      break;
-    case DFPlayerCardOnline:
-      DEBUGLN(F("Карта готова."));
-      break;
-    case DFPlayerUSBInserted:
-      DEBUGLN(F("Подключен USB."));
-      break;
-    case DFPlayerUSBRemoved:
-      DEBUGLN(F("Отключен USB."));
-      break;
-    case DFPlayerPlayFinished:
-      DEBUG(F("Номер: "));
-      DEBUG(value);
-      DEBUGLN(F(". Завершено."));
-      if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
-        dfPlayer.stop();
-      }
-      break;
-    case DFPlayerError:
-      DEBUG(F("DFPlayerError:"));
-      switch (value) {
-        case Busy:
-          DEBUGLN(F("Нет карты"));
-          break;
-        case Sleeping:
-          DEBUGLN(F("Ожидание..."));
-          break;
-        case SerialWrongStack:
-          DEBUGLN(F("Неверные данные"));
-          break;
-        case CheckSumNotMatch:
-          DEBUGLN(F("Ошибка контрольной суммы"));
-          break;
-        case FileIndexOut:
-          DEBUGLN(F("Неверный индекс файла"));
-          break;
-        case FileMismatch:
-          DEBUGLN(F("Файл не найден"));
-          break;
-        case Advertise:
-          DEBUGLN(F("Реклама"));
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
-  }
-}
 
 void refreshDfPlayerFiles() {
   // Чтение почему-то не всегда работает, иногда возвращает 0 или число от какого-то предыдущего запроса
@@ -105,8 +42,8 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для будильника
   int16_t cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.readFileCountsInFolder(1);     delay(GUARD_DELAY);
-    new_val = dfPlayer.readFileCountsInFolder(1); delay(GUARD_DELAY);    
+    val = dfPlayer.getFolderTrackCount(1);     delay(GUARD_DELAY);
+    new_val = dfPlayer.getFolderTrackCount(1); delay(GUARD_DELAY);    
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
@@ -117,8 +54,8 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для рассвета
   cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.readFileCountsInFolder(2);     delay(GUARD_DELAY);
-    new_val = dfPlayer.readFileCountsInFolder(2); delay(GUARD_DELAY);     
+    val = dfPlayer.getFolderTrackCount(2);     delay(GUARD_DELAY);
+    new_val = dfPlayer.getFolderTrackCount(2); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
@@ -129,8 +66,8 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для звуков в бегущей строке
   cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.readFileCountsInFolder(3);     delay(GUARD_DELAY);
-    new_val = dfPlayer.readFileCountsInFolder(3); delay(GUARD_DELAY);     
+    val = dfPlayer.getFolderTrackCount(3);     delay(GUARD_DELAY);
+    new_val = dfPlayer.getFolderTrackCount(3); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
     delay(100);
@@ -156,11 +93,11 @@ void PlayAlarmSound() {
   if (sound > 0) {
     dfPlayer.stop();
     delay(GUARD_DELAY);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
-    dfPlayer.volume(constrain(maxAlarmVolume,1,30));
+    dfPlayer.setVolume(constrain(maxAlarmVolume,1,30));
     delay(GUARD_DELAY);
-    dfPlayer.playFolder(1, sound);
+    dfPlayer.playFolderTrack(1, sound);
     delay(GUARD_DELAY);
-    dfPlayer.enableLoop();
+    dfPlayer.setRepeatPlayCurrentTrack(true);
     delay(GUARD_DELAY);    
     alarmSoundTimer.setInterval(alarmDuration * 60L * 1000L);
     alarmSoundTimer.reset();
@@ -186,11 +123,11 @@ void PlayDawnSound() {
   if (sound > 0) {
     dfPlayer.stop();
     delay(GUARD_DELAY);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
-    dfPlayer.volume(1);
+    dfPlayer.setVolume(1);
     delay(GUARD_DELAY);
-    dfPlayer.playFolder(2, sound);
+    dfPlayer.playFolderTrack(2, sound);
     delay(GUARD_DELAY);
-    dfPlayer.enableLoop();
+    dfPlayer.setRepeatPlayCurrentTrack(true);
     delay(GUARD_DELAY);
     // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
     fadeSoundDirection = 1;   
@@ -215,12 +152,12 @@ void StopSound(int16_t duration) {
   if (duration <= 0) {
     dfPlayer.stop();
     delay(GUARD_DELAY);
-    dfPlayer.volume(0);
+    dfPlayer.setVolume(0);
     return;
   }
   
   // Чтение текущего уровня звука часто глючит и возвращает 0. Тогда использовать maxAlarmVolume
-  fadeSoundStepCounter = dfPlayer.readVolume();
+  fadeSoundStepCounter = dfPlayer.getVolume();
   if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = maxAlarmVolume;
   if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
     
@@ -229,3 +166,110 @@ void StopSound(int16_t duration) {
   
   #endif
 }
+
+#if (USE_MP3 == 1)
+
+class Mp3Notify {
+public:
+  static void PrintlnSourceAction(DfMp3_PlaySources source, const char* action)
+  {
+    if (source & DfMp3_PlaySources_Sd) 
+    {
+        Serial.print("SD-карта, ");
+    }
+    if (source & DfMp3_PlaySources_Usb) 
+    {
+        Serial.print("USB диск, ");
+    }
+    if (source & DfMp3_PlaySources_Flash) 
+    {
+        Serial.print("Flash-память, ");
+    }
+    Serial.println(action);
+  }
+  static void printErrorDetail(uint8_t type){
+/*    
+    DfMp3_Error_PacketSize,
+    DfMp3_Error_PacketHeader,
+    DfMp3_Error_PacketChecksum,
+    DfMp3_Error_General = 0xff
+ */
+    DEBUG(F("DFPlayerError:"));
+    switch (type) {
+      case DfMp3_Error_RxTimeout:
+        DEBUGLN(F("Таймаут!"));
+        break;
+      case DfMp3_Error_SerialWrongStack:
+        DEBUGLN(F("Ошибка стека!"));
+        break;
+      case DfMp3_Error_Busy:
+        DEBUGLN(F("Нет карты"));
+        break;
+      case DfMp3_Error_Sleeping:
+        DEBUGLN(F("Ожидание..."));
+        break;
+      case DfMp3_Error_CheckSumNotMatch:
+        DEBUGLN(F("Ошибка контрольной суммы"));
+        break;
+      case DfMp3_Error_FileIndexOut:
+        DEBUGLN(F("Неверный индекс файла"));
+        break;
+      case DfMp3_Error_FileMismatch:
+        DEBUGLN(F("Файл не найден"));
+        break;
+      case DfMp3_Error_Advertise:
+        DEBUGLN(F("Реклама"));
+        break;
+      case DfMp3_Error_PacketSize:
+        DEBUGLN(F("Неверный размер пакета команды"));
+        break;
+      case DfMp3_Error_PacketHeader:
+        DEBUGLN(F("Неверный заголовок пакета команды"));
+        break;
+      case DfMp3_Error_PacketChecksum:
+        DEBUGLN(F("Ошибка CRC пакета команды"));
+        break;
+      default:
+        DEBUGLN(F("Что-то пошло не так..."));
+        break;
+    }
+  }  
+  static void OnError(DfMp3& mp3, uint16_t errorCode)
+  {
+    // see DfMp3_Error for code meaning
+    printErrorDetail(errorCode);
+  }
+  static void OnPlayFinished(DfMp3& mp3, DfMp3_PlaySources source, uint16_t track)
+  {
+    Serial.print("Трек завершен #");
+    Serial.println(track);  
+    if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
+      dfPlayer.stop();
+    } else
+    // Перезапустить заук, если установлен его повтор
+    if (runTextSound > 0 && runTextSoundRepeat) {
+      dfPlayer.playFolderTrack(3, runTextSound);
+    }    
+  }
+  static void OnPlaySourceOnline(DfMp3& mp3, DfMp3_PlaySources source)
+  {
+    PrintlnSourceAction(source, "готова");
+    InitializeDfPlayer2();
+    if (!isDfPlayerOk) DEBUGLN(F("MP3 плеер недоступен."));    
+  }
+  static void OnPlaySourceInserted(DfMp3& mp3, DfMp3_PlaySources source)
+  {
+    PrintlnSourceAction(source, "вставлена");
+  }
+  static void OnPlaySourceRemoved(DfMp3& mp3, DfMp3_PlaySources source)
+  {
+    PrintlnSourceAction(source, "удалена");
+    // Карточка "отвалилась" - делаем недоступным все что связано с MP3 плеером
+    set_isDfPlayerOk(false);
+    alarmSoundsCount = 0;
+    dawnSoundsCount = 0;
+    noteSoundsCount = 0;
+    DEBUGLN(F("MP3 плеер недоступен."));    
+  }
+};
+#endif

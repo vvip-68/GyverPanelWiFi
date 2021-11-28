@@ -1191,7 +1191,7 @@ void checkAlarmTime() {
   if (fadeSoundTimer.isReady()) {
     if (fadeSoundDirection > 0) {
       // увеличение громкости
-      dfPlayer.volumeUp();
+      dfPlayer.increaseVolume();
       fadeSoundStepCounter--;
       if (fadeSoundStepCounter <= 0) {
         fadeSoundDirection = 0;
@@ -1199,7 +1199,7 @@ void checkAlarmTime() {
       }
     } else if (fadeSoundDirection < 0) {
       // Уменьшение громкости
-      dfPlayer.volumeDown();
+      dfPlayer.decreaseVolume();
       fadeSoundStepCounter--;
       if (fadeSoundStepCounter <= 0) {
         set_isPlayAlarmSound(false);

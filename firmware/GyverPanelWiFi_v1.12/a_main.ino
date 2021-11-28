@@ -451,37 +451,6 @@ void process() {
         processButtonStep();
       }            
     }
-
-    #if (USE_MP3 == 1)
-    // Есть ли изменение статуса MP3-плеера?
-    if (dfPlayer.available()) {
-
-      // Вывести детали об изменении статуса в лог
-      uint8_t msg_type = dfPlayer.readType();      
-      printDetail(msg_type, dfPlayer.read());
-
-      // Действия, которые нужно выполнить при изменении некоторых статусов:
-      if (msg_type == DFPlayerCardRemoved) {
-        // Карточка "отвалилась" - делаем недоступным все что связано с MP3 плеером
-        set_isDfPlayerOk(false);
-        alarmSoundsCount = 0;
-        dawnSoundsCount = 0;
-        noteSoundsCount = 0;
-        DEBUGLN(F("MP3 плеер недоступен."));
-      } else if (msg_type == DFPlayerCardOnline || msg_type == DFPlayerCardInserted) {
-        // Плеер распознал карту - переинициализировать стадию 2
-        InitializeDfPlayer2();
-        if (!isDfPlayerOk) DEBUGLN(F("MP3 плеер недоступен."));
-      } else if (msg_type == DFPlayerPlayFinished) {
-        // Почему-то в звуках бегущей строки повтор через enableLoop не спабатывает
-        // Перезапустить заук, если установлен его повтор
-        if (runTextSound > 0 && runTextSoundRepeat) {
-          dfPlayer.playFolder(3, runTextSound);
-        }
-      }
-          
-    }
-    #endif
     
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
     if (!(isAlarming || isPlayAlarmSound)) checkIdleState();
@@ -2090,9 +2059,9 @@ void parsing() {
                   dfPlayer.stop();
                   set_soundFolder(1);
                   set_soundFile(b_tmp);
-                  dfPlayer.volume(constrain(intData[4],0,30));
-                  dfPlayer.playFolder(soundFolder, soundFile);
-                  dfPlayer.enableLoop();
+                  dfPlayer.setVolume(constrain(intData[4],0,30));
+                  dfPlayer.playFolderTrack(soundFolder, soundFile);
+                  dfPlayer.setRepeatPlayCurrentTrack(true);
                 } else {
                   set_soundFolder(0);
                   set_soundFile(0);
@@ -2118,9 +2087,9 @@ void parsing() {
                 if (b_tmp > 0 && b_tmp <= dawnSoundsCount) {
                   set_soundFolder(2);
                   set_soundFile(b_tmp);
-                  dfPlayer.volume(constrain(intData[4],0,30));
-                  dfPlayer.playFolder(soundFolder, soundFile);
-                  dfPlayer.enableLoop();
+                  dfPlayer.setVolume(constrain(intData[4],0,30));
+                  dfPlayer.playFolderTrack(soundFolder, soundFile);
+                  dfPlayer.setRepeatPlayCurrentTrack(true);
                 } else {
                   set_soundFolder(0);
                   set_soundFile(0);
@@ -2135,7 +2104,7 @@ void parsing() {
              // $20 5 VV; - установить уровень громкости проигрывания примеров (когда уже играет)
              //    VV - уровень громкости
              set_maxAlarmVolume(constrain(intData[2],0,30));
-             dfPlayer.volume(maxAlarmVolume);
+             dfPlayer.setVolume(maxAlarmVolume);
             }
             #endif
             break;

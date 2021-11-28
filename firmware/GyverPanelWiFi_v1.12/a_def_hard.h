@@ -287,7 +287,7 @@
 
 #if (USE_MP3 == 1)
 #include <SoftwareSerial.h>      // Установите в менеджере библиотек "EspSoftwareSerial" для ESP8266/ESP32 https://github.com/plerup/espsoftwareserial/
-#include "DFRobotDFPlayerMini.h" // Установите в менеджере библиотек стандартную библиотеку DFRobotDFPlayerMini ("DFPlayer - A Mini MP3 Player For Arduino" )
+#include "DFMiniMp3.h"           // Установите в менеджере библиотек стандартную библиотеку DFMiniMp3 от Makuha ("DFPlayer Mini MP3 by Makuna" https://github.com/Makuna/DFMiniMp3)
 #endif
 
 #if (USE_SD == 1)

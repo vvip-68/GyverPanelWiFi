@@ -112,8 +112,8 @@ void doEffectWithOverlay(uint8_t aMode) {
         if (isDfPlayerOk && noteSoundsCount > 0) {
           dfPlayer.stop();
           delay(10);
-          dfPlayer.volume(constrain(maxAlarmVolume,1,30));
-          dfPlayer.playFolder(3, runTextSound);
+          dfPlayer.setVolume(constrain(maxAlarmVolume,1,30));
+          dfPlayer.playFolderTrack(3, runTextSound);
         } else {
           runTextSound = -1;
           runTextSoundRepeat = false;
