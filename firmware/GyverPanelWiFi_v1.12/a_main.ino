@@ -4239,6 +4239,9 @@ void setEffect(uint8_t eff) {
     autoplayTimer = millis();
   }
 
+  gameDemo = true;
+  gamePaused = false;
+
   if (thisMode != MC_DAWN_ALARM)
     FastLED.setBrightness(globalBrightness);      
 }

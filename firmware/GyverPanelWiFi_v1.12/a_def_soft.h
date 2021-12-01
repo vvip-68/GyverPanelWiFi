@@ -558,9 +558,14 @@ bool isDfPlayerOk = false;                  // MP3-Player корректно и�
 #if (USE_MP3 == 1)
 
 SoftwareSerial mp3Serial;
-class   Mp3Notify;
-typedef DFMiniMp3<SoftwareSerial, Mp3Notify> DfMp3;
-DfMp3   dfPlayer(mp3Serial);
+class    Mp3Notify;
+#if (DFPLAYER_TYPE == 0)
+typedef  DFMiniMp3<SoftwareSerial, Mp3Notify, Mp3ChipOriginal> DfMp3;
+#endif
+#if (DFPLAYER_TYPE == 1)
+typedef  DFMiniMp3<SoftwareSerial, Mp3Notify, Mp3ChipMH2024K16SS> DfMp3;
+#endif
+DfMp3    dfPlayer(mp3Serial);
 
 int16_t  alarmSoundsCount = 0;              // Кол-во файлов звуков в папке '01' на SD-карте
 int16_t  dawnSoundsCount = 0;               // Кол-во файлов звуков в папке '02' на SD-карте

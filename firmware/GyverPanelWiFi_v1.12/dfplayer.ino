@@ -194,7 +194,7 @@ public:
     DfMp3_Error_PacketChecksum,
     DfMp3_Error_General = 0xff
  */
-    DEBUG(F("DFPlayerError:"));
+    DEBUG(F("DFPlayerError: "));
     switch (type) {
       case DfMp3_Error_RxTimeout:
         DEBUGLN(F("Таймаут!"));
