@@ -303,8 +303,8 @@
 
 #if (USE_MP3 == 1)
 #include <SoftwareSerial.h>      // Установите в менеджере библиотек "EspSoftwareSerial" для ESP8266/ESP32 https://github.com/plerup/espsoftwareserial/
-#include "DFMiniMp3.h"           // Установите в менеджере библиотек стандартную библиотеку DFMiniMp3 от Makuha ("DFPlayer Mini MP3 by Makuna" https://github.com/Makuna/DFMiniMp3)
-#endif
+#include "DFMiniMp3.h"           // Установите в библиотеку DFMiniMp3 от Makuha по следкющей ссылке: ("DFPlayer Mini MP3 by Makuna" https://github.com/Makuna/DFMiniMp3)                                 
+#endif                           // Внимание - НЕ ИЗ МЕНЕДЖЕРА БИБЛИОТЕК. В менеджере в настоящее время версия 1.07, по ссылке 1.10. Скетч использует функции, которых нет в 1.07
 
 #if (USE_SD == 1)
 #include <SPI.h>                 // Библиотеки поддержки работы с SD-картой
