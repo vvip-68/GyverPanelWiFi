@@ -1823,6 +1823,7 @@ void parsing() {
 
       // ----------------------------------------------------
       // 18 - Запрос текущих параметров программой: $18 page;
+      //    page 0:   // ping - проверка связи
       //    page 1:   // Настройки
       //    page 2:   // Эффекты
       //    page 3:   // Настройки бегущей строки
@@ -1848,9 +1849,12 @@ void parsing() {
           if (sendImageFlag) 
             sendImageLine();
           else {
+            /* Почему-то в момент срабатывания рассвета/будильника при наличии данной конструкции
+             * приложение на телефоне не может подключиться к устройству пока не закончи работать будильник 
             if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
               sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника  
             } 
+            */
             sendAcknowledge(cmdSource);
           }
         } else {                          // запрос параметров страницы приложения
@@ -2387,7 +2391,7 @@ void parsing() {
       }
       DEBUGLN();
 
-      DEBUG(F("UDP пакeт размером "));
+      DEBUG(F("Получен UDP пакeт размером "));
       DEBUGLN(packetSize);
     }
 
@@ -2491,31 +2495,31 @@ void sendPageParams(uint8_t page, eSources src) {
   
   switch (page) { 
     case 1:  // Настройки
-      str = getStateString("UP|FM|W|H|DM|PS|PD|IT|AL|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
+      str = getStateString("UP|FM|AL|W|H|DM|PS|PD|IT|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
       break;
     case 2:  // Эффекты
-      str = getStateString("UP|FM|EF|EN|UE|UT|UC|SE|SS|BE|SQ");
+      str = getStateString("UP|FM|AL|EF|EN|UE|UT|UC|SE|SS|BE|SQ");
       break;
     case 3:  // Настройки бегущей строки
-      str = getStateString("UP|FM|TE|TI|CT|ST|C2|OM|TS");
+      str = getStateString("UP|FM|AL|TE|TI|CT|ST|C2|OM|TS");
       break;
     case 4:  // Настройки часов
-      str = getStateString("UP|FM|CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM");
+      str = getStateString("UP|FM|AL|CE|CC|CO|CK|NC|SC|C1|DC|DD|DI|NP|NT|NZ|NS|DW|OF|TM");
       break;
     case 5:  // Настройки будильника
       str = getStateString("UP|FM|AL|AW|AT|AD|AE|MX|MU|MD|MV|MA|MB|MP");
       break;
     case 6:  // Настройки подключения
-      str = getStateString("UP|FM|AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK");
+      str = getStateString("UP|FM|AL|AU|AN|AA|NW|NA|IP|QZ|QA|QP|QS|QU|QW|QD|QR|QK");
       break;
     case 7:  // Настройки режимов автовключения по времени
-      str = getStateString("UP|FM|WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A|T1|T2");
+      str = getStateString("UP|FM|AL|WZ|WU|AM1T|AM1A|AM2T|AM2A|AM3T|AM3A|AM4T|AM4A|AM5A|AM6A|T1|T2");
       break;
     case 8:  // Настройки параметтров матрицы (размеры, подключение)
-      str = getStateString("UP|FM|M0|M1|M2|M3|M4|M5|M6|M7|M8|M9");
+      str = getStateString("UP|FM|AL|M0|M1|M2|M3|M4|M5|M6|M7|M8|M9");
       break;
     case 9:  // Настройки параметтров синхронизации
-      str = getStateString("UP|FM|E0|E1|E2|E3");
+      str = getStateString("UP|FM|AL|E0|E1|E2|E3");
       break;
     case 10:  // Загрузка картинок
       str = getStateString("UP|FM|W|H|BR|CL|SD");
@@ -4090,20 +4094,49 @@ void sendAcknowledge(eSources src) {
   if (src == UDP || src == BOTH) {
     // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
     String reply = "";
-    bool isCmd = false; 
-    if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
-    if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
-    uint8_t L = reply.length();
-    if (L > 0 && reply[L-1] != ';') reply += ";";
-    reply += "ack" + String(ackCounter++) + ";";  
+    uint8_t L = 0; // +++
+
+    if (cmd95.length() > 0) { 
+      reply = cmd95; cmd95 = "";
+      L = reply.length();
+      if (L > 0 && reply[L-1] != ';') {
+        reply += ";"; L++;
+      }
+      memset(replyBuffer, '\0', L+1);
+      reply.toCharArray(replyBuffer, reply.length()+1);
+      udp.beginPacket(udp.remoteIP(), udp.remotePort());
+      udp.write((const uint8_t*) replyBuffer, reply.length()+1);
+      udp.endPacket();
+      yield();
+      delay(100);
+      DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+    }
+    
+    if (cmd96.length() > 0) { 
+      reply = cmd96; cmd96 = "";
+      L = reply.length();
+      if (L > 0 && reply[L-1] != ';') {
+        reply += ";"; L++;
+      }
+      memset(replyBuffer, '\0', L+1);
+      reply.toCharArray(replyBuffer, reply.length()+1);
+      udp.beginPacket(udp.remoteIP(), udp.remotePort());
+      udp.write((const uint8_t*) replyBuffer, reply.length()+1);
+      udp.endPacket();
+      yield();
+      delay(100);
+      DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+    }
+
+    reply = "ack" + String(ackCounter++) + ";";  
+    L = reply.length();
+    memset(replyBuffer, '\0', L+1);
     reply.toCharArray(replyBuffer, reply.length()+1);
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*) replyBuffer, reply.length()+1);
     udp.endPacket();
-    delay(0);
-    if (isCmd) {
-      DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
-    }
+    DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+    
   }
 }
 
