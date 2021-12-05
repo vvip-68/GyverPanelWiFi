@@ -88,6 +88,8 @@ void loadDirectory() {
       // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
       int16_t p = file_name.lastIndexOf("/");
       if (p>=0) file_name = file_name.substring(p + 1);
+      p = file_name.indexOf(".out");
+      if (p>=0) file_name = file_name.substring(0, p);
             
       DEBUG("  ");
       DEBUG(file_name);
@@ -160,7 +162,7 @@ void sdcardRoutine() {
     }
        
     // При загрузке имен файлов с SD-карты в nameFiles только имя файла внутри выбранной папки -- чтобы получить полное имя файла для загрузки  нужно к имени файла добавить имя папки
-    fileName = "/" + String(pWIDTH) + "x" + String(pHEIGHT) + "/" + nameFiles[file_idx];
+    fileName = "/" + String(pWIDTH) + "x" + String(pHEIGHT) + "/" + nameFiles[file_idx] + ".out";
 
     play_file_finished = false;
     DEBUG(F("Загрузка файла эффекта: '"));
