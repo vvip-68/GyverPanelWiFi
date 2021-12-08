@@ -56,7 +56,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1206")
+#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1208")
 
 // --------------------------------------------------------
 
@@ -240,10 +240,13 @@ void setup() {
 
   // Второй этап инициализации плеера - проверка наличия файлов звуков на SD карте
   #if (USE_MP3 == 1)
-    InitializeDfPlayer2();
-    if (!isDfPlayerOk) {
-      DEBUGLN(F("MP3 плеер недоступен."));
-    }
+    if (isDfPlayerOk) {
+      InitializeDfPlayer2();
+      if (!isDfPlayerOk) {
+        DEBUGLN(F("MP3 плеер недоступен."));
+      }
+    } else
+        DEBUGLN(F("MP3 плеер недоступен."));
   #endif
 
   // Подключение к сети

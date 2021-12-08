@@ -12,11 +12,17 @@
 
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
+  DEBUGLN(F("\nИнициализация MP3-плеера..."));  
   mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
   dfPlayer.begin();
+  initTimeout = false;
   dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd);
-  dfPlayer.setEq(DfMp3_Eq_Normal);
-  dfPlayer.setVolume(1);
+  if (initTimeout) {
+    set_isDfPlayerOk(false);  
+  } else {
+    dfPlayer.setEq(DfMp3_Eq_Normal);
+    dfPlayer.setVolume(1);
+  }
 #endif  
 }
 
@@ -197,7 +203,8 @@ public:
     DEBUG(F("DFPlayerError: "));
     switch (type) {
       case DfMp3_Error_RxTimeout:
-        DEBUGLN(F("Таймаут!"));
+        initTimeout = true;
+        // DEBUGLN(F("Таймаут!"));
         break;
       case DfMp3_Error_SerialWrongStack:
         DEBUGLN(F("Ошибка стека!"));
