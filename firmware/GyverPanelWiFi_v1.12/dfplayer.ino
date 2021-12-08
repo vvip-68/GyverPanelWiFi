@@ -1,27 +1,16 @@
-// Задержка между отправкой последовательных команд в модуль DFPlayer
-// На некоторых платах достаточно 10 мс задержки, однако встречаются экземпляры DFPlayer, 
-// которые не выполняют команды, если между отправкой аоследовательных команд задержка менее 100 мс.
-// Рекомендуется подбирать опытным путем. Слишком большая задержка может давать суммарно до 0.5 сек замирания
-// эффектов при начале/окончании воспроизведения звука.
-//
-// Проявление: если прошивка распознаёт подключенный DFPlayer и в InitializeDfPlayer2() файлы звуков считываются, 
-// однако отправка команды "играть" из приложения, страница настройки будильника, комбобокс выбора зввука  
-// не начинает воспроизведение звука - увеличьте значение задержки.
-
-#define GUARD_DELAY 75
-
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
   DEBUGLN(F("\nИнициализация MP3-плеера..."));  
   mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
   dfPlayer.begin();
+  delay(1000);  
   initTimeout = false;
-  dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd);
+  dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd); delay(GUARD_DELAY);
   if (initTimeout) {
     set_isDfPlayerOk(false);  
   } else {
-    dfPlayer.setEq(DfMp3_Eq_Normal);
-    dfPlayer.setVolume(1);
+    dfPlayer.setEq(DfMp3_Eq_Normal);               delay(GUARD_DELAY);
+    dfPlayer.setVolume(1);                         delay(GUARD_DELAY);
   }
 #endif  
 }
@@ -48,12 +37,10 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для будильника
   int16_t cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.getFolderTrackCount(1);     delay(GUARD_DELAY);
+    val = dfPlayer.getFolderTrackCount(1);     delay(GUARD_DELAY);    
     new_val = dfPlayer.getFolderTrackCount(1); delay(GUARD_DELAY);    
     if (val == new_val && val != 0) break;
     cnt++;
-    delay(100);
-    DEBUG(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);
   alarmSoundsCount = val < 0 ? 0 : val;
   
@@ -64,8 +51,6 @@ void refreshDfPlayerFiles() {
     new_val = dfPlayer.getFolderTrackCount(2); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
-    delay(100);
-    DEBUG(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
   dawnSoundsCount = val < 0 ? 0 : val;
 
@@ -76,8 +61,6 @@ void refreshDfPlayerFiles() {
     new_val = dfPlayer.getFolderTrackCount(3); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
-    delay(100);
-    DEBUG(F("."));
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
   noteSoundsCount = val < 0 ? 0 : val;
 
@@ -97,14 +80,10 @@ void PlayAlarmSound() {
   }
   // Установлен корректный звук?
   if (sound > 0) {
-    dfPlayer.stop();
-    delay(GUARD_DELAY);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
-    dfPlayer.setVolume(constrain(maxAlarmVolume,1,30));
-    delay(GUARD_DELAY);
-    dfPlayer.playFolderTrack(1, sound);
-    delay(GUARD_DELAY);
-    dfPlayer.setRepeatPlayCurrentTrack(true);
-    delay(GUARD_DELAY);    
+    dfPlayer.stop();                                    delay(GUARD_DELAY);  // Без этих задержек между вызовами функция dfPlayer приложение крашится.
+    dfPlayer.setVolume(constrain(maxAlarmVolume,1,30)); delay(GUARD_DELAY);
+    dfPlayer.playFolderTrack(1, sound);                 delay(GUARD_DELAY);
+    dfPlayer.setRepeatPlayCurrentTrack(true);           delay(GUARD_DELAY);    
     alarmSoundTimer.setInterval(alarmDuration * 60L * 1000L);
     alarmSoundTimer.reset();
     set_isPlayAlarmSound(true);
@@ -127,14 +106,10 @@ void PlayDawnSound() {
   }
   // Установлен корректный звук?
   if (sound > 0) {
-    dfPlayer.stop();
-    delay(GUARD_DELAY);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
-    dfPlayer.setVolume(1);
-    delay(GUARD_DELAY);
-    dfPlayer.playFolderTrack(2, sound);
-    delay(GUARD_DELAY);
-    dfPlayer.setRepeatPlayCurrentTrack(true);
-    delay(GUARD_DELAY);
+    dfPlayer.stop();                          delay(GUARD_DELAY); // Без этих задержек между вызовами функция dfPlayer приложение крашится.
+    dfPlayer.setVolume(1);                    delay(GUARD_DELAY);
+    dfPlayer.playFolderTrack(2, sound);       delay(GUARD_DELAY);
+    dfPlayer.setRepeatPlayCurrentTrack(true); delay(GUARD_DELAY);
     // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
     fadeSoundDirection = 1;   
     fadeSoundStepCounter = maxAlarmVolume;
@@ -156,14 +131,13 @@ void StopSound(int16_t duration) {
   set_isPlayAlarmSound(false);
 
   if (duration <= 0) {
-    dfPlayer.stop();
-    delay(GUARD_DELAY);
-    dfPlayer.setVolume(0);
+    dfPlayer.stop();       delay(GUARD_DELAY);
+    dfPlayer.setVolume(0); delay(GUARD_DELAY);
     return;
   }
   
   // Чтение текущего уровня звука часто глючит и возвращает 0. Тогда использовать maxAlarmVolume
-  fadeSoundStepCounter = dfPlayer.getVolume();
+  fadeSoundStepCounter = dfPlayer.getVolume(); delay(GUARD_DELAY);
   if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = maxAlarmVolume;
   if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
     
@@ -194,12 +168,6 @@ public:
     Serial.println(action);
   }
   static void printErrorDetail(uint8_t type){
-/*    
-    DfMp3_Error_PacketSize,
-    DfMp3_Error_PacketHeader,
-    DfMp3_Error_PacketChecksum,
-    DfMp3_Error_General = 0xff
- */
     DEBUG(F("DFPlayerError: "));
     switch (type) {
       case DfMp3_Error_RxTimeout:
@@ -251,11 +219,11 @@ public:
     Serial.print("Трек завершен #");
     Serial.println(track);  
     if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
-      dfPlayer.stop();
+      dfPlayer.stop(); delay(GUARD_DELAY);
     } else
     // Перезапустить заук, если установлен его повтор
     if (runTextSound > 0 && runTextSoundRepeat) {
-      dfPlayer.playFolderTrack(3, runTextSound);
+      dfPlayer.playFolderTrack(3, runTextSound); delay(GUARD_DELAY);
     }    
   }
   static void OnPlaySourceOnline(DfMp3& mp3, DfMp3_PlaySources source)

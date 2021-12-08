@@ -110,10 +110,9 @@ void doEffectWithOverlay(uint8_t aMode) {
       #if (USE_MP3 == 1)
       if (runTextSound >= 0) {
         if (isDfPlayerOk && noteSoundsCount > 0) {
-          dfPlayer.stop();
-          delay(10);
-          dfPlayer.setVolume(constrain(maxAlarmVolume,1,30));
-          dfPlayer.playFolderTrack(3, runTextSound);
+          dfPlayer.stop();                                     delay(GUARD_DELAY);
+          dfPlayer.setVolume(constrain(maxAlarmVolume,1,30));  delay(GUARD_DELAY);
+          dfPlayer.playFolderTrack(3, runTextSound);           delay(GUARD_DELAY);
         } else {
           runTextSound = -1;
           runTextSoundRepeat = false;
@@ -199,7 +198,7 @@ void doEffectWithOverlay(uint8_t aMode) {
       if (runTextSound >= 0) {
         runTextSound = -1;
         runTextSoundRepeat = false;
-        dfPlayer.stop();
+        dfPlayer.stop(); delay(GUARD_DELAY);
       }
     #endif
 

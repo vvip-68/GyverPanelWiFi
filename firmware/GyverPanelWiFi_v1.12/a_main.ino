@@ -1053,7 +1053,7 @@ void parsing() {
               // Остановить будильник, если он сработал
               #if (USE_MP3 == 1)
               if (isDfPlayerOk) {
-                dfPlayer.stop();
+                dfPlayer.stop(); delay(GUARD_DELAY);
               }
               set_soundFolder(0);
               set_soundFile(0);
@@ -2034,7 +2034,7 @@ void parsing() {
               //   VV    - максимальная громкость
               //   MA    - номер файла звука будильника
               //   MB    - номер файла звука рассвета
-              dfPlayer.stop();
+              dfPlayer.stop(); delay(GUARD_DELAY);
               set_soundFolder(0);
               set_soundFile(0);
               set_isAlarming(false);
@@ -2060,12 +2060,12 @@ void parsing() {
               } else {
                 b_tmp = intData[3] - 2;  // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
                 if (b_tmp > 0 && b_tmp <= alarmSoundsCount) {
-                  dfPlayer.stop();
+                  dfPlayer.stop(); delay(GUARD_DELAY);
                   set_soundFolder(1);
                   set_soundFile(b_tmp);
-                  dfPlayer.setVolume(constrain(intData[4],0,30));
-                  dfPlayer.playFolderTrack(soundFolder, soundFile);
-                  dfPlayer.setRepeatPlayCurrentTrack(true);
+                  dfPlayer.setVolume(constrain(intData[4],0,30));   delay(GUARD_DELAY);
+                  dfPlayer.playFolderTrack(soundFolder, soundFile); delay(GUARD_DELAY);
+                  dfPlayer.setRepeatPlayCurrentTrack(true);         delay(GUARD_DELAY);
                 } else {
                   set_soundFolder(0);
                   set_soundFile(0);
@@ -2086,14 +2086,14 @@ void parsing() {
                 set_soundFolder(0);
                 set_soundFile(0);
               } else {
-                dfPlayer.stop();
+                dfPlayer.stop(); delay(GUARD_DELAY);
                 b_tmp = intData[3] - 2; // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
                 if (b_tmp > 0 && b_tmp <= dawnSoundsCount) {
                   set_soundFolder(2);
                   set_soundFile(b_tmp);
-                  dfPlayer.setVolume(constrain(intData[4],0,30));
-                  dfPlayer.playFolderTrack(soundFolder, soundFile);
-                  dfPlayer.setRepeatPlayCurrentTrack(true);
+                  dfPlayer.setVolume(constrain(intData[4],0,30));   delay(GUARD_DELAY);
+                  dfPlayer.playFolderTrack(soundFolder, soundFile); delay(GUARD_DELAY);
+                  dfPlayer.setRepeatPlayCurrentTrack(true);         delay(GUARD_DELAY);
                 } else {
                   set_soundFolder(0);
                   set_soundFile(0);
@@ -2108,7 +2108,7 @@ void parsing() {
              // $20 5 VV; - установить уровень громкости проигрывания примеров (когда уже играет)
              //    VV - уровень громкости
              set_maxAlarmVolume(constrain(intData[2],0,30));
-             dfPlayer.setVolume(maxAlarmVolume);
+             dfPlayer.setVolume(maxAlarmVolume); delay(GUARD_DELAY);
             }
             #endif
             break;
