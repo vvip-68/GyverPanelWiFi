@@ -4094,10 +4094,10 @@ void sendAcknowledge(eSources src) {
   if (src == UDP || src == BOTH) {
     // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
     String reply = "";
-    uint8_t L = 0; // +++
+    uint8_t L = 0;
 
     if (cmd95.length() > 0) { 
-      reply = cmd95; cmd95 = "";
+      reply = "$18 " + cmd95; cmd95 = "";
       L = reply.length();
       if (L > 0 && reply[L-1] != ';') {
         reply += ";"; L++;
@@ -4113,7 +4113,7 @@ void sendAcknowledge(eSources src) {
     }
     
     if (cmd96.length() > 0) { 
-      reply = cmd96; cmd96 = "";
+      reply = "$18 " + cmd96; cmd96 = "";
       L = reply.length();
       if (L > 0 && reply[L-1] != ';') {
         reply += ";"; L++;

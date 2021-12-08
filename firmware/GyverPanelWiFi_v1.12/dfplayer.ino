@@ -1,8 +1,9 @@
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
   DEBUGLN(F("\nИнициализация MP3-плеера..."));  
-  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
-  dfPlayer.begin();
+  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX, false, 128);
+  delay(250);  
+  dfPlayer.begin(9600);
   delay(1000);  
   initTimeout = false;
   dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd); delay(GUARD_DELAY);
