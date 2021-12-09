@@ -39,8 +39,16 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для будильника
   int16_t cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.getFolderTrackCount(1);     delay(GUARD_DELAY);    
+    // Если запрос выполнялся более 5 секунд - DFPlayer не ответил - он неработоспособен
+    // Выполнять чтение дальше смысла нет - это только "завешивает" прошивку.
+    uint32_t ms1 = millis();    
+    val = dfPlayer.getFolderTrackCount(1);     delay(GUARD_DELAY);
+    yield();
+    uint32_t ms2 = millis();  
+    // Плеер не ответил за отведенное время? - Завершить процедуру опроса.      
+    if (ms2 - ms1 > 5000) return;
     new_val = dfPlayer.getFolderTrackCount(1); delay(GUARD_DELAY);    
+    yield();
     if (val == new_val && val != 0) break;
     cnt++;
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);
@@ -50,7 +58,9 @@ void refreshDfPlayerFiles() {
   cnt = 0, val = 0, new_val = 0; 
   do {
     val = dfPlayer.getFolderTrackCount(2);     delay(GUARD_DELAY);
+    yield();
     new_val = dfPlayer.getFolderTrackCount(2); delay(GUARD_DELAY);     
+    yield();
     if (val == new_val && val != 0) break;
     cnt++;
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);    
@@ -60,7 +70,9 @@ void refreshDfPlayerFiles() {
   cnt = 0, val = 0, new_val = 0; 
   do {
     val = dfPlayer.getFolderTrackCount(3);     delay(GUARD_DELAY);
+    yield();
     new_val = dfPlayer.getFolderTrackCount(3); delay(GUARD_DELAY);     
+    yield();
     if (val == new_val && val != 0) break;
     cnt++;
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);    

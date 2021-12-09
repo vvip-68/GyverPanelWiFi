@@ -12,6 +12,7 @@
 [JinxFramer - редактор анимации, роликов, картинок пользователя](https://github.com/vvip-68/GyverPanelWiFi/wiki/JinxFramer---редактор-анимации,-роликов,-картинок)  
 [Загрузка изображений в файловую систему МК](https://github.com/vvip-68/GyverPanelWiFi/wiki/Загрузка-изображений-в-файловую-систему-МК)  
 [Экспорт эффектов анимации из ПО «Jinx!»](https://github.com/vvip-68/GyverPanelWiFi/wiki/Экспорт-эффектов-анимации-из-ПО-«Jinx!»)  
+[Захват видео программой «Jinx!»](https://github.com/vvip-68/GyverPanelWiFi/wiki/Захват-видео-программой-«Jinx!»)  
 [Как добавить свою анимацию](https://github.com/vvip-68/GyverPanelWiFi/wiki/Добавление-своей-анимации--к-эффекту-«Анимация»)  
 
 [API управления устройством](https://github.com/vvip-68/GyverPanelWiFi/wiki/API-управления-устройством)  
