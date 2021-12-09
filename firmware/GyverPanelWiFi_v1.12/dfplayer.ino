@@ -1,13 +1,15 @@
 void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
-  DEBUGLN(F("\nИнициализация MP3-плеера..."));  
-  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX, false, 128);
+  DEBUGLN(F("\nИнициализация MP3-плеера..."));
+  isDfPlayerOk = true;
+  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX, false, 256);
   delay(250);  
   dfPlayer.begin(9600);
   delay(1000);  
-  initTimeout = false;
+  uint32_t ms1 = millis();    
   dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd); delay(GUARD_DELAY);
-  if (initTimeout) {
+  uint32_t ms2 = millis();      
+  if (ms2 - ms1 > 5000) {
     set_isDfPlayerOk(false);  
   } else {
     dfPlayer.setEq(DfMp3_Eq_Normal);               delay(GUARD_DELAY);
@@ -18,7 +20,6 @@ void InitializeDfPlayer1() {
 
 void InitializeDfPlayer2() {    
 #if (USE_MP3 == 1)
-  DEBUG(F("\nИнициализация MP3 плеера."));
   refreshDfPlayerFiles();    
   DEBUGLN(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
   DEBUGLN(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));
@@ -34,7 +35,7 @@ void InitializeDfPlayer2() {
 void refreshDfPlayerFiles() {
   // Чтение почему-то не всегда работает, иногда возвращает 0 или число от какого-то предыдущего запроса
   // Для того, чтобы наверняка считать значение - первое прочитанное игнорируем, потом читаем несколько раз до повторения.
-
+  DEBUGLN(F("Поиск файлов на карте плеера..."));
   // Папка с файлами для будильника
   int16_t cnt = 0, val = 0, new_val = 0; 
   do {
@@ -42,7 +43,7 @@ void refreshDfPlayerFiles() {
     new_val = dfPlayer.getFolderTrackCount(1); delay(GUARD_DELAY);    
     if (val == new_val && val != 0) break;
     cnt++;
-  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);
+  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);
   alarmSoundsCount = val < 0 ? 0 : val;
   
   // Папка с файлами для рассвета
@@ -52,7 +53,7 @@ void refreshDfPlayerFiles() {
     new_val = dfPlayer.getFolderTrackCount(2); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
-  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
+  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);    
   dawnSoundsCount = val < 0 ? 0 : val;
 
   // Папка с файлами для звуков в бегущей строке
@@ -62,7 +63,7 @@ void refreshDfPlayerFiles() {
     new_val = dfPlayer.getFolderTrackCount(3); delay(GUARD_DELAY);     
     if (val == new_val && val != 0) break;
     cnt++;
-  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
+  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);    
   noteSoundsCount = val < 0 ? 0 : val;
 
   DEBUGLN();  
@@ -172,8 +173,7 @@ public:
     DEBUG(F("DFPlayerError: "));
     switch (type) {
       case DfMp3_Error_RxTimeout:
-        initTimeout = true;
-        // DEBUGLN(F("Таймаут!"));
+        DEBUGLN(F("Таймаут!"));
         break;
       case DfMp3_Error_SerialWrongStack:
         DEBUGLN(F("Ошибка стека!"));
