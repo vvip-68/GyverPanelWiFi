@@ -95,7 +95,7 @@ void process() {
   // Если включен эффект с кодом большим кол-ва эффектов (но меньшим кода специальных эффектов) - 
   // выбрать случайный эффект, иначе будет отображаться черный экран или застывший предыдущий эффект
   if (thisMode >= MAX_EFFECT && thisMode < SPECIAL_EFFECTS_START) {
-    setRandomMode2(); 
+    setRandomMode(); 
   }
 
   // Эффект сменился?  tmpSaveMode - эффект, который был на предыдущем шаге цикла, thisMode - текущий эффект
@@ -103,7 +103,7 @@ void process() {
     if (effect_name.length() == 0) {
       // Если режим отсутствует в списке эффектов - имя пустое - включить случайный, 
       // на следующем цикле tmpSaveMode != thisMode - имя будет определено снова
-      setRandomMode2(); 
+      setRandomMode(); 
     } else {
       #if (USE_E131 == 1)
       if (!(e131_streaming && workMode == SLAVE)) {
@@ -1386,7 +1386,7 @@ void parsing() {
           // Если в приложении выбраны часы, но они недоступны из-за размеров матрицы - брать другой случайный эффект
           if (tmp_eff == MC_CLOCK){
              if (!(allowHorizontal || allowVertical)) {
-               setRandomMode2();
+               setRandomMode();
              }
           } 
           */         
@@ -1394,7 +1394,7 @@ void parsing() {
           // Если в приложении выбраны часы, но они недоступны из-за размеров матрицы - брать другой случайный эффект
           if (tmp_eff == MC_CLOCK){
             if (!(allowHorizontal || allowVertical)) {
-              setRandomMode2();
+              setRandomMode();
             } else {
               setSpecialMode(10);    // Дневные часы. Для ночных - 8
             }
@@ -1644,7 +1644,7 @@ void parsing() {
              b_tmp = intData[2] > 0 || (intData[2] == 0 && textLines[0].charAt(0) != '#');
              if (b_tmp) {              
                if (thisMode == MC_TEXT){
-                  setRandomMode2();
+                  setRandomMode();
                } 
                nextTextLineIdx = intData[2];  // nextTextLineIdx - индекс следующей принудительно отображаемой строки
                ignoreTextOverlaySettingforEffect = true;
@@ -1787,7 +1787,7 @@ void parsing() {
           idleTimer.reset();
           if (thisMode == MC_FILL_COLOR && globalColor == 0x000000) {
             // Было выключено, режим "Лампа" с черным цветом - включить случайный режим
-            setRandomMode2();
+            setRandomMode();
           }
         }
         
@@ -4296,13 +4296,6 @@ void showCurrentIP(bool autoplay) {
 }
 
 void setRandomMode() {
-    String   s_tmp = String(EFFECT_LIST);    
-    uint32_t cnt = CountTokens(s_tmp, ','); 
-    uint8_t  ef = random8(0, cnt); 
-    setEffect(ef);
-}
-
-void setRandomMode2() {
   
   uint8_t newMode, cnt = 0;
   

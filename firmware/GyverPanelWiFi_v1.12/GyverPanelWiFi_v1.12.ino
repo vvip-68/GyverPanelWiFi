@@ -360,7 +360,7 @@ void setup() {
   } else {
     set_thisMode(getCurrentManualMode());
     if (thisMode < 0 || thisMode == MC_TEXT || thisMode >= SPECIAL_EFFECTS_START) {
-      setRandomMode2();
+      setRandomMode();
     } else {
       setEffect(thisMode);        
     }

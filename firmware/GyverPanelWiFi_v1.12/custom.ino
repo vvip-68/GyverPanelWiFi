@@ -556,6 +556,7 @@ void releaseEffectResources(uint8_t aMode) {
 // ********************* ОСНОВНОЙ ЦИКЛ РЕЖИМОВ *******************
 
 static void nextMode() {
+  gameOverFlag = false;
 #if (SMOOTH_CHANGE == 1)
   fadeMode = 0;
   modeDir = true;
@@ -565,6 +566,7 @@ static void nextMode() {
 }
 
 static void prevMode() {
+  gameOverFlag = false;
 #if (SMOOTH_CHANGE == 1)
   fadeMode = 0;
   modeDir = false;
@@ -576,7 +578,7 @@ static void prevMode() {
 void nextModeHandler() {
 
   if (useRandomSequence) {
-    setRandomMode2();
+    setRandomMode();
     return;
   }
 
@@ -633,7 +635,7 @@ void nextModeHandler() {
 void prevModeHandler() {
 
   if (useRandomSequence) {
-    setRandomMode2();
+    setRandomMode();
     return;
   }
 
@@ -788,7 +790,16 @@ void checkIdleState() {
   
   if (idleState) {
     uint32_t ms = millis();
-    if ((ms - autoplayTimer > autoplayTime) && !(manualMode || e131_wait_command)) {    // таймер смены режима
+  //if ((ms - autoplayTimer > autoplayTime) && !(manualMode || e131_wait_command)) {    // таймер смены режима
+    if (((ms - autoplayTimer > autoplayTime) // таймер смены режима
+           // при окончании игры не начинать ее снова
+           || gameOverFlag && !repeat_play 
+           #if (USE_SD == 1)
+           // если файл с SD-карты проигрался до конца - сменить эффект
+           || (thisMode == MC_SDCARD && play_file_finished)
+           #endif
+        ) && !(manualMode || e131_wait_command)
+      ) {    
       bool ok = true;
       if (
          (thisMode == MC_TEXT     && !fullTextFlag) ||   // Эффект "Бегущая строка" (показать IP адрес) не сменится на другой, пока вся строка не будет показана полностью
