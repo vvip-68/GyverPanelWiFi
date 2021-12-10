@@ -1,6 +1,7 @@
 [Варианты устройств. Схемы.](https://github.com/vvip-68/GyverPanelWiFi/wiki/Варианты-устройств.-Схемы.)  
 [Сборная матрица](https://github.com/vvip-68/GyverPanelWiFi/wiki/Сборная-матрица)   
 [Всё собрал, ничего не работает.](https://github.com/vvip-68/GyverPanelWiFi/wiki/Всё-собрал,-ничего-не-работает.)  
+[Три шага к успеху. Некоторые особенности настроек...](https://github.com/vvip-68/GyverPanelWiFi/wiki/Три-шага-к-успеху.-Некоторые-особенности-настроек...)  
 
 [Пошаговая инструкция подготовки среды для проекта](https://github.com/vvip-68/GyverPanelWiFi/wiki/Пошаговая-инструкция-подготовки-среды-для-проекта)  
 [Настройка скетча для вашего устройства](https://github.com/vvip-68/GyverPanelWiFi/wiki/Настройка-скетча-для-вашего-устройства)  
@@ -18,7 +19,6 @@
 [API управления устройством](https://github.com/vvip-68/GyverPanelWiFi/wiki/API-управления-устройством)  
 [API управления устройством по каналу MQTT](https://github.com/vvip-68/GyverPanelWiFi/wiki/API-управления-устройством-по-каналу-MQTT)   
 [Интеграция в Умный дом](https://github.com/vvip-68/GyverPanelWiFi/wiki/Интеграция-в-Умный-дом)  
-[Три шага к успеху. Некоторые особенности настроек...](https://github.com/vvip-68/GyverPanelWiFi/wiki/Три-шага-к-успеху.-Некоторые-особенности-настроек...)  
 [Большие буквы в бегущей строке](https://github.com/vvip-68/GyverPanelWiFi/wiki/Большие-буквы-в-бегущей-строке)  
 
 #### [Синхронизация устройств](https://github.com/vvip-68/GyverPanelWiFi/wiki/Синхронизация-устройств)  

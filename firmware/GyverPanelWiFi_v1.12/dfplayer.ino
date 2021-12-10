@@ -2,18 +2,21 @@ void InitializeDfPlayer1() {
 #if (USE_MP3 == 1)
   DEBUGLN(F("\nИнициализация MP3-плеера..."));
   isDfPlayerOk = true;
-  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX, false, 256);
-  delay(250);  
+  mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);
   dfPlayer.begin(9600);
   delay(1000);  
+  // Попытка СЧИТАТЬ данные с плеера, чтобы если плеера нет - получить ошибку, т.к.
+  // при отправке команд в плеер библиотека плеера не ждет ответа (подтверждения выполнения команды)
+  // и нет возможности выяснить есть ли плеер на самом деле.
   uint32_t ms1 = millis();    
-  dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd); delay(GUARD_DELAY);
+  dfPlayer.getVolume();                              delay(GUARD_DELAY);
   uint32_t ms2 = millis();      
   if (ms2 - ms1 > 5000) {
     set_isDfPlayerOk(false);  
   } else {
-    dfPlayer.setEq(DfMp3_Eq_Normal);               delay(GUARD_DELAY);
-    dfPlayer.setVolume(1);                         delay(GUARD_DELAY);
+    dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd); delay(GUARD_DELAY);
+    dfPlayer.setEq(DfMp3_Eq_Normal);                 delay(GUARD_DELAY);
+    dfPlayer.setVolume(1);                           delay(GUARD_DELAY);
   }
 #endif  
 }
