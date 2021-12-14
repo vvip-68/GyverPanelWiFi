@@ -251,6 +251,8 @@ public:
   static void OnPlaySourceInserted(DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "вставлена");
+    InitializeDfPlayer2();
+    if (!isDfPlayerOk) DEBUGLN(F("MP3 плеер недоступен."));    
   }
   static void OnPlaySourceRemoved(DfMp3& mp3, DfMp3_PlaySources source)
   {
