@@ -182,7 +182,7 @@ void demoMaze() {
 }
 
 bool checkPath(int8_t x, int8_t y) {
-  // если проверяемая клетка является путью к выходу
+  // если проверяемая клетка является путём к выходу
   if ( (maze[(playerPos[1] + y + SHIFT) * MAZE_WIDTH + (playerPos[0] + x + SHIFT)]) == 2) {
     maze[(playerPos[1] + SHIFT) * MAZE_WIDTH + (playerPos[0] + SHIFT)] = 4;   // убираем текущую клетку из пути (2 - метка пути, ставим любое число, например 4)
     return true;
@@ -294,7 +294,7 @@ void CarveMaze(char *maze, int8_t width, int8_t height, int8_t x, int8_t y) {
   }
 }
 
-// генерацтор лабиринта
+// генератор лабиринта
 void GenerateMaze(char *maze, int8_t width, int8_t height) {
   uint16_t x, y;
   for (x = 0; x < width * height; x++) {

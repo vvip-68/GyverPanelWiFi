@@ -138,7 +138,7 @@ void sdcardRoutine() {
      else if (getEffectScaleParamValue2(MC_SDCARD) == 0)
        currentFile = -2;                               // Случайный порядок
      else if (getEffectScaleParamValue2(MC_SDCARD) == 1)
-       currentFile = -1;                               // Последоватедбное воспроизведение
+       currentFile = -1;                               // Последовательное воспроизведение
      else
        currentFile = getEffectScaleParamValue2(MC_SDCARD) - 2; // Указанный выбранный файл эффектов
 

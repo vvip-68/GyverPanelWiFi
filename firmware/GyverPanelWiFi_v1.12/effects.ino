@@ -210,7 +210,7 @@ void swirlRoutine() {
   uint32_t ms = millis();  
   float spd = (map8(255-getEffectSpeedValue(MC_SWIRL), 50, 100) / 100.0) / (USE_SEGMENTS_PAINTBALL != 0 ? 1 : (float)seg_num);
 
-  // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
+  // Отрисовка режима происходит на максимальной скорости. Значение effectSpeed влияет на параметр BPM функции beatsin8
   // The easiest way to construct this is to multiply a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796 in this case), and pass that as the 16-bit BPM argument.
   uint8_t m1 = (41.0 * spd) + 0.51;
   uint8_t m2 = (27.0 * spd) + 0.51;
@@ -370,7 +370,7 @@ void rainbowRoutine() {
   }
 }
 
-// *********** радуга дигональная ***********
+// *********** радуга диагональная ***********
 
 void rainbowDiagonal() {
   uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
@@ -709,7 +709,7 @@ void matrixRoutine() {
   }
   
   uint8_t  effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
-  uint32_t cut_out = pHEIGHT < 10 ? 0x40 : 0x20; // на 0x004000 хвосты мматрицы короткие (4 точки), на 0x002000 - длиннее (8 точек)
+  uint32_t cut_out = pHEIGHT < 10 ? 0x40 : 0x20; // на 0x004000 хвосты матрицы короткие (4 точки), на 0x002000 - длиннее (8 точек)
 
   for (uint8_t x = 0; x < pWIDTH; x++) {
     // заполняем случайно верхнюю строку
@@ -923,9 +923,9 @@ void lightersRoutine() {
 
 // ********************* БУДИЛЬНИК-РАССВЕТ *********************
 
-int8_t   row, col;                 // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (первая змейка для круговой спирали)
-int8_t   row2, col2;               // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (вторая змейка для плоской спирали)
-int8_t   dir, dir2;                // Для эффекта спирали на плоскости - направление движениия змейки: 0 - вниз; 1 - влево; 2 - вверх; 3 - вправо; 
+int8_t   row, col;                 // Для эффекта спирали  - точка "головы" змейки, бегающей по спирали (первая змейка для круговой спирали)
+int8_t   row2, col2;               // Для эффекта спирали  - точка "головы" змейки, бегающей по спирали (вторая змейка для плоской спирали)
+int8_t   dir, dir2;                // Для эффекта спирали на плоскости - направление движения змейки: 0 - вниз; 1 - влево; 2 - вверх; 3 - вправо;
 int8_t   range[4], range2[4];      // Для эффекта спирали на плоскости - границы разворачивания спирали; 
 uint16_t tail[8], tail2[8];        // Для эффекта спирали на плоскости - позиции хвоста змейки. HiByte = x, LoByte=y
 CHSV     tailColor;                // Цвет последней точки "хвоста" змейки. Этот же цвет используется для предварительной заливки всей матрицы
@@ -950,7 +950,7 @@ uint8_t dawnColorSat2[16] PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170
 
 #define MIN_DAWN_BRIGHT   2        // Минимальное значение яркости будильника (с чего начинается)
 #define MAX_DAWN_BRIGHT   255      // Максимальное значение яркости будильника (чем заканчивается)
-uint8_t DAWN_NINUTES = 20;            // Продолжительность рассыета в минутах
+uint8_t DAWN_NINUTES = 20;            // Продолжительность рассвета в минутах
 
 void dawnProcedure() {
 
@@ -1684,7 +1684,7 @@ void analyzerRoutine() {
   } else
   
   if (phase >= 4) {
-    // Случайные двиижения - "музыка"
+    // Случайные движения - "музыка"
     for (uint8_t i = 0; i < pWIDTH; i++) {
       posOffset[i] = random8(1,MAX_LEVEL);    
     }
@@ -1776,7 +1776,7 @@ void prizmataRoutine() {
   
   FastLED.clear();
 
-  // Отрисовка режима происходит на максимальной скорости. Знеачение effectSpeed влияет на параметр BPM функции beatsin8
+  // Отрисовка режима происходит на максимальной скорости. Значение effectSpeed влияет на параметр BPM функции beatsin8
   uint8_t spd = map8(255-getEffectSpeedValue(MC_PRIZMATA), 12, 64);   
   uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
 
@@ -1979,7 +1979,7 @@ void rainRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
     //modeCode = MC_RAIN;
-    cloudHeight = pHEIGHT * 0.2 + 1; // это уже 20% c лишеним, но на высоких матрицах будет чуть меньше
+    cloudHeight = pHEIGHT * 0.2 + 1; // это уже 20% с лишним, но на высоких матрицах будет чуть меньше
     
     if (noise3d == NULL) { noise3d = new uint8_t*[pWIDTH]; for (uint8_t i = 0; i < pWIDTH; i++) { noise3d[i] = new uint8_t [pHEIGHT]; }}
     if (line == NULL)    { line = new uint8_t[pWIDTH]; }
@@ -2069,7 +2069,7 @@ int8_t   arrow_x[4], arrow_y[4], stop_x[4], stop_y[4];
 uint8_t  arrow_direction;            // 0x01 - слева направо; 0x02 - снизу вверх; 0х04 - справа налево; 0х08 - сверху вниз
 uint8_t  arrow_mode, arrow_mode_orig;// 0 - по очереди все варианты
                                      // 1 - по очереди от края до края экрана; 
-                                     // 2 - одновременно по горизонтали навстречу к ентру, затем одновременно по вертикали навстречу к центру
+                                     // 2 - одновременно по горизонтали навстречу к центру, затем одновременно по вертикали навстречу к центру
                                      // 3 - одновременно все к центру
                                      // 4 - по два (горизонталь / вертикаль) все от своего края к противоположному, стрелки смещены от центра на 1/3
                                      // 5 - одновременно все от своего края к противоположному, стрелки смещены от центра на 1/3
@@ -2134,7 +2134,7 @@ void arrowsRoutine() {
     arrow_y[1]++;
   }
 
-  // движение стрелки - cправа налево
+  // движение стрелки - справа налево
   if ((arrow_direction & 0x04) > 0) {
     color = CHSV(arrow_hue[2], 255, effectBrightness);
     for (int8_t x = 0; x <= 4; x++) {
@@ -2149,7 +2149,7 @@ void arrowsRoutine() {
     arrow_x[2]--;
   }
 
-  // движение стрелки - cверху вниз
+  // движение стрелки - сверху вниз
   if ((arrow_direction & 0x08) > 0) {
     color = CHSV(arrow_hue[3], 255, effectBrightness);
     for (int8_t y = 0; y <= 4; y++) {
@@ -2170,7 +2170,7 @@ void arrowsRoutine() {
 
     case 1:
       // Последовательно - слева-направо -> снизу вверх -> справа налево -> сверху вниз и далее по циклу
-      // В каждый сомент времени сктивна только одна стрелка, если она дошла до края - переключиться на следующую и задать ее начальные координаты
+      // В каждый момент времени активна только одна стрелка, если она дошла до края - переключиться на следующую и задать ее начальные координаты
       arrow_complete = false;
       switch (arrow_direction) {
         case 1: arrow_complete = arrow_x[0] > stop_x[0]; break;

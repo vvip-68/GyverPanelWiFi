@@ -307,7 +307,7 @@ void doEffectWithOverlay(uint8_t aMode) {
             drawTemperature(CLOCK_XC);
             cal_or_temp_processed = true;
           } else {   
-            // Если показ календаря в часах включен - показать кадлендарь, иначе - вместо календаря снова показать температуру, если она включена         
+            // Если показ календаря в часах включен - показать календарь, иначе - вместо календаря снова показать температуру, если она включена
             if (showDateInClock || !init_weather) {
               drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
               cal_or_temp_processed = true;
@@ -330,7 +330,7 @@ void doEffectWithOverlay(uint8_t aMode) {
       uint8_t CLK_Y = CLOCK_Y;
 
       #if (USE_WEATHER == 1)       
-        // Если температура отрисовывается вместе с часами - позийия рисования такая же как у двухстрочного календаря
+        // Если температура отрисовывается вместе с часами - позиция рисования такая же как у двухстрочного календаря
         bool draw_temp = init_weather && showWeatherInClock && allow_two_row && CLOCK_ORIENT == 0;
         if (draw_temp) {
           CLK_Y = CALENDAR_Y + (c_size == 1 ? 6 : 9);
@@ -354,8 +354,8 @@ void doEffectWithOverlay(uint8_t aMode) {
     // Нарисовать текст в текущей позиции
     overlayDelayed = needOverlay;
     if (needOverlay) {
-      y_overlay_low  = getTextY() - 2;                      // Нижняя строка вывода строки текста -2 строки на подстрочные диакритич символы
-      y_overlay_high = y_overlay_low + LET_HEIGHT + 4;      // Высота букв +3 символа на диакритичексие надстрочныесимволы
+      y_overlay_low  = getTextY() - 2;                      // Нижняя строка вывода строки текста -2 строки на подстрочные диакритические символы
+      y_overlay_high = y_overlay_low + LET_HEIGHT + 4;      // Высота букв +3 символа на диакритические надстрочные символы
       if (y_overlay_low < 0) y_overlay_low = 0;
       if (y_overlay_high >= pHEIGHT) y_overlay_high = pHEIGHT - 1;
       overlayWrap();
@@ -803,7 +803,7 @@ void checkIdleState() {
       bool ok = true;
       if (
          (thisMode == MC_TEXT     && !fullTextFlag) ||   // Эффект "Бегущая строка" (показать IP адрес) не сменится на другой, пока вся строка не будет показана полностью
-      // (showTextNow && !fullTextFlag)             ||   // Если нужно чтобы эффект не менялся, пока не пробежит вся строка оверлеем - раскомментарить эту строку
+      // (showTextNow && !fullTextFlag)             ||   // Если нужно чтобы эффект не менялся, пока не пробежит вся строка оверлеем - раскомментировать эту строку
          (thisMode == MC_MAZE     && !gameOverFlag) ||   // Лабиринт не меняем на другой эффект, пока игра не закончится (не выйдем из лабиринта)
       // (thisMode == MC_SNAKE    && !gameOverFlag) ||   // Змейка долгая игра - не нужно дожидаться окончания, можно прервать
          (thisMode == MC_TETRIS   && !gameOverFlag) ||   // Тетрис не меняем на другой эффект, пока игра не закончится (стакан не переполнится)

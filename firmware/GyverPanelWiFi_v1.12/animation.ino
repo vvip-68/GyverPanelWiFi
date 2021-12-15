@@ -625,7 +625,7 @@ static uint32_t expandColor(uint16_t color) {
 }
 
 // ---------------------------------------------------
-// Сохранение/Загрузка/Удаление/Получение спивка
+// Сохранение/Загрузка/Удаление/Получение списка
 // изображений, которые пользователь нарисовал на матрице
 // в программе WiFiPlayer
 // ---------------------------------------------------
@@ -638,7 +638,7 @@ String openImage(String storage, String fName) {
   String directoryName = "/" + String(pWIDTH) + "p" + String(pHEIGHT);
   String fileName = directoryName + "/" + fName + ".p";
 
-  // Если нет поддержки SD=карты - работать с внутренней файловаой системой МК
+  // Если нет поддержки SD=карты - работать с внутренней файловой системой МК
   if (USE_SD == 0) storage = "FS";
 
   #if (USE_SD == 1)
@@ -729,7 +729,7 @@ String saveImage(String storage, String fName) {
   String directoryName = "/" + String(pWIDTH) + "p" + String(pHEIGHT);
   String fileName = directoryName + "/" + fName + ".p";
 
-  // Если нет поддержки SD=карты - работать с внутренней файловаой системой МК
+  // Если нет поддержки SD=карты - работать с внутренней файловой системой МК
   if (USE_SD == 0) storage = "FS";
 
   DEBUG(F("Сохранение файла: "));
