@@ -88,7 +88,7 @@ void loadDirectory() {
       // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
       int16_t p = file_name.lastIndexOf("/");
       if (p>=0) file_name = file_name.substring(p + 1);
-      p = file_name.indexOf(".");
+      p = file_name.lastIndexOf(".");
       if (p>=0) file_name = file_name.substring(0, p);
             
       DEBUG("  ");
