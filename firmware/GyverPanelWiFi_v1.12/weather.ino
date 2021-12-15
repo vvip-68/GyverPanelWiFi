@@ -6,7 +6,7 @@ bool getWeather() {
   // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
   // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&lang=ru&appid=6a4ba421859c9f4166697758b68d889b
 
-  // Пока включена отладка позийионирования часов - запросы на температуру не выполнять
+  // Пока включена отладка позиционирования часов - запросы на температуру не выполнять
   if (debug_hours >= 0 && debug_mins >= 0) return true;
   
   if (!wifi_connected || useWeather == 0) return false;  
@@ -319,7 +319,7 @@ void decodeWeather2(){
   else if (hasNight)           
     dayTime = F("Темное время суток");   // Сейчас ночь
 
-  // Расшифровка погоды при указании в запросe "&lang=ru" сразу возвращается на нужном языке и нет
+  // Расшифровка погоды при указании в запросе "&lang=ru" сразу возвращается на нужном языке и нет
   // надобности расшифровывать код. Если почему-то расшифровка оказалась пуста - создать ее из кода погодных условия.
   if (weather.length() > 0) return;
   
@@ -539,7 +539,7 @@ void weatherRoutine() {
       if (edc_t == 1) temp_width -= 1;            // 1 занимает 2 колонки а не 3
     }
 
-    // Если температура 0 - нужно рисовать занк градуса или букву 'c'
+    // Если температура 0 - нужно рисовать знак градуса или букву 'c'
     // Если температура другая - для большого шрифта, если позволяет место - рисовать знак градуса. Если не позволяет - не рисовать.
     bool need_deg = (t == 0) || (big_font && t != 0);
     if (need_deg) temp_width += (big_font ? (t == 0 ? 0 : 4) : (t == 0 ? 3 : 0));    
@@ -557,7 +557,7 @@ void weatherRoutine() {
 
     // Координаты вывода изображения - центрировать
     image_desc.options = 1+2+4+16;             // Центрировать по вертикали/горизонтали, есть прозрачные пиксели, перед отрисовкой кадра - заливать цветом
-    image_desc.transparent_color = 0x000000;   // Ролзоачные пиксели - черные
+    image_desc.transparent_color = 0x000000;   // Прозрачные пиксели - черные
     image_desc.background_color = 0x000000;    // Заливка - черная (?)
     image_desc.draw_frame_interval = 2500;     // Интервал перехода к следующей картинке
     image_desc.draw_row_interval = 0;          // Рисовка - картинка целиком
@@ -734,7 +734,7 @@ void weatherRoutine() {
       for(uint8_t i = 0; i < 3; i++) {
         drawPixelXY(getClockX(temp_x + i), temp_y + 2 + dy, color);      
       }      
-      // Для плюcа - вертикальная черта
+      // Для плюса - вертикальная черта
       if (temperature > 0) {
         drawPixelXY(getClockX(temp_x + 1), temp_y + 1 + dy, color);
         drawPixelXY(getClockX(temp_x + 1), temp_y + 3 + dy, color);

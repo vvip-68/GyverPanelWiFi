@@ -15,7 +15,7 @@ void loadSettings() {
   //   12 - IP[2]                                                                                            // - " -                         // - " -
   //   13 - IP[3]                                                                                            // - " -                         // - " -
   //   14 - Использовать режим точки доступа                                                                 // getUseSoftAP()                // putUseSoftAP(useSoftAP)
-  //   15 - ориентация часов горизонтально / веритикально                                                    // getClockOrientation()         // putClockOrientation(CLOCK_ORIENT)
+  //   15 - ориентация часов горизонтально / вертикально                                                    // getClockOrientation()         // putClockOrientation(CLOCK_ORIENT)
   //   16 - Отображать с часами текущую дату                                                                 // getShowDateInClock()          // putShowDateInClock(showDateInClock)
   //   17 - Кол-во секунд отображения даты                                                                   // getShowDateDuration()         // putShowDateDuration(showDateDuration)
   //   18 - Отображать дату каждые N секунд                                                                  // getShowDateInterval()         // putShowDateInterval(showDateInterval)
@@ -96,8 +96,8 @@ void loadSettings() {
   //  174 - Использовать сервис получения погоды 0- нет, 1 - Yandex; 2 - OpenWeatherMap                      // getUseWeather()                // putUseWeather(useWeather)
   //  175 - Период запроса информации о погоде в минутах                                                     // getWeatherInterval()           // putWeatherInterval(SYNC_WEATHER_PERIOD)
   // 176,177,178,179 - Код региона Yandex для получения погоды (4 байта - uint32_t)                          // getWeatherRegion()             // putWeatherRegion(regionID)
-  //  180 - цвет температуры в дневных часах: 0 - цвет часов; 1 - цвет в зависимости от теммпературы         // getUseTemperatureColor()       // putUseTemperatureColor(useTemperatureColor)
-  //  181 - цвет температуры в ночных часах:  0 - цвет часов; 1 - цвет в зависимости от теммпературы         // getUseTemperatureColorNight()  // putUseTemperatureColorNight(useTemperatureColorNight)
+  //  180 - цвет температуры в дневных часах: 0 - цвет часов; 1 - цвет в зависимости от температуры         // getUseTemperatureColor()       // putUseTemperatureColor(useTemperatureColor)
+  //  181 - цвет температуры в ночных часах:  0 - цвет часов; 1 - цвет в зависимости от температуры         // getUseTemperatureColorNight()  // putUseTemperatureColorNight(useTemperatureColorNight)
   // 182-206 - MQTT сервер (24 симв)                                                                         // getMqttServer().toCharArray(mqtt_server, 24)  // putMqttServer(String(mqtt_server))       // char mqtt_server[25] = ""
   // 207-221 - MQTT user (14 симв)                                                                           // getMqttUser().toCharArray(mqtt_user, 14)      // putMqttUser(String(mqtt_user))           // char mqtt_user[15] = ""
   // 222-236 - MQTT pwd (14 симв)                                                                            // getMqttPass().toCharArray(mqtt_pass, 14)      // putMqttPass(String(mqtt_pass))           // char mqtt_pass[15] = ""
@@ -166,10 +166,10 @@ void loadSettings() {
       OVERLAY_SIZE = pHEIGHT < 17 ? pWIDTH * pHEIGHT : pWIDTH * 17;
     #elif (BIG_FONT == 1)
       // Шрифт размером 10x16
-      OVERLAY_SIZE  =  pWIDTH * 21;                    // высотв шрифта 16 + 3 строки диакритич символов над знакоместом и две - под знакоместом
+      OVERLAY_SIZE  =  pWIDTH * 21;                    // высота шрифта 16 + 3 строки диакритич символов над знакоместом и две - под знакоместом
     #else
       // Шрифт размером 8x13
-      OVERLAY_SIZE =   pWIDTH * 18;                    // высотв шрифта 13 + 3 строки диакритич символов над знакоместом и две - под знакоместом
+      OVERLAY_SIZE =   pWIDTH * 18;                    // высота шрифта 13 + 3 строки диакритич символов над знакоместом и две - под знакоместом
     #endif
     
     globalBrightness = getMaxBrightness();
@@ -1526,7 +1526,7 @@ void loadTexts() {
   uint8_t  idx = 0;                           
   bool     finished = false;
 
-  memoryAvail = (EEPROM_MAX - TEXT_EEPROM) / 2;    // UTF8 кирилицы - один символ 2 байта
+  memoryAvail = (EEPROM_MAX - TEXT_EEPROM) / 2;    // UTF8 кириллицы - один символ 2 байта
 
   while (addr < EEPROM_MAX && idx < size && !finished) {
    
@@ -1546,7 +1546,7 @@ void loadTexts() {
     idx++;
   }
 
-  memoryAvail = (EEPROM_MAX - addr) / 2;  // UTF8 кирилицы - один символ 2 байта
+  memoryAvail = (EEPROM_MAX - addr) / 2;  // UTF8 кириллицы - один символ 2 байта
   if (memoryAvail < 0) memoryAvail = 0;
 
   if (addr == TEXT_EEPROM + 1) {
@@ -1561,7 +1561,7 @@ void loadTexts() {
   DEBUG(F("Свободно ячеек "));
   DEBUGLN(String(EEPROM_MAX - addr));
 
-  // Заполнить оставшиеся строки массивва пустой строкой
+  // Заполнить оставшиеся строки массива пустой строкой
   for (uint8_t i=idx; i<size; i++) {
      textLines[i] = "";
   }
@@ -1611,7 +1611,7 @@ void loadTexts() {
   textLines[17] = "-Дата и время: {D:DD.MM.YY hh:mm tt}";
   textLines[18] = "До Нового года осталось {R01.01.2021#20}";
   textLines[19] = "Это строка 19 на фоне {E30}Analyzer";
-  textLines[20] = "С Новым годом!{-}";  // отоброжение должно быть отключено, иначе строка будет отображаться как обычная, а не только как заместитель при наступлении события
+  textLines[20] = "С Новым годом!{-}";  // отображение должно быть отключено, иначе строка будет отображаться как обычная, а не только как заместитель при наступлении события
   */
 
   /*
@@ -1642,7 +1642,7 @@ bool saveTexts() {
   uint16_t addr = TEXT_EEPROM;  
   uint8_t  size = sizeof(textLines) / sizeof(String);
 
-  set_memoryAvail((EEPROM_MAX - TEXT_EEPROM) / 2);  // UTF8 кирилицы - один символ 2 байта
+  set_memoryAvail((EEPROM_MAX - TEXT_EEPROM) / 2);  // UTF8 кириллицы - один символ 2 байта
 
   // Подсчитать контрольную сумму строк в массиве. Это позволит определить были ли изменения, нужно ли сохранять массив в EEPROM,
   uint16_t new_crc = 0; 
@@ -1688,10 +1688,10 @@ bool saveTexts() {
     EEPROMwrite(addr, '\0');
   }
 
-  set_memoryAvail((EEPROM_MAX - addr) / 2);  // UTF8 кирилицы - один символ 2 байта
+  set_memoryAvail((EEPROM_MAX - addr) / 2);  // UTF8 кириллицы - один символ 2 байта
   if (memoryAvail < 0) set_memoryAvail(0);
   
-  DEBUG(F("Сохранение строк выполнено.\nИпользованы адреса EEPROM "));
+  DEBUG(F("Сохранение строк выполнено.\nИспользованы адреса EEPROM "));
   DEBUGLN(String(TEXT_EEPROM) + " - " + String(addr - 1));
   if (addr >= EEPROM_MAX - 1) {
     DEBUGLN(F("Память заполнена."));

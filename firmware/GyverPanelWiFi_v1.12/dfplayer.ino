@@ -237,7 +237,7 @@ public:
     if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
       dfPlayer.stop(); delay(GUARD_DELAY);
     } else
-    // Перезапустить заук, если установлен его повтор
+    // Перезапустить звук, если установлен его повтор
     if (runTextSound > 0 && runTextSoundRepeat) {
       dfPlayer.playFolderTrack(3, runTextSound); delay(GUARD_DELAY);
     }    
