@@ -297,7 +297,7 @@ void doEffectWithOverlay(uint8_t aMode) {
     if (showDateState && (showDateInClock || (!allow_two_row && (init_weather && showWeatherInClock && showWeatherState)))) {
       if (showDateInClock && showDateState && !showWeatherState) {
         // Календарь
-        drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_XC, CALENDAR_Y);
+        drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);
         cal_or_temp_processed = true;
       } else {
         // Температура, когда чередуется с часами - только при горизонтальной ориентации часов и если она по высоте не входит в отображение ВМЕСТЕ с часами
