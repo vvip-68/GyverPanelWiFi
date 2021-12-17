@@ -19,7 +19,7 @@
 
 ![PanelAP-3](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Tune/p04.png)
 
-Найдите в папке проекта **Android/AppInventor** файл приложения ***GyverPanelWiFi.apk***
+Найдите в папке проекта **Android/AppInventor** файл приложения ***PanelSetupWiFi.apk***
 и установите его на ваш смартфон. Запустите приложение.
 
 ![Приложение-1](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Tune/p05.png)
