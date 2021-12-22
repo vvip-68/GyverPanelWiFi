@@ -25,7 +25,8 @@
 вставьте этот код в поле "Код региона" на странице основных настроек.  
 
 Скачать файл, содержащий список кодов городов можно здесь:
-https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Weather/yandex.ru-yaca-geo.c2n.pdf
+https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Weather/yandex.ru-yaca-geo.c2n.pdf  
+или [здесь](https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Weather/towns.xlsx)  
 
 ## Настройка погоды с OpenWeatherMap
 
@@ -68,7 +69,7 @@ https://github.com/vvip-68/GyverPanelWiFi/blob/master/wiki/Weather/yandex.ru-yac
 
 - В файле a_def_soft.h в строке 406 найдите следующее:
 ```
-// API-идентификатор сервиса получения погоды                                                  
+// API-идентификатор сервиса получения погоды  
 #define WEATHER_API_KEY "6a4ba421859c9f4166697758b68d889b"
 ```
 и замените ключ на полученный вами в ответном письме. Как правило, ключ активируется в течении 10 минут, реже - до двух часов.  
