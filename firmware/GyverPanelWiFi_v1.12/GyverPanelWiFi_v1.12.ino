@@ -57,7 +57,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.12.2021.1210")
+#define FIRMWARE_VER F("WiFiPanel v.1.12.2022.0127")
 
 // --------------------------------------------------------
 
@@ -73,7 +73,7 @@ void callback(char* topic, uint8_t* payload, uint32_t length) {
   // проверяем из нужного ли нам топика пришли данные
   DEBUG("MQTT << topic='" + String(topic) + "'");
   if (strcmp(topic, mqtt_topic(TOPIC_CMD).c_str()) == 0) {
-    memset(incomeMqttBuffer, 0, BUF_MAX_SIZE);
+    memset(incomeMqttBuffer, 0, BUF_MQTT_SIZE);
     memcpy(incomeMqttBuffer, payload, length);
     
     DEBUG(F("; cmd='"));

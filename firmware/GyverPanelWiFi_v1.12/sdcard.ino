@@ -136,9 +136,9 @@ void sdcardRoutine() {
        currentFile = specialTextEffectParam - 1;
      // Указано случайное воспроизведение файлов с карты?
      else if (getEffectScaleParamValue2(MC_SDCARD) == 0)
-       currentFile = -2;                               // Случайный порядок
+       currentFile = -2;                                       // Случайный порядок
      else if (getEffectScaleParamValue2(MC_SDCARD) == 1)
-       currentFile = -1;                               // Последовательное воспроизведение
+       currentFile = -1;                                       // Последовательное воспроизведение
      else
        currentFile = getEffectScaleParamValue2(MC_SDCARD) - 2; // Указанный выбранный файл эффектов
 

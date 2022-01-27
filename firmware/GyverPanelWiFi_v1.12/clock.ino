@@ -552,9 +552,9 @@ void drawTemperature(int8_t X) {
   // Получить цвет отображения значения температуры
   CRGB color;          
   if (isNightClock) 
-    color = useTemperatureColorNight ? (temperature < -3 ? night_blue_temperature : (temperature > 3 ? night_red_temperature : night_white_temperature)) : clockLED[0];
-  else 
-    color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : clockLED[0]; // CRGB::White; 
+    color = useTemperatureColorNight ? (temperature < -3 ? nightClockBrightness : (temperature > 3 ? nightClockBrightness << 16 : nightClockBrightness << 16 | nightClockBrightness << 8 | nightClockBrightness)) : getNightClockColorByIndex(nightClockColor);
+  else
+    color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : clockLED[0]; 
 
   if (c_size == 1) {
     // Отрисовка температуры в малых часах

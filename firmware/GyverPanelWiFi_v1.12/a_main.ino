@@ -887,7 +887,7 @@ void parsing() {
           // Для прочих режимов - общую яркость системы
           if (isNightClock) {
             set_nightClockBrightness(intData[2]); // setter            
-            set_specialBrightness(nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness);
+            set_specialBrightness(nightClockBrightness);
             FastLED.setBrightness(specialBrightness);
           } else {
             set_globalBrightness(intData[2]);
@@ -1413,7 +1413,7 @@ void parsing() {
              if (isNightClock) {
                // Для ночных часов - полученное значение -> в map 0..6 - код цвета ночных часов
                set_nightClockColor(map(intData[3], 0,255, 0,6));
-               set_specialBrightness(nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness);
+               set_specialBrightness(nightClockBrightness);
                FastLED.setBrightness(specialBrightness);
              } else {
                // Для дневных часов - меняется цвет часов (параметр HUE цвета, hue < 2 - белый)
@@ -1941,14 +1941,14 @@ void parsing() {
            case 10:               // $19 10 X; - Цвет ночных часов:  0 - R; 1 - G; 2 - B; 3 - C; 3 - M; 5 - Y; 6 - W;
              set_nightClockColor(intData[2]);
              if (isNightClock) {
-                set_specialBrightness(nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness);
+                set_specialBrightness(nightClockBrightness);
                 FastLED.setBrightness(specialBrightness);
              }             
              break;
            case 11:               // $19 11 X; - Яркость ночных часов:  1..255;
              set_nightClockBrightness(intData[2]); // setter             
              if (isNightClock) {
-                set_specialBrightness(nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness);
+                set_specialBrightness(nightClockBrightness);
                 FastLED.setBrightness(specialBrightness);
              }             
              break;
@@ -4192,7 +4192,7 @@ void setSpecialMode(int8_t spc_mode) {
       tmp_eff = MC_CLOCK;
       specialClock = false;
       set_isNightClock(true); // setter
-      set_specialBrightness(nightClockBrightness < MIN_BRIGHT_FOR_NIGHT ? MIN_BRIGHT_FOR_NIGHT : nightClockBrightness);
+      set_specialBrightness(nightClockBrightness);
       break;
     case 9:  // Палитра;
       tmp_eff = MC_PALETTE;

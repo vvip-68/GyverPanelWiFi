@@ -1929,12 +1929,12 @@ void putSyncGroup(uint8_t value) {
 
 uint8_t getNightClockBrightness()   {
   uint8_t br = EEPROMread(240);
-  if (br <= 1) br = 2;
+  if (br < MIN_NIGHT_CLOCK_BRIGHTNESS) br = MIN_NIGHT_CLOCK_BRIGHTNESS;
   return br;
 }
 
 void putNightClockBrightness(uint8_t brightness) {
-  if (brightness <= 1) brightness = 2;
+  if (brightness < MIN_NIGHT_CLOCK_BRIGHTNESS) brightness = MIN_NIGHT_CLOCK_BRIGHTNESS;
   if (brightness != getNightClockBrightness()) {
     EEPROMwrite(240, brightness);
   }  
