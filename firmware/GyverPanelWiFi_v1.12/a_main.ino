@@ -3,6 +3,7 @@
 
 // Контроль времени цикла
 uint32_t last_ms = millis();  
+int32_t ccnt; // +++
 
 // Отладка приема пакетов E1.31
 #if (USE_E131 == 1)
@@ -259,6 +260,16 @@ void process() {
         }
         */
 
+        /*
+            Serial.print(CURRENT_UNIVERSE);
+            Serial.print(",");
+            ccnt++; // +++
+            if (ccnt>60) {
+              Serial.println();
+              ccnt=0;
+            }
+        */
+
         bool isCommand = isCommandPacket(&e131_packet);
         if (isCommand && syncMode == COMMAND) e131_wait_command = true;
 
@@ -281,7 +292,9 @@ void process() {
         // Если режим стрима - PHYSIC или LOGIC - вывести принятые данные на матрицу
         if (syncMode == PHYSIC || syncMode == LOGIC) {
           if (drawE131frame(&e131_packet, syncMode)) {
-            FastLED.show();
+            if (CURRENT_UNIVERSE == END_UNIVERSE) {
+              FastLED.show();
+            }
           }
         }
       }

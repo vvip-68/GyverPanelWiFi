@@ -42,6 +42,7 @@ void InitializeE131() {
     UNIVERSE_COUNT = NUM_LEDS / 170;  
     if ((NUM_LEDS % 170) > 0) UNIVERSE_COUNT++;
     if (UNIVERSE_COUNT > 7) UNIVERSE_COUNT = 7;    
+    END_UNIVERSE = START_UNIVERSE + UNIVERSE_COUNT - 1;
 
     last_fps_time = millis();
     
@@ -111,8 +112,18 @@ void printE131packet(e131_packet_t *packet) {
 // ---------------------------------------------------
 // Отображение информации из полученного пакета E1.31 на матрицу
 // ---------------------------------------------------
+int cnt = 0;  
 bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
   uint16_t CURRENT_UNIVERSE = htons(packet->universe);      
+  /*
+    Serial.print(CURRENT_UNIVERSE);
+    Serial.print(",");
+    cnt++; // +++
+    if (cnt>60) {
+      Serial.println();
+      cnt=0;
+    }
+  */  
   uint16_t offset = (CURRENT_UNIVERSE - START_UNIVERSE) * 170; // if more than 170 LEDs (510 channels), client will send in next higher universe    
   if (offset >= NUM_LEDS) return false;
   uint8_t *data = packet->property_values + 1;

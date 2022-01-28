@@ -57,7 +57,7 @@
 
 // ************************ WIFI ПАНЕЛЬ *************************
 
-#define FIRMWARE_VER F("WiFiPanel v.1.12.2022.0127")
+#define FIRMWARE_VER F("WiFiPanel v.1.12.2022.0128")
 
 // --------------------------------------------------------
 
@@ -195,7 +195,7 @@ void setup() {
   leds =  new CRGB[NUM_LEDS];          
   overlayLEDs = new CRGB[OVERLAY_SIZE];
 
-  FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<WS2813, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(globalBrightness);
   if (CURRENT_LIMIT > 0) {
     FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
