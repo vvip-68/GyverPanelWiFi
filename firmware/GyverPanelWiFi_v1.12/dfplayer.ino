@@ -15,7 +15,7 @@ void InitializeDfPlayer1() {
   // при отправке команд в плеер библиотека плеера не ждет ответа (подтверждения выполнения команды)
   // и нет возможности выяснить есть ли плеер на самом деле.
   uint32_t ms1 = millis();    
-  dfPlayer.getVolume(); delay(GUARD_DELAY); dfPlayer.loop();
+  dfPlayer.getVolume(); dfPlayer.loop(); delay(GUARD_DELAY); 
   uint32_t ms2 = millis();      
   if (ms2 - ms1 > 5000) {
     set_isDfPlayerOk(false);  
@@ -51,14 +51,15 @@ void refreshDfPlayerFiles() {
   do {
     // Если запрос выполнялся более 5 секунд - DFPlayer не ответил - он неработоспособен
     // Выполнять чтение дальше смысла нет - это только "завешивает" прошивку.
+    mp3Serial.setTimeout(1000);
     uint32_t ms1 = millis();    
-    val = dfPlayer.getFolderTrackCount(1);     delay(GUARD_DELAY);
+    val = dfPlayer.getFolderTrackCount(1);       delay(GUARD_DELAY);
     dfPlayer.loop();
     yield();
     uint32_t ms2 = millis();  
     // Плеер не ответил за отведенное время? - Завершить процедуру опроса.      
-    if (ms2 - ms1 > 5000) return;
-    new_val = dfPlayer.getFolderTrackCount(1); delay(GUARD_DELAY);    
+    if (ms2 - ms1 > 1000) return;
+    new_val = dfPlayer.getFolderTrackCount(1);   delay(GUARD_DELAY);    
     dfPlayer.loop();
     yield();
     if (val == new_val && val != 0) break;
@@ -69,10 +70,10 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для рассвета
   cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.getFolderTrackCount(2);     delay(GUARD_DELAY);
+    val = dfPlayer.getFolderTrackCount(2);       delay(GUARD_DELAY);
     dfPlayer.loop();
     yield();
-    new_val = dfPlayer.getFolderTrackCount(2); delay(GUARD_DELAY);     
+    new_val = dfPlayer.getFolderTrackCount(2);   delay(GUARD_DELAY);     
     dfPlayer.loop();
     yield();
     if (val == new_val && val != 0) break;
@@ -83,10 +84,10 @@ void refreshDfPlayerFiles() {
   // Папка с файлами для звуков в бегущей строке
   cnt = 0, val = 0, new_val = 0; 
   do {
-    val = dfPlayer.getFolderTrackCount(3);     delay(GUARD_DELAY);
+    val = dfPlayer.getFolderTrackCount(3);       delay(GUARD_DELAY);
     dfPlayer.loop();
     yield();
-    new_val = dfPlayer.getFolderTrackCount(3); delay(GUARD_DELAY);     
+    new_val = dfPlayer.getFolderTrackCount(3);   delay(GUARD_DELAY);     
     dfPlayer.loop();
     yield();
     if (val == new_val && val != 0) break;
