@@ -206,9 +206,9 @@ String getTextStates() {
 
 // интерпретатор кода символа в массиве fontHEX (для Arduino IDE 1.8.* и выше)
 uint16_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
-  font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
+  font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива  
   if (font <= 94) {
-    return read_char(&(fontHEX[font][row]));   // для английских букв и символов
+    return read_char(&(fontHEX[font][row]));       // для английских букв и символов
   } else if (modif == 209 && font == 116) {        // є
     return read_char(&(fontHEX[161][row])); 
   } else if (modif == 209 && font == 118) {        // і
@@ -231,6 +231,16 @@ uint16_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
     return read_char(&(fontHEX[font + 47][row]));
   } else if (modif == 194 && font == 144) {                                          // Знак градуса '°'
     return read_char(&(fontHEX[159][row]));
+  } else if (modif == 195) {                                          // ß
+    switch (font) {
+      case 127: return read_char(&(fontHEX[163][row])); // ß - 195 127 - 163
+      case 100: return read_char(&(fontHEX[33][row]));  // Ä - 195 100 - 33
+      case 118: return read_char(&(fontHEX[47][row]));  // Ö - 195 118 - 47
+      case 124: return read_char(&(fontHEX[53][row]));  // Ü - 195 124 - 53
+      case 132: return read_char(&(fontHEX[65][row]));  // ä - 195 132 - 65
+      case 150: return read_char(&(fontHEX[79][row]));  // ö - 195 150 - 79
+      case 156: return read_char(&(fontHEX[85][row]));  // ü - 195 156 - 85    
+    }
   } else if (modif == 196 || modif == 197) {                                         // Буквы литовского алфавита  Ą Č Ę Ė Į Š Ų Ū Ž ą č ę ė į š ų ū ž
     switch (font) {
       case 100: return read_char(&(fontHEX[33][row])); //Ą 196   100  -     33
@@ -258,9 +268,9 @@ uint16_t getFont(uint8_t font, uint8_t modif, uint8_t row) {
 
 uint16_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if ((modif == 208) && font == 97) {              // Ё
+  if ((modif == 208 && font == 97) || (modif == 195 && (font == 100 || font == 118 || font == 124))) {         // Ё, немец. Ä,Ö,Ü
     return read_char(&(diasHEX[0][row])); 
-  } else if ((modif == 209) && font == 113) {      // ё
+  } else if ((modif == 209 && font == 113) || (modif == 195 && (font == 132 || font == 150 || font == 156))) { // ё, немец. ä,ö,ü
     return read_char(&(diasHEX[0][row])); 
   } else if ((modif == 208) && font == 103) {      // Ї
     return read_char(&(diasHEX[0][row])); 
@@ -296,9 +306,9 @@ uint16_t getDiasByte(uint8_t font, uint8_t modif, uint8_t row) {
 
 int8_t getDiasOffset(uint8_t font, uint8_t modif) {
   font = font - '0' + 16;   // перевод код символа из таблицы ASCII в номер согласно нумерации массива
-  if ((modif == 208) && font == 97) {              // Ё
+  if ((modif == 208 && font == 97) || (modif == 195 && (font == 100 || font == 118 || font == 124))) {         // Ё, немец. Ä,Ö,Ü
     return 3; 
-  } else if ((modif == 209) && font == 113) {      // ё
+  } else if ((modif == 209 && font == 113) || (modif == 195 && (font == 132 || font == 150 || font == 156))) { // ё, немец. ä,ö,ü
     #if (BIG_FONT == 0)
       return 1; 
     #else
