@@ -3176,7 +3176,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Цвет рисования
   if (key == "CL") {
     if (value) {
-      c = CRGB(globalTextColor);
+      c = CRGB(drawColor);
    // value->set(drawColor);
    // return String(drawColor); 
       str = String(c.r) + "," + String(c.g) + "," + String(c.b);
