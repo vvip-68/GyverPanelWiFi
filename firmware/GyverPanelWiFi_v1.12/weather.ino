@@ -4,7 +4,7 @@
 bool getWeather() {
   
   // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
-  // OpenWeatherMap.com: https://openweathermap.org/data/2.5/weather?id=1502026&units=metric&lang=ru&appid=6a4ba421859c9f4166697758b68d889b
+  // OpenWeatherMap.com: http://api.openweathermap.org/data/2.5/weather?id=1502026&lang=ru&units=metric&appid=6a4ba421859c9f4166697758b68d889b
 
   // Пока включена отладка позиционирования часов - запросы на температуру не выполнять
   if (debug_hours >= 0 && debug_mins >= 0) return true;
@@ -174,6 +174,9 @@ bool getWeather() {
     dusk_hour   = hour(dusk_time) + timeZoneOffset;
     dusk_minute = minute(dusk_time);
 
+    if (dawn_hour >= 24) dawn_hour -= 24;
+    if (dusk_hour >= 24) dusk_hour -= 24;
+    
     sunrise = padNum(dawn_hour,2) + ":" + padNum(dawn_minute,2);
     sunset = padNum(dusk_hour,2) + ":" + padNum(dusk_minute,2);
     
