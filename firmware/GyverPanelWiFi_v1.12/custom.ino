@@ -294,10 +294,13 @@ void doEffectWithOverlay(uint8_t aMode) {
 
     // Время отрисовки календаря или температуры
     bool cal_or_temp_processed = false;
+    // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
+    // В малых вертикальных часах - нет.
+    int8_t XC = CLOCK_ORIENT == 1 && c_size == 1 ? CALENDAR_XC : CLOCK_XC;
     if (showDateState && (showDateInClock || (!allow_two_row && (init_weather && showWeatherInClock && showWeatherState)))) {
       if (showDateInClock && showDateState && !showWeatherState) {
         // Календарь
-        drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);
+        drawCalendar(aday, amnth, ayear, dotFlag, XC, CALENDAR_Y);
         cal_or_temp_processed = true;
       } else {
         // Температура, когда чередуется с часами - только при горизонтальной ориентации часов и если она по высоте не входит в отображение ВМЕСТЕ с часами
@@ -309,7 +312,7 @@ void doEffectWithOverlay(uint8_t aMode) {
           } else {   
             // Если показ календаря в часах включен - показать календарь, иначе - вместо календаря снова показать температуру, если она включена
             if (showDateInClock || !init_weather) {
-              drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы и совпадают по формату - ЧЧ:MM и ДД.MM - одинаковый размер
+              drawCalendar(aday, amnth, ayear, dotFlag, XC, CALENDAR_Y);  
               cal_or_temp_processed = true;
             } else if (showWeatherInClock && !allow_two_row) {
               CLOCK_WY = CLOCK_Y;
@@ -318,7 +321,7 @@ void doEffectWithOverlay(uint8_t aMode) {
             }
           }
         #else
-           drawCalendar(aday, amnth, ayear, dotFlag, CLOCK_XC, CALENDAR_Y);  // В больших часах календарь и температура показываются в той же позиции, что и часы
+           drawCalendar(aday, amnth, ayear, dotFlag, XC, CALENDAR_Y);
            cal_or_temp_processed = true;
         #endif
       }
