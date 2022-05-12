@@ -112,7 +112,7 @@ void loadDirectory() {
 }
 
 void sdcardRoutine() {
-  
+ 
  if (loadingFlag || play_file_finished) {
    //modeCode = MC_SDCARD;
 
@@ -130,6 +130,7 @@ void sdcardRoutine() {
    
    if (loadingFlag) {
 
+     loadingFlag = false;
      int8_t currentFile = -1;
      // Указан специальный эффект для бегущей строки? - брать его 
      if (specialTextEffectParam >= 0)
@@ -155,12 +156,13 @@ void sdcardRoutine() {
         } else {
           // Случайный с SD-карты
           file_idx = random16(0,countFiles);
+          if (file_idx >= countFiles) file_idx = countFiles - 1;
         }
       } else {
         file_idx = currentFile;
       }
     }
-       
+
     // При загрузке имен файлов с SD-карты в nameFiles только имя файла внутри выбранной папки -- чтобы получить полное имя файла для загрузки  нужно к имени файла добавить имя папки
     fileName = "/" + String(pWIDTH) + "x" + String(pHEIGHT) + "/" + nameFiles[file_idx] + ".out";
 
@@ -195,7 +197,6 @@ void sdcardRoutine() {
     #endif
 
     FastLED.clear();
-    loadingFlag = false;
   }  
 
   // Карта присутствует и файл открылся правильно?

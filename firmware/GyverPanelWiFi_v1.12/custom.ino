@@ -593,10 +593,9 @@ void nextModeHandler() {
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать следующий файл с SD-карты
     #if (USE_SD == 1)
       if (newMode == MC_SDCARD && getEffectScaleParamValue2(MC_SDCARD) == 1) {
-        if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = 0;
+        if (sf_file_idx == -2 || sf_file_idx >= countFiles) sf_file_idx = 0;
         else sf_file_idx++;
         if (sf_file_idx >= countFiles) {
-          sf_file_idx = MAX_FILES + 1;
           aCnt++;
           newMode++;
         }
@@ -605,7 +604,7 @@ void nextModeHandler() {
         newMode++;
         if (newMode >= MAX_EFFECT) newMode = 0;  
         if (newMode == MC_SDCARD && getEffectUsage(newMode) && getEffectScaleParamValue2(MC_SDCARD) == 1) {
-          if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = 0;
+          if (sf_file_idx == -2 || sf_file_idx >= countFiles) sf_file_idx = 0;
           else sf_file_idx++;
           if (sf_file_idx >= countFiles) sf_file_idx = 0;
         }        
@@ -650,7 +649,7 @@ void prevModeHandler() {
     // Если режим - SD-карта и установлено последовательное воспроизведение файлов - брать предыдущий файл с SD-карты
     #if (USE_SD == 1)
       if (newMode == MC_SDCARD && getEffectScaleParamValue2(MC_SDCARD) == 1) {
-        if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = countFiles - 1;
+        if (sf_file_idx == -2 || sf_file_idx >= countFiles) sf_file_idx = countFiles - 1;
         else sf_file_idx--;
         if (sf_file_idx < 0) {
           sf_file_idx = -2;
@@ -662,7 +661,7 @@ void prevModeHandler() {
         newMode--;
         if (newMode < 0) newMode = MAX_EFFECT - 1;
         if (newMode == MC_SDCARD && getEffectUsage(newMode) && getEffectScaleParamValue2(MC_SDCARD) == 1) {
-          if (sf_file_idx == -2 || sf_file_idx == (MAX_FILES + 1)) sf_file_idx = countFiles - 1;
+          if (sf_file_idx == -2 || sf_file_idx >= countFiles) sf_file_idx = countFiles - 1;
           else sf_file_idx--;
           if (sf_file_idx < 0) sf_file_idx = countFiles - 1;
         }        
@@ -814,7 +813,7 @@ void checkIdleState() {
          (showTextNow && (specialTextEffect >= 0))       // Воспроизводится бегущая строка на фоне указанного эффекта
          #if (USE_SD == 1)
          // Для файла с SD-карты - если указан режим ожидания проигрывания файла до конца, а файл еще не проигрался - не менять эффект
-         || (thisMode == MC_SDCARD && wait_play_finished && !play_file_finished)
+         || (thisMode == MC_SDCARD && (wait_play_finished && !play_file_finished || loadingFlag))
          #endif
       )
       {        

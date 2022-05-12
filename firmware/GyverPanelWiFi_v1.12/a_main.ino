@@ -3,7 +3,7 @@
 
 // Контроль времени цикла
 uint32_t last_ms = millis();  
-int32_t ccnt; // +++
+int32_t ccnt;
 
 // Отладка приема пакетов E1.31
 #if (USE_E131 == 1)
@@ -423,8 +423,10 @@ void process() {
         bool tmpSaveSpecial = specialMode;
         resetModes();  
         setManualModeTo(true);
-        if (tmpSaveSpecial) setRandomMode();
-        else                nextMode();
+        if (tmpSaveSpecial) 
+          setRandomMode();        
+        else 
+          nextMode();
       }
 
       // Тройное нажатие - включить случайный режим с автосменой
@@ -4249,6 +4251,9 @@ void resetModes() {
   loadingFlag = false;
   wifi_print_ip = false;
   wifi_print_ip_text = false;
+  #if (USE_SD == 1)  
+    play_file_finished = false;
+  #endif
 }
 
 void resetModesExt() {
@@ -4260,6 +4265,9 @@ void resetModesExt() {
   autoplayTimer = millis();
   set_autoplayTime(getAutoplayTime());  
   idleState = true;
+  #if (USE_SD == 1)  
+    play_file_finished = false;
+  #endif
 }
 
 void setEffect(uint8_t eff) {
@@ -4319,15 +4327,7 @@ void setRandomMode() {
   if (getEffectUsage(MC_SDCARD) && isSdCardReady && (random16(0, 200) % 10 == 0)) {
     newMode = MC_SDCARD;
     // effectScaleParam2[MC_SDCARD]: 0 - случайный файл; 1 - последовательный перебор; 2 - привести к индексу в массиве файлов SD-карты
-    int8_t file_idx;
-    if (effectScaleParam2[MC_SDCARD] == 0) {
-      sf_file_idx = random16(0,countFiles);
-    } else if (effectScaleParam2[MC_SDCARD] == 1) {
-      sf_file_idx++;
-      if (sf_file_idx >= countFiles) sf_file_idx = 0;
-    } else {
-      sf_file_idx = effectScaleParam2[MC_SDCARD] - 2;
-    }
+    updateSdCardFileIndex();
     setEffect(newMode);
     return;
   }   
@@ -4346,9 +4346,29 @@ void setRandomMode() {
     if (cnt < 2 || newMode != thisMode) break;
   }
   delete[] arr;
+
+  #if (USE_SD == 1)  
+  if (newMode == MC_SDCARD && isSdCardReady) {
+    updateSdCardFileIndex();
+  }   
+  #endif
   
   setEffect(newMode);
 }
+
+#if (USE_SD == 1)  
+void updateSdCardFileIndex() {
+  int8_t file_idx;
+  if (effectScaleParam2[MC_SDCARD] == 0) {
+    sf_file_idx = random16(0,countFiles);
+  } else if (effectScaleParam2[MC_SDCARD] == 1) {
+    sf_file_idx++;
+    if (sf_file_idx >= countFiles) sf_file_idx = 0;
+  } else {
+    sf_file_idx = effectScaleParam2[MC_SDCARD] - 2;
+  }
+}
+#endif
 
 void setManualModeTo(bool isManual) {
   set_manualMode(isManual);
