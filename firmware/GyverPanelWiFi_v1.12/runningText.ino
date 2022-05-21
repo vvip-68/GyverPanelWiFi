@@ -1129,46 +1129,7 @@ String processDateMacrosInText(const String text) {
         sFormat = textLine.substring(idx+3, idx2);
       }
       sFmtProcess = sFormat;
-  
-      //  dddd - полное название дня недели            (допускается DDDD)
-      str = getWeekdayString(wd);  // DDDD  
-      sFmtProcess.replace("DDDD", str);
-      sFmtProcess.replace("dddd", str);
       
-      //  ddd  - сокращенное название дня недели       (допускается DDD)
-      str = getWeekdayShortString(wd);  // DDD
-      sFmtProcess.replace("DDD", str);
-      sFmtProcess.replace("ddd", str);
-  
-      //  dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
-      str = String(aday);  // DD
-      if (str.length() < 2) str = "0" + str;    
-      sFmtProcess.replace("DD", str);
-      sFmtProcess.replace("dd", str);
-  
-      //  d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
-      str = String(aday);  // D
-      sFmtProcess.replace("D", str);
-      sFmtProcess.replace("d", str);
-      
-  
-      //  MMMМ - месяц прописью (января..декабря)
-      str = getMonthString(amnth);
-      sFmtProcess.replace("MMMM", str);
-      
-      //  MMM  - месяц прописью (янв..дек)
-      str = getMonthShortString(amnth);
-      sFmtProcess.replace("MMM", str);
-  
-      //  MM   - месяц от 01 до 12
-      str = String(amnth);
-      if (str.length() < 2) str = "0" + str;    
-      sFmtProcess.replace("MM", str);
-  
-      //  M    - месяц от 1 до 12
-      str = String(amnth);
-      sFmtProcess.replace("M", str);
-    
       //  YYYY - год в виде четырехзначного числа
       str = String(ayear);
       sFmtProcess.replace("YYYY", str);
@@ -1236,7 +1197,50 @@ String processDateMacrosInText(const String text) {
       sFmtProcess.replace("T", str);
       str.toLowerCase();
       sFmtProcess.replace("t", str);
+
+      //  dddd - полное название дня недели            (допускается DDDD)
+      str = getWeekdayString(wd);  // DDDD  
+      str = substitureDateMacros(str);
+      sFmtProcess.replace("DDDD", str);
+      sFmtProcess.replace("dddd", str);
+      
+      //  ddd  - сокращенное название дня недели       (допускается DDD)
+      str = getWeekdayShortString(wd);  // DDD
+      str = substitureDateMacros(str);
+      sFmtProcess.replace("DDD", str);
+      sFmtProcess.replace("ddd", str);
   
+      //  dd   - день месяца, в диапазоне от 01 до 31. (допускается DD)
+      str = String(aday);  // DD
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("DD", str);
+      sFmtProcess.replace("dd", str);
+  
+      //  d    - день месяца, в диапазоне от 1 до 31.  (допускается D)
+      str = String(aday);  // D
+      sFmtProcess.replace("D", str);
+      sFmtProcess.replace("d", str);
+
+      //  MMMМ - месяц прописью (января..декабря)
+      str = getMonthString(amnth);
+      str = substitureDateMacros(str);
+      sFmtProcess.replace("MMMM", str);
+      
+      //  MMM  - месяц прописью (янв..дек)
+      str = substitureDateMacros(str);
+      str = getMonthShortString(amnth);
+      sFmtProcess.replace("MMM", str);
+  
+      //  MM   - месяц от 01 до 12
+      str = String(amnth);
+      if (str.length() < 2) str = "0" + str;    
+      sFmtProcess.replace("MM", str);
+  
+      //  M    - месяц от 1 до 12
+      str = String(amnth);
+      sFmtProcess.replace("M", str);
+      sFmtProcess = unsubstitureDateMacros(sFmtProcess);
+
       // Заменяем в строке макрос с исходной форматной строкой на обработанную строку с готовой текущей датой
       textLine.replace("{D:" + sFormat + "}", sFmtProcess);
       
@@ -1515,6 +1519,32 @@ String processDateMacrosInText(const String text) {
   }
 
   return textLine;
+}
+
+String substitureDateMacros(const String txt) {  
+  String str = txt;
+  str.replace("DD", "~1~");
+  str.replace("dd", "~2~");
+  str.replace("D",  "~3~");
+  str.replace("d",  "~4~");
+  str.replace("MM", "~5~");
+  str.replace("mm", "~6~");
+  str.replace("M",  "~7~");
+  str.replace("m",  "~8~");
+  return str;
+}
+
+String unsubstitureDateMacros(const String txt) {  
+  String str = txt;
+  str.replace("~1~", "DD");
+  str.replace("~2~", "dd");
+  str.replace("~3~", "D");
+  str.replace("~4~", "d");
+  str.replace("~5~", "MM");
+  str.replace("~6~", "mm");
+  str.replace("~7~", "M");
+  str.replace("~8~", "m");
+  return str;
 }
 
 // Обработать макросы цвета в строке, в случае если строка многоцветная
