@@ -1633,7 +1633,6 @@ uint8_t phase = 0;          // фаза эффекта
     
 // -------------------------------------------------------------------------------------
 
-
 void analyzerRoutine() {
 
   static int16_t MAX_LEVEL = (pHEIGHT + pHEIGHT / 4);
@@ -2294,7 +2293,6 @@ void arrowsRoutine() {
       }
       break;
   }
-
 }
 
 void arrowSetupForMode(uint8_t mode, bool change) {
@@ -2321,6 +2319,7 @@ void arrowSetupForMode(uint8_t mode, bool change) {
         break;
     }
 }
+
 void arrowSetup_mode1() {
   // Слева направо
   if ((arrow_direction & 0x01) > 0) {
@@ -2424,4 +2423,128 @@ void arrowSetup_mode4() {
     stop_y [3] = -7;             // скрывается за экраном на 7 пикселей
     stop_x [3] = 0;              // неприменимо 
   }
+}
+
+// ***************************** КУБИК РУБИКА *****************************
+
+#define RUBIK_BLOCK_SIZE 4       // Размер квадратика палитры
+
+/*
+ *  Эти переменные объявлены для эффекта PALETTE
+ *  
+
+uint8_t num_x, num_y, off_x, off_y; 
+
+uint8_t **palette_h; // Н in CHSV
+uint8_t **palette_s; // S in CHSV
+*/
+
+void rubikRoutine() {
+
+  if (loadingFlag) {
+    // modeCode = MC_RUBIK;
+    loadingFlag = false;
+    
+    num_x = pWIDTH / BLOCK_SIZE;
+    num_y = pHEIGHT / BLOCK_SIZE;
+    off_x = (pWIDTH - BLOCK_SIZE * num_x) / 2;
+    off_y = (pHEIGHT - BLOCK_SIZE * num_y) / 2;
+    
+    if (palette_h == NULL) { palette_h = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_h[i] = new uint8_t [num_y]; }}
+    if (palette_s == NULL) { palette_s = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_s[i] = new uint8_t [num_y]; }}
+
+    // Для всех блоков определить состояние - "ожидание появления
+    for (uint8_t c = 0; c < num_x; c++) {
+      for (uint8_t r = 0; r < num_y; r++) {
+        block_sta[c][r] = 2;                // Состояние - пауза перед появлением
+        block_dur[c][r] = random8(25,125);  // Длительность паузы
+      }
+    }
+
+    // Для некоторого количества начальных - установить "За шаг до появления"
+    // При первом же проходе состояние переключится на "появление"
+    for (uint8_t i = 0; i < BLOCK_ON_START * seg_num; i++) {
+      uint8_t c = random8(0, num_x - 1);
+      uint8_t r = random8(0, num_y - 1);
+      block_dur[c][r] = 1;                  // Счетчик до начала появления
+    }
+    FastLED.clear();
+  }
+  
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+
+  for (uint8_t c = 0; c < num_x; c++) {
+    uint8_t block_x = off_x + c * BLOCK_SIZE;
+    for (uint8_t r = 0; r < num_y; r++) {    
+      
+      uint8_t block_y = off_y + r * BLOCK_SIZE;
+      uint8_t h = palette_h[c][r];      
+      uint8_t s = palette_s[c][r];
+
+      // Проверить состояние блока
+      if (block_sta[c][r] > 1) {
+        
+        // Одна из пауз (2 или 3) - пауза перед появлением или перед исчезновением
+        // Уменьшить время паузы. Если стало 0 - переключить с паузы на появление / исчезновение
+         block_dur[c][r] -= 1;
+         if (block_dur[c][r] == 0) {
+           block_sta[c][r] -= 2;     // 3->1 - исчезать; 2->0 появлять за указанное количество шагов
+           if (block_sta[c][r] == 0) {
+             block_dur[c][r] = FADE_IN_STEPS;    // Количество шагов появления блока
+             palette_h[c][r] = random8(0,255);   // Цвет нового блока
+             palette_s[c][r] = random8(112,254); // Насыщенность цвета нового блока
+           } else { 
+             block_dur[c][r] = FADE_OUT_STEPS;  // Кол-во шагов убирания блока
+           }  
+         }
+
+      }
+      
+      if (block_sta[c][r] < 2) {
+
+        // В процессе появления или исчезновения (0 или 1)
+        // Выполнить один шаг появления / исчезновения блока
+        uint8_t fade_dir = block_sta[c][r]; // 0 - появляться, 1 - исчезать
+        uint8_t fade_step = block_dur[c][r];
+
+        // Яркость блока
+        uint8_t bri = fade_dir == 0
+           ? map(fade_step, 0,FADE_IN_STEPS,  0,effectBrightness)
+           : map(fade_step, 0,FADE_OUT_STEPS, effectBrightness,0);
+
+        // Нарисовать блок   
+        for (uint8_t i=0; i<BLOCK_SIZE; i++) {        
+          for (uint8_t j=0; j<BLOCK_SIZE; j++) {
+            
+            //uint8_t k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
+            //uint8_t bri2 = (bri > k ? bri - k : 0);
+            CHSV color = CHSV(h, s, bri); // bri2
+
+            uint8_t xx = block_x + j;
+            uint8_t yy = block_y + BLOCK_SIZE - i - 1;
+            if (xx < pWIDTH && yy < pHEIGHT) {
+              uint16_t idx = getPixelNumber(xx, yy);
+              leds[idx] = color;
+            }
+          }
+        }
+
+        // Шаг появления - обработан
+        block_dur[c][r] -= 1;
+
+        // Весь процесс появления / исчезновения выполнен?
+        // Сменить статус блока
+        if (block_dur[c][r] == 0) {
+           // Появление / исчезновение закончено
+           block_sta[c][r] = block_sta[c][r] == 0 ? 3 : 2; // вкл паузу перед исчезновением после появления или паузу перед появлением после исчезновения
+           block_dur[c][r] = random8(25,125);              // Длительность паузы (циклов обращения палитры)
+        }        
+      }      
+    }
+  }
+}
+
+void rubikRoutineRelease() {
+  if (palette_s != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] palette_s[i];} delete [] palette_s; palette_s = NULL; }
+  if (palette_h != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] palette_h[i];} delete [] palette_h; palette_h = NULL; }
 }
