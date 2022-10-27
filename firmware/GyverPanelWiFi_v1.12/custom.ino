@@ -438,6 +438,7 @@ void processEffect(uint8_t aMode) {
     case MC_CLOCK:               clockRoutine(); break;
     case MC_DAWN_ALARM:          dawnProcedure(); break;
     case MC_PATTERNS:            patternRoutine(); break;
+    case MC_RUBIK:               rubikRoutine(); break;
 
     #ifdef MC_IMAGE
     case MC_IMAGE:               animationRoutine(); break;
@@ -523,6 +524,7 @@ void releaseEffectResources(uint8_t aMode) {
     case MC_CLOCK:               break;
     case MC_DAWN_ALARM:          break;
     case MC_PATTERNS:            break;
+    case MC_RUBIK:               rubikRoutineRelease(); break;
 
     #ifdef MC_IMAGE
     case MC_IMAGE:               break;
@@ -698,7 +700,7 @@ void setTimersForMode(uint8_t aMode) {
     if (efSpeed == 0) efSpeed = 1;
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
-        aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || 
+        aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_RUBIK || 
         aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || aMode == MC_PATTERNS
         #ifdef MC_IMAGE
          || aMode == MC_IMAGE
@@ -716,8 +718,11 @@ void setTimersForMode(uint8_t aMode) {
       if (aMode == MC_ARKANOID) {
         effectTimer.setInterval(50);
         gameTimer.setInterval(efSpeed);  
-      } else {
-        effectTimer.setInterval(10);
+      } else 
+      if (aMode == MC_RUBIK) {
+        effectTimer.setInterval(map8(efSpeed,15,45));
+      } else {    
+        effectTimer.setInterval(15);
       }
     } else if (aMode == MC_MAZE) {
       effectTimer.setInterval(50 + 3 * efSpeed);              

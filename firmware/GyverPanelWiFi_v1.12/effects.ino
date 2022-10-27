@@ -2432,12 +2432,27 @@ void arrowSetup_mode4() {
 /*
  *  Эти переменные объявлены для эффекта PALETTE
  *  
-
 uint8_t num_x, num_y, off_x, off_y; 
-
-uint8_t **palette_h; // Н in CHSV
-uint8_t **palette_s; // S in CHSV
 */
+
+uint8_t* cube_h;
+uint8_t* order_h;
+uint16_t cube_idx;        // Индекс выводимой плашки в фазе начального вывода плашек на матрицу
+uint16_t cube_black_idx;  // Индекс черной плашки в варианте "Пятнашки"
+uint16_t cube_last_idx;   // Индекс черной плашки в варианте "Пятнашки" в котором она была в предыдущейц итерации
+uint16_t cube_new_idx;    // Индекс плашки в варианте "Пятнашки", куда будет перемещаться черная
+uint8_t  cube_phase;      // Фаза формирования изображения: 0 - начальное размещение плашек на матрице; 
+uint8_t  cube_delay;      // Задержка между "шагами" формирования изображения на матрице; Скорость эффекта задается в настройках таймера скорости. Этот параметр - пропускать шаги таймера (выполнять каждый N шаг)
+uint8_t  cube_count;      // Подсчет очередного шага
+uint8_t  cube_variant;    // Вариант анимации; 0 - случайный выбор; 1 - сдвиг по одной плашке; 2 - сдвиг всей полосы; 3 - вращение полос; 4 - пятнашки 
+uint16_t cube_size;       // Количество плашек на поле 
+uint8_t  cube_vh;         // 0 - вертикальное движение; 1 - горизонтальное
+uint8_t  cube_rl;         // верт: 0 - вниз, 1 - вверх; гориз: 0 - влево; 1 - вправо
+uint8_t  cube_move_cnt;   // На сколько линий в координатах матрицы (не плашек!) выполнять смещение
+
+uint8_t  py, px, ppx, ppy;
+CHSV     cubeColorFrom;
+CHSV     cubeColorTo;
 
 void rubikRoutine() {
 
@@ -2445,106 +2460,342 @@ void rubikRoutine() {
     // modeCode = MC_RUBIK;
     loadingFlag = false;
     
-    num_x = pWIDTH / BLOCK_SIZE;
-    num_y = pHEIGHT / BLOCK_SIZE;
-    off_x = (pWIDTH - BLOCK_SIZE * num_x) / 2;
-    off_y = (pHEIGHT - BLOCK_SIZE * num_y) / 2;
+    num_x = pWIDTH / RUBIK_BLOCK_SIZE;
+    num_y = pHEIGHT / RUBIK_BLOCK_SIZE;
+    off_x = (pWIDTH - RUBIK_BLOCK_SIZE * num_x) / 2;
+    off_y = (pHEIGHT - RUBIK_BLOCK_SIZE * num_y) / 2;
+
+    hue = 0;
+    cube_size = num_x * num_y;
+    uint8_t step = 256 / cube_size;
+    if (step < 10) step = 10;
     
-    if (palette_h == NULL) { palette_h = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_h[i] = new uint8_t [num_y]; }}
-    if (palette_s == NULL) { palette_s = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_s[i] = new uint8_t [num_y]; }}
+    // Палитра цветов - задаем последователную "радугу" по всему кругу и начальный порядок вывода плашек на матрицу    
+    if (cube_h  == NULL) { cube_h = new uint8_t[cube_size]; } for (uint8_t i = 0; i < cube_size; i++) { cube_h[i] = hue; hue += step; }
+    if (order_h == NULL) { order_h = new uint8_t[cube_size];} for (uint8_t i = 0; i < cube_size; i++) { order_h[i] = i; }
 
-    // Для всех блоков определить состояние - "ожидание появления
-    for (uint8_t c = 0; c < num_x; c++) {
-      for (uint8_t r = 0; r < num_y; r++) {
-        block_sta[c][r] = 2;                // Состояние - пауза перед появлением
-        block_dur[c][r] = random8(25,125);  // Длительность паузы
-      }
+    // Перемешать плашки и их порядок появления на матрице
+    for (uint16_t i = 0; i < cube_size; i++) {
+      uint16_t idx1 = random16(0, cube_size - 1);
+      uint16_t idx2 = random16(0, cube_size - 1);
+      hue = cube_h[idx1];
+      cube_h[idx1] = cube_h[idx2];
+      cube_h[idx2] = hue;
+      
+      idx1 = random16(0, cube_size - 1);
+      idx2 = random16(0, cube_size - 1);
+      hue = order_h[idx1];
+      order_h[idx1] = order_h[idx2];
+      order_h[idx2] = hue;
     }
 
-    // Для некоторого количества начальных - установить "За шаг до появления"
-    // При первом же проходе состояние переключится на "появление"
-    for (uint8_t i = 0; i < BLOCK_ON_START * seg_num; i++) {
-      uint8_t c = random8(0, num_x - 1);
-      uint8_t r = random8(0, num_y - 1);
-      block_dur[c][r] = 1;                  // Счетчик до начала появления
-    }
+    // Если в настройках выбран вариант "Случайный" - выбрать любой другой из доступных
+    cube_variant = getEffectScaleParamValue2(MC_RUBIK);
+    if (cube_variant == 0 || cube_variant > 4) cube_variant = random8(1,4);
+    
+    cube_idx = 0;
+    cube_black_idx = random16(0, cube_size - 1);
+    cube_phase = 0;    // Фаза 0 - размещение плашек на матрице
+    cube_delay = 4;    // На начальном этапе (фаза 0 - размещение плашек) - очередная плашка на каждый N-ый вызов
+    cube_count = cube_delay;
+    
     FastLED.clear();
   }
+
+  // Если время смены изображения еще не пришло - ничего не делаем
+  if (cube_count > 0) {
+    cube_count--;
+    return;
+  }
+  cube_count = cube_delay; 
   
   uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  
+  if (cube_phase == 0) {
+    // Взять из массива порядка размещения плашек очередную позицию, из массива цветов - цвет  и вывести на матрицу очередную плашку    
+    uint16_t idx = order_h[cube_idx];
+    CHSV color = cube_variant == 4 && idx == cube_black_idx
+      ? CHSV(0, 0, 0)
+      : CHSV(cube_h[idx], 255, effectBrightness);
+    
+    py = idx / num_x;
+    px = idx % num_x;
+    ppx = off_x + px * RUBIK_BLOCK_SIZE;
+    ppy = off_y + py * RUBIK_BLOCK_SIZE;
 
-  for (uint8_t c = 0; c < num_x; c++) {
-    uint8_t block_x = off_x + c * BLOCK_SIZE;
-    for (uint8_t r = 0; r < num_y; r++) {    
+    for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+      for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {        
+        drawPixelXY(ppx + x, ppy + y, color);        
+      }  
+    }
+    
+    cube_idx++;
+    if (cube_idx >= cube_size) {
+      // Все плашки выведены? - перейти к следующей фазе. 
+      cube_idx = 0;
+      cube_phase++;       
+    }
+    return;
+  }
+
+  // Фаза "Настройка движения". Определяем что и в какую сторону нужно сдвигать
+  if (cube_phase == 1) {
+      cube_idx = 0;
       
-      uint8_t block_y = off_y + r * BLOCK_SIZE;
-      uint8_t h = palette_h[c][r];      
-      uint8_t s = palette_s[c][r];
-
-      // Проверить состояние блока
-      if (block_sta[c][r] > 1) {
-        
-        // Одна из пауз (2 или 3) - пауза перед появлением или перед исчезновением
-        // Уменьшить время паузы. Если стало 0 - переключить с паузы на появление / исчезновение
-         block_dur[c][r] -= 1;
-         if (block_dur[c][r] == 0) {
-           block_sta[c][r] -= 2;     // 3->1 - исчезать; 2->0 появлять за указанное количество шагов
-           if (block_sta[c][r] == 0) {
-             block_dur[c][r] = FADE_IN_STEPS;    // Количество шагов появления блока
-             palette_h[c][r] = random8(0,255);   // Цвет нового блока
-             palette_s[c][r] = random8(112,254); // Насыщенность цвета нового блока
-           } else { 
-             block_dur[c][r] = FADE_OUT_STEPS;  // Кол-во шагов убирания блока
-           }  
-         }
-
-      }
-      
-      if (block_sta[c][r] < 2) {
-
-        // В процессе появления или исчезновения (0 или 1)
-        // Выполнить один шаг появления / исчезновения блока
-        uint8_t fade_dir = block_sta[c][r]; // 0 - появляться, 1 - исчезать
-        uint8_t fade_step = block_dur[c][r];
-
-        // Яркость блока
-        uint8_t bri = fade_dir == 0
-           ? map(fade_step, 0,FADE_IN_STEPS,  0,effectBrightness)
-           : map(fade_step, 0,FADE_OUT_STEPS, effectBrightness,0);
-
-        // Нарисовать блок   
-        for (uint8_t i=0; i<BLOCK_SIZE; i++) {        
-          for (uint8_t j=0; j<BLOCK_SIZE; j++) {
-            
-            //uint8_t k = fade_dir == 0 ? (2 * i*j) : (2 * (BLOCK_SIZE * BLOCK_SIZE - i*j));
-            //uint8_t bri2 = (bri > k ? bri - k : 0);
-            CHSV color = CHSV(h, s, bri); // bri2
-
-            uint8_t xx = block_x + j;
-            uint8_t yy = block_y + BLOCK_SIZE - i - 1;
-            if (xx < pWIDTH && yy < pHEIGHT) {
-              uint16_t idx = getPixelNumber(xx, yy);
-              leds[idx] = color;
-            }
+      if (cube_variant == 4) {
+        // Определяем текущие координаты черной плашки - px,py 
+        // Определяем какой из квадратиков вокруг черного будет перемещаться на его место:
+        py = cube_black_idx / num_x;          // X,Y координаты черной плашки в сетке размера RUBIK_BLOCK_SIZE
+        px = cube_black_idx % num_x;
+        ppx = off_x + px * RUBIK_BLOCK_SIZE;  // левый верхний угол черной плашки в координатах матрицы
+        ppy = off_y + py * RUBIK_BLOCK_SIZE;        
+        uint16_t newIdx = cube_last_idx;
+        while (newIdx == cube_last_idx) {
+          bool ok = false;
+          // Движение "черной плашки". Цветная плашка перемещается на место черной
+          while (!ok) {          
+            cube_vh = random16(0, cube_size - 1) % 2 == 0;  // 0 - вертикальное движение; 1 - горизонтальное
+            cube_rl = random16(0, cube_size - 1) % 2 == 0;  // верт: 0 - вниз, 1 - вверх; гориз: 0 - влево; 1 - вправо
+            ok = cube_vh == 0 && (cube_rl == 0 && py < RUBIK_BLOCK_SIZE - 1 || cube_rl == 1 && py > 0) ||   // Вертикально, вверх и выше черного есть цветная плашка или вниз и ниже есть цветная плашка
+                 cube_vh == 1 && (cube_rl == 1 && px < RUBIK_BLOCK_SIZE - 1 || cube_rl == 0 && px > 0);     // Горизонтально влево и леевее есть цветная плашка или вправо и правее есть цветная плашка            
           }
+          if (cube_vh == 0 && cube_rl == 0) {
+            // Вертикально. Цветная вверх на место черной; newIdx - индекс цветной плашки на место которой движется черная
+            newIdx = (py + 1) * RUBIK_BLOCK_SIZE + px;
+          } else
+          if (cube_vh == 0 && cube_rl == 1) {
+            // Вертикально. Цветная вниз на место черной; newIdx - индекс цветной плашки на место которой движется черная
+            newIdx = (py - 1) * RUBIK_BLOCK_SIZE + px;
+          } else
+          if (cube_vh == 1 && cube_rl == 0) {
+            // Горизонтально. Цветная вправо на место черной; newIdx - индекс цветной плашки на место которой движется черная
+            newIdx = py * RUBIK_BLOCK_SIZE + px - 1;            
+          } else
+          if (cube_vh == 1 && cube_rl == 1) {
+            // Горизонтально. Цветная влево на место черной; newIdx - индекс цветной плашки на место которой движется черная
+            newIdx = py * RUBIK_BLOCK_SIZE + px + 1;
+          }
+          delay(0);
+        }
+        cube_new_idx = newIdx;
+        cubeColorFrom = CHSV(cube_h[cube_new_idx], 255, effectBrightness);  // Цветная плашка
+        cubeColorTo = CHSV(0, 0, 0);                                        // Черная плашка 
+        cube_delay = 3;           // Выполнение фазы движения через N циклов
+        cube_count = cube_delay;  // 
+      } else 
+      
+      {
+        // Определяем какая полоса будет двигаться (индекс кубика), вертикально/горизонтально и в каком направдении вверх/вниз / вправо/влево
+        cube_vh = cube_vh == 0 ? 1 : 0;  // 0 - вертикальное движение; 1 - горизонтальное - чередовать
+        cube_rl = random16(0, cube_size - 1) % 2 == 0;  // верт: 0 - вниз, 1 - вверх; гориз: 0 - влево; 1 - вправо
+        
+        // Для вертикального смещения - номер колонки, которая будет двигаться, для горизонтального - номер строки
+        if (cube_vh == 0) {
+          px = random8(0, num_x);          // Случайная колонка, которая  будет смещаться вниз или вверх
+        } else {
+          py = random8(0, num_y);          // Случайная строка, которая будет смешаться влево или вправо
         }
 
-        // Шаг появления - обработан
-        block_dur[c][r] -= 1;
+        cube_delay = 4;                    // Выполнение фазы движения через N циклов
+        cube_count = cube_delay;           // 
 
-        // Весь процесс появления / исчезновения выполнен?
-        // Сменить статус блока
-        if (block_dur[c][r] == 0) {
-           // Появление / исчезновение закончено
-           block_sta[c][r] = block_sta[c][r] == 0 ? 3 : 2; // вкл паузу перед исчезновением после появления или паузу перед появлением после исчезновения
-           block_dur[c][r] = random8(25,125);              // Длительность паузы (циклов обращения палитры)
-        }        
+        // смещение на один блок для режима 1 или на всю ширину / высоту для режима 2 и 3
+        cube_move_cnt = cube_variant == 1 ? 1 : (cube_vh == 0 ? num_y : num_x);
+      }
+      cube_phase++;       
+  }
+  
+  // Отображение следующей фазы зависит от выбранного варианта
+  // Перемещение плашек (cube_phase == 2)
+  switch (cube_variant) {
+    // 1 - Сдвиг на одину плашку всего ряда/колонки
+    // 2 - Сдвиг всей полосы (ряд / колонка) на несколько плашек
+    case 1:         
+    case 2: { 
+      if (cube_vh == 0 && cube_rl == 0) {
+        // Вертикально. Сдвиг колонки вниз - перерисовать строки с 1 до высоты матрицы сдвинуть вниз? нулевую заполнить цветом нижней в колонке плашки
+        ppx = off_x + px * RUBIK_BLOCK_SIZE;
+        for (uint8_t i = num_y  * RUBIK_BLOCK_SIZE + off_y - 1; i > off_y; i--) {
+          uint32_t color = getPixColorXY(ppx, i - 1);
+          for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {
+            drawPixelXY(ppx + x, i, color);
+          }
+        }
+        // Поскольку сдвиг вниз -  заполнить освободившуюся верхнюю строку цветом нижней плашки
+        uint16_t idx = (num_y - 1) * RUBIK_BLOCK_SIZE + px;
+        cubeColorFrom = CHSV(cube_h[idx], 255, effectBrightness);
+        for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {
+          drawPixelXY(ppx + x, off_y, cubeColorFrom);
+        }
+      } else
+
+      if (cube_vh == 0 && cube_rl == 1) {
+        // Вертикально. Сдвиг колонки вверх
+        ppx = off_x + px * RUBIK_BLOCK_SIZE;
+        for (uint8_t i = off_y; i < num_y * RUBIK_BLOCK_SIZE + off_y - 1; i++) {
+          uint32_t color = getPixColorXY(ppx, i + 1);
+          for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {
+            drawPixelXY(ppx + x, i, color);
+          }
+        }
+        // Поскольку сдвиг вверх - заполнить освободившуюся нижнюю строку цветом верхней плашки
+        uint16_t idx = px;
+        cubeColorFrom = CHSV(cube_h[idx], 255, effectBrightness);
+        for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {
+          drawPixelXY(ppx + x, num_y * RUBIK_BLOCK_SIZE + off_y - 1, cubeColorFrom);
+        }
+      } else
+      
+      if (cube_vh == 1 && cube_rl == 0) {
+        // Горизонтально. Сдвиг строки влево
+        ppy = off_y + py * RUBIK_BLOCK_SIZE;
+        for (uint8_t i = off_x; i < num_x * RUBIK_BLOCK_SIZE + off_x - 1; i++) {
+          uint32_t color = getPixColorXY(i + 1, ppy);
+          for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+            drawPixelXY(i, ppy + y, color);
+          }
+        }
+        // Поскольку сдвиг влeво -  заполнить освободившуюся правую колонку цветом левой плашки
+        uint16_t idx = py * RUBIK_BLOCK_SIZE;
+        cubeColorFrom = CHSV(cube_h[idx], 255, effectBrightness);
+        for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+          drawPixelXY(num_x * RUBIK_BLOCK_SIZE + off_x - 1 , ppy + y, cubeColorFrom);
+        }
+      } else
+      
+      if (cube_vh == 1 && cube_rl == 1) {
+        // Горизонтально. Сдвиг строки вправо
+        ppy = off_y + py * RUBIK_BLOCK_SIZE;
+        for (uint8_t i = num_x  * RUBIK_BLOCK_SIZE + off_x - 1; i > off_x; i--) {
+          uint32_t color = getPixColorXY(i - 1, ppy);
+          for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+            drawPixelXY(i, ppy + y, color);
+          }
+        }
+        // Поскольку сдвиг вправо -  заполнить освободившуюся левую колонку цветом правой плашки
+        uint16_t idx = py * RUBIK_BLOCK_SIZE + num_x - 1;
+        cubeColorFrom = CHSV(cube_h[idx], 255, effectBrightness);
+        for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+          drawPixelXY(off_x, ppy + y, cubeColorFrom);
+        }
+      }
+                                                                 
+      // Перемещение на одну плашку закончено?
+      cube_idx++;
+      if (cube_idx >= RUBIK_BLOCK_SIZE) {
+        // Сместить индексы цветов в таблице текущих цветов плашек
+        if (cube_vh == 0 && cube_rl == 0) {
+          // Вертикально. Сдвиг колонки вниз
+          uint8_t idx = (num_y - 1) * RUBIK_BLOCK_SIZE + px; // цвет последней строки
+          hue = cube_h[idx];
+          for (uint8_t i = num_y - 1; i > 0; i--){
+            uint8_t idx1 = (i - 1) * RUBIK_BLOCK_SIZE + px;
+            uint8_t idx2 = i * RUBIK_BLOCK_SIZE + px;
+            cube_h[idx2] = cube_h[idx1];
+          }
+          idx = px; // Индекс первой строки - поместить туда цвет, который был вытеснен из последней строки при сдвиге плашек вниз
+          cube_h[idx] = hue;
+        } else
+        
+        if (cube_vh == 0 && cube_rl == 1) {
+          // Вертикально. Сдвиг колонки вверх
+          uint8_t idx = px; // цвет первой строки
+          hue = cube_h[idx];
+          for (uint8_t i = 0; i < num_y; i++){
+            uint8_t idx1 = (i + 1) * RUBIK_BLOCK_SIZE + px;
+            uint8_t idx2 = i * RUBIK_BLOCK_SIZE + px;
+            cube_h[idx2] = cube_h[idx1];
+          }
+          idx = (num_y - 1) * RUBIK_BLOCK_SIZE + px; // Индекс последней строки - поместить туда цвет, который был вытеснен из первой строки при сдвиге плашек вверх
+          cube_h[idx] = hue;
+        } else
+        
+        if (cube_vh == 1 && cube_rl == 0) {
+          // Горизонтально. Сдвиг строки влево
+          uint8_t idx = py * RUBIK_BLOCK_SIZE; // цвет первой колонки в строке
+          hue = cube_h[idx];
+          for (uint8_t i = 0; i < num_x; i++){
+            uint8_t idx1 = py * RUBIK_BLOCK_SIZE + i + 1;
+            uint8_t idx2 = py * RUBIK_BLOCK_SIZE + i;
+            cube_h[idx2] = cube_h[idx1];
+          }
+          idx = py * RUBIK_BLOCK_SIZE + num_x - 1; // Индекс последней колонки в строке - поместить туда цвет, который был вытеснен из первой колонки при сдвиге плашек влево
+          cube_h[idx] = hue;
+        } else
+        
+        if (cube_vh == 1 && cube_rl == 1) {
+          // Горизонтально. Сдвиг строки вправо
+          uint8_t idx = py * RUBIK_BLOCK_SIZE + num_x - 1; // цвет последней колонки в строке
+          hue = cube_h[idx];
+          for (uint8_t i = num_x - 1; i > 0; i--){
+            uint8_t idx1 = py * RUBIK_BLOCK_SIZE + i - 1 ;
+            uint8_t idx2 = py * RUBIK_BLOCK_SIZE + i;
+            cube_h[idx2] = cube_h[idx1];
+          }
+          idx = py * RUBIK_BLOCK_SIZE; // Индекс первой колонки в строкн - поместить туда цвет, который был вытеснен из последней колонки при сдвиге плашек вправр
+          cube_h[idx] = hue;
+        }    
+        
+        cube_idx = 0;
+        // Если перемещение блока завершено - фаза движения закончена, перейти к фазе настройки следующего движения
+        cube_move_cnt--;
+        if (cube_move_cnt == 0) {
+          cube_phase = 1;
+        }
       }      
     }
+    break;
+
+    case 3: {
+      // Вращение полос
+    }
+    break;
+
+    case 4: {
+      // Пятнашки
+      // Имитируем движение цветной плашки на место черной
+      if (cube_vh == 0 && cube_rl == 0) {
+        // Вертикально. Цветная вверх на место черной; cube_new_idx - индекс цветной плашки на место которой движется черная, которая cube_idx 
+        for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {
+          drawPixelXY(ppx + x, ppy + RUBIK_BLOCK_SIZE - cube_idx - 1, cubeColorFrom);
+          drawPixelXY(ppx + x, ppy + 2 * RUBIK_BLOCK_SIZE - cube_idx - 1, cubeColorTo);
+        }
+      } else
+      if (cube_vh == 0 && cube_rl == 1) {
+        // Вертикально. Цветная вниз на место черной; newIdx - индекс цветной плашки на место которой движется черная
+        for (uint8_t x = 0; x < RUBIK_BLOCK_SIZE; x++) {
+          drawPixelXY(ppx + x, ppy + cube_idx, cubeColorFrom);
+          drawPixelXY(ppx + x, ppy - RUBIK_BLOCK_SIZE + cube_idx, cubeColorTo);
+        }
+      } else
+      if (cube_vh == 1 && cube_rl == 0) {
+        // Горизонтально. Цветная вправо на место черной; newIdx - индекс цветной плашки на место которой движется черная
+        for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+          drawPixelXY(ppx + cube_idx, ppy + y, cubeColorFrom);
+          drawPixelXY(ppx - RUBIK_BLOCK_SIZE + cube_idx, ppy + y, cubeColorTo);
+        }
+      } else
+      if (cube_vh == 1 && cube_rl == 1) {
+        // Горизонтально. Цветная влево на место черной; newIdx - индекс цветной плашки на место которой движется черная
+        for (uint8_t y = 0; y < RUBIK_BLOCK_SIZE; y++) {
+          drawPixelXY(ppx + RUBIK_BLOCK_SIZE - cube_idx - 1, ppy + y, cubeColorFrom);
+          drawPixelXY(ppx + 2 * RUBIK_BLOCK_SIZE - cube_idx - 1, ppy + y, cubeColorTo);
+        }
+      }
+      cube_idx++;
+      if (cube_idx >= RUBIK_BLOCK_SIZE) {
+        cube_h[cube_black_idx] = cube_h[cube_new_idx];
+        cube_last_idx = cube_black_idx;
+        cube_black_idx = cube_new_idx;
+        // Если перемещение блока завершено - фаза движения закончена, перейти к фазе настройки следующего движения
+        cube_phase = 1;
+      }
+    }
+    break;    
   }
 }
 
 void rubikRoutineRelease() {
-  if (palette_s != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] palette_s[i];} delete [] palette_s; palette_s = NULL; }
-  if (palette_h != NULL) { for( uint8_t i = 0; i < num_x; i++ ) { delete [] palette_h[i];} delete [] palette_h; palette_h = NULL; }
+  if (cube_h != NULL) { delete [] cube_h; cube_h = NULL; }
+  if (order_h != NULL) { delete [] order_h; order_h = NULL; }
 }
