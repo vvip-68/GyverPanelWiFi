@@ -1523,7 +1523,7 @@ void parsing() {
           if (thisMode == MC_RUBIK) {
             // Эффект "Кубик Рубика" формирует полное изображения в начале эффекта, потом только дорисовывает части.
             // При смене контраста он должен быть переформирован
-            loadingFlag = true;
+            // loadingFlag = true;
           }      
         } 
 
@@ -4398,6 +4398,11 @@ void setManualModeTo(bool isManual) {
   }
   idleTimer.reset();
   autoplayTimer = millis();
+
+  if (isManual) {
+    putCurrentManualMode(thisMode);
+    saveSettings();
+  }
 }
 
 void sendImageLine() {

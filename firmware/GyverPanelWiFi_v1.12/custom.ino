@@ -720,9 +720,9 @@ void setTimersForMode(uint8_t aMode) {
         gameTimer.setInterval(efSpeed);  
       } else 
       if (aMode == MC_RUBIK) {
-        effectTimer.setInterval(map8(efSpeed,15,45));
+        effectTimer.setInterval(map8(efSpeed,5,50));
       } else {    
-        effectTimer.setInterval(15);
+        effectTimer.setInterval(10);
       }
     } else if (aMode == MC_MAZE) {
       effectTimer.setInterval(50 + 3 * efSpeed);              
