@@ -700,7 +700,7 @@ void setTimersForMode(uint8_t aMode) {
     if (efSpeed == 0) efSpeed = 1;
     // Эти режимы смотрятся (работают) только на максимальной скорости;
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
-        aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 || aMode == MC_RUBIK || 
+        aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 ||
         aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || aMode == MC_PATTERNS
         #ifdef MC_IMAGE
          || aMode == MC_IMAGE
@@ -718,10 +718,7 @@ void setTimersForMode(uint8_t aMode) {
       if (aMode == MC_ARKANOID) {
         effectTimer.setInterval(50);
         gameTimer.setInterval(efSpeed);  
-      } else 
-      if (aMode == MC_RUBIK) {
-        effectTimer.setInterval(map8(efSpeed,5,50));
-      } else {    
+      } else {
         effectTimer.setInterval(10);
       }
     } else if (aMode == MC_MAZE) {

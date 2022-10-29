@@ -1442,6 +1442,10 @@ void parsing() {
             if (thisMode == tmp_eff && tmp_eff == MC_BALLS) {
               // При получении параметра эффекта "Шарики" (кол-во шариков) - надо переинициализировать эффект
               loadingFlag = true;
+            } else 
+            if (thisMode == tmp_eff && tmp_eff == MC_RUBIK) {
+              // При получении параметра эффекта "Кубик Рубика" (размер плашки) - надо переинициализировать эффект
+              loadingFlag = true;
             }
           }
         } else 
@@ -4040,7 +4044,6 @@ String getParamForMode(uint8_t mode) {
    case MC_LIFE:
    case MC_FIRE2:
    case MC_SDCARD:
-   case MC_RUBIK:
    #ifdef MC_IMAGE     
    case MC_IMAGE:
    #endif
