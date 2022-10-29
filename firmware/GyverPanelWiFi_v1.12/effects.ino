@@ -2593,7 +2593,6 @@ void rubikRoutine() {
         cube_vh = random16(0, cube_size - 1) % 2;           // как - вертикально или горизонтально: 0 - вертикальное движение; 1 - горизонтальное - чередовать
         cube_rl = random16(0, cube_size - 1) % 2;           // куда - верт: 0 - вниз, 1 - вверх; гориз: 0 - влево; 1 - вправо
         uint8_t cube_mt = random16(0, cube_size - 1) % 2;   // начало: верт: 0 с левой до правой, 1 - с правой до левой; гориз: 0 - с верхней до нижней; 1 - с нижней до верхней
-        uint8_t cnt = max(num_x, num_y);
         
         // Сдвиг на целую плашку занимает RUBIK_BLOCK_SIZE шагов; 
         // Начало движения каждой следующей полосы задерживается на RUBIK_BLOCK_SIZE / 2 шагов 
@@ -2605,7 +2604,7 @@ void rubikRoutine() {
         // Когда ВСЕ элементы массива достигают верхнего предела - весь цикл завершен, меняем cube_phase на 1 - возврат к началу формирования цикла эффекта
 
         uint8_t stp = RUBIK_BLOCK_SIZE + RUBIK_BLOCK_SIZE / 2;
-        uint8_t mcnt = cube_vh == 0 ? num_y : num_x;
+        uint8_t mcnt = cube_vh == 0 ? num_x : num_y;
         int8_t low = -1 * stp * (mcnt - 1);
         for (uint8_t i = 0; i < mcnt; i++) order_mt[i] = low + (cube_mt == 0 ? i : mcnt - i - 1) * stp;          
       } else
@@ -2652,7 +2651,7 @@ void rubikRoutine() {
 
     case 3: {
       // Вращение полос
-      uint8_t mcnt = cube_vh == 0 ? num_y : num_x; // Количество полос - в зависимости от верт/гориз - это либо ширина, либо высота матрицы
+      uint8_t mcnt = cube_vh == 0 ? num_x : num_y; // Количество полос - в зависимости от верт/гориз - это либо ширина, либо высота матрицы
       uint8_t maxx = mcnt * RUBIK_BLOCK_SIZE;      // Максимальное уол-во шагов сдвига полосы - по количеству светодиодов
       bool processed = false;
       for (uint8_t i = 0; i < mcnt; i++) {
