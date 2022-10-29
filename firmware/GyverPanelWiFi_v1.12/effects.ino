@@ -2657,7 +2657,7 @@ void rubikRoutine() {
       for (uint8_t i = 0; i < mcnt; i++) {
         int8_t cnt = order_mt[i] + 1;
         order_mt[i] = cnt;
-        if (cnt >= 0 && cnt <= maxx) {
+        if (cnt > 0 && cnt <= maxx) {
           processed = true;
           // сдвиг ровно на одну плашку?
           bool isEdge = cnt > 0 && cnt % RUBIK_BLOCK_SIZE == 0;    
