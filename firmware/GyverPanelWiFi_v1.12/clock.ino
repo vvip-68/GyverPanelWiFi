@@ -661,6 +661,11 @@ void drawCalendar(uint8_t aday, uint8_t amnth, int16_t ayear, bool dots, int8_t 
   uint8_t m10 = amnth / 10;
   uint8_t m01 = amnth % 10;
 
+  uint8_t d1 = ayear / 1000;
+  uint8_t d2 = (ayear / 100) % 10;
+  uint8_t d3 = (ayear / 10) % 10;
+  uint8_t d4 = ayear % 10;
+
   uint8_t cx = 0, dy = 0;
   
   if (!allow_two_row) {
@@ -670,117 +675,150 @@ void drawCalendar(uint8_t aday, uint8_t amnth, int16_t ayear, bool dots, int8_t 
   if (c_size == 1) {
 
     CALENDAR_W = 15;   // 4 цифры шириной 3 + 3 пробела между цифрами
+
+    if (pWIDTH >= 15) {
+      dy = allow_two_row ? 6 : 0;
+      
+      // Отрисовка календаря в малых часах  
+      // Число месяца
+      drawDigit3x5(d10, X, Y + dy, clockLED[3]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+      drawDigit3x5(d01, X + 4, Y + dy, clockLED[3]);
     
-    dy = allow_two_row ? 6 : 0;
+      // разделитель числа/месяца
+      if (dots) {
+        drawPixelXY(getClockX(X + 7), Y + dy - (allow_two_row ? 1 : 0), clockLED[2]);
+      }
+      
+      // Месяц
+      drawDigit3x5(m10, X + 8, Y + dy, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+      drawDigit3x5(m01, X + 12, Y + dy, clockLED[4]);
     
-    // Отрисовка календаря в малых часах  
-    // Число месяца
-    drawDigit3x5(d10, X, Y + dy, clockLED[3]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-    drawDigit3x5(d01, X + 4, Y + dy, clockLED[3]);
-  
-    // разделитель числа/месяца
-    if (dots) {
-      drawPixelXY(getClockX(X + 7), Y + dy - (allow_two_row ? 1 : 0), clockLED[2]);
-    }
-    
-    // Месяц
-    drawDigit3x5(m10, X + 8, Y + dy, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-    drawDigit3x5(m01, X + 12, Y + dy, clockLED[4]);
-  
-    // Год  
-    if (allow_two_row) {
-      drawDigit3x5(ayear / 1000, X, Y, clockLED[0]);
-      drawDigit3x5((ayear / 100) % 10, X + 4, Y, clockLED[0]);
-      drawDigit3x5((ayear / 10) % 10, X + 8, Y, clockLED[1]);
-      drawDigit3x5(ayear % 10, X + 12, Y, clockLED[1]);
+      // Год  
+      if (allow_two_row) {
+        drawDigit3x5(d1, X, Y, clockLED[0]);
+        drawDigit3x5(d2, X + 4, Y, clockLED[0]);
+        drawDigit3x5(d3, X + 8, Y, clockLED[1]);
+        drawDigit3x5(d4, X + 12, Y, clockLED[1]);
+      }
+    } else {
+
+      uint8_t x = 0;
+      if (clockScrollSpeed >= 240) {
+        X = 0;
+        x = 0.51 + (pWIDTH - 7) / 2.0;
+      }
+      // По ширине влазит только вертикальное расположение двух цифр - дата и ниже - две цифры месяца
+      drawDigit3x5(d10, X + x, Y + 6, clockLED[3]);
+      drawDigit3x5(d01, X + x + 4, Y + 6, clockLED[3]);
+      if (dots) { // Мигающие точки легко ассоциируются с часами
+        drawPixelXY(getClockX(X + x + 3), Y + 5, clockLED[2]);
+      }
+      drawDigit3x5(m10, X + x, Y, clockLED[4]);
+      drawDigit3x5(m01, X + x + 4, Y, clockLED[4]);
     }
 
   } else {
-    
+
+    // Отрисовка календаря в больших часах
+
     CALENDAR_W = 26;                   // 4 цифры шириной 5 + 2 пробела между цифрами + 2 - ширина точки + 2 - слева/справа от точки
     if (pWIDTH <= 25) CALENDAR_W--;    // На матрицах 25 и меньше - ширина разделит. точки - один столбец
     if (pWIDTH <= 24) CALENDAR_W -= 2; // На матрицах 24 и меньше - нет пробелов слева и справа от разделит. точки
+
+    // Это рассчетн
     
-
-    // Отрисовка календаря в больших часах
-    int8_t  x = X;
-    int8_t  y = Y;
-    uint8_t width = 0;
-
     if (CLOCK_ORIENT == 0 || !allow_two_row) {
+
+      // Если скроллинга часов нет - брать позицию календаря - центр матрицы 
+      if (clockScrollSpeed >= 240) X = 0;
+
+      // Цифра 1 - три точки в ширину, другие - 5 точек в ширину                     + 2  пробела между цифрами дня и месяца
+      uint8_t width_d = (d10 == 1 ? 3 : 5) + (d01 == 1 ? 3 : 5) + (m10 == 1 ? 3 : 5) + (m01 == 1 ? 3 : 5) + 2;
       
+      if (pWIDTH > 25)  width_d += 4;  // 2 точки - разделитель числа / месяца + пробел ДО точки + пробел ПОСЛЕ точки
+      else
+      if (pWIDTH == 25) width_d += 3;  // 1 точка - разделитель числа / месяца + пробел ДО точки + пробел ПОСЛЕ точки
+      else
+                        width_d += 1;  // 1 точка - разделитель числа / месяца, нет разделителей-пробелоа ДО точки и ПОСЛЕ точки
+
+      // Цифра 1 - три точки в ширину, другие - 5 точек в ширину + 3 точки разделителя между цифрами
+      uint8_t width_y = (d1 == 1 ? 3 : 5) + (d2 == 1 ? 3 : 5) + (d3 == 1 ? 3 : 5) + (d4 == 1 ? 3 : 5) + 3;
+
+      // Если год не отображается - ширина равне ширине числа+месяца
+      // Если год отображается - ширина равне максимальной ширине числа/месяца или года
+      uint8_t realWidth = allow_two_row ? max(width_d, width_y ) : width_d;
+
+      uint8_t cx = realWidth == pWIDTH ? 0 : (0.51 + ((pWIDTH - realWidth) / 2.0));
+      if (pWIDTH - realWidth %2 == 1) cx++;
+
+      bool double_dot = pWIDTH > 25;
+      bool dot_spaces = pWIDTH >= 25 || width_d <= 21;
+
+      // Правая граница календаря
+      int8_t right_x = X + cx + realWidth;
+      if (pWIDTH == 23 && realWidth == 21) right_x++;
+      
+      int8_t y = Y;
+
+      int8_t x = right_x;
+
       dy = allow_two_row ? 9 : 0;
       while (y + dy + 7 > pHEIGHT) dy--;
+      
+      x -= (m01 == 1 ? 4 : 5);
+      drawDigit5x7(m01, x , y + dy, clockLED[1]);  x += m01 == 1 ? 1 : 0;
+      x -= (m10 == 1 ? 5 : 6);
+      drawDigit5x7(m10, x, y + dy, clockLED[0]);   x += m10 == 1 ? 1 : 0;
 
-      width = (m10 == 1 ? 4 : 6) + (m01 == 1 ? 4 : 6) + (d10 == 1 ? 4 : 6) + (d01 == 1 ? 4 : 6) + 4;
-
-      // Горизонтальное расположение календаря - также как часы ЧЧ:ММ -> ДД.MM
-      if (d10 == 1 && m01 == 1 && x > 0) x += 2;
-      if (m10 == 1 || m01 == 1) x++;
+      // 2 точки - разделитель числа / месяца + пробел ДО точки + пробел ПОСЛЕ точки
+      if (double_dot) x -= 3;
+      else
+      // 1 точка - разделитель числа / месяца + пробел ДО точки + пробел ПОСЛЕ точки
+      if (pWIDTH == 25) x -= 1;
+      else
+      // нет пробелов, ширина разделителя - 1 точка
+      x--;
+      if (!double_dot && dot_spaces) x--;
       
-      drawDigit5x7(d10, x + cx, y + dy, clockLED[0]); // шрифт 5x7 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-      
-      cx += (d10 == 1 ? -1 : 0);
-      cx += (d10 > 1 && d01 == 1 ? -1 : 0);
-      drawDigit5x7(d01, x + 6 + cx, y + dy, clockLED[1]);      
-
-      cx += (d01 == 1 ? -1 : 0);
-      
-      // Для ширины матрицы в 23 или 24 колонок - пробел ДО точки не рисовать
-      if (pWIDTH < 25) { cx--; width--; }
-      
-      // Для ширины матрицы в 25 колонок - рисовать одинарные точки разделения дня и месяца, если больше - сдвоенные
-      drawPixelXY(getClockX(x + 12 + cx), y + dy   , clockLED[2]);         
-      drawPixelXY(getClockX(x + 12 + cx), y + dy + 1, clockLED[2]);
-      if (pWIDTH > 25) {
-        drawPixelXY(getClockX(x + 13 + cx), y + dy    , clockLED[2]);
-        drawPixelXY(getClockX(x + 13 + cx), y + dy + 1, clockLED[2]);
-      } else {
-        width--;
+      drawPixelXY(getClockX(x), y + dy    , clockLED[2]);         
+      drawPixelXY(getClockX(x), y + dy + 1, clockLED[2]);
+      if (double_dot) {
+        drawPixelXY(getClockX(x + 1), y + dy    , clockLED[2]);
+        drawPixelXY(getClockX(x + 1), y + dy + 1, clockLED[2]);        
       }
-  
-      // Для часов шириной 25 точек (одинарная разделительная точка) смещать вывод месяца на одну позицию влево
-      int8_t dx = (pWIDTH > 25) ? 0 : -1;      
-      cx += (m10 == 1 ? -1 : 0);
 
-      // Для ширины матрицы в 23 или 24 колонок - пробел ПОСЛЕ точки не рисовать, цифры сдвинуть влево
-      if (pWIDTH < 25) { cx--; width--; }
-      
-      drawDigit5x7(m10, x + 15 + cx + dx, y + dy, clockLED[3]);
-  
-      cx += (m01 == 1 ? -1 : 0) + (m10 == 1 && m01 != 1 ? -1 : 0);
-      drawDigit5x7(m01, x + 21 + cx + dx, y + dy, clockLED[4]);  // шрифт 5x7 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
-
-      x = x + 21 + cx + dx + (m01 == 1 ? 5 : 6);
-      
+      // Если есть разделитель -пробел между датой и точкой - 
+      if (dot_spaces) x--;
+            
+      x -= (d01 == 1 ? 4 : 5);
+      drawDigit5x7(d01, x, y + dy, clockLED[4]); x += d01 == 1 ? 1 : 0;
+      x -= (d10 == 1 ? 5 : 6);
+      drawDigit5x7(d10, x, y + dy, clockLED[3]);
+            
       // Если позволено рисовать в два ряда - нарисовать год календаря
       // Отрисовку проводить справа налево, чтобы выравнивать по правому краю даты (день/месяц)
       if (allow_two_row) {
-        uint8_t d1 = ayear / 1000;
-        uint8_t d2 = (ayear / 100) % 10;
-        uint8_t d3 = (ayear / 10) % 10;
-        uint8_t d4 = ayear % 10;
-        x -= (d4 == 1 ? 5 : 6);
-        drawDigit5x7(d4, x, y, clockLED[0]);
-        x -= (d3 == 1 ? 4 : 6);
-        drawDigit5x7(d3, x, y, clockLED[1]);
-        x -= (d2 == 1 ? 4 : 6);
-        drawDigit5x7(d2, x, y, clockLED[3]);
-        x -= (d1 == 1 ? 4 : 6);
+        x = right_x;
+        x -= (d4 == 1 ? 4 : 5);
+        drawDigit5x7(d4, x, y, clockLED[0]); x += d4 == 1 ? 1 : 0;
+        x -= (d3 == 1 ? 5 : 6);
+        drawDigit5x7(d3, x, y, clockLED[1]); x += d3 == 1 ? 1 : 0;
+        x -= (d2 == 1 ? 5 : 6);
+        drawDigit5x7(d2, x, y, clockLED[3]); x += d2 == 1 ? 1 : 0;
+        x -= (d1 == 1 ? 5 : 6);
         drawDigit5x7(d1, x, y, clockLED[4]);
       }
 
     } else {
 
       // Вертикальное расположение календаря - также как часы ДД в верхней строке, ММ - в нижней строке
-      drawDigit5x7(d10, X, Y + 9, clockLED[0]);
-      drawDigit5x7(d01, X + 6, Y + 9, clockLED[1]);
+      drawDigit5x7(d10, X, Y + 8, clockLED[0]);
+      drawDigit5x7(d01, X + 6, Y + 8, clockLED[1]);
       if (dots) { // Мигающие точки легко ассоциируются с часами
-        for (uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + 4 + i), Y + 8, clockLED[2]);
+        for (uint8_t i=0; i<3; i++) drawPixelXY(getClockX(X + 4 + i), Y + 7, clockLED[2]);
       }
-      drawDigit5x7(m10, X, Y + 1, clockLED[3]);
-      drawDigit5x7(m01, X + 6, Y + 1, clockLED[4]);
-      
+      drawDigit5x7(m10, X, Y, clockLED[3]);
+      drawDigit5x7(m01, X + 6, Y, clockLED[4]);
     }
   }
 }
