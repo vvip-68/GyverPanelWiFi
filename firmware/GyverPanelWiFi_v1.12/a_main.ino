@@ -792,6 +792,8 @@ void parsing() {
         putMetaMatrixDirection(intData[10]);
         
         saveSettings();
+        FastLED.clear();
+        FastLED.show();
         
         // После небольшой задержки перезагрузить контроллер
         delay(500);
