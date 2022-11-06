@@ -80,6 +80,13 @@
  *      send the data while the program continues to prepare the next
  *      frame of data.
  *
+ * #define FASTLED_RMT_SERIAL_DEBUG 1
+ *
+ * NEW (Oct 2021): If set enabled (Set to 1), output errorcodes to
+ *      Serial for debugging if not ESP_OK. Might be useful to find
+ *      bugs or problems with GPIO PINS.
+ *
+ *
  * Based on public domain code created 19 Nov 2016 by Chris Osborn <fozztexx@fozztexx.com>
  * http://insentricity.com *
  *
@@ -113,7 +120,12 @@ extern "C" {
 #endif
 
 #include "esp32-hal.h"
+// ESP_IDF_VERSION_MAJOR is defined in ESP-IDF v3.3 or later
+#if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR > 3
+#include "esp_intr_alloc.h"
+#else
 #include "esp_intr.h"
+#endif
 #include "driver/gpio.h"
 #include "driver/rmt.h"
 #include "driver/periph_ctrl.h"
@@ -131,7 +143,11 @@ extern void spi_flash_op_unlock(void);
 
 __attribute__ ((always_inline)) inline static uint32_t __clock_cycles() {
   uint32_t cyc;
+#ifdef FASTLED_XTENSA
   __asm__ __volatile__ ("rsr %0,ccount":"=a" (cyc));
+#else
+  cyc = cpu_hal_get_cycle_count();
+#endif
   return cyc;
 }
 
@@ -146,6 +162,16 @@ __attribute__ ((always_inline)) inline static uint32_t __clock_cycles() {
 //#define FASTLED_RMT_SHOW_TIMER false
 //#endif
 
+#ifndef FASTLED_RMT_SERIAL_DEBUG
+#define FASTLED_RMT_SERIAL_DEBUG 0
+#endif
+
+#if FASTLED_RMT_SERIAL_DEBUG == 1
+#define FASTLED_DEBUG(format, errcode, ...) if (errcode != ESP_OK) { Serial.printf(PSTR("FASTLED: " format "\n"), errcode, ##__VA_ARGS__); }
+#else
+#define FASTLED_DEBUG(format, ...)
+#endif
+
 // -- Configuration constants
 #define DIVIDER       2 /* 4, 8 still seem to work, but timings become marginal */
 
@@ -159,11 +185,23 @@ __attribute__ ((always_inline)) inline static uint32_t __clock_cycles() {
 #define FASTLED_RMT_MEM_BLOCKS 2
 #endif
 
-#define MAX_PULSES         (64 * FASTLED_RMT_MEM_BLOCKS) /* One block has a 64 "pulse" buffer */
+// 64 for ESP32, ESP32S2
+// 48 for ESP32S3, ESP32C3, ESP32H2
+#ifndef FASTLED_RMT_MEM_WORDS_PER_CHANNEL
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+#define FASTLED_RMT_MEM_WORDS_PER_CHANNEL SOC_RMT_MEM_WORDS_PER_CHANNEL
+#else
+// ESP32 value (only chip variant supported on older IDF)
+#define FASTLED_RMT_MEM_WORDS_PER_CHANNEL 64 
+#endif 
+#endif
+
+#define MAX_PULSES (FASTLED_RMT_MEM_WORDS_PER_CHANNEL * FASTLED_RMT_MEM_BLOCKS)
 #define PULSES_PER_FILL    (MAX_PULSES / 2)              /* Half of the channel buffer */
 
 // -- Convert ESP32 CPU cycles to RMT device cycles, taking into account the divider
-#define F_CPU_RMT                   (  80000000L)
+// RMT Clock is typically APB CLK, which is 80MHz on most devices, but 40MHz on ESP32-H2
+#define F_CPU_RMT                   (  APB_CLK_FREQ )
 #define RMT_CYCLES_PER_SEC          (F_CPU_RMT/DIVIDER)
 #define RMT_CYCLES_PER_ESP_CYCLE    (F_CPU / RMT_CYCLES_PER_SEC)
 #define ESP_TO_RMT_CYCLES(n)        ((n) / (RMT_CYCLES_PER_ESP_CYCLE))
@@ -183,10 +221,18 @@ __attribute__ ((always_inline)) inline static uint32_t __clock_cycles() {
 #define FASTLED_RMT_MAX_CONTROLLERS 32
 #endif
 
-// -- Number of RMT channels to use (up to 8, but 4 by default)
-//    Redefine this value to 1 to force serial output
+// -- Max RMT TX channel
 #ifndef FASTLED_RMT_MAX_CHANNELS
-#define FASTLED_RMT_MAX_CHANNELS (8/FASTLED_RMT_MEM_BLOCKS)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+// 8 for (ESP32)  4 for (ESP32S2, ESP32S3)  2 for (ESP32C3, ESP32H2)
+#define FASTLED_RMT_MAX_CHANNELS SOC_RMT_TX_CANDIDATES_PER_GROUP
+#else
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define FASTLED_RMT_MAX_CHANNELS 4
+#else
+#define FASTLED_RMT_MAX_CHANNELS 8
+#endif
+#endif
 #endif
 
 class ESP32RMTController
@@ -210,9 +256,10 @@ private:
     uint32_t       mLastFill;
 
     // -- Pixel data
-    uint32_t *     mPixelData;
+    uint8_t *      mPixelData;
     int            mSize;
     int            mCur;
+    int            mBufSize;
 
     // -- RMT memory
     volatile uint32_t * mRMT_mem_ptr;
@@ -225,18 +272,23 @@ private:
     uint16_t       mBufferSize; // bytes
     int            mCurPulse;
 
+    // -- These values need to be real variables, so we can access them
+    //    in the cpp file
+    static int     gMaxChannel;
+    static int     gMemBlocks;
+
 public:
 
     // -- Constructor
     //    Mainly just stores the template parameters from the LEDController as
     //    member variables.
-    ESP32RMTController(int DATA_PIN, int T1, int T2, int T3);
+    ESP32RMTController(int DATA_PIN, int T1, int T2, int T3, int maxChannel, int memBlocks);
 
     // -- Get max cycles per fill
     uint32_t IRAM_ATTR getMaxCyclesPerFill() const { return mMaxCyclesPerFill; }
 
     // -- Get or create the pixel data buffer
-    uint32_t * getPixelBuffer(int size_in_bytes);
+    uint8_t * getPixelBuffer(int size_in_bytes);
 
     // -- Initialize RMT subsystem
     //    This only needs to be done once. The particular pin is not important,
@@ -302,18 +354,17 @@ private:
     // -- The actual controller object for ESP32
     ESP32RMTController mRMTController;
 
-    // -- This instantiation forces a check on the pin choice
-    FastPin<DATA_PIN> mFastPin;
+    // -- Verify that the pin is valid
+    static_assert(FastPin<DATA_PIN>::validpin(), "Invalid pin specified");
 
 public:
 
     ClocklessController()
-        : mRMTController(DATA_PIN, T1, T2, T3)
+        : mRMTController(DATA_PIN, T1, T2, T3, FASTLED_RMT_MAX_CHANNELS, FASTLED_RMT_MEM_BLOCKS)
         {}
 
     void init()
     {
-        // mRMTController = new ESP32RMTController(DATA_PIN, T1, T2, T3);
     }
 
     virtual uint16_t getMaxRefreshRate() const { return 400; }
@@ -329,43 +380,15 @@ protected:
     {
         // -- Make sure the buffer is allocated
         int size_in_bytes = pixels.size() * 3;
-        uint32_t * pData = mRMTController.getPixelBuffer(size_in_bytes);
+        uint8_t * pData = mRMTController.getPixelBuffer(size_in_bytes);
 
-        // -- Read out the pixel data using the pixel controller methods that
-        //    perform the scaling and adjustments 
-        int count = 0;
-        int which = 0;
+        // -- This might be faster
         while (pixels.has(1)) {
-            // -- Get the next four bytes of data
-            uint8_t four[4] = {0,0,0,0};
-            for (int i = 0; i < 4; i++) {
-                switch (which) {
-                case 0: 
-                    four[i] = pixels.loadAndScale0();
-                    break;
-                case 1:
-                    four[i] = pixels.loadAndScale1();
-                    break;
-                case 2:
-                    four[i] = pixels.loadAndScale2();
-                    pixels.advanceData();
-                    pixels.stepDithering();
-                    break;
-                }
-                // -- Move to the next color
-                which++;
-                if (which > 2) which = 0;
-
-                // -- Stop if there's no more data
-                if ( ! pixels.has(1)) break;
-            }
-
-            // -- Pack the four bytes into a 32-bit value with the right bit order
-            uint8_t a = four[0];
-            uint8_t b = four[1];
-            uint8_t c = four[2];
-            uint8_t d = four[3];
-            pData[count++] = a << 24 | b << 16 | c << 8 | d;
+            *pData++ = pixels.loadAndScale0();
+            *pData++ = pixels.loadAndScale1();
+            *pData++ = pixels.loadAndScale2();
+            pixels.advanceData();
+            pixels.stepDithering();
         }
     }
 

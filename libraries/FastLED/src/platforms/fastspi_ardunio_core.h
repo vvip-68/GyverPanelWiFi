@@ -1,30 +1,16 @@
-#ifndef __INC_FASTSPI_ARM_MXRT1062_H
-#define __INC_FASTSPI_ARM_MXRT1062_H
+#ifndef __INC_FASTSPI_ARDUNIO_CORE_H
+#define __INC_FASTSPI_ARDUNIO_CORE_H
 
 FASTLED_NAMESPACE_BEGIN
 
-#if defined (FASTLED_TEENSY4) && defined(ARM_HARDWARE_SPI)
+#if defined(ARDUNIO_CORE_SPI)
 #include <SPI.h>
 
-template <uint8_t _DATA_PIN, uint8_t _CLOCK_PIN, uint32_t _SPI_CLOCK_RATE, SPIClass & _SPIObject, int _SPI_INDEX>
-class Teensy4HardwareSPIOutput {
-	Selectable *m_pSelect;
-	uint32_t  m_bitCount;
-	uint32_t m_bitData;
-	inline IMXRT_LPSPI_t & port() __attribute__((always_inline)) {
-		switch(_SPI_INDEX) {
-			case 0:
-			return IMXRT_LPSPI4_S;
-			case 1:
-			return IMXRT_LPSPI3_S;
-			case 2:
-			return IMXRT_LPSPI1_S;
-		}
-	}
+template <uint8_t _DATA_PIN, uint8_t _CLOCK_PIN, uint32_t _SPI_CLOCK_RATE, SPIClass & _SPIObject>
+class ArdunioCoreSPIOutput {
 
 public:
-	Teensy4HardwareSPIOutput() { m_pSelect = NULL; m_bitCount = 0;}
-	Teensy4HardwareSPIOutput(Selectable *pSelect) { m_pSelect = pSelect; m_bitCount = 0;}
+	ArdunioCoreSPIOutput() {}
 
 	// set the object representing the selectable -- ignore for now
 	void setSelect(Selectable *pSelect) { /* TODO */ }
@@ -36,12 +22,10 @@ public:
 	void inline select() __attribute__((always_inline)) {
 		// begin the SPI transaction
 		_SPIObject.beginTransaction(SPISettings(_SPI_CLOCK_RATE, MSBFIRST, SPI_MODE0));
-		if(m_pSelect != NULL) { m_pSelect->select(); }
 	}
 
 	// release the CS select
 	void inline release() __attribute__((always_inline)) {
-		if(m_pSelect != NULL) { m_pSelect->release(); }
 		_SPIObject.endTransaction();
 	}
 
@@ -50,25 +34,12 @@ public:
 
 	// write a byte out via SPI (returns immediately on writing register) -
 	void inline writeByte(uint8_t b) __attribute__((always_inline)) {
-		if(m_bitCount == 0) {
-			_SPIObject.transfer(b);
-		} else {
-			// There's been a bit of data written, add that to the output as well
-			uint32_t outData = (m_bitData << 8) | b;
-			uint32_t tcr = port().TCR;
-			port().TCR = (tcr & 0xfffff000) | LPSPI_TCR_FRAMESZ((8+m_bitCount) - 1);  // turn on 9 bit mode
-			port().TDR = outData;		// output 9 bit data.
-			while ((port().RSR & LPSPI_RSR_RXEMPTY)) ;	// wait while the RSR fifo is empty...
-			port().TCR = (tcr & 0xfffff000) | LPSPI_TCR_FRAMESZ((8) - 1);  // turn back on 8 bit mode
-			port().RDR;
-			m_bitCount = 0;
-		}
+		_SPIObject.transfer(b);
 	}
 
 	// write a word out via SPI (returns immediately on writing register)
 	void inline writeWord(uint16_t w) __attribute__((always_inline)) {
-		writeByte(((w>>8) & 0xFF));
-		_SPIObject.transfer(w & 0xFF);
+		_SPIObject.transfer16(w);
 	}
 
 	// A raw set of writing byte values, assumes setup/init/waiting done elsewhere
@@ -99,15 +70,7 @@ public:
 
 	// write a single bit out, which bit from the passed in byte is determined by template parameter
 	template <uint8_t BIT> inline void writeBit(uint8_t b) {
-		m_bitData = (m_bitData<<1) | ((b&(1<<BIT)) != 0);
-		// If this is the 8th bit we've collected, just write it out raw
-		register uint32_t bc = m_bitCount;
-		bc = (bc + 1) & 0x07;
-		if (!bc) {
-			m_bitCount = 0;
-			_SPIObject.transfer(m_bitData);
-		}
-		m_bitCount = bc;
+		// todo
 	}
 
 	// write a block of uint8_ts out in groups of three.  len is the total number of uint8_ts to write out.  The template
