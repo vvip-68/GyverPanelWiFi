@@ -440,6 +440,7 @@ void processEffect(uint8_t aMode) {
     case MC_PATTERNS:            patternRoutine(); break;
     case MC_RUBIK:               rubikRoutine(); break;
     case MC_STARS:               starsRoutine(); break;
+    case MC_STARS2:              stars2Routine(); break;
 
     #ifdef MC_IMAGE
     case MC_IMAGE:               animationRoutine(); break;
@@ -506,7 +507,7 @@ void releaseEffectResources(uint8_t aMode) {
     case MC_FIRE:                fireRoutineRelease(); break;
     case MC_FILL_COLOR:          break;
     case MC_COLORS:              break;
-    case MC_LIGHTERS:            break;
+    case MC_LIGHTERS:            lighters2RoutineRelease(); break;
     case MC_SWIRL:               break;
     case MC_MAZE:                mazeRoutineRelease(); break;
     case MC_SNAKE:               break;
@@ -527,6 +528,7 @@ void releaseEffectResources(uint8_t aMode) {
     case MC_PATTERNS:            break;
     case MC_RUBIK:               rubikRoutineRelease(); break;
     case MC_STARS:               break;
+    case MC_STARS2:              stars2RoutineRelease(); break;
 
     #ifdef MC_IMAGE
     case MC_IMAGE:               break;
@@ -704,7 +706,7 @@ void setTimersForMode(uint8_t aMode) {
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 ||
         aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || 
-        aMode == MC_PATTERNS || aMode == MC_STARS
+        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2
         #ifdef MC_IMAGE
          || aMode == MC_IMAGE
         #endif  
@@ -713,6 +715,9 @@ void setTimersForMode(uint8_t aMode) {
          uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);
          if (variant == 0) effectTimer.setInterval(50);
          else effectTimer.setInterval(efSpeed);
+      } else
+      if (aMode == MC_STARS2) {
+        effectTimer.setInterval(map8(efSpeed,1,50));
       } else
       if (aMode == MC_TETRIS) {
         effectTimer.setInterval(50);

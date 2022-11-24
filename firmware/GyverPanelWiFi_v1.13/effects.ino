@@ -45,6 +45,7 @@ uint8_t getEffectScaleParamValue2(int8_t eff) {
 
 uint8_t hue;
 uint8_t loopCounter;
+uint8_t loopCounter2;
 
 // *********** снегопад 2.0 ***********
 
@@ -883,31 +884,160 @@ void sparklesRoutine() {
   fader(map8(effectBrightness, 4, SPARKLES_FADE_STEP));
 }
 
+// ********************* СВЕТЛЯКИ *********************
+
+#define LIGHTERS_AM 100
+
+int8_t  **lightersPos;   // Позиции светляков
+int8_t  **lightersSpeed; // Скорость движения светляков
+uint8_t *lightersColor;  // Цвета светляков
+    
+void lightersRoutine() {
+  
+  if (loadingFlag) {
+    loadingFlag = false;
+    // modeCode = MC_LIGHTERS;
+
+    if (lightersPos == NULL) { lightersPos = new int8_t*[2]; for (uint8_t i = 0; i < 2; i++) { lightersPos[i] = new int8_t [LIGHTERS_AM]; }}
+    if (lightersSpeed == NULL) { lightersSpeed = new int8_t*[2]; for (uint8_t i = 0; i < 2; i++) { lightersSpeed[i] = new int8_t [LIGHTERS_AM]; }}
+    if (lightersColor == NULL) { lightersColor = new uint8_t [LIGHTERS_AM]; }
+
+    FOR_i (0, LIGHTERS_AM) {
+      lightersPos[0][i] = random16(0, pWIDTH);
+      lightersPos[1][i] = random16(0, pHEIGHT);
+      lightersSpeed[0][i] = random8(0, 4) - 2;
+      lightersSpeed[1][i] = random8(0, 4) - 2;
+      lightersColor[i] = random8(0, 255);
+    }
+  }
+
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  FastLED.clear();
+
+  if (++loopCounter > 20) loopCounter = 0;
+
+   FOR_i (0, map8(getEffectScaleParamValue(MC_LIGHTERS),5,100)) {
+    if (loopCounter == 0) {     // меняем скорость каждые 20 отрисовок
+      while (lightersSpeed[0][i] == 0 && lightersSpeed[1][i] == 0) {
+        lightersSpeed[0][i] += random8(0, 4) - 2;
+        lightersSpeed[1][i] += random8(0, 4) - 2;
+        lightersSpeed[0][i] = constrain(lightersSpeed[0][i], -5, 5);
+        lightersSpeed[1][i] = constrain(lightersSpeed[1][i], -5, 5);
+      }
+    }
+
+    lightersPos[0][i] += lightersSpeed[0][i];
+    lightersPos[1][i] += lightersSpeed[1][i];
+
+    if (lightersPos[0][i] < 0) lightersPos[0][i] = pWIDTH - 1;
+    if (lightersPos[0][i] >= pWIDTH) lightersPos[0][i] = 0;
+
+    if (lightersPos[1][i] < 0) {
+      lightersPos[1][i] = 0;
+      lightersSpeed[1][i] = -lightersSpeed[1][i];
+    }
+    if (lightersPos[1][i] >= pHEIGHT - 1) {
+      lightersPos[1][i] = pHEIGHT - 1;
+      lightersSpeed[1][i] = -lightersSpeed[1][i];
+    }
+    drawPixelXY(lightersPos[0][i], lightersPos[1][i], CHSV(lightersColor[i], 255, effectBrightness));
+  }
+}
+
+void lighters2RoutineRelease() {
+  if (lightersPos   != NULL) { for( uint8_t i = 0; i < 2; i++ ) { delete [] lightersPos[i];}   delete [] lightersPos;   lightersPos   = NULL; }
+  if (lightersSpeed != NULL) { for( uint8_t i = 0; i < 2; i++ ) { delete [] lightersSpeed[i];} delete [] lightersSpeed; lightersSpeed = NULL; }
+  
+  if (lightersColor == NULL) { delete [] lightersColor; lightersColor = NULL; }
+}
+
+// ******************* МЕРЦАНИЕ ********************
+
+uint32_t xf,yf,v_time,hue_time,hxy;
+
+// Play with the values of the variables below and see what kinds of effects they
+// have!  More octaves will make things slower.
+
+// how many octaves to use for the brightness and hue functions
+uint8_t  octaves=3;
+uint8_t  hue_octaves=1;
+
+// the 'distance' between points on the x and y axis
+int32_t  xscale=57771;
+int32_t  yscale=57771;
+
+// the 'distance' between x/y points for the hue noise
+int32_t  hue_scale=1;
+
+// how fast we move through time & hue noise
+int32_t  time_speed=1111;
+uint8_t  hue_speed=10;
+
+// adjust these values to move along the x or y axis between frames
+uint16_t x_speed, y_speed;
+
+void flickerRoutine() {
+  if (loadingFlag) {
+    // modeCode = MC_FLICKER;
+    loadingFlag = false;
+    x_speed = (pWIDTH > pHEIGHT ? 1111 : 331);
+    y_speed = (pWIDTH > pHEIGHT ? 331 : 1111);
+
+    hxy = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    xf = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    yf = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    v_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
+    hue_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();    
+  }
+
+  // Если совсем задержки нет - матрица мерцает от постоянного обновления
+  delay(5);
+
+  // uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  // adjust the intra-frame time values
+  hue_speed = map8(255-getEffectSpeedValue(MC_FLICKER), 1, 5);
+
+  // fill the led array 2/16-bit noise values
+  fill_2dnoise16(leds, pWIDTH, pHEIGHT, (sMATRIX_TYPE == 0),
+                octaves, xf, xscale, yf, yscale, v_time,
+                hue_octaves, hxy, hue_scale, hxy, hue_scale, hue_time, 
+                false);
+ 
+  xf += x_speed;
+  yf += y_speed;
+
+  v_time += time_speed;
+  hue_time += hue_speed;
+}
 
 // *********************  ЗВЕЗДОЧКИ ******************
 
 #define STARS_FADE_STEP 5     // шаг уменьшения яркости
+uint8_t drawRays = 0;
 
 void starsRoutine() {
   if (loadingFlag) {
+    // modeCode = MC_STARS;
     loadingFlag = false;
     loopCounter = 0;
     hue = 46;
-    // modeCode = MC_STARS;
+    //   0               1         2        3        4
+    // ">Случайный выбор,Без лучей,Лучи '+',Лучи 'X',Лучи '+' и 'X'"
+    drawRays = getEffectScaleParamValue2(thisMode);  
+    if (drawRays == 0) drawRays = random8(1, 4);
     FastLED.clear();  // очистить
   }
 
   delay(5);  
   fader(STARS_FADE_STEP);
 
-  uint8_t spd = getEffectSpeedValue(MC_STARS);
+  uint8_t spd = getEffectSpeedValue(thisMode);
   if (spd > 0 && loopCounter++ < map8(spd, 0, 30)) return;
   loopCounter = 0;
     
   uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   uint8_t fadeBrightness =  effectBrightness / 4 * 3;  
-  bool    useRays = getEffectScaleParamValue2(MC_STARS) != 0;  
-  uint8_t the_color = getEffectScaleParamValue(MC_STARS);
+  uint8_t the_color = getEffectScaleParamValue(thisMode);
   uint8_t color = the_color;
   int8_t  delta = random8(0, 12) - 6;
 
@@ -924,7 +1054,7 @@ void starsRoutine() {
     cnt++;
     uint8_t x = random8(1, pWIDTH - 1);
     uint8_t y = random8(1, pHEIGHT - 1);
-    bool enable = !useRays ||
+    bool enable = drawRays == 1 ||
                   getPixColorXY(x,   y  ) == 0 && 
                   getPixColorXY(x+1, y  ) == 0 &&
                   getPixColorXY(x-1, y  ) == 0 &&
@@ -941,10 +1071,11 @@ void starsRoutine() {
       // Центр
       idx = getPixelNumber(x, y); 
       if (idx >= 0) leds[idx] = star_color;
-      if (useRays) {
+      if (drawRays > 1) {
         // Стороны лучей
         star_color = CHSV(color, sat, fadeBrightness);
-        if (pWIDTH >= 24 || pHEIGHT >= 24 && random8(0, 50) % 2 == 0) {
+        bool useXRay = random8(0, 50) % 2 == 0;
+        if (drawRays == 3 || drawRays == 4 && useXRay) {
           // Тип - X
           idx = getPixelNumber(x+1, y+1); 
           if (idx >= 0) leds[idx] = star_color;
@@ -954,7 +1085,7 @@ void starsRoutine() {
           if (idx >= 0) leds[idx] = star_color;
           idx = getPixelNumber(x-1, y-1); 
           if (idx >= 0) leds[idx] = star_color;              
-        } else {
+        } else if (drawRays == 2 || drawRays == 4 && !useXRay) {
           // Тип - крест +
           idx = getPixelNumber(x+1, y); 
           if (idx >= 0) leds[idx] = star_color;
@@ -971,60 +1102,145 @@ void starsRoutine() {
   }
 }
 
-// ----------------------------- СВЕТЛЯКИ ------------------------------
+// *********************  ЗВЕЗДОЧКИ-2 (Штора) ******************
 
-#define LIGHTERS_AM 100
-int16_t lightersPos[2][LIGHTERS_AM];
-int8_t  lightersSpeed[2][LIGHTERS_AM];
-uint8_t lightersColor[LIGHTERS_AM];
+#define STARS2_FADE_STEP 10   // шаг уменьшения яркости
+#define BACK_BRIGHTNESS 20
+#define STAR_BRIGHTNESS 36
 
-int16_t angle[LIGHTERS_AM];
-int16_t speedV[LIGHTERS_AM];
-int8_t  angleSpeed[LIGHTERS_AM];
+int8_t  *starState;    // 0 - яркость не меняется 1 - яркость увеличивается -1 - яркость уменьшается
+uint8_t *starBright;   // Текущая яркость звезды
 
-void lightersRoutine() {
+uint8_t  numStarsWidth;
+uint8_t  numStarsHeight;
+uint16_t numStars;
+
+void stars2Routine() {
+
+  drawRays = getEffectScaleParamValue2(thisMode);
+  uint8_t contrast = getEffectContrastValue(thisMode);
+  uint8_t delta2 = 0;
+
+  uint8_t delta = 255 - globalBrightness;  
+  if (drawRays < 2) {
+    if (delta > 200) delta2 = delta / 3; else
+    if (delta > 150) delta2 = delta / 4; else
+    if (delta > 100) delta2 = delta / 5; else
+    if (delta > 50 ) delta2 = delta / 6; else
+                     delta2 = delta / 7;
+  } else {
+    if (delta > 200) delta2 = delta / 4; else
+    if (delta > 150) delta2 = delta / 5; else
+    if (delta > 100) delta2 = delta / 6; else
+    if (delta > 50 ) delta2 = delta / 7; else
+                     delta2 = delta / 8;
+  }
+ 
+  uint8_t backBrightness = BACK_BRIGHTNESS + delta2;
+  uint8_t starBrightness = constrain(STAR_BRIGHTNESS + delta2, STAR_BRIGHTNESS, 255);
+  uint8_t maxEffectBrightness = constrain(contrast, 2 * starBrightness, 255);
+  uint8_t maxFadeBrightness = maxEffectBrightness / 4 * 3;  
+
   if (loadingFlag) {
+    // modeCode = MC_STARS2;
     loadingFlag = false;
-    // modeCode = MC_LIGHTERS;
-    randomSeed(millis());
-    for (uint8_t i = 0; i < LIGHTERS_AM; i++) {
-      lightersPos[0][i] = random(0, pWIDTH * 10);
-      lightersPos[1][i] = random(0, pHEIGHT * 10);
-      lightersSpeed[0][i] = random(-10, 10);
-      lightersSpeed[1][i] = random(-10, 10);
-      lightersColor[i] = random(0, 255);
+
+    numStarsWidth = pWIDTH / 4;
+    numStarsHeight = pHEIGHT / 4;
+    numStars = numStarsWidth * numStarsHeight;
+    hue = 0;
+
+    if (starState  == NULL) { starState  = new int8_t  [numStars]; }
+    if (starBright == NULL) { starBright = new uint8_t [numStars]; }
+
+    // Заполнить массив начальной яркости звезд 
+    FOR_i(0, numStars) {
+      starState[i] = 0;
+      starBright[i] = starBrightness;
+    }
+    FastLED.clear();  // очистить
+  }
+
+  // На каждый 5 (или менее в зависимости от размера матрицы) шаг "зажигаем" следующую звезду
+  loopCounter++;
+  if (loopCounter == 5 - numStars / 256) {
+    loopCounter = 0;
+    idx = random16(0, numStars);
+    if (starState[idx] == 0) {
+      starState[idx] = 1;
+      // Некоторые звезды зажигаются не плавно, а вспышкой и плавно угасает
+      if (random8(0, 100) % 4 == 0) {
+        starBright[idx] = maxEffectBrightness - STARS2_FADE_STEP;
+      }
     }
   }
 
-  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
-  FastLED.clear();
-
-  if (++loopCounter > 20) loopCounter = 0;
-
-  for (uint8_t i = 0; i < map8(getEffectScaleParamValue(MC_LIGHTERS),5,150); i++) {
-    if (loopCounter == 0) {     // меняем скорость каждые 20 отрисовок
-      lightersSpeed[0][i] += random(-3, 4);
-      lightersSpeed[1][i] += random(-3, 4);
-      lightersSpeed[0][i] = constrain(lightersSpeed[0][i], -20, 20);
-      lightersSpeed[1][i] = constrain(lightersSpeed[1][i], -20, 20);
+  // В режимах без фона крайние положения двиджка "вариант" включают режим прокрутки по радуге
+  uint8_t color = getEffectScaleParamValue(thisMode);
+  if (drawRays >= 2 && (color < 2 || color > 253)) {
+    color = hue;
+    loopCounter2++;
+    if (loopCounter2 == 10) {
+      loopCounter2 = 0;
+      hue += 1;
     }
-
-    lightersPos[0][i] += lightersSpeed[0][i];
-    lightersPos[1][i] += lightersSpeed[1][i];
-
-    if (lightersPos[0][i] < 0) lightersPos[0][i] = (pWIDTH - 1) * 10;
-    if (lightersPos[0][i] >= pWIDTH * 10) lightersPos[0][i] = 0;
-
-    if (lightersPos[1][i] < 0) {
-      lightersPos[1][i] = 0;
-      lightersSpeed[1][i] = -lightersSpeed[1][i];
-    }
-    if (lightersPos[1][i] >= (pHEIGHT - 1) * 10) {
-      lightersPos[1][i] = (pHEIGHT - 1) * 10;
-      lightersSpeed[1][i] = -lightersSpeed[1][i];
-    }
-    drawPixelXY(lightersPos[0][i] / 10, lightersPos[1][i] / 10, CHSV(lightersColor[i], 255, effectBrightness));
   }
+
+  // Заливка поля цветом фона для режима с фоном или черным для режима без фона
+  CHSV back_color = CHSV(color, 255, drawRays < 2 ? backBrightness : 0) ;     
+  fillAll(back_color);
+
+  FOR_x(0, numStarsWidth) {
+    FOR_y(0, numStarsHeight) {
+
+     // Корректировка яркости (угасание/зажигания) звезды
+     idx = x + numStarsWidth * y;
+     uint16_t br = starBright[idx];
+     br += starState[idx] * STARS2_FADE_STEP;
+     if (br >= maxEffectBrightness) {
+       // При достижении максимальной яркости - переключить на "угасание"
+       starState[idx] = -1;
+       br = maxEffectBrightness;
+     } else if (br <= starBrightness) {
+       // При достижении минимальной яркости - переключить на "ожидание"
+       starState[idx] = 0;
+       br = starBrightness;
+     }
+     starBright[idx] = br;
+
+     // Отрисовать звезду      
+     uint8_t xp = x * 4 + 1;
+     uint8_t yp = y * 4 + x % 2 + 1;
+     uint8_t effectBrightness = constrain(starBright[x + y * numStarsWidth], starBrightness, maxEffectBrightness);
+
+      // Центр
+      idx = getPixelNumber(xp, yp); 
+      CHSV star_color = CHSV(color, 255, effectBrightness);  
+
+      if (idx >= 0) leds[idx] = star_color;
+            
+      if (drawRays == 1 || drawRays == 3) {
+        // Стороны лучей
+        uint8_t fadeBrightness = effectBrightness / 4 * 3;
+        if (fadeBrightness > maxFadeBrightness) fadeBrightness = maxFadeBrightness;
+        if (fadeBrightness < backBrightness) fadeBrightness = backBrightness;
+        star_color = CHSV(color, 255, fadeBrightness);
+        idx = getPixelNumber(xp+1, yp); 
+        if (idx >= 0) leds[idx] = star_color;
+        idx = getPixelNumber(xp-1, yp); 
+        if (idx >= 0) leds[idx] = star_color;
+        idx = getPixelNumber(xp, yp+1); 
+        if (idx >= 0) leds[idx] = star_color;
+        idx = getPixelNumber(xp, yp-1); 
+        if (idx >= 0) leds[idx] = star_color;      
+      }            
+    }    
+  }  
+}
+
+void stars2RoutineRelease() {
+  if (starState == NULL) { delete [] starState; starState = NULL; }
+  if (starBright == NULL) { delete [] starBright; starBright = NULL; }  
 }
 
 // ********************* БУДИЛЬНИК-РАССВЕТ *********************
@@ -1336,65 +1552,6 @@ void fillColorProcedure() {
   }
 }
 
-// ******************* МЕРЦАНИЕ ********************
-
-uint32_t xf,yf,v_time,hue_time,hxy;
-
-// Play with the values of the variables below and see what kinds of effects they
-// have!  More octaves will make things slower.
-
-// how many octaves to use for the brightness and hue functions
-uint8_t  octaves=3;
-uint8_t  hue_octaves=1;
-
-// the 'distance' between points on the x and y axis
-int32_t  xscale=57771;
-int32_t  yscale=57771;
-
-// the 'distance' between x/y points for the hue noise
-int32_t  hue_scale=1;
-
-// how fast we move through time & hue noise
-int32_t  time_speed=1111;
-uint8_t  hue_speed=10;
-
-// adjust these values to move along the x or y axis between frames
-uint16_t x_speed, y_speed;
-
-void flickerRoutine() {
-  if (loadingFlag) {
-    // modeCode = MC_FLICKER;
-    loadingFlag = false;
-    x_speed = (pWIDTH > pHEIGHT ? 1111 : 331);
-    y_speed = (pWIDTH > pHEIGHT ? 331 : 1111);
-
-    hxy = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
-    xf = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
-    yf = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
-    v_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();
-    hue_time = (uint32_t)((uint32_t)random16() << 16) + (uint32_t)random16();    
-  }
-
-  // Если совсем задержки нет - матрица мерцает от постоянного обновления
-  delay(5);
-
-  // uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
-  // adjust the intra-frame time values
-  hue_speed = map8(255-getEffectSpeedValue(MC_FLICKER), 1, 5);
-
-  // fill the led array 2/16-bit noise values
-  fill_2dnoise16(leds, pWIDTH, pHEIGHT, (sMATRIX_TYPE == 0),
-                octaves, xf, xscale, yf, yscale, v_time,
-                hue_octaves, hxy, hue_scale, hxy, hue_scale, hue_time, 
-                false);
- 
-  xf += x_speed;
-  yf += y_speed;
-
-  v_time += time_speed;
-  hue_time += hue_speed;
-}
-
 // ******************* PACIFICA ********************
 
 //////////////////////////////////////////////////////////////////////////
@@ -1601,7 +1758,7 @@ void paletteRoutine() {
 
     dir_mx = pWIDTH > pHEIGHT ? 0 : 1;                                   // 0 - квадратные сегменты расположены горизонтально, 1 - вертикально
     seg_num = dir_mx == 0 ? (pWIDTH / pHEIGHT) : (pHEIGHT / pWIDTH);     // вычисляем количество сегментов, умещающихся на матрице
-    
+
     if (palette_h == NULL) { palette_h = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_h[i] = new uint8_t [num_y]; }}
     if (palette_s == NULL) { palette_s = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { palette_s[i] = new uint8_t [num_y]; }}
     if (block_sta == NULL) { block_sta = new uint8_t*[num_x]; for (uint8_t i = 0; i < num_x; i++) { block_sta[i] = new uint8_t [num_y]; }}
@@ -1651,7 +1808,6 @@ void paletteRoutine() {
              block_dur[c][r] = FADE_OUT_STEPS;  // Кол-во шагов убирания блока
            }  
          }
-
       }
       
       if (block_sta[c][r] < 2) {

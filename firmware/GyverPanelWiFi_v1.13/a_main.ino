@@ -1512,7 +1512,12 @@ void parsing() {
             // При получении параметра 2 эффекта "Кубик рубика" -  вид - надо переинициализировать эффект
             // Если установлен вариант - "случайный" - продолжаем показывать тот что был
             loadingFlag = effectScaleParam2[tmp_eff] != 0;
-          } 
+          } else
+          if (thisMode == tmp_eff && tmp_eff == MC_STARS) {
+            // При получении параметра 2 эффекта "Звездочки" -  вид - надо переинициализировать эффект
+            // Если установлен вариант - "случайный" - продолжаем показывать тот что был
+            loadingFlag = effectScaleParam2[tmp_eff] != 0;
+          }
           #ifndef NO_ANIMATION
           else
           if (thisMode == tmp_eff && tmp_eff == MC_IMAGE) {
@@ -4170,7 +4175,13 @@ String getParam2ForMode(uint8_t mode) {
      str = String(F("C>")) + (effectScaleParam2[thisMode] == 0 ? "0" : "1") + String(F(">Сегменты")); // "C>1>Сегменты"
      break;
    case MC_STARS:
-     str = String(F("C>")) + (effectScaleParam2[thisMode] == 0 ? "0" : "1") + String(F(">Лучи")); // "C>1>Лучи"
+     //           Маркер типа - список выбора         0,1,2,3,4               0               1         2      3      4
+     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Без лучей,Лучи '+',Лучи 'X',Лучи '+' и 'X'"));
+     break;
+   case MC_STARS2:
+     // Дополнительный параметр представлен в приложении списком выбора
+     //           Маркер типа - список выбора         0,1,2,3,4               0         1         2         3
+     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Вариант 1,Вариант 2,Вариант 3,Вариант 4"));
      break;
  }
  return str;   
