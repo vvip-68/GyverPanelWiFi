@@ -1646,7 +1646,10 @@ void pacifica_one_layer( CRGBPalette16& p, uint16_t cistart, uint16_t wavescale,
     uint16_t sindex16 = sin16( ci) + 32768;
     uint8_t sindex8 = scale16( sindex16, 240);
     CRGB c = ColorFromPalette( p, sindex8, bri, LINEARBLEND);
-    leds[i] += c;
+    uint8_t px = i % pWIDTH;
+    uint8_t py = i / pWIDTH;
+    idx = getPixelNumber(px, py);
+    if (idx >= 0) leds[idx] += c;
   }
 }
 
@@ -1659,11 +1662,16 @@ void pacifica_add_whitecaps()
   for( uint16_t i = 0; i < NUM_LEDS; i++) {
     uint8_t threshold = scale8( sin8( wave), 20) + basethreshold;
     wave += 7;
-    uint8_t l = leds[i].getAverageLight();
-    if( l > threshold) {
-      uint8_t overage = l - threshold;
-      uint8_t overage2 = qadd8( overage, overage);
-      leds[i] += CRGB( overage, overage2, qadd8( overage2, overage2));
+    uint8_t px = i % pWIDTH;
+    uint8_t py = i / pWIDTH;
+    idx = getPixelNumber(px, py);
+    if (idx >= 0) {
+      uint8_t l = leds[idx].getAverageLight();
+      if( l > threshold) {
+        uint8_t overage = l - threshold;
+        uint8_t overage2 = qadd8( overage, overage);
+        leds[idx] += CRGB( overage, overage2, qadd8( overage2, overage2));
+      }
     }
   }
 }
@@ -1672,9 +1680,14 @@ void pacifica_add_whitecaps()
 void pacifica_deepen_colors()
 {
   for( uint16_t i = 0; i < NUM_LEDS; i++) {
-    leds[i].blue = scale8( leds[i].blue,  145); 
-    leds[i].green= scale8( leds[i].green, 200); 
-    leds[i] |= CRGB( 2, 5, 7);
+    uint8_t px = i % pWIDTH;
+    uint8_t py = i / pWIDTH;
+    idx = getPixelNumber(px, py);
+    if (idx >= 0) {
+      leds[idx].blue = scale8( leds[idx].blue,  145); 
+      leds[idx].green= scale8( leds[idx].green, 200); 
+      leds[idx] |= CRGB( 2, 5, 7);
+    }
   }
 }
 
@@ -1727,7 +1740,10 @@ void shadowsRoutine() {
     uint16_t pixelnumber = i;
     pixelnumber = (NUM_LEDS-1) - pixelnumber;
     
-    nblend( leds[pixelnumber], newcolor, 64);
+    uint8_t px = pixelnumber % pWIDTH;
+    uint8_t py = pixelnumber / pWIDTH;
+    idx = getPixelNumber(px, py);
+    if (idx >= 0) nblend( leds[idx], newcolor, 64);
   }
 }
 
