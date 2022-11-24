@@ -500,9 +500,9 @@ void saveDefaults() {
 #if (INITIALIZE_TEXTS == 1)
   textLines[0]   = "##";
   textLines[1]   = "Всё будет хорошо!";
-  textLines[2]   = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.2023#4}{E21}";
+  textLines[2]   = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.***+}{S01.12.****#31.12.**** 23:59:59}{E21}";
   textLines[3]   = "До {C#0019FF}Нового года{C#FFFFFF} {P01.01.****#4}";
-  textLines[4]   = "-С {C#00D0FF}Новым {C#0BFF00}{D:yyyy} {C#FFFFFF}годом!{E21}";
+  textLines[4]   = "С {C#00D0FF}Новым {C#0BFF00}{D:yyyy} {C#FFFFFF}годом!{S01.01.****#31.01.**** 23:59:59}{E21}";
   textLines[5]   = "В {C#10FF00}Красноярске {C#FFFFFF}{WS} {WT}°C";
   textLines[6]   = "Show must go on!{C#000002}";
   textLines[7]   = "{C#FF000F}Крибле! {C#000001}Крабле!! {C#00FF00}Бумс!!!{E24}";

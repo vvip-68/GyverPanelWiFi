@@ -585,7 +585,9 @@ String processMacrosInText(const String text) {
 
      "{D}"      - просто часы вида "21:00" в виде бегущей строки
 
-     "{R01.01.2021 0:00#N}" 
+     "{R01.01.2021 0:00:00#N}" 
+     "{R01.01.**** 0:00:00#N}" 
+     "{R01.01.***+ 0:00:00#N}" 
        - где после R указана дата и опционально время до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
            для R: X дней X часов X минут; 
            для P: X дней X часов X минут X секунд; 
@@ -593,10 +595,20 @@ String processMacrosInText(const String text) {
          Если дней не осталось - выводится только X часов X минут; 
          Если часов тоже уже не осталось - выводится X минут
          Если минут тоже уже не осталось - выводится X секунд
+         Год в дате может быть указан '****', что означает "текущий год" или '***+', что означает "Следующий год"
+         Время в макросе может быть указано с секундами: '23:59:59'
        
        - где после даты/времени может быть указан
          - #N - если осталось указанная дата уже наступила - вместо этой строки выводится строка с номером N
                 если строка замены не указана - просроченная строка не выводится берется следующая строка
+         - Внимание! При использовании макроса для вывода строки "До Нового года осталось" с годом, указанным звездочками '****'
+           следует иметь в виду, что по достижении указанной даты год сменится на следующий, и событие "По достижении даты показовать строку #N"
+           не сработает - вместо этого будет отображаться "До Нового года осталось 365 дней".
+           Чтобы это избежать - и строку с макросом {R} и строку #N нужно использовать совместно с макросом {S}, который онграничивает
+           перирод показа этой строки:
+             textLines[2]   = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.***+}{S01.12.****#31.12.**** 23:59:59}";
+             textLines[3]   = "С {C#00D0FF}Новым {C#0BFF00}{D:yyyy} {C#FFFFFF}годом!{S01.01.****#31.01.**** 23:59:59}";
+
 
      "{P01.01.2020#N#B#A}"
      "{P**.**.**** 7:00#N#B#A#F}"
@@ -681,7 +693,7 @@ String processMacrosInText(const String text) {
     // Сейчас просто выставить флаг, что строка содержит макросы, зависимые от даты
     //    "{D:F}" - где F - один из форматов даты / времени если формата даты нет - аналогично {D}
     //    "{D}"  - просто часы вида "21:00" в виде бегущей строки
-    //    "{R01.01.2021#N}" 
+    //    "{R01.01.****#N}" 
     //    "{P01.**.2021 8:00#N#B#A#F}" 
     //    "{S01.01.****}" 
     // -------------------------------------------------------------
@@ -1034,15 +1046,27 @@ String processDateMacrosInText(const String text) {
           tt   - Указатель am/pm
   
       "{R01.01.2021#N}" 
+      "{R01.01.****}" 
+      "{R01.01.***+}" 
          - где после R указана дата до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
              X дней X часов X минут; 
            Если дней не осталось - выводится только X часов X минут; 
            Если минут тоже уже не осталось - выводится X минут
+           Год в дате может быть указан '****', что означает "текущий год" или '***+', что означает "Следующий год"
+           Время в макросе может быть указано с секундами: '23:59:59'
        
          - где после даты может быть указан
            - #N - если осталось указанная дата уже наступила - вместо этой строки выводится строка с номером N
                   если строка замены не указана или отключена (символ "-" вначале строки) - просроченная строка не выводится
                   берется следующая строка
+                  
+         - Внимание! При использовании макроса для вывода строки "До Нового года осталось" с годом, указанным звездочками '****'
+           следует иметь в виду, что по достижении указанной даты год сменится на следующий, и событие "По достижении даты показовать строку #N"
+           не сработает - вместо этого будет отображаться "До Нового года осталось 365 дней".
+           Чтобы это избежать - и строку с макросом {R} и строку #N нужно использовать совместно с макросом {S}, который онграничивает
+           перирод показа этой строки:
+             textLines[2]   = "До {C#00D0FF}Нового года {C#FFFFFF}осталось {C#10FF00}{R01.01.***+}{S01.12.****#31.12.**** 23:59}";
+             textLines[3]   = "С {C#00D0FF}Новым {C#0BFF00}{D:yyyy} {C#FFFFFF}годом!{S01.01.****#31.01.**** 23:59}";
 
      "{PДД.ММ.ГГГГ#N#B#A#F}"
        - где после P указаны опционально дата и время до которой нужно отсчитывать оставшееся время, выводя строку остатка в формате:
@@ -1248,10 +1272,13 @@ String processDateMacrosInText(const String text) {
       idx = textLine.indexOf("{D:");
     }
 
-    // "{R01.01.2021#N}" 
-    // "{R10.10.2020 7:00#N}" 
+    // "{R01.01.****}" 
+    // "{R01.01.***+}" 
+    // "{R01.01.2023#N}" 
+    // "{R10.10.2023 7:00#N}" 
     idx = textLine.indexOf("{R");
     if (idx >= 0) {
+            
       // Если время  события уже наступило и в строке указана строка-заместитель для отображения ПОСЛЕ наступления события - показывать эту строку
       // Если замены строки после наступления события нет - textLine будет пустой - отображать нечего
       // Строка замены снова может содержать метки времени - поэтому отправить проверку / замену на второй круг
@@ -1271,8 +1298,8 @@ String processDateMacrosInText(const String text) {
       // удаляем макрос; точка вставки строки остатка будет будет в позицию idx
       textLine.remove(idx, idx2 - idx + 1);
 
-      // Здесь str имеет вид '01.01.2020', если строки замены ПОСЛЕ события нет или '01.01.2020#J' или '01.01.2020#19' если строка замены указана (J=19 - индекс в массиве)
-      // так же после даты может быть указано время '01.01.2020 7:00'
+      // Здесь str имеет вид '01.01.2020', или '01.01.****', или '01.01.***+' если строки замены ПОСЛЕ события нет или '01.01.2020#J' или '01.01.2020#19' если строка замены указана (J=19 - индекс в массиве)
+      // так же после даты может быть указано время '01.01.2020 7:00:00'
       if (str.length() > 0) {
 
         time_t t_now = now();
@@ -1293,36 +1320,17 @@ String processDateMacrosInText(const String text) {
           s_nn = idx>=0 ? str.substring(idx+1) : "";
           str = str.substring(0,idx);
         }
+
+        tmElements_t tm = ParseDateTime(str);
+        t_event = makeTime(tm);
+
+        /*
+        DEBUGLN("------------------------------------");
+        DEBUGLN("Исходная R-дата: '" + str + "'");
+        DEBUGLN(String(F("Дата события: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + ":" + padNum(tm.Second,2));
+        DEBUGLN("------------------------------------");
+        */
         
-        // Корректная дата - 10 символов, точки в позициях 2 и 5, если есть время - оно отделено пробелом от даты, часы и минуты разделены двоеточием
-        if (str.length() > 10) {
-          idx = str.indexOf(" ");
-          if (idx > 0) {
-            s_time = str.substring(idx+1);
-            str = str.substring(0,idx);
-            s_time.trim();
-            str.trim();
-          }
-        }
-
-        if (str.length() == 10 && str.charAt(2) == '.' && str.charAt(5) == '.') {
-           uint8_t iHours = 0, iMinutes = 0;
-           uint8_t iDay   = (str[0] - '0') * 10 + (str[1] - '0');
-           uint8_t iMonth = (str[3] - '0') * 10 + (str[4] - '0');
-           str = str.substring(6);
-           uint16_t iYear = str.toInt();
-           idx = s_time.indexOf(":"); 
-           if (idx > 0) {
-             String s_mins = s_time.substring(idx+1);
-             String s_hrs = s_time.substring(0,idx);
-             iHours = s_hrs.toInt();
-             iMinutes = s_mins.toInt();
-           }
-
-           tmElements_t tm = {0, iMinutes, iHours, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)};
-           t_event = makeTime(tm);
-        }
-
         // Если t_now >= t_event - событие уже прошло, нужно заменять обрабатываемую строку на строку подстановки, указанную (или нет) в s_nn 
         if (t_now >= t_event) {
 
@@ -1681,7 +1689,6 @@ void rescanTextEvents() {
    **.**.2020 - каждый день 2020 года
    
    "{P7:00#N#120#30#12347}"  - каждый пн,вт,ср,чт,вс в 7 утра (за 120 сек до наступления события и 30 секунд после наступления
-
    - где компоненты даты:
      ДД - число месяца
      MM - месяц
@@ -1703,7 +1710,7 @@ void rescanTextEvents() {
 
   bool     found = false;
   uint8_t  stage = 0;         // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 - секунд ПОСЛЕ; 8 - дни недели
-  uint8_t  iDay = 0, iMonth = 0, iHour = 0, iMinute = 0, star_cnt = 0;
+  uint8_t  iDay = 0, iMonth = 0, iHour = 0, iMinute = 0, iSecond = 0, star_cnt = 0;
   uint16_t iYear = 0;
   uint32_t iBefore = 60, iAfter = 60, num = 0;
   uint8_t  moment_idx = 0;    // индекс элемента в формируемом массиве
@@ -1732,7 +1739,7 @@ void rescanTextEvents() {
     DEBUGLN(String(F("Строка: '")) + text + "'");
 
     // Сбрасываем переменные перед разбором очередной строки
-    stage = 0; iDay = 0; iMonth = 0; iYear = 0; iHour = 0; iMinute = 0; iBefore = 60; iAfter = 60; star_cnt = 0; num = 0;
+    stage = 0; iDay = 0; iMonth = 0; iYear = 0; iHour = 0; iMinute = 0; iSecond = 0; iBefore = 60; iAfter = 60; star_cnt = 0; num = 0;
     wdays = "1234567";
     
     // Побайтово разбираем строку макроса
@@ -1857,7 +1864,7 @@ void rescanTextEvents() {
       if (iYear < year()) continue;
       
       // Сформировать ближайшее время события из полученных компонент
-      tmElements_t tm = {0, iMinute, iHour, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)}; 
+      tmElements_t tm = {iSecond, iMinute, iHour, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)}; 
       time_t t_event = makeTime(tm);            
       
       // Если событие уже прошло - это может быть, когда дата опущена или звездочками, а время указано меньше текущего - брать то же время следующего дня/месяца/года
@@ -1968,17 +1975,20 @@ void checkMomentText() {
 // Если дата не совпадает - текст отображать сегодня нельзя - еще не пришло (или уже прошло) время для этого текста
 bool forThisDate(String text) {
   /*
-     "{S01.01.2020#01.01.2020}"
-     "{S01.01.2020 7:00#01.01.2020 19:00}"
-     "{S01.01.**** 7:00#01.01.**** 19:00}"
-       - где после S указаны даты начала и конца периода доступного для отображения строки.
-       Для режима S элементы даты быть заменены звездочкой '*'
-       **.10.2020 - весь октябрь 2020 года 
-       01.**.**** - каждое первое число месяца
-       **.**.2020 - каждый день 2020 года
-       Если время начала периода отсутствует - считается 00:00:00
-       Если время конца периода отсутствует  - считается 23:59:59
-       Допускается указывать несколько макросов {S} в строке для определения нескольких разрешенных диапазонов
+     text - в общем случае - "{S01.01.**** 7:00:00#01.01.**** 19:00:00}" - содержит даты начала и конца, разделенные символом "#"
+     Дата как правило имеет формат "ДД.ММ.ГГГГ ЧЧ:MM:СС"; В дате День может быть замене на "**" - текущий день, месяц - "**" - текущий месяц, год - "****" - текущий год или "***+" - следующий год
+     Примеры:
+       "{S01.01.2020#01.01.2020}"
+       "{S01.01.2020 7:00#01.01.2020 19:00}"
+       "{S01.01.**** 7:00#01.01.**** 19:00:00}"
+         - где после S указаны даты начала и конца периода доступного для отображения строки.
+         Для режима S элементы даты быть заменены звездочкой '*'
+         **.10.2020 - весь октябрь 2020 года 
+         01.**.**** - каждое первое число месяца
+         **.**.2020 - каждый день 2020 года
+         Если время начала периода отсутствует - считается 00:00:00
+         Если время конца периода отсутствует  - считается 23:59:59
+         Допускается указывать несколько макросов {S} в строке для определения нескольких разрешенных диапазонов
   */
   bool   ok = false;
   String str;
@@ -2016,6 +2026,7 @@ bool forThisDate(String text) {
       DEBUGLN("now=" + String(now_moment) + "; start=" + String(textAllowBegin) + "; end=" + String(textAllowEnd));
       if (ok) DEBUGLN(F("вывод разрешен"));
       else    DEBUGLN(F("вывод запрещен"));
+      DEBUGLN(F("--------------------")); 
       */
     }
 
@@ -2036,200 +2047,57 @@ bool forThisDate(String text) {
 
 void extractMacroSDates(String text) {
 
+  // Макрос {S} ДОЛЖЕН содержать ОБЕ части - дату начала и дату концаж
+  
+  // Text - в общем случае - "01.01.**** 7:00:00#01.01.**** 19:00:00" - содержит даты начала и конца, разделенные символом "#"
+  // Дата как правило имеет формат "ДД.ММ.ГГГГ ЧЧ:MM:СС"; В дате День может быть замене на "**" - текущий день, месяц - "**" - текущий месяц, год - "****" - текущий год или "***+" - следующий год
+  
   textAllowBegin = 0;        // время начала допустимого интервала отображения unixTime
   textAllowEnd = 0;          // время конца допустимого интервала отображения unixTime
 
-  uint8_t  stage = 0, star_cnt = 0;
-  uint8_t  iDay1 = 0, iMonth1 = 0, iHour1 = 0, iMinute1 = 0;
-  uint8_t  iDay2 = 0, iMonth2 = 0, iHour2 = 0, iMinute2 = 0;
-  uint16_t iYear1 = 0, iYear2 = 0, num = 0;
-
-  int8_t   idx = text.indexOf("#");
-  bool     hasDate2 =  idx > 0; // В строке есть элементы даты даты2 или времени даты2
-  bool     hasTime2 = false;    // В строке есть элементы времени даты2
-  String   str;
+  String s_date1, s_date2;
+  int8_t idx = text.indexOf('#');
+  if (idx <= 0) {
+    DEBUGLN(String(F("Строка: '")) + text + "'");                
+    DEBUGLN(F("Ошибка: макроы {S} должен содержать обе части - начало и конец интервала"));
+    textAllowBegin = 0; // время начала допустимого интервала отображения unixTime
+    textAllowEnd   = 0; // время конца допустимого интервала отображения unixTime
+    return;
+  }      
   
-  if (hasDate2) {
-    str = text.substring(idx+1); // Выделяем часть, отвечающую за Дату2
-    hasTime2 = str.indexOf(":") > 0;    // Если в оставшейся части есть разделитель часов/минут - время указано
-  }
+  s_date1 = text.substring(0, idx);
+  s_date2 = text.substring(idx+1);
 
-  // Стадии разбора:
-  //  0 - число дыты 1
-  //  1 - месяц даты 1
-  //  2 - год даты 1
-  //  3 - часы даты 1
-  //  4 - минуты даты 1
-  //  5 - число дыты 2
-  //  6 - месяц даты 2
-  //  7 - год даты 2
-  //  8 - часы даты 2
-  //  9 - минуты даты 2
+  // Сформировать ближайшее время события из полученных компонент  
+  tmElements_t tm1 = ParseDateTime(s_date1);
+  tmElements_t tm2 = ParseDateTime(s_date2);
+    
+  time_t t_event1 = makeTime(tm1);
+  time_t t_event2 = makeTime(tm2);
+
+  /*
+  DEBUGLN(F("--------------------")); 
+  DEBUGLN("date1='" + s_date1 + ";");
+  DEBUGLN("date2='" + s_date2 + ";");
+  DEBUGLN(String(F("Интервал показа: ")) + 
+                 padNum(tm1.Day,2) + "." + padNum(tm1.Month,2) + "." + padNum(tmYearToCalendar(tm1.Year),4) + " " + padNum(tm1.Hour,2) + ":" + padNum(tm1.Minute,2) + ":" + padNum(tm1.Second,2) + " -- " +
+                 padNum(tm2.Day,2) + "." + padNum(tm2.Month,2) + "." + padNum(tmYearToCalendar(tm2.Year),4) + " " + padNum(tm2.Hour,2) + ":" + padNum(tm2.Minute,2) + ":" + padNum(tm2.Second,2));
+  DEBUGLN(F("--------------------")); 
+  */
   
-  // Побайтово разбираем строку макроса
-  bool err = false;
-  for (uint8_t ix = 0; ix < text.length(); ix++) {
-    if (err) {
-      DEBUGLN();
-      DEBUG(String(F("Ошибка в макросе\n'{S")) + text + String(F("}'\n  ")));
-      for(uint8_t n=0; n<ix; n++) DEBUG('-');
-      DEBUGLN('^');
-      break;
-    }      
-    char c = text[ix];
-    switch (c) {
-      // замена элемента даты "любой" - день месяц или год даты 1 и даты 2
-      case '*':
-        // только для дня/месяца/года и не более двух звезд для дня / месяца или четырех для года и нельзя звезду сочетать с цифрой
-        err = (stage == 3) || (stage == 4) || (stage == 8) || (stage == 9) ||           // только для дня/месяца/года и
-              (star_cnt == 1 && num != 0) ||                                               // нельзя звезду сочетать с цифрой и
-              ((stage == 0 || stage == 1 || stage == 5 || stage == 6) && star_cnt > 2) ||  // не более двух звезд для числа/месяца
-              ((stage == 2 || stage == 7) && star_cnt > 4);                                // не более четырех звезд для года
-        if (!err) {
-          star_cnt++;  // счетчик звезд
-          num = 0;     // обнулить число          
-        }
-        break;  
-      // Разделитель даты дня/месяца/года
-      case '.':
-        err = stage != 0 && stage != 1 && stage != 5 && stage != 6;  // точка - разделитель элементов даты и в других стадиях недопустима
-        if (!err) {
-          switch (stage) {
-            case 0: iDay1 = num;   stage = 1; break; // Следующая стадия - разбор месяца даты 1
-            case 1: iMonth1 = num; stage = 2; break; // Следующая стадия - разбор года даты 1
-            case 2: iYear1 = num; break;
-            case 5: iDay2 = num;   stage = 6; break; // Следующая стадия - разбор месяца даты 2
-            case 6: iMonth2 = num; stage = 7; break; // Следующая стадия - разбор года даты 3
-            case 7: iYear2 = num; break;
-          }
-          star_cnt = 0; num = 0;
-        }
-        break;  
-      // Разделитель часов и минут  
-      case ':':
-        err = stage != 0 && stage != 3 && stage != 5 && stage != 8;  // Дата может быть опущена (stage == 0 для дата1, stage == 5 для дата2) и текущая стадия stage == 3 или stage == 8 - был разбор часов. Если это не так - ошибка
-        if (!err) {
-          if (stage == 0 || stage == 3) {
-            iHour1 = num;
-            stage = 4;    // следующая стадия - разбор минут дата1
-          }
-          if (stage == 5 || stage == 8) {
-            iHour2 = num;
-            stage = 9;    // следующая стадия - разбор минут дата2
-          }
-          num = 0;
-        }
-        break;  
-      // Разделитель даты1 и даты2 
-      case '#':
-        switch (stage) {
-          case 2: iYear1 = num;   stage = 5; break;   // Сейчас разбор года дата 1 - переходим в стадию разбора даты2
-          case 4: iMinute1 = num; stage = 5; break;  // Сейчас разбор минут времени дата1 - переходим в стадию разбора дата2
-          default:
-            err = true;    // В любой другой стадии № не на своем месте - ошибка
-            break;
-        }          
-        num = 0;  
-        star_cnt = 0;
-        break;  
-      // Разделитель даты и времени  
-      case ' ':
-        err = stage != 2 && stage != 7;  // Разделитель даты и времени. Если предыдущая фаза - не разбор года - это ошибка. Пробел в других местах недопустим
-        if (!err) {
-          if (stage == 2) {
-            iYear1 = num;
-            stage = 3; // следующая стадия - разбор часов
-          }
-          if (stage == 7) {
-            iYear2 = num;
-            stage = 8; // следующая стадия - разбор часов
-          }
-          num = 0;
-          star_cnt = 0;
-        }
-        break;  
-      default:
-        // Здесь могут быть цифры 0..9 для любой стадии (день/месяц/год/часы/минуты)
-        if (c >= '0' && c <= '9') {
-          err = star_cnt != 0;     // Если число звезд не равно 0 - цифра сочетается со звездой - нельзя
-          if (!err) {
-            num = num * 10 + (c - '0');
-          }
-          break;
-        }
-        // Любой другой символ - ошибка разбора макроса
-        err = true;
-        break;  
-    }
-
-    // Это последний символ в строке?
-    if (ix == text.length() - 1) {
-      // Если строка кончилась ДО полного разбора даты или времени - ошибка
-      // Остальные параметры могут быть опущены - тогда принимают значения по умолчанию
-      // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 -секунд ПОСЛЕ; 8 - дни недели
-      switch (stage) {
-        case 2:  iYear1    = num; break;
-        case 4:  iMinute1  = num; break;
-        case 7:  iYear2    = num; break;
-        case 9:  iMinute2  = num; break;
-        default: err      = true;  break;
-      }                  
-    }
-  }
-
-  // Разбор прошел без ошибки? Определить дату начала и конца диапазона
-  if (!err) {
-    // Если день/месяц/год даты1 отсутствуют или указаны заменителями - брать текущую
-    // Если день/месяц/год даты2 отсутствуют или указаны заменителями - брать дату1
-
-    bool starYear1 = false, starYear2 = false;
-    
-    if (iDay1   == 0) { iDay1   = day();   }
-    if (iMonth1 == 0) { iMonth1 = month(); }
-    if (iYear1  == 0) { iYear1  = year(); starYear1 = true; }
-    if (iDay2   == 0) { iDay2 = iDay1;     }
-    if (iMonth2 == 0) { iMonth2 = iMonth1; }
-    if (iYear2  == 0) { iYear2 = iYear1;  starYear2 = true; }
-
-    // Если время в дата2 пропущены - брать 23:59
-    if (iHour2 == 0 && !hasTime2) { iHour2 = 23; }
-    if (iMinute2 == 0 && !hasTime2) { iMinute2 = 59; }
-
-    // Сформировать ближайшее время события из полученных компонент
-    tmElements_t tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (uint8_t)CalendarYrToTm(iYear1)}; 
-    tmElements_t tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (uint8_t)CalendarYrToTm(iYear2)}; 
-    
-    time_t t_event1 = makeTime(tm1);
-    time_t t_event2 = makeTime(tm2);
-
-    if (t_event2 < t_event1) {
-      if (starYear2) {
-        tm2 = {59, iMinute2, iHour2, 0, iDay2, iMonth2, (uint8_t)CalendarYrToTm(iYear2 + 1)};     
-        t_event2 = makeTime(tm2);
-      } else if (starYear1) {
-        tm1 = {0, iMinute1, iHour1, 0, iDay1, iMonth1, (uint8_t)CalendarYrToTm(iYear1 - 1)}; 
-        t_event1 = makeTime(tm1);
-      }
-    }
-    
-    textAllowBegin = t_event1; // время начала допустимого интервала отображения unixTime
-    textAllowEnd   = t_event2; // время конца допустимого интервала отображения unixTime
-          
-    breakTime(t_event1, tm1);
-    breakTime(t_event2, tm2);
-    
-    if (t_event2 < t_event1) {
-      DEBUGLN(String(F("Строка: '")) + text + "'");
-      DEBUGLN(String(F("Интервал показа: ")) + 
-                     padNum(tm1.Day,2) + "." + padNum(tm1.Month,2) + "." + padNum(tmYearToCalendar(tm1.Year),4) + " " + padNum(tm1.Hour,2) + ":" + padNum(tm1.Minute,2) + " -- " +
-                     padNum(tm2.Day,2) + "." + padNum(tm2.Month,2) + "." + padNum(tmYearToCalendar(tm2.Year),4) + " " + padNum(tm2.Hour,2) + ":" + padNum(tm2.Minute,2));
-                   
-      textAllowBegin = 0; // время начала допустимого интервала отображения unixTime
-      textAllowEnd   = 0; // время конца допустимого интервала отображения unixTime
-      DEBUGLN(F("Ошибка: дата начала больше даты окончания разрешенного интервала"));
-    }
-    
-  }
+  if (t_event2 < t_event1) {
+    DEBUGLN(String(F("Строка: '")) + text + "'");
+    DEBUGLN(String(F("Интервал показа: ")) + 
+                   padNum(tm1.Day,2) + "." + padNum(tm1.Month,2) + "." + padNum(tmYearToCalendar(tm1.Year),4) + " " + padNum(tm1.Hour,2) + ":" + padNum(tm1.Minute,2) + ":" + padNum(tm1.Second,2) + " -- " +
+                   padNum(tm2.Day,2) + "." + padNum(tm2.Month,2) + "." + padNum(tmYearToCalendar(tm2.Year),4) + " " + padNum(tm2.Hour,2) + ":" + padNum(tm2.Minute,2) + ":" + padNum(tm2.Second,2));
+    DEBUGLN(F("Ошибка: дата начала больше даты окончания разрешенного интервала"));                 
+    textAllowBegin = 0; // время начала допустимого интервала отображения unixTime
+    textAllowEnd   = 0; // время конца допустимого интервала отображения unixTime
+    return;
+  }      
+  
+  textAllowBegin = t_event1; // время начала допустимого интервала отображения unixTime
+  textAllowEnd   = t_event2; // время конца допустимого интервала отображения unixTime
 }
 
 bool isFirstLineControl() {
@@ -2271,4 +2139,72 @@ bool isFirstLineControl() {
   }
   
   return isControlLine;  
+}
+
+tmElements_t ParseDateTime(String &str) {
+
+  uint8_t  aday = day();
+  uint8_t  amnth = month();
+  uint16_t ayear = year();
+  uint8_t  hrs = hour();
+  uint8_t  mins = minute();
+  uint8_t  secs = second();
+
+  String s_date;
+  String s_time;
+  uint16_t iYear = 0;  
+  uint8_t iMonth = 0, iDay = 0, iHours = 0, iMinutes = 0, iSeconds = 0;
+  int8_t idx;
+  
+  tmElements_t tm;  
+
+  // Корректная дата - 10 символов (ДД.ММ.ГГГГ), точки в позициях 2 и 5; UUUU может быть '****' - текущий год или '***+' - следующий год
+  // Если есть время - оно отделено пробелом от даты, формат (ЧЧ:MM:СС), часы и минуты и секундв разделены двоеточием
+  if (str.length() >= 10) {
+    idx = str.indexOf(" ");
+    if (idx < 0) idx = str.length();
+    s_date = str.substring(0,idx);
+    s_time = str.substring(idx+1);
+    s_time.trim();
+    s_date.trim();
+  }
+
+  /*
+  DEBUGLN("------------------------------------");
+  DEBUGLN("text = '" + str + "'");
+  DEBUGLN("parse -> date = '" + s_date + "'; time = '" + s_time + "'");
+  */
+  
+  if (s_date.length() == 10 && s_date.charAt(2) == '.' && s_date.charAt(5) == '.') {
+    idx = CountTokens(s_date, '.');
+    if (idx > 0) {
+      String sDay = GetToken(s_date, 1, '.');
+      String sMonth = idx >= 2 ? GetToken(s_date, 2, '.') : "0";
+      String sYear = idx >= 3 ? GetToken(s_date, 3, '.') : "0";
+      iDay   = sDay == "**" ? aday : sDay.toInt();
+      iMonth = sMonth == "**" ? amnth : sMonth.toInt();
+      iYear  = sYear == "****" ? ayear : (sYear == "***+" ? (ayear + 1) : sYear.toInt());
+      if (iDay   == 0) iDay   = aday;
+      if (iMonth == 0) iMonth = amnth;
+      if (iYear  == 0) iYear  = ayear;
+    }
+  }
+
+  if (s_time.length() > 0) {
+    idx = CountTokens(s_time, ':');              
+    if (idx > 0) {
+      iHours = GetToken(s_time, 1, ':').toInt();
+      iMinutes = idx >= 2 ? GetToken(s_time, 2, ':').toInt() : 0;
+      iSeconds = idx >= 3 ? GetToken(s_time, 3, ':').toInt() : 0;
+    }
+  }
+  
+  tm = {iSeconds, iMinutes, iHours, 0, iDay, iMonth, (uint8_t)CalendarYrToTm(iYear)};
+
+  /*
+  DEBUGLN(String(F("Parse out: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + ":" + padNum(tm.Second,2));
+  DEBUGLN("------------------------------------");
+  */
+  
+  return tm;
 }
