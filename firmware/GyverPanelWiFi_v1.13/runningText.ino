@@ -2047,31 +2047,40 @@ bool forThisDate(String text) {
 
 void extractMacroSDates(String text) {
 
-  // Макрос {S} ДОЛЖЕН содержать ОБЕ части - дату начала и дату концаж
-  
   // Text - в общем случае - "01.01.**** 7:00:00#01.01.**** 19:00:00" - содержит даты начала и конца, разделенные символом "#"
   // Дата как правило имеет формат "ДД.ММ.ГГГГ ЧЧ:MM:СС"; В дате День может быть замене на "**" - текущий день, месяц - "**" - текущий месяц, год - "****" - текущий год или "***+" - следующий год
+  // Если не указана дата начала интервала - берется дата конца интервала и время ставится в 00:00:00
+  // Если не указана дата конца интервала - берется дата начала интервала и время ставится в 23:59:59
   
   textAllowBegin = 0;        // время начала допустимого интервала отображения unixTime
   textAllowEnd = 0;          // время конца допустимого интервала отображения unixTime
 
-  String s_date1, s_date2;
-  int8_t idx = text.indexOf('#');
-  if (idx <= 0) {
-    DEBUGLN(String(F("Строка: '")) + text + "'");                
-    DEBUGLN(F("Ошибка: макроы {S} должен содержать обе части - начало и конец интервала"));
-    textAllowBegin = 0; // время начала допустимого интервала отображения unixTime
-    textAllowEnd   = 0; // время конца допустимого интервала отображения unixTime
+  if (text.length() == 0) {
+    DEBUGLN(String(F("Строка: '")) + text + "'");
+    DEBUGLN(F("Ошибка: макрос {S} не содержит интервала дат"));                 
     return;
   }      
+
+  String s_date1, s_date2;
+  int8_t idx = text.indexOf('#');
+
+  bool hasDate1 = idx != 0;  // -1 или больше нуля означает,что '#' либо нет - тогда вся строка - data1, либо больше 0 - есть часть для data1; в строке '#07.01.****' есть data2, нет data1
+  bool hasDate2 = idx > 0;   // Если в строке есть '#' - значит data2 присутствует
   
-  s_date1 = text.substring(0, idx);
-  s_date2 = text.substring(idx+1);
+  s_date1 = idx < 0 ? text : ( idx == 0 ? "" : text.substring(0, idx));
+  s_date2 = idx >=0 ? text.substring(idx+1) : "";
 
   // Сформировать ближайшее время события из полученных компонент  
-  tmElements_t tm1 = ParseDateTime(s_date1);
-  tmElements_t tm2 = ParseDateTime(s_date2);
-    
+  tmElements_t tm1, tm2;
+  if (hasDate1) tm1 = ParseDateTime(s_date1);
+  if (hasDate2) tm2 = ParseDateTime(s_date2);
+
+  // Если нет начала интервала - брать время 00:00:00 и дату конца интервала 
+  if (!hasDate1) tm1 = {0, 0, 0, 0, tm2.Day, tm2.Month, tm2.Year };
+
+  // Если нет конца интервала - брать время 23:59:59 и дату начала интервала 
+  if (!hasDate2) tm2 = {59, 59, 23, 0, tm1.Day, tm1.Month, tm1.Year };
+      
   time_t t_event1 = makeTime(tm1);
   time_t t_event2 = makeTime(tm2);
 
