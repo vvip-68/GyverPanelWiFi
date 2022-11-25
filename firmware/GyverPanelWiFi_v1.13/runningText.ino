@@ -2080,6 +2080,11 @@ void extractMacroSDates(String text) {
 
   // Если нет конца интервала - брать время 23:59:59 и дату начала интервала 
   if (!hasDate2) tm2 = {59, 59, 23, 0, tm1.Day, tm1.Month, tm1.Year };
+
+  // Если в строке даты окончания периода время не указано вообще (отсутствует пробел как разделитель даты и времени) - время окончания поставить 23:59:59
+  if (hasDate2 && s_date2.indexOf(' ') < 0) {
+    tm2 = {59, 59, 23, 0, tm2.Day, tm2.Month, tm2.Year };
+  }
       
   time_t t_event1 = makeTime(tm1);
   time_t t_event2 = makeTime(tm2);
