@@ -75,9 +75,8 @@ const uint16_t mario3[] PROGMEM = {
 0x0000, 0x1040, 0x9A60, 0x9A60, 0x9A40, 0x1040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 };
 
-const uint16_t* const mario_array[4] PROGMEM = { mario0, mario1, mario2, mario3 };
-
 const animation_t animation_mario PROGMEM = {  
+   .frames  = { mario0, mario1, mario2, mario3 },
    .start_x = 0,                        // Позиция отображения X (начальная) 
    .start_y = 0,                        // Позиция отображения Y (начальная)
    .options = 4+16,                     // Битовый флаг дополнительных параметров картинки

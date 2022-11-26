@@ -398,12 +398,18 @@ const uint16_t ovc_ts_ra[] PROGMEM = {
 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 };
 
+// Массив, объявленный в таком виде используется в эффекте "Погода" - не удалять
 const uint16_t* const weather_array[20] PROGMEM =   {
   skc_d, skc_n, bkn_d, bkn_n, bkn_minus_ra_d, bkn_minus_ra_n, bkn_minus_sn_d, bkn_minus_sn_n,
   bkn_ra_d, bkn_ra_n, bkn_sn_d, bkn_sn_n, bl, fg_d, ovc, ovc_minus_ra, ovc_minus_sn, ovc_ra, ovc_sn, ovc_ts_ra
 };
 
 const animation_t animation_weather PROGMEM = {  
+   .frames  = {
+      skc_d, skc_n, bkn_d, bkn_n, bkn_minus_ra_d, bkn_minus_ra_n, bkn_minus_sn_d, bkn_minus_sn_n,
+      bkn_ra_d, bkn_ra_n, bkn_sn_d, bkn_sn_n, bl, fg_d, 
+      ovc, ovc_minus_ra, ovc_minus_sn, ovc_ra, ovc_sn, ovc_ts_ra
+    },
    .start_x = 0,                        // Позиция отображения X (начальная) 
    .start_y = 0,                        // Позиция отображения Y (начальная)
    .options = 1+2+4+16,                 // Битовый флаг дополнительных параметров картинки
@@ -422,7 +428,7 @@ const animation_t animation_weather PROGMEM = {
                                         //   1 (0x01) - снизу вверх
                                         //   2 (0x10) - слева направо
                                         //   3 (0x11)- справа налево
-   .draw_frame_interval = 5000,         // Интервал отрисовки очередной порции картинки анимации (строка при построчной анимации или кадр при покадровой)
+   .draw_frame_interval = 2500,         // Интервал отрисовки очередной порции картинки анимации (строка при построчной анимации или кадр при покадровой)
    .draw_row_interval = 0,              // Задержка мс между отрисовкой строк изображения (если 0 - рисуется кадр целиком, а не построчно)
    .move_x_interval = 0,                // Смещение по оси X каждые N мс
    .move_y_interval = 0,                // Смещение по оси Y каждые N мс
