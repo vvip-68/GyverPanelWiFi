@@ -313,7 +313,6 @@ void animationRoutine() {
     }
 
     loadingFlag = false;    
-    // modeCode = MC_IMAGE;
 
     first_draw = true;
     image_completed = false;

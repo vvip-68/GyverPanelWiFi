@@ -1518,6 +1518,12 @@ void parsing() {
             loadingFlag = effectScaleParam2[tmp_eff] != 0;
           }
           else
+          if (thisMode == tmp_eff && tmp_eff == MC_TRAFFIC) {
+            // При получении параметра 2 эффекта "Трафик" -  вид - надо переинициализировать эффект
+            // Если установлен вариант - "случайный" - продолжаем показывать тот что был
+            loadingFlag = effectScaleParam2[tmp_eff] != 0;
+          }
+          else
           if (thisMode == tmp_eff && tmp_eff == MC_IMAGE) {
             // При получении параметра 2 эффекта "Анимация" -  вид - надо переинициализировать эффект
             // Если установлена анимация - "случайная" - продолжаем показывать тот что был
@@ -3046,10 +3052,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   // Настройка скорости
   if (key == "SE") {
     if (value) {
-      if (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_FIRE2 
-        #ifdef MC_IMAGE     
-        || effect == MC_IMAGE 
-        #endif
+      if (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_FIRE2 || effect == MC_IMAGE 
         ) {
         value->set("X");
         return "X";
@@ -3057,10 +3060,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       value->set(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255));
       return String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255));
     }
-    return str + "SE:" +  (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_FIRE2
-       #ifdef MC_IMAGE     
-       || effect == MC_IMAGE 
-       #endif
+    return str + "SE:" +  (effect == MC_PACIFICA || effect == MC_SHADOWS || effect == MC_CLOCK || effect == MC_FIRE2 || effect == MC_IMAGE 
          ? "X" 
          : String(255 - constrain(map(getEffectSpeed(effect), D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0,255), 0,255)));
   }
@@ -4094,9 +4094,7 @@ String getParamForMode(uint8_t mode) {
    case MC_LIFE:
    case MC_FIRE2:
    case MC_SDCARD:
-   #ifdef MC_IMAGE     
    case MC_IMAGE:
-   #endif
      str = "X";
      break;
    case MC_CLOCK:
@@ -4150,14 +4148,12 @@ String getParam2ForMode(uint8_t mode) {
      }     
      break;
      #endif
-   #ifdef MC_IMAGE     
    case MC_IMAGE:
      // Эффект "Анимация" имеет несколько вариантов - список выбора отображаемой картинки
      // Дополнительный параметр представлен в приложении списком выбора
      //           Маркер типа - список выбора         0,1,2,3,4               0                     1, 2, ...
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,")) + GetAnimationsList();
      break;
-   #endif  
    case MC_PAINTBALL:
    case MC_SWIRL:
    case MC_CYCLON:
@@ -4176,9 +4172,12 @@ String getParam2ForMode(uint8_t mode) {
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Без лучей,Лучи '+',Лучи 'X',Лучи '+' и 'X'"));
      break;
    case MC_STARS2:
-     // Дополнительный параметр представлен в приложении списком выбора
      //           Маркер типа - список выбора         0,1,2,3,4               0         1         2         3
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Вариант 1,Вариант 2,Вариант 3,Вариант 4"));
+     break;
+   case MC_TRAFFIC:
+     //           Маркер типа - список выбора         0,1,2,3,4               0               1       2
+     str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Цветной,Монохром"));
      break;
  }
  return str;   

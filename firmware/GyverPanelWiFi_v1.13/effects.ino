@@ -739,6 +739,196 @@ void matrixRoutine() {
 }
 
 
+// **************** ТРАФИК *****************
+
+uint8_t *traficTColors;    // Цвета линий трафика верхней части матрицы
+int16_t *traficTIndex;     // Позиция "головы" дорожки верхней части матрицы
+uint8_t *traficBColors;    // Цвета линий трафика нижней части матрицы
+int16_t *traficBIndex;     // Позиция "головы" дорожки нижней части матрицы
+uint8_t *traficLColors;    // Цвета линий трафика левой части матрицы
+int16_t *traficLIndex;     // Позиция "головы" дорожки левой части матрицы
+uint8_t *traficRColors;    // Цвета линий трафика правой части матрицы
+int16_t *traficRIndex;     // Позиция "головы" дорожки правой части матрицы
+bool     isColored;
+
+void trafficRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    // modeCode = MC_TRAFFIC;
+    hue = random8(0,255);
+    
+    if (traficTColors == NULL) { traficTColors = new uint8_t [pWIDTH];  }
+    if (traficTIndex  == NULL) { traficTIndex  = new int16_t [pWIDTH];  }
+    if (traficBColors == NULL) { traficBColors = new uint8_t [pWIDTH];  }
+    if (traficBIndex  == NULL) { traficBIndex  = new int16_t [pWIDTH];  }
+    if (traficLColors == NULL) { traficLColors = new uint8_t [pHEIGHT]; }
+    if (traficLIndex  == NULL) { traficLIndex  = new int16_t [pHEIGHT]; }
+    if (traficRColors == NULL) { traficRColors = new uint8_t [pHEIGHT]; }
+    if (traficRIndex  == NULL) { traficRIndex  = new int16_t [pHEIGHT]; }
+
+    FOR_x (0, pWIDTH) {
+      traficTIndex[x] = -1;
+      traficBIndex[x] = -1;
+    }
+    FOR_y (0, pHEIGHT) {
+      traficLIndex[y] = -1;
+      traficTIndex[y] = -1;
+    }
+    
+    uint8_t variant = getEffectScaleParamValue2(thisMode);  // 0 - Случайный, 1 - цветной, 2 - Монохром 
+    if (variant == 0) variant = random8() % 2;
+    isColored = variant == 1;  
+    
+    FastLED.clear();
+  }
+
+  uint8_t  cnt;
+  uint16_t density;
+  uint8_t  effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+
+  // Сгенерировать начало новых дорожек для верха и низа
+  density = map8(255 - getEffectScaleParamValue(thisMode), 1, pWIDTH * 2) * 5;  
+  FOR_x (0, pWIDTH) {
+    // Все элементы массива изначально -1 - что означает "не активно"
+    // В случайном порядке назначить дорожку активной, если она зще не активна
+    if (random16(0, density) == 0 && traficTIndex[x] < 0) {
+      traficTIndex[x] = 0;
+      traficTColors[x] = random8();
+    }
+    if (random16(0, density) == 0 && traficBIndex[x] < 0) {
+      traficBIndex[x] = 0;
+      traficBColors[x] = random8();
+    }
+  }
+
+  // Сгенерировать начало новых дорожек для левой и правой стороны
+  density = map8(255 - getEffectScaleParamValue(thisMode), 1, pHEIGHT * 2) * 5;  
+  FOR_y (0, pHEIGHT) {
+    // Все элементы массива изначально -1 - что означает "не активно"
+    // В случайном порядке назначить дорожку активной, если она зще не активна
+    if (random16(0, density) == 0 && traficLIndex[y] < 0) {
+      traficLIndex[y] = 0;
+      traficLColors[y] = random8();
+    }
+    if (random16(0, density) == 0 && traficRIndex[y] < 0) {
+      traficRIndex[y] = 0;
+      traficRColors[y] = random8();
+    }
+  }
+
+  // Максимальная длина горизонтальной и вертикальной дорожек - половина от ширины / высоты
+  uint8_t max_width = pWIDTH / 3 * 2;
+  uint8_t max_height = pHEIGHT / 3 * 2;
+
+  // За длину дорожки от головы до "хвоста" яркость должна упасть от максимальной до нуля.
+  // Рассчитать шаг убывания яркости для горизонтали и верикали
+  uint8_t step_width = 255 / pWIDTH;
+  uint8_t step_height = 255 / pHEIGHT;
+
+  // Сверху вниз
+  FOR_x (0, pWIDTH) {
+    // traficTIndex - содержит координату по Y (отсчитываемая от верха матрицы) - 0 - голова "дорожки"
+    // Для верха голову рисовать от Y и вверх, убывая яркость на шаг step_height до нуля
+    // Когда координата Y выйдет за высоту матрицы + длину дорожки - поставить -1 - дорожка "свободна"
+    int16_t y = traficTIndex[x];
+    int16_t b = effectBrightness;
+    if (traficTIndex[x] >= 0) {
+      uint8_t c = isColored ? traficTColors[x] : hue;
+      cnt = 0;
+      for (int16_t i = y; i >= 0; i--) {
+        cnt++;
+        idx = getPixelNumber(x, pHEIGHT - i - 1);
+        if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_height ? 0 : b);   
+        b -= step_height;
+        if (cnt == max_height) break;
+      }
+      y++;
+      traficTIndex[x] = y > pHEIGHT + max_height ? -1 : y;
+    }
+  }
+
+
+  // Слева направо
+  FOR_y (0, pHEIGHT) {
+    // traficLIndex - содержит координату по X (отсчитываемая от левой стороны матрицы) - 0 - голова "дорожки"
+    // Для левой стороны голову рисовать от 0 и вправо, убывая яркость на шаг step_width до нуля
+    // Когда координата X выйдет за ширину матрицы + длину дорожки - поставить -1 - дорожка "свободна"
+    int16_t x = traficLIndex[y];
+    int16_t b = effectBrightness;
+    if (traficLIndex[y] >= 0) {
+      uint8_t c = isColored ? traficLColors[y] : hue;
+      cnt = 0;
+      for (int16_t i = x; i >= 0; i--) {
+        cnt++;
+        idx = getPixelNumber(i, y);
+        if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_width ? 0 : b);   
+        b -= step_width;
+        if (cnt == max_width) break;
+      }
+      x++;
+      traficLIndex[y] = x > pWIDTH + max_width ? -1 : x;
+    }
+  }
+  
+
+  // Снизу вверх
+  FOR_x (0, pWIDTH) {
+    // traficBIndex - содержит координату по Y (отсчитываемая от низа матрицы) - 0 - голова "дорожки"
+    // Для низа голову рисовать от Y и вниз, убывая яркость на шаг step_height до нуля
+    // Когда координата Y выйдет за минус длину дорожки - поставить -1 - дорожка "свободна"
+    int16_t y = traficBIndex[x];
+    int16_t b = effectBrightness;
+    if (traficBIndex[x] >= 0) {
+      uint8_t c = isColored ? traficBColors[x] : hue;
+      cnt = 0;
+      for (int16_t i = y; i >= 0; i--) {        
+        cnt++;
+        idx = getPixelNumber(x, i);
+        if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_height ? 0 : b);   
+        b -= step_height;
+        if (cnt == max_height) break;
+      }
+      y++;
+      traficBIndex[x] = y > pHEIGHT + max_height ? -1 : y;
+    }
+  }
+
+  // Справа налево
+  FOR_y (0, pHEIGHT) {
+    // traficRIndex - содержит координату по X (отсчитываемая от правой стороны матрицы) - 0 - голова "дорожки"
+    // Для правой стороны голову рисовать от 0 и влево, убывая яркость на шаг step_width до нуля
+    // Когда координата X выйдет за ширину матрицы + длину дорожки - поставить -1 - дорожка "свободна"
+    int16_t x = traficRIndex[y];
+    int16_t b = effectBrightness;
+    if (traficRIndex[y] >= 0) {
+      uint8_t c = isColored ? traficRColors[y] : hue;
+      cnt = 0;
+      for (int16_t i = x; i >= 0; i--) {
+        cnt++;
+        idx = getPixelNumber(pWIDTH - i - 1, y);
+        if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_width ? 0 : b);   
+        b -= step_width;
+        if (cnt == max_width) break;
+      }
+      x++;
+      traficRIndex[y] = x > pWIDTH + max_width ? -1 : x;
+    }
+  }
+
+  hue++;
+}
+
+void trafficRoutineRelease() {
+  if (traficTColors == NULL) { delete [] traficTColors; traficTColors = NULL; }
+  if (traficTIndex  == NULL) { delete [] traficTIndex;  traficTIndex  = NULL; }
+  if (traficBColors == NULL) { delete [] traficBColors; traficBColors = NULL; }
+  if (traficBIndex  == NULL) { delete [] traficBIndex;  traficBIndex  = NULL; }
+  if (traficLColors == NULL) { delete [] traficLColors; traficLColors = NULL; }
+  if (traficLIndex  == NULL) { delete [] traficLIndex;  traficLIndex  = NULL; }
+  if (traficRColors == NULL) { delete [] traficRColors; traficRColors = NULL; }
+  if (traficRIndex  == NULL) { delete [] traficRIndex;  traficRIndex  = NULL; }
+}
+
 // ********************************* ШАРИКИ *********************************
 
 #define BALLS_AMOUNT_MAX 6 // максимальное количество "шариков"

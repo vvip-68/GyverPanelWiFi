@@ -286,6 +286,9 @@ void drawCircleF(float x0, float y0, float radius, CRGB color) {
 
 // получить номер пикселя в ленте по координатам
 int16_t getPixelNumber(int8_t x, int8_t y) {
+
+  if (x < 0 || x >= pWIDTH || y < 0 || y >= pHEIGHT) return -1;
+  
   uint8_t xx,yy,ww,sx,sy,mx,my,mw,snum,num;
 
   if (sMATRIX_TYPE == 0 || sMATRIX_TYPE == 1) {

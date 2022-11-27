@@ -13,13 +13,8 @@ void doEffectWithOverlay(uint8_t aMode) {
   bool clockReady = clockTimer.isReady();
   bool textReady = textTimer.isReady();
 
-  #ifdef MC_IMAGE
   bool effectReady = aMode == MC_IMAGE || effectTimer.isReady(); // "Анимация" использует собственные "таймеры" для отрисовки - отрисовка без задержек; Здесь таймер опрашивать нельзя - он после опроса сбросится. 
-                                                                 // А должен читаться в эффекте анимации, проверяя не пришло ли время отрисовать эффект фона
-  #else
-  bool effectReady = effectTimer.isReady();
-  #endif  
-  
+                                                                 // А должен читаться в эффекте анимации, проверяя не пришло ли время отрисовать эффект фона  
 
   if (!(effectReady || (clockReady && !showTextNow) || (textReady && (showTextNow || thisMode == MC_TEXT)))) return;
 
@@ -441,10 +436,8 @@ void processEffect(uint8_t aMode) {
     case MC_RUBIK:               rubikRoutine(); break;
     case MC_STARS:               starsRoutine(); break;
     case MC_STARS2:              stars2Routine(); break;
-
-    #ifdef MC_IMAGE
+    case MC_TRAFFIC:             trafficRoutine(); break;
     case MC_IMAGE:               animationRoutine(); break;
-    #endif  
 
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutine(); break;
@@ -529,10 +522,8 @@ void releaseEffectResources(uint8_t aMode) {
     case MC_RUBIK:               rubikRoutineRelease(); break;
     case MC_STARS:               break;
     case MC_STARS2:              stars2RoutineRelease(); break;
-
-    #ifdef MC_IMAGE
+    case MC_TRAFFIC:             trafficRoutineRelease(); break;
     case MC_IMAGE:               break;
-    #endif  
 
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutineRelease(); break;
@@ -706,10 +697,7 @@ void setTimersForMode(uint8_t aMode) {
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 ||
         aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || 
-        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2
-        #ifdef MC_IMAGE
-         || aMode == MC_IMAGE
-        #endif  
+        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2 || aMode == MC_IMAGE
         ) {      
       if (aMode == MC_PATTERNS) {
          uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);

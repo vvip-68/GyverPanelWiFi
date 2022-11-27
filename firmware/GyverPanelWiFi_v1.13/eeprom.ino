@@ -410,11 +410,8 @@ void saveDefaults() {
   putEffectClockOverlayUsage(MC_ARKANOID, false);
   putEffectClockOverlayUsage(MC_WEATHER, false);
   putEffectClockOverlayUsage(MC_LIFE, false);
-
-  #ifdef MC_IMAGE
   putEffectTextOverlayUsage(MC_IMAGE, false);
   putEffectClockOverlayUsage(MC_IMAGE, false);
-  #endif
 
   putClockScrollSpeed(250);
   putTextScrollSpeed(186);
