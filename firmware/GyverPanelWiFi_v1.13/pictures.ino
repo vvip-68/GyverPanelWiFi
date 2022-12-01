@@ -457,10 +457,18 @@ void slideRoutine() {
     dir_y = 0;   
     changeSlide = true;
   } else {
+    if (pictureWidth >= pWIDTH) {
+      pic_offset_x = (pWIDTH - pictureWidth) / 2;
+      dir_x = 0;
+    }
+    if (pictureHeight >= pHEIGHT) {
+      pic_offset_y = (pHEIGHT - pictureHeight) / 2; 
+      dir_y = 0;   
+    }
     moveDelay = map8(moveDelay, 5, 200);
     move_delay_x = pWIDTH >= pHEIGHT ? moveDelay * 10 : moveDelay * 10 / 3 * 2;
     move_delay_y = pWIDTH >= pHEIGHT ? moveDelay * 10 / 3 * 2 : moveDelay * 10 ;    
-    if (pWIDTH - pictureWidth > 6 &&  dir_x == 0) dir_x = 1;
+    if (pWIDTH - pictureWidth > 6 && dir_x == 0) dir_x = 1;
     if (pHEIGHT - pictureHeight > 6 && dir_y == 0) dir_y = 1;
     if (dir_x != 0 && millis() - lastMillisX > move_delay_x) {
       lastMillisX = millis();
