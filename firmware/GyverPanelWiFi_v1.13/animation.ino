@@ -12,7 +12,7 @@
     Используя трекбар под рисунком или кнопки навигации слева/справа от трекбара перейдите к следующему кадру
     Нарисуйте последовательно оставшиеся кадры анимации.
     В разделе "Сохранение" -> "Сохранить код", нажмите кнопку "Фрагмент".
-    Укажите имя файла. Rk; будет сохранен файл с расширением ".h"
+    Укажите имя файла. Код будет сохранен файл с расширением ".h"
     Найдите в сохраненном файле структуру описания анимации (в самом низу файла) и
     настройте опции анимации - направление и скорость смещения, скорость анимации и другие опции,
     описывающие поведение анимации. Скопируйте файл в папку скетча.
@@ -89,9 +89,9 @@ const animation_t animations[] = {
 // Список картинок, доступных для отрисовки в эффекте "Анимация"
 #define IMAGE_LIST F("Сердце,Марио,Погода")   
 
-#define MAX_IMAGE_WIDTH   16                  // Здесь указаны максимальные размеры картинки, используемые в прошивке для которого нужен оверлей
-#define MAX_IMAGE_HEIGHT  16                  // Если картинка не использует эффекты в качестве бакграунда - оверлей не нужен
-                                              // Не указывайте оверлей больше чем нужно - это расходует RAM
+#define MAX_IMAGE_WIDTH   16         // Здесь указаны максимальные размеры картинки, используемые в прошивке для которого нужен оверлей
+#define MAX_IMAGE_HEIGHT  16         // Если картинка не использует эффекты в качестве бакграунда - оверлей не нужен
+                                     // Не указывайте оверлей больше чем нужно - это расходует RAM
 // -----------------------------------------------------------------------------------------------------------
 
 void initAnimations() {  
@@ -675,23 +675,25 @@ static uint32_t expandColor(uint16_t color) {
 // в программе WiFiPlayer
 // ---------------------------------------------------
 
-String openImage(String storage, String fName) {
+String openImage(String storage, String fName, void* lds, bool exactName) {
 
   File file;
   bool ok = true;
   String message = "";
   String directoryName = "/" + String(pWIDTH) + "p" + String(pHEIGHT);
-  String fileName = directoryName + "/" + fName + ".p";
+  String fileName = exactName ? fName : (directoryName + "/" + fName + ".p");
 
   // Если нет поддержки SD=карты - работать с внутренней файловой системой МК
   if (USE_SD == 0) storage = "FS";
 
+  CRGB* alds = (CRGB*)lds;
+  
   #if (USE_SD == 1)
   if (storage == "SD") {    
     if (!SD.exists(directoryName)) {
       ok = SD.mkdir(directoryName);
       if (!ok) {
-        message = String(F("Папка для хранения изображений '")) + directoryName + String(F("' не найдена."));
+        message = String(F("Папка для хранения изображений '")) + storage + ":/" + directoryName + String(F("' не найдена."));
         DEBUGLN(message);
         return message;
       }
@@ -705,7 +707,7 @@ String openImage(String storage, String fName) {
     if (!LittleFS.exists(directoryName)) {
       ok = LittleFS.mkdir(directoryName);
       if (!ok) {
-        message = String(F("Папка для хранения изображений '")) + directoryName + String(F("' не найдена."));
+        message = String(F("Папка для хранения изображений '")) + storage + ":/" + directoryName + String(F("' не найдена."));
         DEBUGLN(message);
         return message;
       }
@@ -715,7 +717,7 @@ String openImage(String storage, String fName) {
   }
 
   if (!file) {
-    message = String(F("Файл '")) + fileName + String(F("' не найден."));
+    message = String(F("Файл '")) + storage + ":/" + fileName + String(F("' не найден."));
     DEBUGLN(message);
     return message;
   }
@@ -725,7 +727,7 @@ String openImage(String storage, String fName) {
   len = file.read(buf, 3);
   ok = len == 3;
   if (!ok) {
-    message = String(F("Ошибка чтения файла '")) + fileName + "'";
+    message = String(F("Ошибка чтения файла '")) + storage + ":/" + fileName + "'";
     DEBUGLN(message);
     file.close();
     return message;
@@ -733,32 +735,41 @@ String openImage(String storage, String fName) {
 
   uint8_t w = buf[1];
   uint8_t h = buf[2];
-  int8_t offset_x = (pWIDTH - w) / 2;
-  int8_t offset_y = (pHEIGHT - h) / 2;
 
-  FastLED.clear();
+  // При загрузке новой картинки прямо на матрицу - предварительно очистить матрицу
+  if (alds == nullptr) FastLED.clear();
 
-  for (uint8_t x = 0; x < w; x++) {
-    for (uint8_t y = 0; y < h; y++) {
+  FOR_x(0, w) {
+    FOR_y (0, h) {
       len = file.read(buf, 3);
       ok = len == 3;
       if (!ok) {
-        message = String(F("Ошибка чтения файла '")) + fileName + "'";
+        message = String(F("Ошибка чтения файла '")) + storage + ":/" + fileName + "'";
         DEBUGLN(message);
         file.close();
         return message;
       }
-      int8_t cx = x + offset_x;
-      int8_t cy = y + offset_y;
-      if (cx >= 0 && cy >= 0 && cx < pWIDTH && cy < pHEIGHT) {
-        int16_t idx = getPixelNumber(cx, cy);
-        if (idx >= 0) {
-          uint8_t r = buf[0];
-          uint8_t g = buf[1];
-          uint8_t b = buf[2];
-          leds[idx] = CRGB(r << 16 | g << 8 | b);
+      
+      uint8_t r = buf[0];
+      uint8_t g = buf[1];
+      uint8_t b = buf[2];
+      
+      if (alds != nullptr) {
+        // Если ссылка на массив НЕ передана - помещаем точку прямо на матрицу
+        alds[x + w * y] = CRGB(r << 16 | g << 8 | b);
+      } else {
+        int8_t offset_x = (pWIDTH - w) / 2;
+        int8_t offset_y = (pHEIGHT - h) / 2;
+        // Если ссылка на массив передана - помещаем точку в этот массив
+        int8_t cx = x + offset_x;
+        int8_t cy = y + offset_y;
+        if (cx >= 0 && cy >= 0 && cx < pWIDTH && cy < pHEIGHT) {
+          int16_t idx = getPixelNumber(cx, cy);
+          if (idx >= 0) {
+            leds[idx] = CRGB(r << 16 | g << 8 | b);
+          }
         }
-      }
+      }      
     }
   }
 

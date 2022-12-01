@@ -14,6 +14,7 @@ void process() {
 
   // Время прохода одного цикла  
   uint16_t duration = millis() - last_ms;
+  
   if (duration > 0) {
     last_ms = millis();
     //DEBUG(F("duration="));
@@ -1300,7 +1301,7 @@ void parsing() {
               }      
               str1 = USE_SD == 1 ? str.substring(0,2) : "FS"; // хранилище
               str2 = str.substring(3);                        // Имя файла картинки без расширения
-              str = openImage(str1, str2);
+              str = openImage(str1, str2, nullptr, false);
               str = "$18 ERR:[" + str + "];";
               break;
 

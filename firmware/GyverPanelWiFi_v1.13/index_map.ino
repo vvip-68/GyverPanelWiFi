@@ -177,7 +177,7 @@ int8_t scanIndexMaps() {
       int16_t p = file_name.lastIndexOf("/");
       if (p >= 0) file_name = file_name.substring(p + 1);
 
-      DEBUG("  ");
+      DEBUG("   ");
       DEBUGLN(file_name);
 
       p = file_name.lastIndexOf(".");

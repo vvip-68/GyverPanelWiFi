@@ -365,13 +365,18 @@ void doEffectWithOverlay(uint8_t aMode) {
 }
 
 void FastLEDshow() {
+  static unsigned long prevTimer = 0;
   #if (USE_E131 == 1)
   if (workMode == MASTER && (syncMode == PHYSIC || syncMode == LOGIC)) {
     sendE131Screen();
     delay(e131_send_delay);
   }
   #endif
-  FastLED.show();
+  // Если выводить на матрицу чаще 5 мс - она мерцает
+  if (millis() - prevTimer > 5) {
+     FastLED.show();
+     prevTimer = millis();
+  }
 }
 
 void processEffect(uint8_t aMode) {
@@ -438,6 +443,7 @@ void processEffect(uint8_t aMode) {
     case MC_STARS2:              stars2Routine(); break;
     case MC_TRAFFIC:             trafficRoutine(); break;
     case MC_IMAGE:               animationRoutine(); break;
+    case MC_SLIDE:               slideRoutine(); break;
 
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutine(); break;
@@ -524,6 +530,7 @@ void releaseEffectResources(uint8_t aMode) {
     case MC_STARS2:              stars2RoutineRelease(); break;
     case MC_TRAFFIC:             trafficRoutineRelease(); break;
     case MC_IMAGE:               break;
+    case MC_SLIDE:               slideRoutineRelease(); break;
 
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutineRelease(); break;
@@ -697,7 +704,7 @@ void setTimersForMode(uint8_t aMode) {
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 ||
         aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || 
-        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2 || aMode == MC_IMAGE
+        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2 || aMode == MC_IMAGE || aMode == MC_SLIDE
         ) {      
       if (aMode == MC_PATTERNS) {
          uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);

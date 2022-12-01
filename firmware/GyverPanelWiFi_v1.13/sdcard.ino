@@ -91,7 +91,7 @@ void loadDirectory() {
       p = file_name.lastIndexOf(".");
       if (p >= 0) file_name = file_name.substring(0, p);
             
-      DEBUG("  ");
+      DEBUG("   ");
       DEBUG(file_name);
       DEBUG("\t\t");
       if (sz == 0)

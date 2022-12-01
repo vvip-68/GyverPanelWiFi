@@ -335,7 +335,7 @@ int16_t getPixelNumber(int8_t x, int8_t y) {
         : yy * ww + ww - xx - 1; // если нечётная строка  
   
     return snum * sWIDTH * sHEIGHT + num;
-  } else
+  }
 
   if (sMATRIX_TYPE == 2) {
     int16_t index = -1;
@@ -356,6 +356,8 @@ int16_t getPixelNumber(int8_t x, int8_t y) {
     #endif
     return index;
   }
+  
+  return -1;
 }
 
 uint8_t THIS_X(uint8_t x, uint8_t y) {
@@ -527,7 +529,7 @@ String IntToHex(uint32_t value, uint8_t n) {
   return sHex;
 }
 
-uint32_t CountTokens(String str, char separator) {
+uint32_t CountTokens(String &str, char separator) {
 
   uint32_t count = 0;
   int16_t  pos = 0;

@@ -43,10 +43,6 @@ uint8_t getEffectScaleParamValue2(int8_t eff) {
 
 // ---------------------------------------------
 
-uint8_t hue;
-uint8_t loopCounter;
-uint8_t loopCounter2;
-
 // *********** снегопад 2.0 ***********
 
 void snowRoutine() {
@@ -844,6 +840,7 @@ void trafficRoutine() {
       }
       y++;
       traficTIndex[x] = y > pHEIGHT + max_height ? -1 : y;
+      if (traficTIndex[x] < 0) traficTColors[x] = random8();
     }
   }
 
@@ -867,6 +864,7 @@ void trafficRoutine() {
       }
       x++;
       traficLIndex[y] = x > pWIDTH + max_width ? -1 : x;
+      if (traficLIndex[y] < 0) traficLColors[y] = random8();
     }
   }
   
@@ -890,6 +888,7 @@ void trafficRoutine() {
       }
       y++;
       traficBIndex[x] = y > pHEIGHT + max_height ? -1 : y;
+      if (traficBIndex[x] < 0) traficBColors[x] = random8();
     }
   }
 
@@ -912,6 +911,7 @@ void trafficRoutine() {
       }
       x++;
       traficRIndex[y] = x > pWIDTH + max_width ? -1 : x;
+      if (traficRIndex[y] < 0) traficRColors[y] = random8();
     }
   }
 
@@ -2090,12 +2090,11 @@ uint8_t  maxValue;
 bool     fallFlag;
 
 uint32_t *timeLevel;
-uint8_t  *posOffset;   // Массив данных для отображения на матрице
+uint8_t  *posOffset;       // Массив данных для отображения на матрице
 int16_t  *maxLevel;
 uint8_t  *posLevel_old;
 
-uint8_t st = 0;
-uint8_t phase = 0;          // фаза эффекта
+uint8_t  st = 0;
     
 // -------------------------------------------------------------------------------------
 
@@ -2907,7 +2906,6 @@ int16_t  cube_idx;         // Индекс выводимой плашки в ф
 int16_t  cube_black_idx;   // Индекс черной плашки в варианте "Пятнашки"
 int16_t  cube_new_idx;     // Индекс плашки в варианте "Пятнашки", куда будет перемещаться черная
 int8_t   cube_last_mv;     // Прошлое направление движение цветной плашки на место черной в "Пятнашках" ; 
-uint8_t  cube_phase;       // Фаза формирования изображения: 0 - начальное размещение плашек на матрице; 
 uint8_t  cube_variant;     // Вариант анимации; 0 - случайный выбор; 1 - сдвиг по одной плашке; 2 - сдвиг всей полосы; 3 - вращение полос; 4 - пятнашки 
 uint16_t cube_size;        // Количество плашек на поле 
 uint8_t  cube_vh;          // 0 - вертикальное движение; 1 - горизонтальное
@@ -2953,7 +2951,7 @@ void rubikRoutine() {
     }
     
     // Перемешать плашки и их порядок появления на матрице
-    for (uint16_t i = 0; i < cube_size; i++) {
+    FOR_i (0, cube_size) {
       uint16_t idx1 = random16(0, cube_size - 1);
       uint16_t idx2 = random16(0, cube_size - 1);
       hue = cube_h[idx1];
@@ -2973,14 +2971,14 @@ void rubikRoutine() {
     
     cube_idx = 0;
     cube_black_idx = random16(0, cube_size);
-    cube_phase = 0;    // Фаза 0 - размещение плашек на матрице
+    phase = 0;    // Фаза 0 - размещение плашек на матрице
     
     FastLED.clear();
   }
   
   uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
   
-  if (cube_phase == 0) {
+  if (phase == 0) {
     // Взять из массива порядка размещения плашек очередную позицию, из массива цветов - цвет  и вывести на матрицу очередную плашку    
     uint16_t idx = order_h[cube_idx];
     CHSV color = cube_variant == 4 && idx == cube_black_idx
@@ -3002,13 +3000,13 @@ void rubikRoutine() {
     if (cube_idx >= cube_size) {
       // Все плашки выведены? - перейти к следующей фазе. 
       cube_idx = 0;
-      cube_phase++;       
+      phase++;       
     }
     return;
   }
 
   // Фаза "Настройка движения". Определяем что и в какую сторону нужно сдвигать
-  if (cube_phase == 1) {
+  if (phase == 1) {
       cube_idx = 0;
       
       if (cube_variant == 4) {
@@ -3067,7 +3065,7 @@ void rubikRoutine() {
         // Массив с задержками для плашки размером 4x4 пикселя, в поле 4x4 плашки с учетом задержек определяется массивом [-6, -4, -2, 0]
         // При каждом проходе увеличиваем на 1 элемент массива. Пока элемент массива меньше нуля - сдвига нет; Если 0 или больше - выполняем сдвиг        
         // Когда значение элемента массива достигает num_x * RUBIK_BLOCK_SIZE для гориз или num_y * RUBIK_BLOCK_SIZE по верикали - перестаем прокручивать полосу (движение завершено)
-        // Когда ВСЕ элементы массива достигают верхнего предела - весь цикл завершен, меняем cube_phase на 1 - возврат к началу формирования цикла эффекта
+        // Когда ВСЕ элементы массива достигают верхнего предела - весь цикл завершен, меняем phase на 1 - возврат к началу формирования цикла эффекта
 
         uint8_t stp = RUBIK_BLOCK_SIZE + RUBIK_BLOCK_SIZE / 2;
         uint8_t mcnt = cube_vh == 0 ? num_x : num_y;
@@ -3093,11 +3091,11 @@ void rubikRoutine() {
         // смещение на один блок для режима 1 или на всю ширину / высоту для режима 2 и 3
         cube_move_cnt = cube_variant == 1 ? RUBIK_BLOCK_SIZE : (cube_vh == 0 ? num_y : num_x) * RUBIK_BLOCK_SIZE;
       }
-      cube_phase++;       
+      phase++;       
   }
   
   // Отображение следующей фазы зависит от выбранного варианта
-  // Перемещение плашек (cube_phase == 2)
+  // Перемещение плашек (phase == 2)
   switch (cube_variant) {
     // 1 - Сдвиг на одину плашку всего ряда/колонки
     // 2 - Сдвиг всей полосы (ряд / колонка) на несколько плашек
@@ -3110,7 +3108,7 @@ void rubikRoutine() {
       // Если все шаги по перемещению полосы завершены - вернуться к файзе формирования направления движения следующей полосы
       cube_move_cnt--;
       if (cube_move_cnt == 0) {
-        cube_phase = 1;
+        phase = 1;
       }        
     }
     break;
@@ -3131,7 +3129,7 @@ void rubikRoutine() {
         }
       }
       if (!processed) {
-        cube_phase = 1;
+        phase = 1;
       }              
     }
     break;
@@ -3173,7 +3171,7 @@ void rubikRoutine() {
         cube_h[cube_black_idx] = cube_h[cube_new_idx];
         cube_black_idx = cube_new_idx;
         // Если перемещение блока завершено - фаза движения закончена, перейти к фазе настройки следующего движения
-        cube_phase = 1;
+        phase = 1;
       }
     }
     break;    

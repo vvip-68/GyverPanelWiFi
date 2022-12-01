@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2022.1128")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2022.1201")
 
 // -------------------------------------------------------------------------------------------------------
 // Версии (что нового): 
@@ -344,6 +344,12 @@ void setup() {
     InitializeSD2();
   #endif
 
+  // Поиск доступных анимаций
+  initAnimations();
+
+  // Поиск картинок, пригодных для эффекта "Слайды"
+  initialisePictures();
+  
   #if (USE_POWER == 1)
     pinMode(POWER_PIN, OUTPUT);
   #endif
@@ -469,8 +475,6 @@ void setup() {
   // Проверить соответствие позиции вывода часов размерам матрицы
   // При необходимости параметры отображения часов корректируются в соответствии с текущими аппаратными возможностями
   checkClockOrigin();
-
-  initAnimations();
   
   // Если был задан спец.режим во время предыдущего сеанса работы матрицы - включить его
   // Номер спец-режима запоминается при его включении и сбрасывается при включении обычного режима или игры

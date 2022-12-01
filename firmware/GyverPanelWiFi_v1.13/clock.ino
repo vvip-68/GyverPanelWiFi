@@ -63,7 +63,6 @@ void sendNTPpacket(IPAddress& address) {
 void parseNTP() {
   getNtpInProgress = false;
   DEBUGLN(F("Разбор пакета NTP"));
-  ntp_t = 0; ntp_cnt = 0; init_time = true; refresh_time = false;
   unsigned long highWord = word(incomeBuffer[40], incomeBuffer[41]);
   unsigned long lowWord = word(incomeBuffer[42], incomeBuffer[43]);
   // combine the four bytes (two words) into a long integer
@@ -76,8 +75,21 @@ void parseNTP() {
 
   DEBUG(F("Секунд с 1970: "));
   DEBUGLN(t);
-  DEBUG(F("Текущее время: ")); 
+  DEBUG(F("Получено время: ")); 
   DEBUGLN(t2);
+
+  // Замечена ситуация, когда полученное время при корректировке слишком кардинально отличается
+  // от текущего установленного времени и после применения часы "сбиваются" на несеолько часов
+  // И остаются в таком состоянии до следующей корректировки.
+  // Если время полученное отличается от текущего более чем на 10 минут - считаем корректировку недостоверной
+  // Часы не могут так быстро уходить вперед или отставать за период между корректировками
+  if (init_time && abs(now() - t) > 600) {
+    DEBUG(F("Текущее время: ")); 
+    DEBUGLN(getDateTimeString(now()));
+    DEBUGLN(F("Полученное время слишком отличается от текущего.")); 
+    DEBUGLN(F("Время признано недостоверным. Корректировка отменена")); 
+    return;
+  }
 
   setTime(t);  
   // этот вызов нужен, чтобы отработали сопутствующие установке времени процедуры
@@ -87,6 +99,8 @@ void parseNTP() {
   if (upTime == 0) {
     upTime = t - millis() / 1000L;
   }
+
+  ntp_t = 0; ntp_cnt = 0; init_time = true; refresh_time = false;
 
   #if (USE_MQTT == 1)
   DynamicJsonDocument doc(256);

@@ -186,17 +186,17 @@ public:
   {
     if (source & DfMp3_PlaySources_Sd) 
     {
-        Serial.print("SD-карта, ");
+        DEBUG(F("SD-карта, "));
     }
     if (source & DfMp3_PlaySources_Usb) 
     {
-        Serial.print("USB диск, ");
+        DEBUG(F("USB диск, "));
     }
     if (source & DfMp3_PlaySources_Flash) 
     {
-        Serial.print("Flash-память, ");
+        DEBUG(F("Flash-память, "));
     }
-    Serial.println(action);
+    DEBUG(action);
   }
   static void printErrorDetail(uint8_t type){
     DEBUG(F("DFPlayerError: "));
@@ -246,8 +246,8 @@ public:
   }
   static void OnPlayFinished(DfMp3& mp3, DfMp3_PlaySources source, uint16_t track)
   {
-    Serial.print("Трек завершен #");
-    Serial.println(track);  
+    DEBUG(F("Трек завершен #"));
+    DEBUGLN(track);  
     if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0 && runTextSound <= 0) {
       dfPlayer.stop(); delay(GUARD_DELAY);
     } else
