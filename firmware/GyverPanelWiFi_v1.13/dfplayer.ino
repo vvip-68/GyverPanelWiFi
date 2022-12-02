@@ -196,7 +196,7 @@ public:
     {
         DEBUG(F("Flash-память, "));
     }
-    DEBUG(action);
+    DEBUGLN(action);
   }
   static void printErrorDetail(uint8_t type){
     DEBUG(F("DFPlayerError: "));

@@ -1864,7 +1864,7 @@ void parsing() {
         if (!manualMode) {
           autoplayTimer = millis();
         }
-        if (idleTime == 0 || manualMode) // таймер отключен
+        if (idleTime == 0) // таймер отключен
           idleTimer.setInterval(4294967295);
         else
           idleTimer.setInterval(idleTime);

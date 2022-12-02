@@ -159,8 +159,16 @@ void setup() {
     host_name = String(HOST_NAME);
   #endif
 
+  uint8_t eeprom_id = EEPROMread(0);
+  
   DEBUGLN();
   DEBUGLN(FIRMWARE_VER);
+  DEBUG(F("Версия EEPROM: "));
+  DEBUGLN("0x" + IntToHex(eeprom_id, 2));  
+  if (eeprom_id != EEPROM_OK) {
+    DEBUG(F("Обновлено до: "));
+    DEBUGLN("0x" + IntToHex(EEPROM_OK, 2));  
+  }
   DEBUGLN("Host: '" + host_name + "'");
   DEBUGLN();
   
@@ -455,12 +463,6 @@ void setup() {
   display.displayByte(_empty, _empty, _empty, _empty);
   #endif
 
-  // Таймер бездействия
-  if (idleTime == 0) // Таймер Idle  отключен
-    idleTimer.setInterval(4294967295);
-  else  
-    idleTimer.setInterval(idleTime);
-
   // Таймер синхронизации часов
   ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
 
@@ -499,8 +501,9 @@ void setup() {
   #if (USE_MQTT == 1)
   if (!stopMQTT) mqttSendStartState();
   #endif
-  
-  if (manualMode || specialMode) {
+
+  // Таймер бездействия  
+  if (idleTime == 0 || specialMode) {
     idleTimer.setInterval(4294967295);
   } else {
     idleTimer.setInterval(idleTime);    
@@ -518,7 +521,7 @@ void loop() {
       }
     #endif
   }
-
+  
   #if (USE_MP3 == 1)
     dfPlayer.loop();  
   #endif
