@@ -15,7 +15,7 @@ void InitializeDfPlayer1() {
   // при отправке команд в плеер библиотека плеера не ждет ответа (подтверждения выполнения команды)
   // и нет возможности выяснить есть ли плеер на самом деле.
   uint32_t ms1 = millis();    
-  dfPlayer.getVolume(); dfPlayer.loop(); delay(GUARD_DELAY); 
+  dfPlayer.getVolume(); delay(GUARD_DELAY); 
   uint32_t ms2 = millis();      
   if (ms2 - ms1 > 5000) {
     set_isDfPlayerOk(false);  
@@ -23,7 +23,6 @@ void InitializeDfPlayer1() {
     dfPlayer.setPlaybackSource(DfMp3_PlaySource_Sd); delay(GUARD_DELAY);
     dfPlayer.setEq(DfMp3_Eq_Normal);                 delay(GUARD_DELAY);
     dfPlayer.setVolume(1);                           delay(GUARD_DELAY);
-    dfPlayer.loop();
   }
 #endif  
 }
@@ -54,14 +53,10 @@ void refreshDfPlayerFiles() {
     mp3Serial.setTimeout(1000);
     uint32_t ms1 = millis();    
     val = dfPlayer.getFolderTrackCount(1);       delay(GUARD_DELAY);
-    dfPlayer.loop();
-    yield();
     uint32_t ms2 = millis();  
     // Плеер не ответил за отведенное время? - Завершить процедуру опроса.      
     if (ms2 - ms1 > 1000) return;
     new_val = dfPlayer.getFolderTrackCount(1);   delay(GUARD_DELAY);    
-    dfPlayer.loop();
-    yield();
     if (val == new_val && val != 0) break;
     cnt++;
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);
@@ -71,11 +66,7 @@ void refreshDfPlayerFiles() {
   cnt = 0, val = 0, new_val = 0; 
   do {
     val = dfPlayer.getFolderTrackCount(2);       delay(GUARD_DELAY);
-    dfPlayer.loop();
-    yield();
     new_val = dfPlayer.getFolderTrackCount(2);   delay(GUARD_DELAY);     
-    dfPlayer.loop();
-    yield();
     if (val == new_val && val != 0) break;
     cnt++;
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);    
@@ -85,11 +76,7 @@ void refreshDfPlayerFiles() {
   cnt = 0, val = 0, new_val = 0; 
   do {
     val = dfPlayer.getFolderTrackCount(3);       delay(GUARD_DELAY);
-    dfPlayer.loop();
-    yield();
     new_val = dfPlayer.getFolderTrackCount(3);   delay(GUARD_DELAY);     
-    dfPlayer.loop();
-    yield();
     if (val == new_val && val != 0) break;
     cnt++;
   } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 3);    

@@ -51,7 +51,7 @@ void initialisePictures() {
   // Результат из процедуры getStoredImages() - строка с именами файлов, разделенные запятыми
   #if (USE_SD == 1)
     DEBUG(F("Поиск слайдов на SD в папке '"));
-    DEBUGLN(String(pWIDTH) + "x" + String(pHEIGHT) + "...");
+    DEBUGLN(String(pWIDTH) + "p" + String(pHEIGHT) + "'...");
     pictureStorage = "SD";
     pictureList = getStoredImages(pictureStorage);
     if (pictureList.length() != 0) {
@@ -62,7 +62,7 @@ void initialisePictures() {
 
   if (pictureList.length() == 0) {
     DEBUG(F("Поиск слайдов на FS в папке '"));
-    DEBUGLN(String(pWIDTH) + "x" + String(pHEIGHT) + "...");
+    DEBUGLN(String(pWIDTH) + "p" + String(pHEIGHT) + "'...");
     pictureStorage = "FS";
     pictureList = getStoredImages(pictureStorage);
     if (pictureList.length() != 0) {
@@ -71,29 +71,31 @@ void initialisePictures() {
     }    
   }
 
-  pWIDTH = 16;
-  pHEIGHT = 16;
+  if (pWIDTH != 16 || pHEIGHT != 16) {
+    pWIDTH = 16;
+    pHEIGHT = 16;
+    
+    #if (USE_SD == 1)
+      if (pictureList.length() == 0) {
+        DEBUGLN(F("Поиск слайдов на SD в папке '16p16...'"));
+        pictureStorage = "SD";
+        pictureList = getStoredImages(pictureStorage);
+        if (pictureList.length() != 0) {
+          pictureWidth = pWIDTH;
+          pictureHeight = pHEIGHT;
+        }    
+      }
+    #endif
   
-  #if (USE_SD == 1)
     if (pictureList.length() == 0) {
-      DEBUGLN(F("Поиск слайдов на SD в папке 16x16...'"));
-      pictureStorage = "SD";
+      DEBUGLN(F("Поиск слайдов на FS в папке '16p16...'"));
+      pictureStorage = "FS";
       pictureList = getStoredImages(pictureStorage);
       if (pictureList.length() != 0) {
         pictureWidth = pWIDTH;
         pictureHeight = pHEIGHT;
       }    
     }
-  #endif
-
-  if (pictureList.length() == 0) {
-    DEBUGLN(F("Поиск слайдов на FS в папке 16x16...'"));
-    pictureStorage = "FS";
-    pictureList = getStoredImages(pictureStorage);
-    if (pictureList.length() != 0) {
-      pictureWidth = pWIDTH;
-      pictureHeight = pHEIGHT;
-    }    
   }
 
   if (pictureList.length() == 0) {
@@ -367,7 +369,7 @@ void slideRoutine() {
   }  
 
   uint8_t changeDelay = map8(255 - getEffectScaleParamValue(thisMode),1,30);
-  if (abs(millis() - lastMillis) > 1000L * changeDelay) {
+  if (abs((long long)(millis() - lastMillis)) > 1000UL * changeDelay) {
     lastMillis = millis();
     // Подошло время смены слайда и мы находимся в фазе "покоя" - перейти к фазе подготовки скрытия картинки
     phase = phase == 0 ? 3 : 1;
