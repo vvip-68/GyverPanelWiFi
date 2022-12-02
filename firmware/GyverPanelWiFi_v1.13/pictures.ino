@@ -77,7 +77,7 @@ void initialisePictures() {
     
     #if (USE_SD == 1)
       if (pictureList.length() == 0) {
-        DEBUGLN(F("Поиск слайдов на SD в папке '16p16...'"));
+        DEBUGLN(F("Поиск слайдов на SD в папке '16p16'..."));
         pictureStorage = "SD";
         pictureList = getStoredImages(pictureStorage);
         if (pictureList.length() != 0) {
@@ -88,7 +88,7 @@ void initialisePictures() {
     #endif
   
     if (pictureList.length() == 0) {
-      DEBUGLN(F("Поиск слайдов на FS в папке '16p16...'"));
+      DEBUGLN(F("Поиск слайдов на FS в папке '16p16'..."));
       pictureStorage = "FS";
       pictureList = getStoredImages(pictureStorage);
       if (pictureList.length() != 0) {
