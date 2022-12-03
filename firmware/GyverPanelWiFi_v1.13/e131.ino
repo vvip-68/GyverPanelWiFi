@@ -459,7 +459,7 @@ void processCommandPacket(e131_packet_t *packet) {
       // Скорость прокрутки текста
       clockScrollSpeed = packet->property_values[4];
       if (clockScrollSpeed >= 240) {
-        clockTimer.setInterval(4294967295);
+        clockTimer.stopTimer();
         checkClockOrigin();
       } else {
         clockTimer.setInterval(clockScrollSpeed);

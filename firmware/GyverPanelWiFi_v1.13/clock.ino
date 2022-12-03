@@ -1146,7 +1146,8 @@ void checkAlarmTime() {
          realDawnDuration = (alrmHour * 60L + alrmMinute) - (dawnHour * 60L + dawnMinute);
          if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
          // Отключить таймер автоперехода в демо-режим
-         idleTimer.setInterval(4294967295);
+         DEBUGLN(F("Переход в авторежим отключен"));
+         idleTimer.stopTimer();
          #if (USE_MP3 == 1)
          if (useAlarmSound) PlayDawnSound();
          #endif
@@ -1218,7 +1219,7 @@ void checkAlarmTime() {
     #endif
     DEBUGLN(String(F("Будильник Авто-ВЫКЛ в ")) + padNum(h,2)+ ":" + padNum(m,2));
     
-    alarmSoundTimer.setInterval(4294967295);
+    alarmSoundTimer.stopTimer();
     set_isPlayAlarmSound(false);
     StopSound(1000);   
 
@@ -1257,7 +1258,7 @@ void checkAlarmTime() {
       fadeSoundStepCounter--;
       if (fadeSoundStepCounter <= 0) {
         fadeSoundDirection = 0;
-        fadeSoundTimer.setInterval(4294967295);
+        fadeSoundTimer.stopTimer();
       }
     } else if (fadeSoundDirection < 0) {
       // Уменьшение громкости
@@ -1266,7 +1267,7 @@ void checkAlarmTime() {
       if (fadeSoundStepCounter <= 0) {
         set_isPlayAlarmSound(false);
         fadeSoundDirection = 0;
-        fadeSoundTimer.setInterval(4294967295);
+        fadeSoundTimer.stopTimer();
         StopSound(0);
       }
     }
@@ -1284,7 +1285,7 @@ void stopAlarm() {
     set_isPlayAlarmSound(false);
     cmd95 = "";
 
-    alarmSoundTimer.setInterval(4294967295);
+    alarmSoundTimer.stopTimer();
 
     // Во время работы будильника индикатор плавно мерцает.
     // После завершения работы - восстановить яркость индикатора

@@ -72,7 +72,6 @@ void process() {
       FastLED.clear();
     }
     if (e131_streaming && !streaming) {
-      idleState = true;
       if (prevWorkMode == MASTER)
         DEBUGLN(F("Останов вещания E1.31 потока"));
       else
@@ -235,9 +234,8 @@ void process() {
       if (e131 && !e131->isEmpty()) {
         // Получен пакет данных. 
         e131_last_packet = millis();
-        e131->pull(&e131_packet);
+        e131->pull(&e131_packet);        
         
-        idleState = false;
         idleTimer.reset();
         
         uint16_t CURRENT_UNIVERSE = htons(e131_packet.universe);      
@@ -728,7 +726,6 @@ void parsing() {
 
     // Режимs 18 и 6.7  не сбрасывают idleTimer
     // Другие режимы сбрасывают таймер бездействия
-    // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
     if (!(intData[0] == 18 || (intData[0] == 6 && intData[1] == 7))) {
       idleTimer.reset();
     }
@@ -1836,8 +1833,7 @@ void parsing() {
 
         if (intData[1] == 1) {
           set_idleTime(getIdleTime());    
-          idleTimer.setInterval(idleTime);
-          idleTimer.reset();
+          setIdleTimer();             
           if (thisMode == MC_FILL_COLOR && globalColor == 0x000000) {
             // Было выключено, режим "Лампа" с черным цветом - включить случайный режим
             setRandomMode();
@@ -1860,15 +1856,10 @@ void parsing() {
       case 17: 
         set_autoplayTime((uint32_t)intData[1] * 1000UL);   // секунды -> миллисек 
         set_idleTime((uint32_t)intData[2] * 60 * 1000UL);  // минуты -> миллисек
-        idleState = !manualMode;
         if (!manualMode) {
           autoplayTimer = millis();
         }
-        if (idleTime == 0) // таймер отключен
-          idleTimer.setInterval(4294967295);
-        else
-          idleTimer.setInterval(idleTime);
-        idleTimer.reset();
+        setIdleTimer();             
         // Для команд, пришедших от MQTT отправлять только ACK;
         // Для команд, пришедших от UDP отправлять при необходимости другие данные, например - состояние элементов управления на странице от которой пришла команда 
         sendAcknowledge(cmdSource);
@@ -4304,9 +4295,7 @@ void setSpecialMode(int8_t spc_mode) {
     set_thisMode(tmp_eff);
     specialMode = true;
     setTimersForMode(thisMode);
-    // Таймер возврата в авторежим отключен    
-    idleTimer.setInterval(4294967295);
-    idleTimer.reset();
+    setIdleTimer();             
     FastLED.setBrightness(specialBrightness);
     specialModeId = spc_mode;
   }  
@@ -4343,7 +4332,6 @@ void resetModesExt() {
   set_manualMode(false);
   autoplayTimer = millis();
   set_autoplayTime(getAutoplayTime());  
-  idleState = true;
   #if (USE_SD == 1)  
     play_file_finished = false;
   #endif
@@ -4364,6 +4352,7 @@ void setEffect(uint8_t eff) {
   set_thisMode(eff);
 
   setTimersForMode(thisMode);  
+  setIdleTimer();
 
   putCurrentSpecMode(-1);
   if (manualMode){
@@ -4451,16 +4440,8 @@ void updateSdCardFileIndex() {
 
 void setManualModeTo(bool isManual) {
   set_manualMode(isManual);
-  
-  idleState = !manualMode;
-  if (idleTime == 0 || manualMode || specialMode) {
-    idleTimer.setInterval(4294967295);
-  } else {
-    idleTimer.setInterval(idleTime);    
-  }
-  idleTimer.reset();
+  setIdleTimer();             
   autoplayTimer = millis();
-
   if (isManual) {
     putCurrentManualMode(thisMode);
     saveSettings();

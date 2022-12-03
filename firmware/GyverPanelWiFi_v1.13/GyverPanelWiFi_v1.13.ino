@@ -487,7 +487,7 @@ void setup() {
   #endif
 
   // Таймер рассвета
-  dawnTimer.setInterval(4294967295);
+  dawnTimer.stopTimer();
   
   // Проверить соответствие позиции вывода часов размерам матрицы
   // При необходимости параметры отображения часов корректируются в соответствии с текущими аппаратными возможностями
@@ -517,13 +517,7 @@ void setup() {
   if (!stopMQTT) mqttSendStartState();
   #endif
 
-  // Таймер бездействия  
-  if (idleTime == 0 || specialMode) {
-    idleTimer.setInterval(4294967295);
-  } else {
-    idleTimer.setInterval(idleTime);    
-  }
-  idleTimer.reset();
+  setIdleTimer();
 }
 
 void loop() {

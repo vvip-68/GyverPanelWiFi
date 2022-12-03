@@ -133,7 +133,7 @@ void PlayDawnSound() {
     fadeSoundStepCounter = maxAlarmVolume;
     if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
     fadeSoundTimer.setInterval(realDawnDuration * 60L * 1000L / fadeSoundStepCounter);
-    alarmSoundTimer.setInterval(4294967295);
+    alarmSoundTimer.stopTimer();
   } else {
     StopSound(1000);
   }

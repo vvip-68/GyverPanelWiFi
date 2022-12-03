@@ -311,7 +311,7 @@ void loadSettings() {
     for (uint8_t i=0; i<MAX_EFFECT; i++) {
       effectScaleParam[i]  = 50;             // среднее значение для параметра. Конкретное значение зависит от эффекта
       effectScaleParam2[i] = 0;              // второй параметр эффекта по умолчанию равен 0. Конкретное значение зависит от эффекта
-      effectContrast[i]    = 192;            // контраст эффекта
+      effectContrast[i]    = 128;            // контраст эффекта
       effectSpeed[i]       = D_EFFECT_SPEED; // скорость эффекта
     }
 

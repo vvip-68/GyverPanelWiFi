@@ -739,7 +739,7 @@ void setTimersForMode(uint8_t aMode) {
     if (clockScrollSpeed > D_CLOCK_SPEED_MAX) set_clockScrollSpeed(D_CLOCK_SPEED_MAX);
   }
   if (clockScrollSpeed >= 240) {
-    clockTimer.setInterval(4294967295);
+    clockTimer.stopTimer();
     checkClockOrigin();
   } else {
     clockTimer.setInterval(clockScrollSpeed);
@@ -795,7 +795,7 @@ void checkIdleState() {
   modeFader();
 #endif
   
-  if (idleState) {
+  if (!(manualMode || specialMode)) {
     uint32_t ms = millis();
   //if ((ms - autoplayTimer > autoplayTime) && !(manualMode || e131_wait_command)) {    // таймер смены режима
     if (((ms - autoplayTimer > autoplayTime) // таймер смены режима
@@ -836,9 +836,28 @@ void checkIdleState() {
     }
   } else {
     if (idleTimer.isReady()) {      // таймер холостого режима. Если время наступило - включить автосмену режимов 
+      DEBUGLN(F("Автоматический режим включен по таймеру бездействия."));
       e131_wait_command = false;
-      setManualModeTo(false);
+      setManualModeTo(false);      
       nextMode();
     }
   }  
+}
+
+void setIdleTimer() {
+  // Таймер бездействия  
+  if (idleTime == 0 || specialMode) {
+    if (!idleTimer.isStopped()) { 
+      DEBUGLN(F("Переход в авторежим отключен"));
+      idleTimer.stopTimer();
+    }
+  } else {
+    if (idleTimer.getInterval() != idleTime) {
+      DEBUG(F("Таймер включения авторежима: "));
+      DEBUG(idleTime / 60000UL);
+      DEBUGLN(F(" минут(а)"));
+      idleTimer.setInterval(idleTime);    
+    }
+  }
+  idleTimer.reset();
 }
