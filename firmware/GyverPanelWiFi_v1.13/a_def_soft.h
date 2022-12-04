@@ -831,6 +831,7 @@ uint8_t    masterHeight;                    // высота матрицы MASTE
 
 #endif
 
+bool       streaming = false;               // В настоящее время идет передача (MASTER) или прием (SLAVE) пакетов E1.31
 bool       e131_streaming = false;          // Устройство работает в режиме отправки E1.31 пакетов (MASTER) или происходит прием E1.31 пакетов (SLAVE)
 bool       e131_wait_command = false;       // Устройство работает в режиме прием E1.31 пакетов команд (SLAVE, COMMAND)
 

@@ -1,6 +1,23 @@
 // Спецификация протокола E1.31 - https://tsp.esta.org/tsp/documents/docs/ANSI_E1-31-2018.pdf
 #if (USE_E131 == 1)
 
+#define CMD_TURNONOFF     0
+#define CMD_BRIGHTNESS    1
+#define CMD_SPCBRIGHTNESS 2
+#define CMD_EFFECT        3
+#define CMD_SPCEFFECT     4
+#define CMD_RUNTEXT       5
+#define CMD_STOPTEXT      6
+#define CMD_TIME          7
+#define CMD_SPEED         8
+#define CMD_CONTRAST      9
+#define CMD_PARAM1       10
+#define CMD_PARAM2       11
+#define CMD_COLOR        12
+#define CMD_DIMENSION    13
+#define CMD_TEXTSPEED    14
+#define CMD_CLOCKSPEED   15
+
 // ---------------------------------------------------
 // Инициализация протокола E1.31 для устройства в роли приемника или передатчика
 // ---------------------------------------------------
@@ -135,15 +152,20 @@ bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
   } else {
     // Режим вывода LOGIC - начало картинки X,Y = 0,0; Далее по строке слева направо, затем строки сверху вниз
     // Порядок следования светодиодов на матрице должен соответствовать порядку следования пикселей на MASTER-устройстве
-    uint16_t len = (170 + offset > NUM_LEDS) ? (NUM_LEDS - offset) : 170;  
+    uint8_t w = masterWidth == 0 ? pWIDTH : masterWidth;
+    uint8_t h = masterHeight == 0 ? pHEIGHT : masterHeight;
+    uint16_t numLeds = w * h;
+    uint16_t len = (170 + offset > numLeds) ? (numLeds - offset) : 170;  
+    int8_t offset_x = (pWIDTH - w) / 2;
+    int8_t offset_y = (pHEIGHT - h) / 2;
     for (uint16_t i = 0; i<len; i++) {
       uint16_t idx = offset + i;
-      uint8_t  x = idx % pWIDTH;
-      uint8_t  y = pHEIGHT - idx / pWIDTH - 1;
+      int8_t  x = idx % w;
+      int8_t  y = h - idx / w - 1;
       uint16_t n = i * 3;
       CRGB color = CRGB(data[n], data[n+1], data[n+2]);
-      drawPixelXY(x,y,color);
-    }              
+      drawPixelXY(offset_x + x, offset_y + y, color);
+    } 
   }
   return true;
 }
@@ -201,36 +223,46 @@ void sendE131Screen() {
   if (!e131) return;
   if (!(syncMode == PHYSIC || syncMode == LOGIC)) return;
 
-  e131_packet_t *packet = e131->createPacket(host_name.c_str(), e131_cid);
-  if (!packet) return;
+  e131_packet_t* packet = NULL;
   
   if (syncMode == PHYSIC) {
-    uint16_t cnt = 0, universe = START_UNIVERSE;
-    for (uint16_t idx = 0; idx < NUM_LEDS; idx++) {
-      CRGB color = leds[idx];
-      e131->setRGB(packet,cnt,color.r,color.g,color.b);      
-      cnt++;
-      if (cnt == 170 || idx == NUM_LEDS-1) {
-        // отправить пакет
-        e131->sendPacket(packet, universe, cnt);
-        cnt = 0;
-        universe++;
+    packet = e131->createPacket(host_name.c_str(), e131_cid);
+    if (packet) {
+      uint16_t cnt = 0, universe = START_UNIVERSE;
+      for (uint16_t idx = 0; idx < NUM_LEDS; idx++) {
+        CRGB color = leds[idx];
+        e131->setRGB(packet,cnt,color.r,color.g,color.b);      
+        cnt++;
+        if (cnt == 170 || idx == NUM_LEDS-1) {
+          // отправить пакет
+          e131->sendPacket(packet, universe, cnt);
+          cnt = 0;
+          universe++;
+        }
       }
     }
   } else
 
   if (syncMode == LOGIC) {
-    uint16_t idx = 0, cnt = 0, universe = START_UNIVERSE;
-    for (int8_t y = pHEIGHT-1; y >= 0; y--) {
-      for (int8_t x = 0; x < pWIDTH; x++) {
-        CRGB color = getPixColorXY(x,y);  
-        e131->setRGB(packet,cnt,color.r,color.g,color.b);      
-        idx++; cnt++;
-        if (cnt == 170 || idx == NUM_LEDS) {
-          // отправить пакет
-          e131->sendPacket(packet, universe, cnt);
-          cnt = 0;
-          universe++;
+    // Отправить пакет с размерами MASTER-матрицы
+    packet = makeCommandPacket(CMD_DIMENSION);
+    if (packet) {
+      packet->property_values[4] = pWIDTH;
+      packet->property_values[5] = pHEIGHT;
+      e131->sendPacket(packet, 1, 170);
+      // Отправить экран MASTER-матрицы клиентам SLAVE
+      uint16_t idx = 0, cnt = 0, universe = START_UNIVERSE;
+      for (int8_t y = pHEIGHT-1; y >= 0; y--) {
+        for (int8_t x = 0; x < pWIDTH; x++) {
+          CRGB color = getPixColorXY(x,y);  
+          e131->setRGB(packet,cnt,color.r,color.g,color.b);      
+          idx++; cnt++;
+          if (cnt == 170 || idx == NUM_LEDS) {
+            // отправить пакет
+            e131->sendPacket(packet, universe, cnt);
+            cnt = 0;
+            universe++;
+          }
         }
       }
     }
@@ -251,23 +283,6 @@ bool isCommandPacket(e131_packet_t *packet) {
   // 4 и далее - параметры команды (зависит от команды)
   return packet != NULL && htons(packet->universe) == 1 && packet->property_values[1] == 0xAA && packet->property_values[2] == 0x55;
 }
-
-#define CMD_TURNONOFF     0
-#define CMD_BRIGHTNESS    1
-#define CMD_SPCBRIGHTNESS 2
-#define CMD_EFFECT        3
-#define CMD_SPCEFFECT     4
-#define CMD_RUNTEXT       5
-#define CMD_STOPTEXT      6
-#define CMD_TIME          7
-#define CMD_SPEED         8
-#define CMD_CONTRAST      9
-#define CMD_PARAM1       10
-#define CMD_PARAM2       11
-#define CMD_COLOR        12
-#define CMD_DIMENSION    13
-#define CMD_TEXTSPEED    14
-#define CMD_CLOCKSPEED   15
 
 // ---------------------------------------------------
 // Обработать команду, полученную в пакете E1.31
@@ -442,12 +457,19 @@ void processCommandPacket(e131_packet_t *packet) {
       break;      
 
     case CMD_DIMENSION:
+    {
       // Ширина и высота MASTER - матрицы
-      masterWidth  = packet->property_values[4];
-      masterHeight = packet->property_values[5];
+      uint8_t ww = packet->property_values[4];
+      uint8_t hh = packet->property_values[5];
+      if (masterWidth != ww || masterHeight != hh) {
+        masterWidth  = ww;
+        masterHeight = hh;
+        FastLED.clear();
+      }
       //DEBUGLN("GOT CMD_DIMENSION");
       break;      
-
+    }
+    
     case CMD_TEXTSPEED:
       // Скорость прокрутки текста
       textScrollSpeed = packet->property_values[4];

@@ -25,7 +25,7 @@ void process() {
   parsing();
 
   #if (USE_E131 == 1)
-    bool streaming = e131 != NULL && (workMode == MASTER || (workMode == SLAVE && (e131_wait_command || ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)))))); 
+    streaming = e131 != NULL && (workMode == MASTER || (workMode == SLAVE && (e131_wait_command || ((!e131->isEmpty() || (millis() - e131_last_packet <= E131_TIMEOUT)))))); 
     if (!e131_streaming && streaming) {
       flag_1 = false;
       flag_2 = false;
@@ -48,6 +48,8 @@ void process() {
             commandSetMode(thisMode);
         }
       } else {
+        masterWidth = 0;
+        masterHeight = 0;
         if (syncMode == COMMAND)
           DEBUGLN(F("Ожидание поступления потока команд E1.31...\n"));        
         else
@@ -285,15 +287,18 @@ void process() {
         // Если пакет содержит команду - обработать ее
         if (isCommand) {
           processCommandPacket(&e131_packet);          
-          needProcessEffect = true;
+          needProcessEffect = syncMode == COMMAND;
         } else
         // Если режим стрима - PHYSIC или LOGIC - вывести принятые данные на матрицу
+        // Физический вывод на матрицу выполнять при получении ПЕРВОГО (НАЧАЛЬНОГО) пакета группы,
+        // подразумевая что на предыдущем шаге все принятые пакеты уже разобраны и цвета помещены в массив leds[] - то есть полный кадр сформирован        
+        // Для всех остальных пакетов - просто разбирать их и помещать принятые данные части кадра в массив leds[];
+        // Если дожидаться последнего пакета группы и только потом выводить - для MASTER матриц чей размер меньше SLAVE - последний пакет не придет никогда
+        // и будет создаваться впечатление "зависшей" матрицы - нет вывода. Конечно, в этом случае при несовпадении размеров матриц MASTER и SLAVE
+        // быдет выведена "каша", но хотя бы видно, что устройство не зависло...
         if (syncMode == PHYSIC || syncMode == LOGIC) {
-          if (drawE131frame(&e131_packet, syncMode)) {
-            if (CURRENT_UNIVERSE == END_UNIVERSE) {
-              FastLED.show();
-            }
-          }
+          if (CURRENT_UNIVERSE == START_UNIVERSE) FastLED.show();
+          drawE131frame(&e131_packet, syncMode);
         }
       }
     }
