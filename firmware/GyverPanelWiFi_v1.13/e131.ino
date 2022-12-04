@@ -52,13 +52,18 @@ void InitializeE131() {
     }
   } else
   if (workMode == SLAVE) {
-    // Поддерживается до 7 вселенных. Одна группа синхронизации - 7 вселенных, т.е Группа 0 - 1..7 вселенная, Группа 1 - 8..14 вселенные и т.д.
+    // Поддерживается до MAX_UNIVERCE_COUNT = 7 вселенных. Одна группа синхронизации - 7 вселенных, т.е Группа 0 - 1..7 вселенная, Группа 1 - 8..14 вселенные и т.д.
     // 7 вселенных по 170 диодов = 1190 диодов
-    START_UNIVERSE = (syncGroup * 7) + 1;
+    START_UNIVERSE = (syncGroup * MAX_UNIVERCE_COUNT) + 1;
+    // ------------
     // Одна вселенная содержит данные 170 RGB светодиодов - используется 170*3 = 510 каналов из доступных по спецификации E1.31 DMX 512 каналов на вселенную.
     UNIVERSE_COUNT = NUM_LEDS / 170;  
     if ((NUM_LEDS % 170) > 0) UNIVERSE_COUNT++;
-    if (UNIVERSE_COUNT > 7) UNIVERSE_COUNT = 7;    
+    if (UNIVERSE_COUNT > MAX_UNIVERCE_COUNT) UNIVERSE_COUNT = MAX_UNIVERCE_COUNT;    
+    // На маленькую матрицу может приходить картинка с большой, поэтому инициализировать слушатель нужно на максимально поддерживаемое 
+    // количество вселенных в одной группе
+    UNIVERSE_COUNT = MAX_UNIVERCE_COUNT; // !!!
+    // ------------
     END_UNIVERSE = START_UNIVERSE + UNIVERSE_COUNT - 1;
 
     last_fps_time = millis();
@@ -142,9 +147,9 @@ bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
     }
   */  
   uint16_t offset = (CURRENT_UNIVERSE - START_UNIVERSE) * 170; // if more than 170 LEDs (510 channels), client will send in next higher universe    
-  if (offset >= NUM_LEDS) return false;
   uint8_t *data = packet->property_values + 1;
   if (syncMode == PHYSIC) {
+    if (offset >= NUM_LEDS) return false;
     // Режим вывода PHYSIC - просто передаем весь полученный массив данных на ленту
     // Порядок следования светодиодов на матрице должен соответствовать порядку следования пикселей на MASTER-устройстве
     uint16_t len = (170 + offset > NUM_LEDS) ? (NUM_LEDS - offset) * 3 : 510;  
@@ -158,7 +163,7 @@ bool drawE131frame(e131_packet_t *packet, eSyncModes syncMode) {
     uint16_t len = (170 + offset > numLeds) ? (numLeds - offset) : 170;  
     int8_t offset_x = (pWIDTH - w) / 2;
     int8_t offset_y = (pHEIGHT - h) / 2;
-    for (uint16_t i = 0; i<len; i++) {
+    for (uint16_t i = 0; i < len; i++) {
       uint16_t idx = offset + i;
       int8_t  x = idx % w;
       int8_t  y = h - idx / w - 1;
@@ -178,10 +183,13 @@ void printWorkMode() {
   if (workMode == STANDALONE) {
     DEBUGLN(F("\nРежим работы: АВТОНОМНЫЙ, синхронизация E1.31 отключена\n"));
   } else {
-    START_UNIVERSE = (syncGroup * 7) + 1;
+    START_UNIVERSE = (syncGroup * MAX_UNIVERCE_COUNT) + 1;
     UNIVERSE_COUNT = NUM_LEDS / 170;  
     if ((NUM_LEDS % 170) > 0) UNIVERSE_COUNT++;
-    if (UNIVERSE_COUNT > 7) UNIVERSE_COUNT = 7;    
+    if (UNIVERSE_COUNT > MAX_UNIVERCE_COUNT) UNIVERSE_COUNT = MAX_UNIVERCE_COUNT;
+    
+    // В режиме SLAVE на маленькую матрицу может приходить сигнал с большой, поэтому задействовать нужно все доступное для группы количество вселенных
+    if (workMode == SLAVE) UNIVERSE_COUNT = MAX_UNIVERCE_COUNT;
 
     uint8_t END_UNIVERSE = START_UNIVERSE + UNIVERSE_COUNT - 1;
     IPAddress address  = IPAddress(239, 255, ((START_UNIVERSE >> 8) & 0xff), ((START_UNIVERSE >> 0) & 0xff));
