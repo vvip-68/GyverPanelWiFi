@@ -179,6 +179,7 @@ void process() {
             if (init_weather && weather_cnt >= 10) {
               DEBUGLN(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
+              init_weather = false;
               
               #if (USE_MQTT == 1)
               DynamicJsonDocument doc(256);
@@ -208,13 +209,17 @@ void process() {
               }
             }        
           }
-          if (init_weather && (millis() - weather_time > weatherActualityDuration * 3600L * 1000L)) {
-            init_weather = false;
-            refresh_weather = true;
-          }
         }
       #endif
     } 
+
+    #if (USE_WEATHER == 1)  
+      // Если погода не смогла обновиться дважды за период обновления погоды + 30сек "запаса" - считать погоду неинициализированной и не отображать погоду в часах
+      if (useWeather > 0 && init_weather && (millis() - weather_time > weatherActualityDuration * 3600L * 1000L)) {
+        init_weather = false;
+        refresh_weather = true;
+      }
+    #endif
     
     if (init_time && !(wifi_connected && useNtp)) {
       // Если нет соединения WiFi (возможно работает в режиме AP) - вместо запроса текущего времени интернета
