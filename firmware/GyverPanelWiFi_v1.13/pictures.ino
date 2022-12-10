@@ -261,8 +261,8 @@ void DrawSlide() {
       counter = (pic_fade == 5 || pic_fade == 6) ? pictureWidth / 2 : pictureWidth;
       FOR_x(0, counter) {
         FOR_y (0, pictureHeight) {      
-          int16_t idx1 = x + y * pictureHeight;
-          int16_t idx2 = pictureWidth - x - 1 + y * pictureHeight;
+          int16_t idx1 = x + y * pictureWidth;
+          int16_t idx2 = pictureWidth - x - 1 + y * pictureWidth;
           if (pic_fade == 6 || pic_fade == 8) {
             lim = counter - loopCounter;
             drawBlack = x >= lim;
@@ -315,10 +315,10 @@ void DrawSlide() {
           FOR_y(0,TILE_SIZE) {
             uint16_t xp = xc * TILE_SIZE + x;
             uint16_t yp = yc * TILE_SIZE + y;
-            idx =  xp + pictureWidth * yp;
             if (drawBlack) {
               color = CRGB(0, 0, 0); 
             } else {
+              idx =  xp * pictureHeight + yp;
               color = picture[idx];
               color = color.nscale8_video(effectBrightness);    
             }
@@ -341,7 +341,7 @@ void slideRoutine() {
     return;
   }
 
-  //  pic_fade  0 - квадратики; 
+  //  pic_fade  0 - квадратики; - не работает 
   //            1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
   //            5 - верт. от центра к краям;  6 - от краев к центру; 7 - слева направо; 8 - справа налево
   
@@ -362,8 +362,8 @@ void slideRoutine() {
     cnt_tiles = (pictureWidth * pictureHeight) / (TILE_SIZE * TILE_SIZE); 
     
     phase = 1;                                     // фаза эффекта 0 -  показ картинки; 1 - настройка "появления" картинки;  2 - появление картинки 3 - настройка скрытия картинки 4 - "скрытие" картинки
-    pic_fade = random8(0,100) % 9;                 // 0 - квадратики; 
-                                                   // 1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
+  //pic_fade = random8(0,100) % 9;                 // 0 - квадратики; - не работает :(
+    pic_fade = random8(0,100) % 8 + 1;             // 1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
                                                    // 5 - верт. от центра к краям;  6 - от краев к центру; 7 - слева направо; 8 - справа налево    
     FastLED.clear();
   }  
