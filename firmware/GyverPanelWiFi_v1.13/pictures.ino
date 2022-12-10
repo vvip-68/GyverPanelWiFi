@@ -388,7 +388,8 @@ void slideRoutine() {
   }
   
   if (phase == 1) {
-    pic_fade = random8(0,100) % 9;
+    // pic_fade = random8(0,100) % 9;
+    pic_fade = random8(0,100) % 8 + 1;
     switch(pic_fade) {
       case 1:  loopCounter = pictureHeight / 2;  break;      // гориз от краев к центру: Height / 2 шагов для движения от края к центру
       case 2:  loopCounter = pictureHeight / 2;  break;      // гориз от цетра к краям:  Height / 2 шагов для движения от края к центру
@@ -418,7 +419,8 @@ void slideRoutine() {
   
   if (phase == 3) {
     // настройка скрытия картинки - выбрать способ
-    pic_fade = random8(0,100) % 9;
+    // pic_fade = random8(0,100) % 9;
+    pic_fade = random8(0,100) % 8 + 1;
     switch(pic_fade) {
       case 1:  loopCounter = pictureHeight / 2;  break;  // гориз от краев к центру: Height / 2 шагов для движения от края к центру
       case 2:  loopCounter = pictureHeight / 2;  break;  // гориз от цетра к краям:  Height / 2 шагов для движения от края к центру
