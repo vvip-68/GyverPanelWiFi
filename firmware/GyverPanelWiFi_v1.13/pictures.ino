@@ -26,8 +26,6 @@
 // Скорость перемещения задается слайдером "Вариант". В крайнем левом положении слайдера картинка не перемещается и выводится по центру поля матрицы
 //
 
-#define  TILE_SIZE 4
-
 CRGB     *picture;         // Буфер для загрузки кадра
 int8_t   pic_offset_x;     // Для движущихся картинок - смещение левого верхнего угла
 int8_t   pic_offset_y;
@@ -36,8 +34,6 @@ int8_t   dir_y;            // Направление движения по y
 uint16_t move_delay_x;     // коли-во миллисекунд 5-200 * 10 через которое смещение по x
 uint16_t move_delay_y;     // коли-во миллисекунд 5-200 * 10 через которое смещение по y
 int8_t   pic_fade;         // способ появления / скрытия картинки
-uint8_t* pic_tiles = NULL; // Массив индексов плашек 4x4 появления / исчезновения слайда при pic_fade == 0 
-uint8_t  cnt_tiles;        // Количество "плашек" для режима по квадратикам
 
 
 void initialisePictures() {
@@ -171,20 +167,6 @@ bool getNextSlide() {
   return res;
 }
 
-void PrepareTiles() {
-  if (pic_tiles != NULL) { delete [] pic_tiles; pic_tiles = NULL; };
-  // Массив индексов обращения к плашкам
-  pic_tiles = new uint8_t[cnt_tiles]; for (uint8_t i = 0; i < cnt_tiles; i++) { pic_tiles[i]= i; }
-  // Перемешать
-  FOR_i (0, cnt_tiles) {
-    uint16_t idx1 = random16(0, cnt_tiles - 1);
-    uint16_t idx2 = random16(0, cnt_tiles - 1);
-    uint8_t idx = pic_tiles[idx1];
-    pic_tiles[idx1] = pic_tiles[idx2];
-    pic_tiles[idx2] = idx;
-  }
-}
-
 void DrawSlide() {
   CRGB     color, color1, color2;  
   bool     drawBlack, allBlack;
@@ -292,41 +274,7 @@ void DrawSlide() {
           }
         }
       }       
-      break;
-    
-    default: // Квадратиками 4x4
-      // Порядок квадратиков - в массиве pic_tiles;
-      // loopCounter от cnt_tiles - 1 до 0;
-      // фаза появления - все что ДО loopCounter рисуется черной плашкой, от и после - кусочек слайда
-      // фаза сокрытия  - все что ДО loopCounter рисуется картинкой, от и после - черной плашкой
-      // Все поле картинки (слайда) разбивается на плитеи, размером 4x4 - ширина pictureWidth / 4; высота - pictureHeight / 4
-      uint8_t ww = pictureWidth  / TILE_SIZE;
-      uint8_t hh = pictureHeight / TILE_SIZE;
-      FOR_i(0,cnt_tiles) {
-        uint8_t idx = pic_tiles[i];
-        uint8_t xc = idx % ww;
-        uint8_t yc = idx / hh;
-        // xc - координата x плашки 4x4, yc - координата y плашки
-        // нарисовать плитку слайда x,y или черную плашку, в зависимости от фазы "Появления" / "Исчезновения"
-        bool drawBlack = i < loopCounter;
-        if (phase == 4) drawBlack = !drawBlack;
-        allBlack &= drawBlack;
-        FOR_x(0,TILE_SIZE) {
-          FOR_y(0,TILE_SIZE) {
-            uint16_t xp = xc * TILE_SIZE + x;
-            uint16_t yp = yc * TILE_SIZE + y;
-            if (drawBlack) {
-              color = CRGB(0, 0, 0); 
-            } else {
-              idx =  xp * pictureHeight + yp;
-              color = picture[idx];
-              color = color.nscale8_video(effectBrightness);    
-            }
-            drawPixelXY(pic_offset_x + xp, pic_offset_y + yp, color);              
-          }
-        }          
-      }
-      break;
+      break;    
   }
   if (phase == 4 && allBlack) phase = 1;
 }
@@ -341,8 +289,7 @@ void slideRoutine() {
     return;
   }
 
-  //  pic_fade  0 - квадратики; - не работает 
-  //            1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
+  //  pic_fade  1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
   //            5 - верт. от центра к краям;  6 - от краев к центру; 7 - слева направо; 8 - справа налево
   
   CRGB color;
@@ -357,12 +304,8 @@ void slideRoutine() {
     lastMillis  = millis();
     lastMillisX = millis();
     lastMillisY = millis();
-
-    // Количество плашек для режима "квадратики"
-    cnt_tiles = (pictureWidth * pictureHeight) / (TILE_SIZE * TILE_SIZE); 
     
     phase = 1;                                     // фаза эффекта 0 -  показ картинки; 1 - настройка "появления" картинки;  2 - появление картинки 3 - настройка скрытия картинки 4 - "скрытие" картинки
-  //pic_fade = random8(0,100) % 9;                 // 0 - квадратики; - не работает :(
     pic_fade = random8(0,100) % 8 + 1;             // 1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
                                                    // 5 - верт. от центра к краям;  6 - от краев к центру; 7 - слева направо; 8 - справа налево    
     FastLED.clear();
@@ -388,7 +331,6 @@ void slideRoutine() {
   }
   
   if (phase == 1) {
-    // pic_fade = random8(0,100) % 9;
     pic_fade = random8(0,100) % 8 + 1;
     switch(pic_fade) {
       case 1:  loopCounter = pictureHeight / 2;  break;      // гориз от краев к центру: Height / 2 шагов для движения от края к центру
@@ -399,9 +341,7 @@ void slideRoutine() {
       case 6:  loopCounter = pictureWidth / 2;   break;      // верт от центра к краям:  Width / 2 шагов для движения от края к центру
       case 7:  loopCounter = pictureWidth;       break;      // верт слева направо -     Width шагов
       case 8:  loopCounter = pictureWidth;       break;      // верт справа налево -     Width шагов
-      default: loopCounter = cnt_tiles; pic_fade = 0; break; // Квадратиками 4x4
     }    
-    if (pic_fade == 0) PrepareTiles();
     phase = 2;
   }
   
@@ -430,9 +370,7 @@ void slideRoutine() {
       case 6:  loopCounter = pictureWidth / 2;   break;  // верт от центра к краям:  Width / 2 шагов для движения от края к центру
       case 7:  loopCounter = pictureWidth;       break;  // верт слева направо -     Width шагов
       case 8:  loopCounter = pictureWidth;       break;  // верт справа налево -     Width шагов
-      default: loopCounter = cnt_tiles; pic_fade = 0; break; // Квадратиками 4x4
     }    
-    if (pic_fade == 0) PrepareTiles();
     phase = 4;
   }
   
@@ -514,5 +452,4 @@ void slideRoutine() {
 
 void slideRoutineRelease() {
   if (picture   != NULL) { delete [] picture; picture = NULL; }  
-  if (pic_tiles != NULL) { delete [] pic_tiles; pic_tiles = NULL; };
 }
