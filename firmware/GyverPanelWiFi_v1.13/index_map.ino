@@ -49,6 +49,7 @@ const int16_t PROGMEM imap[] = {
 #endif
 
 #if (WIDTH == 32 && HEIGHT == 16)
+#define INDEX_MAP_OK
 bool loadIndexMap() {  mapFiles[0] = String(WIDTH) + "x" + String(HEIGHT); mapListLen = 1; return true; }
 // Матрица сборная из двух 16x16, у обеих матриц угол подключения левый нижний, направление вправо, тип - зигзаг
 /* !!! Не удалять. Это информация о распределении сегментов матрицы !!!

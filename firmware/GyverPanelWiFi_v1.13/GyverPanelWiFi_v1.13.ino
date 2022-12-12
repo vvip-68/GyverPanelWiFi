@@ -326,7 +326,7 @@ void setup() {
   // -----------------------------------------
   // В этом блоке можно принудительно устанавливать параметры, которые должны быть установлены при старте микроконтроллера
   // -----------------------------------------
-
+  
   // -----------------------------------------  
     
   // Настройки ленты
@@ -340,7 +340,16 @@ void setup() {
     putMatrixSegmentType(sMATRIX_TYPE);
   }
 
-  FastLED.addLeds<WS2813, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+
+  /*
+  // Это пример, как выводить на две матрицы 16х16 (сборная матрица 32х16) через два пина D2 и D3
+  // Чтобы вывод был именно на D2 и D3 - в меню Инструменты - плату выбирать "Wemos D1 mini pro" - при выбранной плате NodeMCU назначение пинов куда-то "съезжает" на другие - нужно искать куда. 
+  // Убедитесь в правильном назначении адресации диодов матриц в сборной матрице используя индексные файлы или сьорную матрицу из матриц одного размера и подключения сегментов.
+  FastLED.addLeds<WS2812, D2, COLOR_ORDER>(leds, 256).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<WS2812, D3, COLOR_ORDER>(leds, 256, 256).setCorrection( TypicalLEDStrip );
+  */
+  
   FastLED.setBrightness(globalBrightness);
   if (CURRENT_LIMIT > 0) {
     FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
