@@ -836,6 +836,7 @@ void trafficRoutine() {
         idx = getPixelNumber(x, pHEIGHT - i - 1);
         if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_height ? 0 : b);   
         b -= step_height;
+        if (b < 0) b = 0;
         if (cnt == max_height) break;
       }
       y++;
@@ -860,6 +861,7 @@ void trafficRoutine() {
         idx = getPixelNumber(i, y);
         if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_width ? 0 : b);   
         b -= step_width;
+        if (b < 0) b = 0;
         if (cnt == max_width) break;
       }
       x++;
@@ -884,6 +886,7 @@ void trafficRoutine() {
         idx = getPixelNumber(x, i);
         if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_height ? 0 : b);   
         b -= step_height;
+        if (b < 0) b = 0;
         if (cnt == max_height) break;
       }
       y++;
@@ -907,6 +910,7 @@ void trafficRoutine() {
         idx = getPixelNumber(pWIDTH - i - 1, y);
         if (idx >=0) leds[idx] = CHSV(c, 255, cnt == max_width ? 0 : b);   
         b -= step_width;
+        if (b < 0) b = 0;
         if (cnt == max_width) break;
       }
       x++;
