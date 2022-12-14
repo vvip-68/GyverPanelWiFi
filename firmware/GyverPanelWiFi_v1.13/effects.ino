@@ -1343,6 +1343,7 @@ void stars2Routine() {
     numStarsHeight = pHEIGHT / 4;
     numStars = numStarsWidth * numStarsHeight;
     hue = 0;
+    loopCounter = 0;
 
     if (starState  == NULL) { starState  = new int8_t  [numStars]; }
     if (starBright == NULL) { starBright = new uint8_t [numStars]; }
