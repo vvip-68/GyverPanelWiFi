@@ -1,3 +1,7 @@
+// Эффекты на SD-карте
+//
+// Сортировка загруженных эффектов: от пользователя 'alex-3ton'
+
 #if (USE_SD == 1)
 
 File fxdata;
@@ -71,45 +75,161 @@ void loadDirectory() {
         entry.close();
         break;
       }
-        
-      if (first) {
-        first = false;
-        DEBUGLN(F("Найдены файлы эффектов:"));        
-      }
-
-      sz = 0;
-      fsize = file_size;
-      fs_name = F("байт");
-
-      if (fsize > 1024) { fsize /= 1024.0; fs_name = "К"; sz++;}
-      if (fsize > 1024) { fsize /= 1024.0; fs_name = "М"; sz++;}
-      if (fsize > 1024) { fsize /= 1024.0; fs_name = "Г"; sz++;}
 
       // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
       int16_t p = file_name.lastIndexOf("/");
       if (p >= 0) file_name = file_name.substring(p + 1);
       p = file_name.lastIndexOf(".");
       if (p >= 0) file_name = file_name.substring(0, p);
-            
-      DEBUG("   ");
-      DEBUG(file_name);
-      DEBUG("\t\t");
-      if (sz == 0)
-        DEBUGR(file_size, DEC);
-      else
-        DEBUGR(fsize, 2);      
-      DEBUGLN(" " + fs_name);
-      
+                  
       nameFiles[countFiles++] = file_name;
     }
-    
+        
     entry.close();
   }
 
   if (countFiles == 0) {
     DEBUGLN(F("Доступных файлов эффектов не найдено"));
+  }  else {
+    sortAndShow(directoryName);     
   }  
 }
+
+// ----------------------------------
+// --------- alex-3ton part ---------
+
+void bbSort( String *arr, int sz) {
+  // Простейшая сортировка (пузырёк)
+  // Находим наименьшее значение и определяем на первую позицию,
+  // Когда поиск наименьшего значения закончен следующая позиция 
+  //   устанавливается следующей по положению.
+  // И т.д. тупым перебором
+  String a, b;
+  if (sz > 1) {
+    for( int i=0; i<sz; i++)  {
+      for( int j=i+1; j<sz; j++)  {
+        a = arr[i]; a.toLowerCase();
+        b = arr[j]; b.toLowerCase();
+        if( b < a) {
+          String q = arr[i];
+          arr[i] = arr[j];
+          arr[j] = q;
+        } 
+      } 
+    } 
+  }
+}
+
+String fileSizeToString(uint32_t file_size){
+  uint8_t  sz = 0;
+  float    fsize = file_size;
+  String   fs_out = "";
+  
+  fs_out = "байт";
+  if (fsize > 1024) { fsize /= 1024.0; fs_out = "К"; sz++;}
+  if (fsize > 1024) { fsize /= 1024.0; fs_out = "М"; sz++;}
+  if (fsize > 1024) { fsize /= 1024.0; fs_out = "Г"; sz++;}
+
+  if (sz == 0) fs_out = (String)file_size + " " + fs_out; 
+  else {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%.2f", fsize);
+    fs_out = (String)buf + " " + fs_out;
+    //fs_out = format("{:.2f}", fsize) + " " + fs_out;
+  }
+
+  return fs_out;
+}
+
+void sortAndShow(String directoryName) {
+
+  //сортируем
+  bbSort( nameFiles, countFiles );
+
+  String   file_name;
+  uint32_t file_size;
+  bool     error, err;
+  uint16_t frame_sz = NUM_LEDS * 3 + 1;
+
+  DEBUG(F("Найдено файлов с эффектами: ")); 
+  DEBUGLN(countFiles);
+    
+  for (uint8_t x = 0; x < countFiles; x++) {
+    fileName = directoryName + "/" + nameFiles[x] + ".out";
+    
+    fxdata = SD.open(fileName);
+    if (!fxdata) {
+      error = true;
+      DEBUGLN("   " + nameFiles[x] + String(F("\t\tERR - ошибка чтения")));
+      nameFiles[x] = "";
+      continue;
+    }
+
+    err = false;
+    file_size = 0;
+    uint8_t frames = 0;
+    
+    // Определяем количество фреймов, заодно и читабельность файла (можно не использовать)     
+    /*
+    while (fxdata.available()){ 
+      char tmp; 
+      fxdata.readBytes(&tmp, 1); 
+      file_size++;   // пропускаем служебный байт
+      char* ptr = reinterpret_cast<char*>(&leds[0]);
+      int16_t cnt = fxdata.readBytes(ptr, NUM_LEDS * 3);  
+      if (cnt != NUM_LEDS * 3) {
+        err = true;
+        break;       
+      } else {
+        file_size += NUM_LEDS * 3; // 3 байта на цвет RGB для каждого светодиода
+        frames++;                  
+      }
+    }    
+    */
+    file_size = fxdata.size();
+    fxdata.close();
+
+    if (err) {
+      DEBUGLN("   " + nameFiles[x] + String(F("\t\tERR - ошибка размера кадра")));
+      nameFiles[x] = "";
+      error = true;
+      continue;
+    }
+
+    frames = file_size / frame_sz;
+    uint16_t cnt = file_size % frame_sz;
+
+    DEBUG("   " + nameFiles[x] + "\t" + fileSizeToString(file_size));
+    if (cnt == 0) {
+      DEBUG(", " + String(frames) + String(F(" кадр.")));
+      DEBUGLN(F("\t\tOK"));
+    } else {
+      DEBUGLN(F("\t\tERR - ошибка формата"));
+      nameFiles[x] = "";
+    }
+  }
+
+  // Если были ошибки - удалить ошибочные файлы эффектов
+  if (error) {
+    uint8_t idx = 0;
+    for (uint8_t x = 0; x < countFiles; x++) {
+      file_name = nameFiles[x];
+      if (file_name.length() > 0) {
+        if (x != idx) {
+          nameFiles[idx] = file_name;
+        }
+        idx++;
+      }
+    }
+    for (uint8_t x = idx; x < countFiles; x++) {
+      nameFiles[x] = "";
+    }
+    countFiles = idx;
+  }
+}
+
+// --------- alex-3ton part ---------
+// ----------------------------------
 
 void sdcardRoutine() {
  
