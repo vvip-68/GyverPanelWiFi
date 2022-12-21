@@ -5,7 +5,6 @@
 #if (USE_SD == 1)
 
 File fxdata;
-File folder;
 
 int8_t  file_idx;    // Служебное - для определения какой следующий файл воспроизводить
 String  fileName;    // Полное имя файла эффекта, включая имя папки
@@ -13,13 +12,17 @@ bool    sd_card_ok = false;
 
 void InitializeSD1() {  
   set_isSdCardReady(false);
-  DEBUGLN(F("\nИнициализация SD-карты..."));  
-  sd_card_ok = SD.begin(SD_CS_PIN);
+  #if (USE_SD == 1 && FS_AS_SD == 0)
+    DEBUGLN(F("Инициализация SD-карты..."));  
+    sd_card_ok = SD.begin(SD_CS_PIN);
+  #else
+    DEBUGLN(F("Эмуляция SD-карты в FS."));  
+    sd_card_ok = true;
+  #endif
 }
 
 void InitializeSD2() {  
   if (sd_card_ok) {
-    DEBUGLN(F("Загрузка списка файлов с эффектами..."));  
     loadDirectory();
     sd_card_ok = countFiles > 0;
     set_isSdCardReady(sd_card_ok);
@@ -34,59 +37,113 @@ void loadDirectory() {
   String directoryName = "/" + String(pWIDTH) + "x" + String(pHEIGHT);
   DEBUG(F("Папка с эффектами "));
   DEBUG(directoryName);
+  
+  #if (USE_SD == 1 && FS_AS_SD == 0)
   if (SD.exists(directoryName)) {
+  #else    
+  if (LittleFS.exists(directoryName)) {    
+  #endif
     DEBUGLN(F(" обнаружена."));
   } else {
     DEBUGLN(F(" не обнаружена."));
     return;
   }
+  
+  DEBUGLN(F("Загрузка списка файлов с эффектами..."));  
 
   String   file_name, fn;
   uint32_t file_size;
   float    fsize;
   uint8_t  sz = 0;
-  String   fs_name;
+  String   fs_name;  
   
-  bool     first = true;
-  folder = SD.open(directoryName);
-    
-  while (folder) {
-    File entry =  folder.openNextFile();
-    
-    // Очередной файл найден? Нет - завершить
-    if (!entry) break;
-        
-    if (!entry.isDirectory()) {
-            
-      file_name = entry.name();
-      file_size = entry.size();
-
-      fn = file_name;
-      fn.toLowerCase();
+  #if (USE_SD == 1 && FS_AS_SD == 0)
+    File folder = SD.open(directoryName);     
+    while (folder) {
+      File entry =  folder.openNextFile();
       
-      if (!fn.endsWith(".out") || file_size == 0) {
-        entry.close();
-        continue;    
-      }
-
-      if (countFiles >= MAX_FILES) {
-        DEBUG(F("Максимальное количество эффектов: "));        
-        DEBUGLN(MAX_FILES);
-        entry.close();
-        break;
-      }
-
-      // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
-      int16_t p = file_name.lastIndexOf("/");
-      if (p >= 0) file_name = file_name.substring(p + 1);
-      p = file_name.lastIndexOf(".");
-      if (p >= 0) file_name = file_name.substring(0, p);
-                  
-      nameFiles[countFiles++] = file_name;
-    }
+      // Очередной файл найден? Нет - завершить
+      if (!entry) break;
+          
+      if (!entry.isDirectory()) {
+              
+        file_name = entry.name();
+        file_size = entry.size();
+  
+        fn = file_name;
+        fn.toLowerCase();
         
-    entry.close();
-  }
+        if (!fn.endsWith(".out") || file_size == 0) {
+          entry.close();
+          continue;    
+        }
+    
+        // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
+        int16_t p = file_name.lastIndexOf("/");
+        if (p >= 0) file_name = file_name.substring(p + 1);
+        p = file_name.lastIndexOf(".");
+        if (p >= 0) file_name = file_name.substring(0, p);
+                    
+        nameFiles[countFiles++] = file_name;
+        
+        if (countFiles >= MAX_FILES) {
+          DEBUG(F("Максимальное количество эффектов: "));        
+          DEBUGLN(MAX_FILES);
+          break;
+        }
+      }
+          
+      entry.close();
+    }
+    
+  #else
+
+    #if defined(ESP32)
+      File folder = LittleFS.open(directoryName);
+    #else
+      Dir  folder = LittleFS.openDir(directoryName);
+    #endif
+      
+    while (true) {
+
+      #if defined(ESP32)
+        File entry = folder.openNextFile();
+        if (!entry) break;
+      #else        
+        if (!folder.next()) break;
+        File entry = folder.openFile("r");
+      #endif
+                     
+      if (!entry.isDirectory()) {
+              
+        file_name = entry.name();
+        file_size = entry.size();
+  
+        fn = file_name;
+        fn.toLowerCase();
+        
+        if (!fn.endsWith(".out") || file_size == 0) {
+          entry.close();
+          continue;    
+        }
+  
+        // Если полученное имя файла содержит имя папки (на ESP32 это так, на ESP8266 - только имя файла) - оставить только имя файла
+        int16_t p = file_name.lastIndexOf("/");
+        if (p >= 0) file_name = file_name.substring(p + 1);
+        p = file_name.lastIndexOf(".");
+        if (p >= 0) file_name = file_name.substring(0, p);
+                    
+        nameFiles[countFiles++] = file_name;
+        
+        if (countFiles >= MAX_FILES) {
+          DEBUG(F("Максимальное количество эффектов: "));        
+          DEBUGLN(MAX_FILES);
+          break;
+        }
+      }
+      entry.close();
+    }        
+  #endif
 
   if (countFiles == 0) {
     DEBUGLN(F("Доступных файлов эффектов не найдено"));
@@ -143,68 +200,45 @@ String fileSizeToString(uint32_t file_size){
 
 void sortAndShow(String directoryName) {
 
-  //сортируем
+  // сортируем
   bbSort( nameFiles, countFiles );
 
+  bool     error = false;
   String   file_name;
   uint32_t file_size;
-  bool     error, err;
   uint16_t frame_sz = NUM_LEDS * 3 + 1;
-
-  DEBUG(F("Найдено файлов с эффектами: ")); 
-  DEBUGLN(countFiles);
     
   for (uint8_t x = 0; x < countFiles; x++) {
     fileName = directoryName + "/" + nameFiles[x] + ".out";
     
+    #if (USE_SD == 1 && FS_AS_SD == 0)    
     fxdata = SD.open(fileName);
+    #else
+    fxdata = LittleFS.open(fileName, "r");
+    #endif
+    
     if (!fxdata) {
       error = true;
-      DEBUGLN("   " + nameFiles[x] + String(F("\t\tERR - ошибка чтения")));
+      DEBUGLN("   " + padRight(nameFiles[x],16) + String(F("ERR - ошибка загрузки")));
       nameFiles[x] = "";
       continue;
     }
-
-    err = false;
-    file_size = 0;
-    uint8_t frames = 0;
     
-    // Определяем количество фреймов, заодно и читабельность файла (можно не использовать)     
-    /*
-    while (fxdata.available()){ 
-      char tmp; 
-      fxdata.readBytes(&tmp, 1); 
-      file_size++;   // пропускаем служебный байт
-      char* ptr = reinterpret_cast<char*>(&leds[0]);
-      int16_t cnt = fxdata.readBytes(ptr, NUM_LEDS * 3);  
-      if (cnt != NUM_LEDS * 3) {
-        err = true;
-        break;       
-      } else {
-        file_size += NUM_LEDS * 3; // 3 байта на цвет RGB для каждого светодиода
-        frames++;                  
-      }
-    }    
-    */
     file_size = fxdata.size();
     fxdata.close();
 
-    if (err) {
-      DEBUGLN("   " + nameFiles[x] + String(F("\t\tERR - ошибка размера кадра")));
-      nameFiles[x] = "";
-      error = true;
-      continue;
-    }
-
-    frames = file_size / frame_sz;
+    uint16_t frames = file_size / frame_sz;
     uint16_t cnt = file_size % frame_sz;
+    String s_fsize = fileSizeToString(file_size);
+    s_fsize = padLeft(s_fsize, 10);
 
-    DEBUG("   " + nameFiles[x] + "\t" + fileSizeToString(file_size));
+    DEBUG("   " + padRight(nameFiles[x],16));
     if (cnt == 0) {
-      DEBUG(", " + String(frames) + String(F(" кадр.")));
-      DEBUGLN(F("\t\tOK"));
+      DEBUG(padRight(s_fsize + ", " + String(frames) + String(F(" кадр.")), 29));
+      DEBUGLN(F("OK"));
     } else {
-      DEBUGLN(F("\t\tERR - ошибка формата"));
+      DEBUG(padRight(s_fsize, 25));
+      DEBUGLN(F("ERR - ошибка формата"));
       nameFiles[x] = "";
     }
   }
@@ -225,7 +259,9 @@ void sortAndShow(String directoryName) {
       nameFiles[x] = "";
     }
     countFiles = idx;
+    DEBUGLN(F("Файлы с ошибками пропущены."));
   }
+  DEBUGLN(String(F("Доступно ")) + String(countFiles) + " файлов эффектов.");
 }
 
 // --------- alex-3ton part ---------
@@ -295,7 +331,12 @@ void sdcardRoutine() {
 
     if (fxdata) fxdata.close();
     
+    #if (USE_SD == 1 && FS_AS_SD == 0)    
     fxdata = SD.open(fileName);
+    #else
+    fxdata = LittleFS.open(fileName, "r");
+    #endif
+    
     if (fxdata) {
       DEBUGLN(F("' -> ok"));
     } else {

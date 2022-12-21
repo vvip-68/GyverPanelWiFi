@@ -1306,8 +1306,8 @@ void parsing() {
                 set_thisMode(MC_DRAW);
                 setManualModeTo(true);
               }      
-              str1 = USE_SD == 1 ? str.substring(0,2) : "FS"; // хранилище
-              str2 = str.substring(3);                        // Имя файла картинки без расширения
+              str1 = USE_SD == 1 && FS_AS_SD == 0 ? str.substring(0,2) : "FS"; // хранилище: если нет реальной SD-карты (эмуляция в FS) - использовать хранилище FS
+              str2 = str.substring(3);                                         // Имя файла картинки без расширения
               str = openImage(str1, str2, nullptr, false);
               str = "$18 ERR:[" + str + "];";
               break;
@@ -1318,8 +1318,8 @@ void parsing() {
                 set_thisMode(MC_DRAW);
                 setManualModeTo(true);
               }      
-              str1 = USE_SD == 1 ? str.substring(0,2) : "FS"; // хранилище
-              str2 = str.substring(3);                        // Имя файла картинки без расширения
+              str1 = USE_SD == 1 && FS_AS_SD == 0 ? str.substring(0,2) : "FS"; // хранилище: если нет реальной SD-карты (эмуляция в FS) - использовать хранилище FS
+              str2 = str.substring(3);                                         // Имя файла картинки без расширения
               str = saveImage(str1, str2);              
               str = "$18 ERR:[" + str + "];";
               break;
@@ -1330,8 +1330,8 @@ void parsing() {
                 set_thisMode(MC_DRAW);
                 setManualModeTo(true);
               }      
-              str1 = USE_SD == 1 ? str.substring(0,2) : "FS"; // хранилище
-              str2 = str.substring(3);                        // Имя файла картинки без расширения
+              str1 = USE_SD == 1 && FS_AS_SD == 0 ? str.substring(0,2) : "FS"; // хранилище: если нет реальной SD-карты (эмуляция в FS) - использовать хранилище FS
+              str2 = str.substring(3);                                         // Имя файла картинки без расширения
               str = deleteImage(str1, str2);              
               str = "$18 ERR:[" + str + "];";
               break;
@@ -3733,7 +3733,7 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
   }
 
 #if (USE_SD == 1)
-  // Наличие и доступность SD карты
+  // Наличие и доступность SD карты (в т.ч и эмуляция в FS)
   if (key == "SD") {
     if (value) {
       value->set(isSdCardReady);

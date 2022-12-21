@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2022.1220")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2022.1221")
 
 // -------------------------------------------------------------------------------------------------------
 // Версии (что нового): 
@@ -304,7 +304,8 @@ void setup() {
   DEBUGLN(F(" Дополнительный индикатор TM1637"));
 
   DEBUG((USE_SD == 1 ? "+" : "-"));
-  DEBUGLN(F(" Эффекты Jinx! с SD-карты"));
+  DEBUG(F(" Эффекты Jinx! с SD-карты"));
+  DEBUGLN(USE_SD == 1 && FS_AS_SD == 1 ? String(F(" (эмуляция в FS)")) : "");
 
   DEBUG((USE_MP3 == 1 ? "+" : "-"));
   DEBUGLN(F(" Поддержка MP3 Player"));

@@ -2072,7 +2072,7 @@ uint8_t checkEepromBackup() {
     file.close();
   }
 
-  #if (USE_SD == 1)
+  #if (USE_SD == 1 && FS_AS_SD == 0)
     file = SD.open(fileName);
     if (file) {
       if (file.size() == EEPROM_MAX) {
@@ -2100,7 +2100,7 @@ bool saveEepromToFile(String storage) {
   File file;
 
   saveSettings();
-  if (USE_SD == 0) storage = "FS";
+  if (USE_SD == 0 || USE_SD == 1 && FS_AS_SD == 1) storage = "FS";
 
   DEBUG(F("Сохранение файла: "));
   DEBUGLN(storage + String(F(":/")) + fileName);
@@ -2122,7 +2122,7 @@ bool saveEepromToFile(String storage) {
     file = LittleFS.open(fileName, "w");
   }
 
-  #if (USE_SD == 1) 
+  #if (USE_SD == 1 && FS_AS_SD == 0) 
   if (storage == "SD") {
 
     // Если файл с таким именем уже есть - удалить (перезапись файла новым)
@@ -2192,7 +2192,7 @@ bool loadEepromFromFile(String storage) {
   uint16_t idx = 0;  
   File file;
 
-  if (USE_SD == 0) storage = "FS";
+  if (USE_SD == 0 || USE_SD == 1 && FS_AS_SD == 1) storage = "FS";
 
   DEBUG(F("Загрузка файла: "));
   DEBUGLN(storage + String(F(":/")) + fileName);
@@ -2201,7 +2201,7 @@ bool loadEepromFromFile(String storage) {
     file = LittleFS.open(fileName, "r");
   }
 
-  #if (USE_SD == 1) 
+  #if (USE_SD == 1 && FS_AS_SD == 0) 
   if (storage == "SD") {
     file = SD.open(fileName, FILE_READ);
   }

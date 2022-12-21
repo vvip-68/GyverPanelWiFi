@@ -764,6 +764,27 @@ void shiftDiag() {
   }
 }
 
+String padRight(String &str, uint8_t cnt) {
+  uint16_t len = str.length();
+  if (len >= cnt) return str;
+  char data[cnt + 1];
+  memset(data, ' ', cnt);
+  data[cnt] = '\0';
+  strcpy(data, str.c_str());
+  data[len] = ' ';
+  return String(data);
+}
+
+String padLeft(String &str, uint8_t cnt) {
+  uint16_t len = str.length();
+  if (len >= cnt) return str;
+  char data[cnt + 1];
+  memset(data, ' ', cnt);
+  data[cnt] = '\0';
+  strcpy(&data[cnt - len], str.c_str());
+  return String(data);
+}
+
 String padNum(int16_t num, uint8_t cnt) {
   char data[12];
   String fmt = "%0"+ String(cnt) + "d";

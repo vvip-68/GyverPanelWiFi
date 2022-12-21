@@ -45,7 +45,7 @@ void initialisePictures() {
   // Для поиска картинок в папке используем процедуру getStoredImages() из animation.ini
   // Поскольку она ищет картинки в папке, соответствующей текущим pWIDTH и pHEIGHT - их нужно будет временно переопределить, в конце процедуры - восстановить
   // Результат из процедуры getStoredImages() - строка с именами файлов, разделенные запятыми
-  #if (USE_SD == 1)
+  #if (USE_SD == 1 && FS_AS_SD == 0)
     DEBUG(F("Поиск слайдов на SD в папке '"));
     DEBUGLN(String(pWIDTH) + "p" + String(pHEIGHT) + "'...");
     pictureStorage = "SD";
@@ -71,7 +71,7 @@ void initialisePictures() {
     pWIDTH = 16;
     pHEIGHT = 16;
     
-    #if (USE_SD == 1)
+    #if (USE_SD == 1 && FS_AS_SD == 0)
       if (pictureList.length() == 0) {
         DEBUGLN(F("Поиск слайдов на SD в папке '16p16'..."));
         pictureStorage = "SD";

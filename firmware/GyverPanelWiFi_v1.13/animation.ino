@@ -108,8 +108,8 @@ void initAnimations() {
   use_animations[0] = use_num++;
   anim_name = GetToken(name_list, 1, ',');
   animations_list += anim_name + ",";
-
-  DEBUGLN(F("Найденные анимации:"));
+  
+  DEBUGLN(F("\nНайденные анимации:"));
   DEBUGLN(String(F("   ")) + anim_name + "\t" + String(animations[0].frame_width) + "x" + String(animations[0].frame_height));
 
   // Другие анимации добавляются в список используемых, только если размер матрицы позволяет отображать
@@ -684,11 +684,11 @@ String openImage(String storage, String fName, void* lds, bool exactName) {
   String fileName = exactName ? fName : (directoryName + "/" + fName + ".p");
 
   // Если нет поддержки SD=карты - работать с внутренней файловой системой МК
-  if (USE_SD == 0) storage = "FS";
+  if (USE_SD == 0 || USE_SD == 1 && FS_AS_SD == 1) storage = "FS";
 
   CRGB* alds = (CRGB*)lds;
   
-  #if (USE_SD == 1)
+  #if (USE_SD == 1 && FS_AS_SD == 0)
   if (storage == "SD") {    
     if (!SD.exists(directoryName)) {
       ok = SD.mkdir(directoryName);
@@ -697,8 +697,7 @@ String openImage(String storage, String fName, void* lds, bool exactName) {
         DEBUGLN(message);
         return message;
       }
-    }
-  
+    }  
     file = SD.open(fileName, FILE_READ);
   }
   #endif
@@ -712,7 +711,6 @@ String openImage(String storage, String fName, void* lds, bool exactName) {
         return message;
       }
     }
-  
     file = LittleFS.open(fileName, "r");
   }
 
@@ -788,12 +786,12 @@ String saveImage(String storage, String fName) {
   String fileName = directoryName + "/" + fName + ".p";
 
   // Если нет поддержки SD=карты - работать с внутренней файловой системой МК
-  if (USE_SD == 0) storage = "FS";
+  if (USE_SD == 0 || USE_SD == 1 && FS_AS_SD == 1) storage = "FS";
 
   DEBUG(F("Сохранение файла: "));
   DEBUGLN(storage + String(F(":/")) + fileName);
 
-  #if (USE_SD == 1)
+  #if (USE_SD == 1 && FS_AS_SD == 0)
   if (storage == "SD") {    
     if (!SD.exists(directoryName)) {
       ok = SD.mkdir(directoryName);
@@ -818,7 +816,7 @@ String saveImage(String storage, String fName) {
   }
   #endif
 
-  if (storage == "FS") {    
+  if (storage == "FS" || storage == "SD" && FS_AS_SD == 1) {    
     if (!LittleFS.exists(directoryName)) {
       ok = LittleFS.mkdir(directoryName);
       if (!ok) {
@@ -887,13 +885,13 @@ String deleteImage(String storage, String fName) {
   DEBUG(F("Удаление файла: "));
   DEBUGLN(storage + String(F(":/")) + fileName);
   
-  #if (USE_SD == 1)
+  #if (USE_SD == 1 && FS_AS_SD == 0)
   if (storage == "SD") {
     ok = SD.remove(fileName);
   }
   #endif
 
-  if (storage == "FS") {
+  if (storage == "FS" || storage == "SD" && FS_AS_SD == 1) {
     ok = LittleFS.remove(fileName);
   }
 
@@ -913,7 +911,7 @@ String getStoredImages(String storage) {
   String list = "";
   String directoryName = "/" + String(pWIDTH) + "p" + String(pHEIGHT);
   
-  #if (USE_SD == 1)
+  #if (USE_SD == 1 && FS_AS_SD == 0)
   if (storage == "SD") {
     if (SD.exists(directoryName)) {
       
@@ -953,7 +951,7 @@ String getStoredImages(String storage) {
   }
   #endif
 
-  if (storage == "FS") {
+  if (storage == "FS" || storage == "SD" && FS_AS_SD == 1) {
     if (LittleFS.exists(directoryName)) {
       
       String file_name, fn;
