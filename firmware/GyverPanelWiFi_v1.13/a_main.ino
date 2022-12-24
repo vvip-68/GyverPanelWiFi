@@ -2582,7 +2582,7 @@ void sendPageParams(uint8_t page, eSources src) {
       str = getStateString("UP|FM|W|H|BR|CL|SD|FS");
       break;
     case 12:  // Игры
-      str = getStateString("UP|FM|W|H|BR|SE|SD");
+      str = getStateString("UP|FM|W|H|BR|SE");
       break;
     case 91:  // Запрос текста бегущей строки для редактирования указанной ячейки или замены строки текста в списке ячейки
       str = getStateString("TS|TY");
