@@ -234,7 +234,8 @@ void sortAndShow(String directoryName) {
 
     DEBUG("   " + padRight(nameFiles[x],16));
     if (cnt == 0) {
-      DEBUG(padRight(s_fsize + ", " + String(frames) + String(F(" кадр.")), 29));
+      s_fsize = s_fsize + ", " + String(frames) + String(F(" кадр."));
+      DEBUG(padRight(s_fsize, 29));
       DEBUGLN(F("OK"));
     } else {
       DEBUG(padRight(s_fsize, 25));
