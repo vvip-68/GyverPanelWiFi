@@ -95,6 +95,7 @@ void loadDirectory() {
           
       entry.close();
     }
+    folder.colse();
     
   #else
 
@@ -143,6 +144,7 @@ void loadDirectory() {
       }
       entry.close();
     }        
+    folder.colse();
   #endif
 
   if (countFiles == 0) {
