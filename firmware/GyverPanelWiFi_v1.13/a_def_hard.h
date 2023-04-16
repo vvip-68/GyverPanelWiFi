@@ -431,12 +431,7 @@
 #endif
 
 #include "FS.h"                  // Работа с внутренней файловой системой чипа ESP8266/ESP32
-#if defined(ESP32)
-  #define   LittleFS LITTLEFS
-  #include <LITTLEFS.h>
-#else
-  #include <LittleFS.h>
-#endif
+#include <LittleFS.h>
 
 // =======================================================
 

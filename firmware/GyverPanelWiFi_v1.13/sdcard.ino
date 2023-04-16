@@ -95,7 +95,6 @@ void loadDirectory() {
           
       entry.close();
     }
-    folder.colse();
     
   #else
 
@@ -144,7 +143,9 @@ void loadDirectory() {
       }
       entry.close();
     }        
-    folder.colse();
+    #if defined(ESP32)
+      folder.colse();
+    #endif  
   #endif
 
   if (countFiles == 0) {
