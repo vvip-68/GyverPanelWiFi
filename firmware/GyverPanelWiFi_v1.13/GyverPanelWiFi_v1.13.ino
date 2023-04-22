@@ -330,7 +330,7 @@ void setup() {
   leds =  new CRGB[NUM_LEDS];          
   overlayLEDs = new CRGB[OVERLAY_SIZE];
 
-  // Создать массив для карты индексов адресации светодиодов в ленте +++!!!
+  // Создать массив для карты индексов адресации светодиодов в ленте
   bool ok = loadIndexMap();
   if (sMATRIX_TYPE == 2 && (!ok || mapListLen == 0)) {
     sMATRIX_TYPE = 0;
