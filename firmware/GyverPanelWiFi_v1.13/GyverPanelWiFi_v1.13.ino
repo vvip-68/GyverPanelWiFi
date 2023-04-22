@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.0422")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.0423")
 
 // --------------------------   -----------------------------------------------------------------------------
 //
@@ -330,13 +330,15 @@ void setup() {
   leds =  new CRGB[NUM_LEDS];          
   overlayLEDs = new CRGB[OVERLAY_SIZE];
 
-  // Создать массив для карты индексов адресации светодиодов в ленте
+  // Создать массив для карты индексов адресации светодиодов в ленте +++!!!
   bool ok = loadIndexMap();
-  if (!ok || mapListLen == 0) {
+  if (sMATRIX_TYPE == 2 && (!ok || mapListLen == 0)) {
     sMATRIX_TYPE = 0;
     putMatrixSegmentType(sMATRIX_TYPE);
   }
 
+
+  DEBUGLN("sMATRIX_TYPE=" + String(sMATRIX_TYPE));
   FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
 
   /*
