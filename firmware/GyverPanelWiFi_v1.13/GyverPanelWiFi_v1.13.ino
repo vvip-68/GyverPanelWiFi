@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.0416")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.0422")
 
 // --------------------------   -----------------------------------------------------------------------------
 //
@@ -581,7 +581,7 @@ void startWiFi(uint32_t waitTime) {
     uint32_t last_wifi_check = 0;
     int16_t  cnt = 0;
     while (!(stop_waiting || wifi_connected)) {
-      delay(0);
+      delay(1);
       if (millis() - last_wifi_check > 250) {
         last_wifi_check = millis();
         set_wifi_connected(WiFi.status() == WL_CONNECTED); 
@@ -602,7 +602,7 @@ void startWiFi(uint32_t waitTime) {
         // Время ожидания подключения к сети вышло
         break;
       }
-      delay(0);
+      delay(1);
       // Опрос состояния кнопки
       butt.tick();
       if (butt.hasClicks()) {
@@ -612,7 +612,7 @@ void startWiFi(uint32_t waitTime) {
         stop_waiting = true;
         break;
       }
-      delay(0);
+      delay(1);
     }
     DEBUGLN();
 
