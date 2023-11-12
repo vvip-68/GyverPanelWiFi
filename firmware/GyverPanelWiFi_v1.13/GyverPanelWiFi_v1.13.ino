@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.0423")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.1111")
 
 // --------------------------   -----------------------------------------------------------------------------
 //
@@ -397,6 +397,9 @@ void setup() {
   // Настройка кнопки
   butt.setStepTimeout(100);
   butt.setClickTimeout(500);
+  butt.setDebounce(50);
+  butt.tick();
+  butt.isHolded();
 
   // Второй этап инициализации плеера - проверка наличия файлов звуков на SD карте
   #if (USE_MP3 == 1)

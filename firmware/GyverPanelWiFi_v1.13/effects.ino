@@ -383,7 +383,7 @@ void rainbowDiagonal() {
       float dx = (pWIDTH >= pHEIGHT)
          ? (float)(pWIDTH / pHEIGHT * x + y)
          : (float)(pHEIGHT / pWIDTH * y + x);
-      CRGB thisColor = CHSV((uint8_t)(hue + dx * (float)(255 / maxDim)), 255, effectBrightness);
+      CRGB thisColor = CHSV((uint8_t)(hue + dx * map8(getEffectScaleParamValue(MC_RAINBOW),1, maxDim)), 255, effectBrightness);
       drawPixelXY(x, y, thisColor); 
     }
   }
