@@ -72,8 +72,6 @@
 #define EFFECT_EEPROM  400       // Начальная ячейка eeprom с параметрами эффектов, 5 байт на эффект
 #define TEXT_EEPROM   1000       // Начальная ячейка eeprom с текстом бегущих строк
 
-#define COLOR_ORDER    GRB       // Порядок цветов на ленте. Если цвет отображается некорректно - меняйте. Начать можно с RGB
-
 #ifndef BRIGHTNESS
 #define BRIGHTNESS      32       // Яркость матрицы по-умолчанию 0..255
 #endif

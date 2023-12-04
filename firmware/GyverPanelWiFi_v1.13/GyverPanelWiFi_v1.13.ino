@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.1111")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2023.1204")
 
 // --------------------------   -----------------------------------------------------------------------------
 //
@@ -26,8 +26,7 @@
 //
 // Версия ядра ESP8266 - 2.7.4    
 // Версия ядра ESP32   - 2.0.6
-// Версия FastLED      - 3.5.0 (или 3.4.0)
-//
+// Версия FastLED      - 3.5.0
 // Вне зависимости от реальной платы выбирать NodeMCU v1.0 (ESP12-E)
 // Пин вывода на ленту LED_PIN обозначен как 2 (GPIO2) или D4
 // Тем не менее при указанной выше комбинации - NodeMCU v1.0 + Ядро 2.7.4 + библиотека FastLed 3.5 - назначает вывод на пин D2 микроконтроллера
@@ -336,7 +335,6 @@ void setup() {
     sMATRIX_TYPE = 0;
     putMatrixSegmentType(sMATRIX_TYPE);
   }
-
 
   DEBUGLN("sMATRIX_TYPE=" + String(sMATRIX_TYPE));
   FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );

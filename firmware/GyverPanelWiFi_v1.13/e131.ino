@@ -390,7 +390,7 @@ void processCommandPacket(e131_packet_t *packet) {
       syncEffectParam2   = packet->property_values[8];              // Параметр эффекта 2
       masterWidth        = packet->property_values[12];
       masterHeight       = packet->property_values[13];
-      globalColor = CRGB(packet->property_values[9],packet->property_values[10],packet->property_values[11]);
+      globalColor        = ((packet->property_values[9] & 0xFF) << 16) | ((packet->property_values[10] && 0xFF) << 8) | (packet->property_values[11] && 0xFF);      
       setEffect(packet->property_values[4]);        
       //DEBUGLN("GOT CMD_EFFECT");
       break;
@@ -460,7 +460,7 @@ void processCommandPacket(e131_packet_t *packet) {
 
     case CMD_COLOR:
       // globalColor
-      globalColor = CRGB(packet->property_values[4],packet->property_values[5],packet->property_values[6]);
+      globalColor = ((packet->property_values[4] & 0xFF) << 16) | ((packet->property_values[5] && 0xFF) << 8) | (packet->property_values[6] && 0xFF);
       //DEBUGLN("GOT CMD_COLOR");
       break;      
 
