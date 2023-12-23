@@ -79,6 +79,12 @@ void doEffectWithOverlay(uint8_t aMode) {
       textCurrentCount = 0;                // Сбросить счетчик количества раз, сколько строка показана на матрице;
       textStartTime = millis();            // Запомнить время начала отображения бегущей строки
 
+      if (moment_active) {
+        ignoreTextOverlaySettingforEffect = true;
+      } else {
+        pTextCount = 0;
+      }
+
       #if (USE_E131 == 1)
         commandSetTextSpeed(textScrollSpeed);
         commandSetImmediateText(syncText); // Присваивается в prepareNextText - currentText из которого НЕ удалены макросы
@@ -97,6 +103,7 @@ void doEffectWithOverlay(uint8_t aMode) {
         } else {
           outText = currentText;
         }
+        
         doc["text"] = outText;
         serializeJson(doc, out);    
         SendMQTT(out, TOPIC_TXT);

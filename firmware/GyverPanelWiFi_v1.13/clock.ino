@@ -261,6 +261,8 @@ int8_t getClockX(int8_t x) {
 // нарисовать часы
 void drawClock(uint8_t hrs, uint8_t mins, bool dots, int8_t X, int8_t Y) {
 
+  if (!(allowVertical || allowHorizontal)) return;
+  
   // Для отладки позиционирования часов с температурой
   bool debug = debug_hours >= 0 && debug_mins >= 0;
   if (debug) {

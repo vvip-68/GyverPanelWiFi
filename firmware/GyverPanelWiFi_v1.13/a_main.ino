@@ -4539,6 +4539,7 @@ void turnOn() {
 void setImmediateText(String str) {
   // текст бегущей строки для немедленного отображения без сохранения 
   currentText = str;
+  needProcessMacros = true;
   showTextNow = false;
   ignoreTextOverlaySettingforEffect = true;
   fullTextFlag = true;

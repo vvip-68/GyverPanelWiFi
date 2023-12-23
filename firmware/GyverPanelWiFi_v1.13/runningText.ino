@@ -48,14 +48,35 @@ void fillString(String text) {
   // Задан ли специальный цвет отображения строки?
   // Если режим цвета - монохром (0) или задан неверно (>2) - использовать глобальный или специальный цвет
   
-  uint8_t i = 0, j = 0, pos = 0, modif = 0;
+  uint16_t i = 0, j = 0, pos = 0, modif = 0, restSec = -1, restTextOffset = 0, restTextWidth = 0;
+  bool showRestSeconds = false;
+  String restSecStr;
+
+  if (momentIdx >= 0 && momentTextIdx >= 0 && pTextCount > 0 && isPTextCentered) {
+    // Отображаемый текст - с макросом {P} и один раз он уже отобразился полностью, 
+    // текст содержит флаг отображения остатка секнд по центру матрицы и остаток времени до события - менее минуты
+    // Теперь просто отображаем остчет оставшегося времени по центру матрицы
+
+    // Сколько секунд осталось до события?
+    restSec = moments[momentIdx].moment - now();
+    showRestSeconds = restSec > 0 && restSec < 60;
+    
+    // Остаток секунд в виде строки
+    restSecStr = padNum(restSec,2);
+
+    // Получить ширину строки в точках, чтобы высчитать центр отображения на матрице
+    restTextWidth = 2 * LET_WIDTH + SPACE;    
+
+    // Начальная позиция вывода остатка секунд по центру экрана
+    restTextOffset = ((pWIDTH - restTextWidth) / 2);
+  }
   
-  while (text[i] != '\0') {
+  while (true) {
 
     // Если строка - многоцветная (содержит несколько макросов определения цвета) - определить каким цветом выводится текущая буква строки
     if (textHasMultiColor) {
       if (pos < (MAX_COLORS - 1) && i >= textColorPos[pos+1]) {      
-          pos++;
+        pos++;
       }      
       color = pos < MAX_COLORS ? textColor[pos] : globalTextColor;
     } else {
@@ -66,16 +87,30 @@ void fillString(String text) {
       }
     }
 
-    // Определились с цветом - выводим очередную букву  
-    if ((uint8_t)text[i] > 191) {    // работаем с русскими буквами!
-      modif = (uint8_t)text[i];
-      i++;
-    } else {      
-      drawLetter(j, text[i], modif, offset + j * (LET_WIDTH + SPACE), color);
-      modif = 0;
-      i++;
+    if (showRestSeconds) {
+
+      // Определились с цветом - выводим очередную цифру  
+      drawLetter(j, restSecStr[i], 0, restTextOffset + j * (LET_WIDTH + SPACE), color);
       j++;
+      
+      if (restSecStr[i] == '\0') break;
+      i++; 
+      
+    } else {
+
+      // Определились с цветом - выводим очередную букву  
+      if ((uint16_t)text[i] > 191) {    // работаем с русскими буквами!
+        modif = (uint16_t)text[i];
+      } else {
+        drawLetter(j, text[i], modif, offset + j * (LET_WIDTH + SPACE), color);
+        j++;
+        modif = 0;
+      }
+      if (text[i] == '\0') break;
+      i++;
+      
     }
+
   }
   fullTextFlag = false;
 
@@ -83,6 +118,7 @@ void fillString(String text) {
   if (offset < -j * (LET_WIDTH + SPACE)) {
     offset = pWIDTH + 3;
     fullTextFlag = true;
+    if (momentIdx >= 0 && momentTextIdx >= 0) pTextCount++;
   }      
 }
 
@@ -399,7 +435,10 @@ bool prepareNextText(String text) {
   offset = pWIDTH;   // перемотка новой строки в правый край
   if (text.length() != 0) {
     syncText = text;
-    currentText = processMacrosInText(text);
+    if (needProcessMacros) {
+      currentText = processMacrosInText(currentText);
+      needProcessMacros = false;
+    }
   } else {
     // Размер массива строк
     uint8_t sizeOfTextsArray = sizeof(textLines) / sizeof(String);   // Размер массива текста бегущих строк
@@ -1449,6 +1488,7 @@ String processDateMacrosInText(const String text) {
 
     // "{P01.01.2021#N#B#A#F}" 
     // "{P7:00#N#B#A#F}" 
+    // "{P7:00#N#B#A#F#T}" или  "{P7:00#N#B#A#F#t}"
     // "{P**.01.2021 7:00#N#B#A#F}" 
     idx = textLine.indexOf("{P");
     if (idx >= 0) {
@@ -1469,7 +1509,7 @@ String processDateMacrosInText(const String text) {
       uint16_t insertPoint = idx;
 
       // Текущее активное событие - momentIdx, который указывает на элемент массива moments[]
-      if (momentIdx >= 0) {
+      if (momentIdx >= 0 && !noCounterInText) {
         // Вычислить сколько до наступления события осталось времени. 
         // Время события - поле moment структуры Moment элемента массива
         // Данная строка, содержавшая макрос {P} - всегда ДО события, строка ПОСЛЕ события макроса {P} содержать не может и в этот блок не попадает
@@ -1486,19 +1526,21 @@ String processDateMacrosInText(const String text) {
         // Если осталось несколько часов - отображать часы и минуты
         // Если осталось меньше-равно 7 дней - отображать дни и часы
         // Если осталось больше 7 дней - отображать дни
-  
-        if (restDays == 0 && restHours == 0 && restMinutes == 0)
-          tmp = String(restSeconds) + WriteSeconds(restSeconds);
-        else if (restDays == 0 && restHours == 0 && restMinutes > 0)
-          tmp = String(restMinutes) + WriteMinutes(restMinutes);
-        else if (restDays == 0 && restHours > 0 && restMinutes > 0)
-          tmp = String(restHours) + WriteHours(restHours) + " " + String(restMinutes) + WriteMinutes(restMinutes);
-        else if (restDays > 0 && restDays <= 7 && restHours > 0)
-          tmp = String(restDays) + WriteDays(restDays) + " " + String(restHours) + WriteHours(restHours);
-        else  
-          tmp = String(restDays) + WriteDays(restDays);
         
-        textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
+        String tmp;
+        if (restDays == 0 && restHours == 0 && restMinutes == 0)
+          { tmp += restSeconds; tmp += WriteSeconds(restSeconds); }
+        else if (restDays == 0 && restHours == 0 && restMinutes > 0)
+          { tmp += restMinutes; tmp += WriteMinutes(restMinutes); }
+        else if (restDays == 0 && restHours > 0 && restMinutes > 0)
+          { tmp += restHours; tmp += WriteHours(restHours); tmp += ' '; tmp += restMinutes; tmp += WriteMinutes(restMinutes); }
+        else if (restDays > 0 && restDays <= 7 && restHours > 0)
+          { tmp += restDays; tmp += WriteDays(restDays); tmp += ' '; tmp += restHours; tmp += WriteHours(restHours); }
+        else  
+          { tmp += restDays; tmp += WriteDays(restDays); }
+          
+        String tl_str(textLine.substring(0, insertPoint)); tl_str += tmp; tl_str += textLine.substring(insertPoint);         
+        textLine = tl_str;
       }
     }
 
@@ -1714,6 +1756,8 @@ void rescanTextEvents() {
   }
 
   bool     found = false;
+  bool     flagT  = false;
+  bool     flagT2 = false;
   uint8_t  stage = 0;         // 0 - разбор даты (день); 1 - месяц; 2 - год; 3 - часы; 4- минуты; 5 - строка замены; 6 - секунд ДО; 7 - секунд ПОСЛЕ; 8 - дни недели
   uint8_t  iDay = 0, iMonth = 0, iHour = 0, iMinute = 0, iSecond = 0, star_cnt = 0;
   uint16_t iYear = 0;
@@ -1746,6 +1790,21 @@ void rescanTextEvents() {
     // Сбрасываем переменные перед разбором очередной строки
     stage = 0; iDay = 0; iMonth = 0; iYear = 0; iHour = 0; iMinute = 0; iSecond = 0; iBefore = 60; iAfter = 60; star_cnt = 0; num = 0;
     wdays = "1234567";
+    flagT  = false;
+    flagT2 = false;
+
+    // Если в строке более чем 1 знак '#' и строка заканчивается на #T - это FlagT. Более 1 раза, т.к если один раз - это строка заместитель с индексом T
+    idx = str.indexOf("#");
+    if (idx >= 0) {
+      idx = str.indexOf("#", idx + 1);
+      if (idx > 0) {
+        flagT  = str.endsWith("#T") || str.endsWith("#t");
+        flagT2 = str.endsWith("#t");
+        if (flagT) {
+          str = str.substring(0, str.length() - 2);
+        }
+      }
+    }
     
     // Побайтово разбираем строку макроса
     bool err = false;
@@ -1921,15 +1980,40 @@ void rescanTextEvents() {
       
       breakTime(t_event, tm);
       
-      DEBUGLN(String(F("Событие: ")) + padNum(tm.Day,2) + "." + padNum(tm.Month,2) + "." + padNum(tmYearToCalendar(tm.Year),4) + " " + padNum(tm.Hour,2) + ":" + padNum(tm.Minute,2) + 
-                     String(F("; before=")) + String(iBefore) + String(F("; after=")) + String(iAfter) + String(F("; days='")) + wdays + String(F("'; replace='")) + String(getAZIndex(text_idx)) + "'");
-      
+      String str(F("Событие: "));
+      str += padNum(tm.Day,2);
+      str += ".";
+      str += padNum(tm.Month,2);
+      str += ".";
+      str += padNum(tmYearToCalendar(tm.Year),4);
+      str += " ";
+      str += padNum(tm.Hour,2);
+      str += ":";
+      str += padNum(tm.Minute,2);
+      str += F("; before=");
+      str += iBefore;
+      str += F("; after=");
+      str += iAfter;
+      str += F("; days='");
+      str += wdays;
+      str += F("'; text='");
+      str += getAZIndex(i);
+      str += F("'; replace='");
+      str += getAZIndex(text_idx);
+      str += "'; center=";
+      str += flagT ? "true" : "false";
+      DEBUGLN(str);
+      str.clear();
+            
       // Заполнить текущий элемент массива полученными параметрами
       moments[moment_idx].moment = t_event;
       moments[moment_idx].before = iBefore;
-      moments[moment_idx].after = iAfter;
+      moments[moment_idx].after  = iAfter;
       moments[moment_idx].index_b = i;
       moments[moment_idx].index_a = text_idx;
+      moments[moment_idx].flagT   = flagT;
+      moments[moment_idx].flagT2  = flagT2;
+
 
       // Строка-заместитель должна быть отключена, чтобы она не отображалась как регулярная строка
       if (text_idx >= 0) {
@@ -1955,7 +2039,7 @@ void rescanTextEvents() {
 // Возврат - индекс строки текста в массиве текстовых строк или -1, если активного события нет
 void checkMomentText() {
   momentIdx = -1;                   // Индекс строки в массиве moments для активного текущего непрерывно отслеживаемого события
-  momentTextIdx = -1;               // Индекс строки в массиве textLines для активного текущего непрерывно отслеживаемого события
+  momentTextIdx = -1;               // Индекс строки для активного текущего непрерывно отслеживаемого события
   time_t this_moment = now();
   for (uint8_t i = 0; i < MOMENTS_NUM; i++) {
     // Не содержит события
@@ -1963,13 +2047,17 @@ void checkMomentText() {
     // Время за #B секунд до наступления события? - отдать index_b
     if ((uint32_t)this_moment >= moments[i].moment - moments[i].before && this_moment < moments[i].moment) {
       momentIdx = i;
-      momentTextIdx = moments[i].index_b; // before
+      momentTextIdx = moments[i].index_b; // before 
+      isPTextCentered = moments[i].flagT;
+      noCounterInText = moments[i].flagT2;
       break;
     }    
     // Время #А секунд после наступления события? - отдать index_a
     if ((time_t)this_moment >= moments[i].moment && (time_t)this_moment <= moments[i].moment + (time_t)moments[i].after) {
       momentIdx = i;
       momentTextIdx = moments[i].index_a; // after
+      isPTextCentered = false;
+      noCounterInText = false;
       break;
     }    
   }
