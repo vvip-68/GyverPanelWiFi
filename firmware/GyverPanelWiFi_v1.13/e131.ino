@@ -1,22 +1,23 @@
 // Спецификация протокола E1.31 - https://tsp.esta.org/tsp/documents/docs/ANSI_E1-31-2018.pdf
 #if (USE_E131 == 1)
 
-#define CMD_TURNONOFF     0
-#define CMD_BRIGHTNESS    1
-#define CMD_SPCBRIGHTNESS 2
-#define CMD_EFFECT        3
-#define CMD_SPCEFFECT     4
-#define CMD_RUNTEXT       5
-#define CMD_STOPTEXT      6
-#define CMD_TIME          7
-#define CMD_SPEED         8
-#define CMD_CONTRAST      9
-#define CMD_PARAM1       10
-#define CMD_PARAM2       11
-#define CMD_COLOR        12
-#define CMD_DIMENSION    13
-#define CMD_TEXTSPEED    14
-#define CMD_CLOCKSPEED   15
+#define CMD_TURNONOFF       0
+#define CMD_BRIGHTNESS      1
+#define CMD_SPCBRIGHTNESS   2
+#define CMD_EFFECT          3
+#define CMD_SPCEFFECT       4
+#define CMD_RUNTEXT         5
+#define CMD_STOPTEXT        6
+#define CMD_TIME            7
+#define CMD_SPEED           8
+#define CMD_CONTRAST        9
+#define CMD_PARAM1         10
+#define CMD_PARAM2         11
+#define CMD_COLOR          12
+#define CMD_DIMENSION      13
+#define CMD_TEXTSPEED      14
+#define CMD_CLOCKSPEED     15
+#define CMD_CURBRIGHTNESS  16
 
 // ---------------------------------------------------
 // Инициализация протокола E1.31 для устройства в роли приемника или передатчика
@@ -382,6 +383,11 @@ void processCommandPacket(e131_packet_t *packet) {
       //DEBUGLN("GOT CMD_SPCBRIGHTNESS");
       break;
 
+    // Установить яркость
+    case CMD_CURBRIGHTNESS:
+      FastLED.setBrightness(packet->property_values[4]);
+      break;
+
     // Включить эффект  
     case CMD_EFFECT:
       syncEffectSpeed    = packet->property_values[5];              // Скорость эффекта
@@ -544,6 +550,17 @@ void commandSetSpecialBrightness(uint8_t value) {
   delay(5);
   free(packet);    
   //DEBUGLN("SEND CMD_SPCBRIGHTNESS");
+}
+
+void commandSetCurrentBrightness(uint8_t value) {
+  if (workMode != MASTER) return;
+  e131_packet_t *packet = makeCommandPacket(CMD_CURBRIGHTNESS);
+  if (!packet) return;
+  packet->property_values[4] = value;
+  e131->sendPacket(packet, 1, 170);
+  delay(5);
+  free(packet);    
+  // DEBUGLN("SEND CMD_CURBRIGHTNESS");
 }
 
 void commandSetImmediateText(String str) {

@@ -223,7 +223,7 @@ void smartMaze() {
         if (maze[MAZE_WIDTH + x] == 2) line++;
       if (line > MAX_STRAIGHT) sum = 0;
     }
-    delay(0);
+    yield();
   }
 }
 
@@ -255,7 +255,7 @@ void makeHoles() {
       maze[y * MAZE_WIDTH + x] = 0;                     // сделать стенку проходом (пробить дыру)
       holes++;                                          // увеличить счётчик число дыр в стенах
     }
-    delay(0);
+    yield();
   }
 }
 

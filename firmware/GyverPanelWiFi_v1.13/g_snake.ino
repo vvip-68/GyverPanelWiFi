@@ -33,56 +33,58 @@ void snakeRoutine() {
   else if (vectorY < 0) buttVector[snakeLength] = 3;
 
   // смещение головы змеи
-  headX += vectorX;
-  headY += vectorY;
-
-  if (headX < 0 || headX > pWIDTH - 1 || headY < 0 || headY > pHEIGHT - 1) { // если вышла за границы поля
-    pizdetc = true;
-  }
-
-  if (!pizdetc) {
-    // проверка на pizdetc
-    if ((uint32_t)(getPixColorXY(headX, headY) != 0 && (uint32_t)getPixColorXY(headX, headY) != GLOBAL_COLOR_2)) {   // если змея врезалась во что то, но не в яблоко
-      pizdetc = true;                           // флаг на отработку
+  if (!gamePaused) {
+    headX += vectorX;
+    headY += vectorY;
+  
+    if (headX < 0 || headX > pWIDTH - 1 || headY < 0 || headY > pHEIGHT - 1) { // если вышла за границы поля
+      pizdetc = true;
     }
-
-    // БЛОК ОТРАБОТКИ ПОЕДАНИЯ ЯБЛОКА
-    if (!pizdetc && (uint32_t)getPixColorXY(headX, headY) == (uint32_t)GLOBAL_COLOR_2) { // если попали головой в яблоко
-      apple_flag = false;                       // флаг что яблока больше нет
-      snakeLength++;                            // увеличить длину змеи
-      buttVector[snakeLength] = 4;              // запоминаем, что надо будет не стирать хвост
+  
+    if (!pizdetc) {
+      // проверка на pizdetc
+      if ((uint32_t)(getPixColorXY(headX, headY) != 0 && (uint32_t)getPixColorXY(headX, headY) != GLOBAL_COLOR_2)) {   // если змея врезалась во что то, но не в яблоко
+        pizdetc = true;                           // флаг на отработку
+      }
+  
+      // БЛОК ОТРАБОТКИ ПОЕДАНИЯ ЯБЛОКА
+      if (!pizdetc && (uint32_t)getPixColorXY(headX, headY) == (uint32_t)GLOBAL_COLOR_2) { // если попали головой в яблоко
+        apple_flag = false;                       // флаг что яблока больше нет
+        snakeLength++;                            // увеличить длину змеи
+        buttVector[snakeLength] = 4;              // запоминаем, что надо будет не стирать хвост
+      }
+  
+      // вычисляем координату хвоста (чтобы стереть) по массиву вектора
+      switch (buttVector[0]) {
+        case 0: buttX += 1;
+          break;
+        case 1: buttX -= 1;
+          break;
+        case 2: buttY += 1;
+          break;
+        case 3: buttY -= 1;
+          break;
+        case 4: missDelete = true;  // 4 значит не стирать!
+          break;
+      }
+  
+      // смещаем весь массив векторов хвоста ВЛЕВО
+      for (uint8_t i = 0; i < snakeLength; i++) {
+        buttVector[i] = buttVector[i + 1];
+      }
+  
+      // если змея не в процессе роста, закрасить бывший хвост чёрным
+      if (!missDelete) {
+        drawPixelXY(buttX, buttY, 0x000000);
+      }
+      else missDelete = false;
     }
-
-    // вычисляем координату хвоста (чтобы стереть) по массиву вектора
-    switch (buttVector[0]) {
-      case 0: buttX += 1;
-        break;
-      case 1: buttX -= 1;
-        break;
-      case 2: buttY += 1;
-        break;
-      case 3: buttY -= 1;
-        break;
-      case 4: missDelete = true;  // 4 значит не стирать!
-        break;
-    }
-
-    // смещаем весь массив векторов хвоста ВЛЕВО
-    for (uint8_t i = 0; i < snakeLength; i++) {
-      buttVector[i] = buttVector[i + 1];
-    }
-
-    // если змея не в процессе роста, закрасить бывший хвост чёрным
-    if (!missDelete) {
-      drawPixelXY(buttX, buttY, 0x000000);
-    }
-    else missDelete = false;
 
     // рисуем голову змеи в новом положении
     drawPixelXY(headX, headY, GLOBAL_COLOR_1);
   }
   
-  if (gameDemo) snakeDemo();
+  if (gameDemo && !gamePaused) snakeDemo();
 
   // если он настал
   if (pizdetc) {
@@ -91,7 +93,7 @@ void snakeRoutine() {
 
     // ну в общем плавно моргнуть, типо змейке "больно"
     for (uint8_t bright = 0; bright < 15; bright++) {
-      FastLED.setBrightness(bright);
+      FastLEDsetBrightness(bright);
       for (uint16_t i = 0; i < NUM_LEDS; i++) {
         leds[i] = CRGB::Red;
       }
@@ -101,7 +103,7 @@ void snakeRoutine() {
 
     delay(100);
     FastLED.clear();
-    FastLED.setBrightness(globalBrightness);
+    FastLEDsetBrightness(globalBrightness);
 
     //if (!gameDemo) {
       displayScore(snakeLength - START_LENGTH);
@@ -194,6 +196,7 @@ void newGameSnake() {
   randomSeed(millis());
 
   gameOverFlag = false;
+  if (!gameDemo) gamePaused = true;
   
   // длина из настроек, начинаем в середине экрана, бла-бла-бла
   snakeLength = START_LENGTH;

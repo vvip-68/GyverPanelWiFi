@@ -1,7 +1,7 @@
 // Гайд по постройке матрицы: https://alexgyver.ru/matrix_guide/
 // Страница проекта на GitHub: https://github.com/vvip-68/GyverPanelWiFi
 // Автор идеи, начальный проект - GyverMatrixBT: AlexGyver Technologies, 2019 (https://alexgyver.ru/gyvermatrixbt/)
-// Дальнейшее развитие: vvip-68, 2019-2023
+// Дальнейшее развитие: vvip-68, 2019-2024
 // https://AlexGyver.ru/
 //
 // Дополнительные ссылки для Менеджера плат ESP8266 и ESP32 в Файл -> Настройки
@@ -354,7 +354,7 @@ void setup() {
   FastLED.addLeds<WS2812, D3, COLOR_ORDER>(leds, 256, 256).setCorrection( TypicalLEDStrip );
   */
   
-  FastLED.setBrightness(globalBrightness);
+  FastLEDsetBrightness(globalBrightness);
   if (CURRENT_LIMIT > 0) {
     FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
   }

@@ -410,7 +410,7 @@ void process() {
           set_globalColor(0xFFFFFF);
           isButtonHold = false;
           setSpecialMode(1);
-          FastLED.setBrightness(globalBrightness);
+          FastLEDsetBrightness(globalBrightness);
         }
       #else
         // Удержание кнопки повышает / понижает яркость панели (лампы)
@@ -454,7 +454,7 @@ void process() {
           set_globalBrightness(255);
           set_globalColor(0xFFFFFF);
           setSpecialMode(1);
-          FastLED.setBrightness(globalBrightness);
+          FastLEDsetBrightness(globalBrightness);
         }      
         // Пятикратное нажатие - показать текущий IP WiFi-соединения            
         else if (clicks == 5) {
@@ -538,7 +538,7 @@ void processButtonStep() {
     }
   }
   set_specialBrightness(globalBrightness);
-  if (!isTurnedOff) FastLED.setBrightness(globalBrightness);    
+  if (!isTurnedOff) FastLEDsetBrightness(globalBrightness);    
 }
 
 // ********************* ПРИНИМАЕМ ДАННЫЕ **********************
@@ -930,11 +930,11 @@ void parsing() {
           if (isNightClock) {
             set_nightClockBrightness(intData[2]); // setter            
             set_specialBrightness(nightClockBrightness);
-            FastLED.setBrightness(specialBrightness);
+            FastLEDsetBrightness(specialBrightness);
           } else {
             set_globalBrightness(intData[2]);
             if (specialMode) set_specialBrightness(globalBrightness);
-            if (!isTurnedOff) FastLED.setBrightness(globalBrightness);
+            if (!isTurnedOff) FastLEDsetBrightness(globalBrightness);
             if (thisMode == MC_DRAW || thisMode == MC_LOADIMAGE) {
               FastLEDshow();
             }
@@ -1456,7 +1456,7 @@ void parsing() {
                // Для ночных часов - полученное значение -> в map 0..6 - код цвета ночных часов
                set_nightClockColor(map(intData[3], 0,255, 0,6));
                set_specialBrightness(nightClockBrightness);
-               FastLED.setBrightness(specialBrightness);
+               FastLEDsetBrightness(specialBrightness);
              } else {
                // Для дневных часов - меняется цвет часов (параметр HUE цвета, hue < 2 - белый)
                set_EffectScaleParam(tmp_eff, intData[3]);
@@ -1996,14 +1996,14 @@ void parsing() {
              set_nightClockColor(intData[2]);
              if (isNightClock) {
                 set_specialBrightness(nightClockBrightness);
-                FastLED.setBrightness(specialBrightness);
+                FastLEDsetBrightness(specialBrightness);
              }             
              break;
            case 11:               // $19 11 X; - Яркость ночных часов:  1..255;
              set_nightClockBrightness(intData[2]); // setter             
              if (isNightClock) {
                 set_specialBrightness(nightClockBrightness);
-                FastLED.setBrightness(specialBrightness);
+                FastLEDsetBrightness(specialBrightness);
              }             
              break;
            case 12:               // $19 12 X; - скорость прокрутки часов оверлея или 0, если часы остановлены по центру
@@ -4306,7 +4306,7 @@ void setSpecialMode(int8_t spc_mode) {
     specialMode = true;
     setTimersForMode(thisMode);
     setIdleTimer();             
-    FastLED.setBrightness(specialBrightness);
+    FastLEDsetBrightness(specialBrightness);
     specialModeId = spc_mode;
   }  
 
@@ -4375,7 +4375,7 @@ void setEffect(uint8_t eff) {
   gamePaused = false;
 
   if (thisMode != MC_DAWN_ALARM)
-    FastLED.setBrightness(globalBrightness);      
+    FastLEDsetBrightness(globalBrightness);      
 }
 
 void showCurrentIP(bool autoplay) {

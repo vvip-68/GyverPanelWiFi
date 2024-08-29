@@ -642,7 +642,7 @@ void nextModeHandler() {
   setTimersForMode(thisMode);
   
   FastLED.clear();
-  FastLED.setBrightness(globalBrightness);
+  FastLEDsetBrightness(globalBrightness);
 }
 
 void prevModeHandler() {
@@ -699,7 +699,7 @@ void prevModeHandler() {
   setTimersForMode(thisMode);
   
   FastLED.clear();
-  FastLED.setBrightness(globalBrightness);
+  FastLEDsetBrightness(globalBrightness);
 }
 
 void setTimersForMode(uint8_t aMode) {
@@ -777,7 +777,7 @@ void modeFader() {
         fadeBrightness = 0;
         fadeMode = 2;
       }
-      FastLED.setBrightness(fadeBrightness);
+      FastLEDsetBrightness(fadeBrightness);
     }
   } else if (fadeMode == 2) {
     fadeMode = 3;
@@ -790,7 +790,7 @@ void modeFader() {
         fadeBrightness = globalBrightness;
         fadeMode = 4;
       }
-      FastLED.setBrightness(fadeBrightness);
+      FastLEDsetBrightness(fadeBrightness);
     }
   }
 }

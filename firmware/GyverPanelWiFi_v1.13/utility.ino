@@ -42,6 +42,15 @@ const uint8_t font3x5_s[][3] PROGMEM = {
   {0b11101, 0b10101, 0b11110},    // 9
 };
 
+void FastLEDsetBrightness(uint8_t value) {
+  #if (USE_E131 == 1)
+  if (workMode == MASTER) {
+    commandSetCurrentBrightness(value);
+  }
+  #endif
+  FastLED.setBrightness(value);
+}
+
 // отображаем счёт для игр
 void displayScore(uint16_t score) {
   uint8_t score_size = SCORE_SIZE;
@@ -574,7 +583,7 @@ uint32_t getColorInt(CRGB color) {
 }
 
 // Вычисление значения яркости эффектов по отношению к общей яркости
-// Общая яркость регулируется через FastLED.setBrightness(); 
+// Общая яркость регулируется через FastLEDsetBrightness(); 
 // Вычисленная яркость эффекта влияет на компонент яркости V в модели HCSV
 uint8_t getBrightnessCalculated(uint8_t brightness, uint8_t contrast) {
   // В данном варианте общая яркость не учитывается в расчете
