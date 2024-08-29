@@ -3,7 +3,7 @@
 #include <limits>
 
 TEST_CASE("serializeJson(MemberProxy)") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   deserializeJson(doc, "{\"hello\":42}");
   JsonObject obj = doc.as<JsonObject>();
   std::string result;
@@ -14,7 +14,7 @@ TEST_CASE("serializeJson(MemberProxy)") {
 }
 
 TEST_CASE("serializeJson(ElementProxy)") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   deserializeJson(doc, "[42]");
   JsonArray arr = doc.as<JsonArray>();
   std::string result;
@@ -25,7 +25,7 @@ TEST_CASE("serializeJson(ElementProxy)") {
 }
 
 TEST_CASE("serializeJson(JsonVariantSubscript)") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   deserializeJson(doc, "[42]");
   JsonVariant var = doc.as<JsonVariant>();
   std::string result;

@@ -140,7 +140,7 @@ void PlayDawnSound() {
   #endif
 }
 
-void StopSound(int16_t duration) {
+void StopSound([[maybe_unused]]int16_t duration) {
 
   if (!isDfPlayerOk) return;
 

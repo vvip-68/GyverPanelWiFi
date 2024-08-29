@@ -327,6 +327,24 @@ void process() {
     
     clockTicker();
     
+    #if (USE_TM1637 == 1)
+      if (lastDisplay[0] != currDisplay[0] || lastDisplay[1] != currDisplay[1] || lastDisplay[2] != currDisplay[2] || lastDisplay[3] != currDisplay[3]) {
+        display.displayByte(currDisplay[0], currDisplay[1], currDisplay[2], currDisplay[3]);
+        lastDisplay[0] = currDisplay[0];
+        lastDisplay[1] = currDisplay[1];
+        lastDisplay[2] = currDisplay[2];
+        lastDisplay[3] = currDisplay[3];
+      }
+      if (lastDotState != currDotState) {
+        display.point(currDotState);
+        lastDotState = currDotState;
+      }
+      if (lastDisplayBrightness != currDisplayBrightness) {
+        display.setBrightness(currDisplayBrightness);
+        lastDisplayBrightness = currDisplayBrightness;
+      }
+    #endif    
+
     checkAlarmTime();
     checkAutoMode1Time();
     checkAutoMode2Time();
@@ -1532,6 +1550,12 @@ void parsing() {
             loadingFlag = effectScaleParam2[tmp_eff] != 0;
           }
           else
+          if (thisMode == tmp_eff && tmp_eff == MC_FIREWORKS) {
+            // При получении параметра 2 эффекта "Фейерврк" -  вид - надо переинициализировать эффект
+            // Если установлена анимация - "случайная" - продолжаем показывать тот что был
+            loadingFlag = effectScaleParam2[tmp_eff] != 0;
+          } 
+          else
           if (thisMode == tmp_eff && tmp_eff == MC_IMAGE) {
             // При получении параметра 2 эффекта "Анимация" -  вид - надо переинициализировать эффект
             // Если установлена анимация - "случайная" - продолжаем показывать тот что был
@@ -2544,7 +2568,6 @@ void sendPageParams(uint8_t page) {
 void sendPageParams(uint8_t page, eSources src) {
 
   String str = "", color, text;
-  CRGB   c1, c2;
   bool   err = false;
   
   switch (page) { 
@@ -4181,8 +4204,12 @@ String getParam2ForMode(uint8_t mode) {
      //           Маркер типа - список выбора         0,1,2,3,4               0               1       2
      str = String(F("L>")) + String(effectScaleParam2[thisMode]) + String(F(">Случайный выбор,Цветной,Монохром"));
      break;
- }
- return str;   
+   case MC_FIREWORKS:
+     // Слайдер
+     str += effectScaleParam2[mode];  // ???
+     break;
+  }
+  return str;   
 }
 
 void sendAcknowledge(eSources src) {

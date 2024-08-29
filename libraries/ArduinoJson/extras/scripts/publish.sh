@@ -2,7 +2,7 @@
 
 set -eu
 
-which awk sed jq curl perl >/dev/null
+which awk sed jq 7z curl perl >/dev/null
 
 cd "$(dirname "$0")/../.."
 
@@ -15,7 +15,6 @@ VERSION="$1"
 DATE=$(date +%F)
 TAG="v$VERSION"
 VERSION_REGEX='[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9]+)?'
-STARS=$(curl -s https://api.github.com/repos/bblanchon/ArduinoJson | jq '.stargazers_count')
 
 update_version_in_source () {
 	IFS=".-" read MAJOR MINOR REVISION EXTRA < <(echo "$VERSION")
@@ -30,25 +29,16 @@ update_version_in_source () {
 	sed -i~ -bE "s/(project\\s*\\(ArduinoJson\\s+VERSION\\s+).*?\\)/\\1$MAJOR.$MINOR.$REVISION)/" CMakeLists.txt
 	rm CMakeLists.txt~
 
-	sed -i~ -bE \
-		-e "s/\"version\":.*$/\"version\": \"$VERSION\",/" \
-		-e "s/[0-9]+ stars/$STARS stars/" \
-		library.json
+	sed -i~ -bE "s/\"version\":.*$/\"version\": \"$VERSION\",/" library.json
 	rm library.json~
 
-	sed -i~ -bE \
-		-e "s/version=.*$/version=$VERSION/" \
-		-e "s/[0-9]+ stars/$STARS stars/" \
-		library.properties
+	sed -i~ -bE "s/version=.*$/version=$VERSION/" library.properties
 	rm library.properties~
 
 	sed -i~ -bE "s/version: .*$/version: $VERSION.{build}/" appveyor.yml
 	rm appveyor.yml~
 
-	sed -i~ -bE \
-		-e "s/^version: .*$/version: \"$VERSION\"/" \
-		-e "s/[0-9]+ stars/$STARS stars/" \
-		idf_component.yml
+	sed -i~ -bE "s/^version: .*$/version: \"$VERSION\"/" idf_component.yml
 	rm idf_component.yml~
 
 	sed -i~ -bE \
@@ -80,6 +70,7 @@ commit_new_version
 add_tag
 push
 
+extras/scripts/build-arduino-package.sh . "../ArduinoJson-$TAG.zip"
 extras/scripts/build-single-header.sh "src/ArduinoJson.h" "../ArduinoJson-$TAG.h"
 extras/scripts/build-single-header.sh "src/ArduinoJson.hpp" "../ArduinoJson-$TAG.hpp"
 extras/scripts/get-release-page.sh "$VERSION" "CHANGELOG.md" "../ArduinoJson-$TAG.h" > "../ArduinoJson-$TAG.md"

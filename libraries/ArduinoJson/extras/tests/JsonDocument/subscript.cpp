@@ -1,14 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-#include "Literals.hpp"
-
 TEST_CASE("JsonDocument::operator[]") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   const JsonDocument& cdoc = doc;
 
   SECTION("object") {
@@ -20,40 +18,26 @@ TEST_CASE("JsonDocument::operator[]") {
     }
 
     SECTION("std::string") {
-      REQUIRE(doc["hello"_s] == "world");
-      REQUIRE(cdoc["hello"_s] == "world");
-    }
-
-    SECTION("JsonVariant") {
-      doc["key"] = "hello";
-      REQUIRE(doc[doc["key"]] == "world");
-      REQUIRE(cdoc[cdoc["key"]] == "world");
+      REQUIRE(doc[std::string("hello")] == "world");
+      REQUIRE(cdoc[std::string("hello")] == "world");
     }
 
     SECTION("supports operator|") {
-      REQUIRE((doc["hello"] | "nope") == "world"_s);
-      REQUIRE((doc["world"] | "nope") == "nope"_s);
+      REQUIRE((doc["hello"] | "nope") == std::string("world"));
+      REQUIRE((doc["world"] | "nope") == std::string("nope"));
     }
   }
 
   SECTION("array") {
     deserializeJson(doc, "[\"hello\",\"world\"]");
 
-    SECTION("int") {
-      REQUIRE(doc[1] == "world");
-      REQUIRE(cdoc[1] == "world");
-    }
-
-    SECTION("JsonVariant") {
-      doc[2] = 1;
-      REQUIRE(doc[doc[2]] == "world");
-      REQUIRE(cdoc[doc[2]] == "world");
-    }
+    REQUIRE(doc[1] == "world");
+    REQUIRE(cdoc[1] == "world");
   }
 }
 
 TEST_CASE("JsonDocument automatically promotes to object") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   doc["one"]["two"]["three"] = 4;
 
@@ -61,7 +45,7 @@ TEST_CASE("JsonDocument automatically promotes to object") {
 }
 
 TEST_CASE("JsonDocument automatically promotes to array") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   doc[2] = 2;
 

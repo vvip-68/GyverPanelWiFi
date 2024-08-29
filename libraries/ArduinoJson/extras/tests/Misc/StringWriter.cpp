@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <Arduino.h>
@@ -9,7 +9,6 @@
 
 #include <catch.hpp>
 
-#include "Literals.hpp"
 #include "custom_string.hpp"
 
 using namespace ArduinoJson::detail;
@@ -37,13 +36,13 @@ void common_tests(StringWriter& writer, const String& output) {
 
   SECTION("OneString") {
     REQUIRE(4 == print(writer, "ABCD"));
-    REQUIRE("ABCD"_s == output);
+    REQUIRE(std::string("ABCD") == output);
   }
 
   SECTION("TwoStrings") {
     REQUIRE(4 == print(writer, "ABCD"));
     REQUIRE(4 == print(writer, "EFGH"));
-    REQUIRE("ABCDEFGH"_s == output);
+    REQUIRE(std::string("ABCDEFGH") == output);
   }
 }
 
@@ -140,9 +139,9 @@ TEST_CASE("Writer<custom_string>") {
 }
 
 TEST_CASE("serializeJson(doc, String)") {
-  JsonDocument doc;
+  StaticJsonDocument<1024> doc;
   doc["hello"] = "world";
-  ::String output = "erase me";
+  ::String output;
 
   SECTION("sufficient capacity") {
     serializeJson(doc, output);

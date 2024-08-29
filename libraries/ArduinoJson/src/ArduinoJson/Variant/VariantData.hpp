@@ -1,21 +1,17 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include <ArduinoJson/Memory/StringNode.hpp>
+#include <ArduinoJson/Memory/MemoryPool.hpp>
 #include <ArduinoJson/Misc/SerializedValue.hpp>
 #include <ArduinoJson/Numbers/convertNumber.hpp>
 #include <ArduinoJson/Strings/JsonString.hpp>
 #include <ArduinoJson/Strings/StringAdapters.hpp>
 #include <ArduinoJson/Variant/VariantContent.hpp>
-#include <ArduinoJson/Variant/VariantSlot.hpp>
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
-
-template <typename T>
-T parseNumber(const char* s);
 
 class VariantData {
   VariantContent content_;  // must be first to allow cast from array to variant
@@ -24,222 +20,78 @@ class VariantData {
  public:
   VariantData() : flags_(VALUE_IS_NULL) {}
 
+  void operator=(const VariantData& src) {
+    content_ = src.content_;
+    flags_ = uint8_t((flags_ & OWNED_KEY_BIT) | (src.flags_ & ~OWNED_KEY_BIT));
+  }
+
   template <typename TVisitor>
-  typename TVisitor::result_type accept(TVisitor& visit) const {
+  typename TVisitor::result_type accept(TVisitor& visitor) const {
     switch (type()) {
       case VALUE_IS_FLOAT:
-        return visit.visit(content_.asFloat);
+        return visitor.visitFloat(content_.asFloat);
 
       case VALUE_IS_ARRAY:
-        return visit.visit(content_.asArray);
+        return visitor.visitArray(content_.asCollection);
 
       case VALUE_IS_OBJECT:
-        return visit.visit(content_.asObject);
+        return visitor.visitObject(content_.asCollection);
 
       case VALUE_IS_LINKED_STRING:
-        return visit.visit(JsonString(content_.asLinkedString));
-
       case VALUE_IS_OWNED_STRING:
-        return visit.visit(JsonString(content_.asOwnedString->data,
-                                      content_.asOwnedString->length,
-                                      JsonString::Copied));
+        return visitor.visitString(content_.asString.data,
+                                   content_.asString.size);
 
-      case VALUE_IS_RAW_STRING:
-        return visit.visit(RawString(content_.asOwnedString->data,
-                                     content_.asOwnedString->length));
+      case VALUE_IS_OWNED_RAW:
+      case VALUE_IS_LINKED_RAW:
+        return visitor.visitRawJson(content_.asString.data,
+                                    content_.asString.size);
 
       case VALUE_IS_SIGNED_INTEGER:
-        return visit.visit(content_.asSignedInteger);
+        return visitor.visitSignedInteger(content_.asSignedInteger);
 
       case VALUE_IS_UNSIGNED_INTEGER:
-        return visit.visit(content_.asUnsignedInteger);
+        return visitor.visitUnsignedInteger(content_.asUnsignedInteger);
 
       case VALUE_IS_BOOLEAN:
-        return visit.visit(content_.asBoolean != 0);
+        return visitor.visitBoolean(content_.asBoolean != 0);
 
       default:
-        return visit.visit(nullptr);
+        return visitor.visitNull();
     }
   }
 
-  template <typename TVisitor>
-  static typename TVisitor::result_type accept(const VariantData* var,
-                                               TVisitor& visit) {
-    if (var != 0)
-      return var->accept(visit);
-    else
-      return visit.visit(nullptr);
-  }
-
-  VariantData* addElement(ResourceManager* resources) {
-    auto array = isNull() ? &toArray() : asArray();
-    return detail::ArrayData::addElement(array, resources);
-  }
-
-  static VariantData* addElement(VariantData* var, ResourceManager* resources) {
-    if (!var)
-      return nullptr;
-    return var->addElement(resources);
-  }
+  template <typename T>
+  T asIntegral() const;
 
   template <typename T>
-  bool addValue(T&& value, ResourceManager* resources) {
-    auto array = isNull() ? &toArray() : asArray();
-    return detail::ArrayData::addValue(array, detail::forward<T>(value),
-                                       resources);
+  T asFloat() const;
+
+  JsonString asString() const;
+
+  bool asBoolean() const;
+
+  CollectionData* asArray() {
+    return isArray() ? &content_.asCollection : 0;
   }
 
-  template <typename T>
-  static bool addValue(VariantData* var, T&& value,
-                       ResourceManager* resources) {
-    if (!var)
-      return false;
-    return var->addValue(value, resources);
-  }
-
-  bool asBoolean() const {
-    switch (type()) {
-      case VALUE_IS_BOOLEAN:
-        return content_.asBoolean;
-      case VALUE_IS_SIGNED_INTEGER:
-      case VALUE_IS_UNSIGNED_INTEGER:
-        return content_.asUnsignedInteger != 0;
-      case VALUE_IS_FLOAT:
-        return content_.asFloat != 0;
-      case VALUE_IS_NULL:
-        return false;
-      default:
-        return true;
-    }
-  }
-
-  ArrayData* asArray() {
-    return isArray() ? &content_.asArray : 0;
-  }
-
-  const ArrayData* asArray() const {
+  const CollectionData* asArray() const {
     return const_cast<VariantData*>(this)->asArray();
   }
 
-  CollectionData* asCollection() {
+  const CollectionData* asCollection() const {
     return isCollection() ? &content_.asCollection : 0;
   }
 
-  const CollectionData* asCollection() const {
-    return const_cast<VariantData*>(this)->asCollection();
+  CollectionData* asObject() {
+    return isObject() ? &content_.asCollection : 0;
   }
 
-  template <typename T>
-  T asFloat() const {
-    static_assert(is_floating_point<T>::value, "T must be a floating point");
-    switch (type()) {
-      case VALUE_IS_BOOLEAN:
-        return static_cast<T>(content_.asBoolean);
-      case VALUE_IS_UNSIGNED_INTEGER:
-        return static_cast<T>(content_.asUnsignedInteger);
-      case VALUE_IS_SIGNED_INTEGER:
-        return static_cast<T>(content_.asSignedInteger);
-      case VALUE_IS_LINKED_STRING:
-      case VALUE_IS_OWNED_STRING:
-        return parseNumber<T>(content_.asOwnedString->data);
-      case VALUE_IS_FLOAT:
-        return static_cast<T>(content_.asFloat);
-      default:
-        return 0;
-    }
-  }
-
-  template <typename T>
-  T asIntegral() const {
-    static_assert(is_integral<T>::value, "T must be an integral type");
-    switch (type()) {
-      case VALUE_IS_BOOLEAN:
-        return content_.asBoolean;
-      case VALUE_IS_UNSIGNED_INTEGER:
-        return convertNumber<T>(content_.asUnsignedInteger);
-      case VALUE_IS_SIGNED_INTEGER:
-        return convertNumber<T>(content_.asSignedInteger);
-      case VALUE_IS_LINKED_STRING:
-        return parseNumber<T>(content_.asLinkedString);
-      case VALUE_IS_OWNED_STRING:
-        return parseNumber<T>(content_.asOwnedString->data);
-      case VALUE_IS_FLOAT:
-        return convertNumber<T>(content_.asFloat);
-      default:
-        return 0;
-    }
-  }
-
-  ObjectData* asObject() {
-    return isObject() ? &content_.asObject : 0;
-  }
-
-  const ObjectData* asObject() const {
+  const CollectionData* asObject() const {
     return const_cast<VariantData*>(this)->asObject();
   }
 
-  JsonString asRawString() const {
-    switch (type()) {
-      case VALUE_IS_RAW_STRING:
-        return JsonString(content_.asOwnedString->data,
-                          content_.asOwnedString->length, JsonString::Copied);
-      default:
-        return JsonString();
-    }
-  }
-
-  JsonString asString() const {
-    switch (type()) {
-      case VALUE_IS_LINKED_STRING:
-        return JsonString(content_.asLinkedString, JsonString::Linked);
-      case VALUE_IS_OWNED_STRING:
-        return JsonString(content_.asOwnedString->data,
-                          content_.asOwnedString->length, JsonString::Copied);
-      default:
-        return JsonString();
-    }
-  }
-
-  VariantData* getElement(size_t index,
-                          const ResourceManager* resources) const {
-    return ArrayData::getElement(asArray(), index, resources);
-  }
-
-  static VariantData* getElement(const VariantData* var, size_t index,
-                                 const ResourceManager* resources) {
-    return var != 0 ? var->getElement(index, resources) : 0;
-  }
-
-  template <typename TAdaptedString>
-  VariantData* getMember(TAdaptedString key,
-                         const ResourceManager* resources) const {
-    return ObjectData::getMember(asObject(), key, resources);
-  }
-
-  template <typename TAdaptedString>
-  static VariantData* getMember(const VariantData* var, TAdaptedString key,
-                                const ResourceManager* resources) {
-    if (!var)
-      return 0;
-    return var->getMember(key, resources);
-  }
-
-  VariantData* getOrAddElement(size_t index, ResourceManager* resources) {
-    auto array = isNull() ? &toArray() : asArray();
-    if (!array)
-      return nullptr;
-    return array->getOrAddElement(index, resources);
-  }
-
-  template <typename TAdaptedString>
-  VariantData* getOrAddMember(TAdaptedString key, ResourceManager* resources) {
-    if (key.isNull())
-      return nullptr;
-    auto obj = isNull() ? &toObject() : asObject();
-    if (!obj)
-      return nullptr;
-    return obj->getOrAddMember(key, resources);
-  }
+  bool copyFrom(const VariantData& src, MemoryPool* pool);
 
   bool isArray() const {
     return (flags_ & VALUE_IS_ARRAY) != 0;
@@ -251,10 +103,6 @@ class VariantData {
 
   bool isCollection() const {
     return (flags_ & COLLECTION_MASK) != 0;
-  }
-
-  bool isFloat() const {
-    return (flags_ & NUMBER_BIT) != 0;
   }
 
   template <typename T>
@@ -271,65 +119,35 @@ class VariantData {
     }
   }
 
-  bool isNull() const {
-    return type() == VALUE_IS_NULL;
-  }
-
-  static bool isNull(const VariantData* var) {
-    if (!var)
-      return true;
-    return var->isNull();
-  }
-
-  bool isObject() const {
-    return (flags_ & VALUE_IS_OBJECT) != 0;
+  bool isFloat() const {
+    return (flags_ & NUMBER_BIT) != 0;
   }
 
   bool isString() const {
     return type() == VALUE_IS_LINKED_STRING || type() == VALUE_IS_OWNED_STRING;
   }
 
-  size_t nesting(const ResourceManager* resources) const {
-    auto collection = asCollection();
-    if (collection)
-      return collection->nesting(resources);
-    else
-      return 0;
+  bool isObject() const {
+    return (flags_ & VALUE_IS_OBJECT) != 0;
   }
 
-  static size_t nesting(const VariantData* var,
-                        const ResourceManager* resources) {
-    if (!var)
-      return 0;
-    return var->nesting(resources);
+  bool isNull() const {
+    return type() == VALUE_IS_NULL;
   }
 
-  void removeElement(size_t index, ResourceManager* resources) {
-    ArrayData::removeElement(asArray(), index, resources);
+  bool isEnclosed() const {
+    return !isFloat();
   }
 
-  static void removeElement(VariantData* var, size_t index,
-                            ResourceManager* resources) {
-    if (!var)
-      return;
-    var->removeElement(index, resources);
+  void remove(size_t index) {
+    if (isArray())
+      content_.asCollection.removeElement(index);
   }
 
   template <typename TAdaptedString>
-  void removeMember(TAdaptedString key, ResourceManager* resources) {
-    ObjectData::removeMember(asObject(), key, resources);
-  }
-
-  template <typename TAdaptedString>
-  static void removeMember(VariantData* var, TAdaptedString key,
-                           ResourceManager* resources) {
-    if (!var)
-      return;
-    var->removeMember(key, resources);
-  }
-
-  void reset() {
-    flags_ = VALUE_IS_NULL;
+  void remove(TAdaptedString key) {
+    if (isObject())
+      content_.asCollection.removeMember(key);
   }
 
   void setBoolean(bool value) {
@@ -337,175 +155,168 @@ class VariantData {
     content_.asBoolean = value;
   }
 
-  void setBoolean(bool value, ResourceManager* resources) {
-    release(resources);
-    setBoolean(value);
-  }
-
   void setFloat(JsonFloat value) {
     setType(VALUE_IS_FLOAT);
     content_.asFloat = value;
   }
 
-  void setFloat(JsonFloat value, ResourceManager* resources) {
-    release(resources);
-    setFloat(value);
+  void setLinkedRaw(SerializedValue<const char*> value) {
+    if (value.data()) {
+      setType(VALUE_IS_LINKED_RAW);
+      content_.asString.data = value.data();
+      content_.asString.size = value.size();
+    } else {
+      setType(VALUE_IS_NULL);
+    }
   }
 
   template <typename T>
-  enable_if_t<is_signed<T>::value> setInteger(T value) {
-    setType(VALUE_IS_SIGNED_INTEGER);
-    content_.asSignedInteger = value;
+  bool storeOwnedRaw(SerializedValue<T> value, MemoryPool* pool) {
+    const char* dup = pool->saveString(adaptString(value.data(), value.size()));
+    if (dup) {
+      setType(VALUE_IS_OWNED_RAW);
+      content_.asString.data = dup;
+      content_.asString.size = value.size();
+      return true;
+    } else {
+      setType(VALUE_IS_NULL);
+      return false;
+    }
   }
 
   template <typename T>
-  enable_if_t<is_unsigned<T>::value> setInteger(T value) {
+  typename enable_if<is_unsigned<T>::value>::type setInteger(T value) {
     setType(VALUE_IS_UNSIGNED_INTEGER);
     content_.asUnsignedInteger = static_cast<JsonUInt>(value);
   }
 
   template <typename T>
-  void setInteger(T value, ResourceManager* resources) {
-    release(resources);
-    setInteger(value);
+  typename enable_if<is_signed<T>::value>::type setInteger(T value) {
+    setType(VALUE_IS_SIGNED_INTEGER);
+    content_.asSignedInteger = value;
   }
 
   void setNull() {
     setType(VALUE_IS_NULL);
   }
 
-  void setNull(ResourceManager* resources) {
-    release(resources);
-    setNull();
-  }
-
-  static void setNull(VariantData* var, ResourceManager* resources) {
-    if (!var)
-      return;
-    var->setNull(resources);
-  }
-
-  void setRawString(StringNode* s) {
+  void setString(JsonString s) {
     ARDUINOJSON_ASSERT(s);
-    setType(VALUE_IS_RAW_STRING);
-    content_.asOwnedString = s;
-  }
-
-  template <typename T>
-  void setRawString(SerializedValue<T> value, ResourceManager* resources) {
-    release(resources);
-    auto dup = resources->saveString(adaptString(value.data(), value.size()));
-    if (dup)
-      setRawString(dup);
+    if (s.isLinked())
+      setType(VALUE_IS_LINKED_STRING);
     else
-      setNull();
+      setType(VALUE_IS_OWNED_STRING);
+    content_.asString.data = s.c_str();
+    content_.asString.size = s.size();
   }
 
-  template <typename T>
-  static void setRawString(VariantData* var, SerializedValue<T> value,
-                           ResourceManager* resources) {
-    if (!var)
-      return;
-    var->setRawString(value, resources);
-  }
-
-  template <typename TAdaptedString>
-  void setString(TAdaptedString value, ResourceManager* resources) {
-    setNull(resources);
-
-    if (value.isNull())
-      return;
-
-    if (value.isLinked()) {
-      setLinkedString(value.data());
-      return;
-    }
-
-    auto dup = resources->saveString(value);
-    if (dup)
-      setOwnedString(dup);
-  }
-
-  template <typename TAdaptedString>
-  static void setString(VariantData* var, TAdaptedString value,
-                        ResourceManager* resources) {
-    if (!var)
-      return;
-    var->setString(value, resources);
-  }
-
-  void setLinkedString(const char* s) {
-    ARDUINOJSON_ASSERT(s);
-    setType(VALUE_IS_LINKED_STRING);
-    content_.asLinkedString = s;
-  }
-
-  void setOwnedString(StringNode* s) {
-    ARDUINOJSON_ASSERT(s);
-    setType(VALUE_IS_OWNED_STRING);
-    content_.asOwnedString = s;
-  }
-
-  size_t size(const ResourceManager* resources) const {
-    return isCollection() ? content_.asCollection.size(resources) : 0;
-  }
-
-  static size_t size(const VariantData* var, const ResourceManager* resources) {
-    return var != 0 ? var->size(resources) : 0;
-  }
-
-  ArrayData& toArray() {
+  CollectionData& toArray() {
     setType(VALUE_IS_ARRAY);
-    new (&content_.asArray) ArrayData();
-    return content_.asArray;
+    content_.asCollection.clear();
+    return content_.asCollection;
   }
 
-  ArrayData& toArray(ResourceManager* resources) {
-    release(resources);
-    return toArray();
-  }
-
-  static ArrayData* toArray(VariantData* var, ResourceManager* resources) {
-    if (!var)
-      return 0;
-    return &var->toArray(resources);
-  }
-
-  ObjectData& toObject() {
+  CollectionData& toObject() {
     setType(VALUE_IS_OBJECT);
-    new (&content_.asObject) ObjectData();
-    return content_.asObject;
+    content_.asCollection.clear();
+    return content_.asCollection;
   }
 
-  ObjectData& toObject(ResourceManager* resources) {
-    release(resources);
-    return toObject();
+  size_t memoryUsage() const {
+    switch (type()) {
+      case VALUE_IS_OWNED_STRING:
+      case VALUE_IS_OWNED_RAW:
+        // We always add a zero at the end: the deduplication function uses it
+        // to detect the beginning of the next string.
+        return content_.asString.size + 1;
+      case VALUE_IS_OBJECT:
+      case VALUE_IS_ARRAY:
+        return content_.asCollection.memoryUsage();
+      default:
+        return 0;
+    }
   }
 
-  static ObjectData* toObject(VariantData* var, ResourceManager* resources) {
-    if (!var)
+  size_t size() const {
+    return isCollection() ? content_.asCollection.size() : 0;
+  }
+
+  VariantData* addElement(MemoryPool* pool) {
+    if (isNull())
+      toArray();
+    if (!isArray())
       return 0;
-    return &var->toObject(resources);
+    return content_.asCollection.addElement(pool);
+  }
+
+  VariantData* getElement(size_t index) const {
+    const CollectionData* col = asArray();
+    return col ? col->getElement(index) : 0;
+  }
+
+  VariantData* getOrAddElement(size_t index, MemoryPool* pool) {
+    if (isNull())
+      toArray();
+    if (!isArray())
+      return 0;
+    return content_.asCollection.getOrAddElement(index, pool);
+  }
+
+  template <typename TAdaptedString>
+  VariantData* getMember(TAdaptedString key) const {
+    const CollectionData* col = asObject();
+    return col ? col->getMember(key) : 0;
+  }
+
+  template <typename TAdaptedString>
+  VariantData* getOrAddMember(TAdaptedString key, MemoryPool* pool) {
+    if (isNull())
+      toObject();
+    if (!isObject())
+      return 0;
+    return content_.asCollection.getOrAddMember(key, pool);
+  }
+
+  void movePointers(ptrdiff_t stringDistance, ptrdiff_t variantDistance) {
+    if (flags_ & OWNED_VALUE_BIT)
+      content_.asString.data += stringDistance;
+    if (flags_ & COLLECTION_MASK)
+      content_.asCollection.movePointers(stringDistance, variantDistance);
   }
 
   uint8_t type() const {
     return flags_ & VALUE_MASK;
   }
 
- private:
-  void release(ResourceManager* resources) {
-    if (flags_ & OWNED_VALUE_BIT)
-      resources->dereferenceString(content_.asOwnedString->data);
+  template <typename TAdaptedString>
+  inline bool setString(TAdaptedString value, MemoryPool* pool) {
+    if (value.isNull()) {
+      setNull();
+      return true;
+    }
 
-    auto collection = asCollection();
-    if (collection)
-      collection->clear(resources);
+    return storeString(pool, value, VariantStringSetter(this));
   }
 
+ private:
   void setType(uint8_t t) {
     flags_ &= OWNED_KEY_BIT;
     flags_ |= t;
   }
+
+  struct VariantStringSetter {
+    VariantStringSetter(VariantData* instance) : instance_(instance) {}
+
+    template <typename TStoredString>
+    void operator()(TStoredString s) {
+      if (s)
+        instance_->setString(s);
+      else
+        instance_->setNull();
+    }
+
+    VariantData* instance_;
+  };
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

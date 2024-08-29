@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -19,7 +19,8 @@ template <typename T>
 struct IsCharOrVoid<const T> : IsCharOrVoid<T> {};
 
 template <typename TSource>
-struct Reader<TSource*, enable_if_t<IsCharOrVoid<TSource>::value>> {
+struct Reader<TSource*,
+              typename enable_if<IsCharOrVoid<TSource>::value>::type> {
   const char* ptr_;
 
  public:
@@ -38,7 +39,8 @@ struct Reader<TSource*, enable_if_t<IsCharOrVoid<TSource>::value>> {
 };
 
 template <typename TSource>
-struct BoundedReader<TSource*, enable_if_t<IsCharOrVoid<TSource>::value>>
+struct BoundedReader<TSource*,
+                     typename enable_if<IsCharOrVoid<TSource>::value>::type>
     : public IteratorReader<const char*> {
  public:
   explicit BoundedReader(const void* ptr, size_t len)

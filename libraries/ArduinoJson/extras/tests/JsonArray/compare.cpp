@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("Compare JsonArray with JsonArray") {
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
 
   SECTION("Compare with unbound") {
     JsonArray array = doc.to<JsonArray>();
@@ -43,15 +43,15 @@ TEST_CASE("Compare JsonArray with JsonArray") {
   }
 
   SECTION("Compare with identical array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
 
     CHECK(array1 == array2);
     CHECK(array1 <= array2);
@@ -62,15 +62,15 @@ TEST_CASE("Compare JsonArray with JsonArray") {
   }
 
   SECTION("Compare with different array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello1");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello2");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
 
     CHECK(array1 != array2);
     CHECK_FALSE(array1 == array2);
@@ -82,7 +82,7 @@ TEST_CASE("Compare JsonArray with JsonArray") {
 }
 
 TEST_CASE("Compare JsonArray with JsonVariant") {
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
 
   SECTION("Compare with self") {
     JsonArray array = doc.to<JsonArray>();
@@ -107,15 +107,15 @@ TEST_CASE("Compare JsonArray with JsonVariant") {
   }
 
   SECTION("Compare with identical array") {
-    JsonArray array = doc.add<JsonArray>();
+    JsonArray array = doc.createNestedArray();
     array.add(1);
     array.add("hello");
-    array.add<JsonObject>();
+    array.createNestedObject();
 
-    JsonVariant variant = doc.add<JsonArray>();
+    JsonVariant variant = doc.createNestedArray();
     variant.add(1);
     variant.add("hello");
-    variant.add<JsonObject>();
+    variant.createNestedObject();
 
     CHECK(array == variant);
     CHECK(array <= variant);
@@ -133,15 +133,15 @@ TEST_CASE("Compare JsonArray with JsonVariant") {
   }
 
   SECTION("Compare with different array") {
-    JsonArray array = doc.add<JsonArray>();
+    JsonArray array = doc.createNestedArray();
     array.add(1);
     array.add("hello1");
-    array.add<JsonObject>();
+    array.createNestedObject();
 
-    JsonVariant variant = doc.add<JsonArray>();
+    JsonVariant variant = doc.createNestedArray();
     variant.add(1);
     variant.add("hello2");
-    variant.add<JsonObject>();
+    variant.createNestedObject();
 
     CHECK(array != variant);
     CHECK_FALSE(array == variant);
@@ -153,7 +153,7 @@ TEST_CASE("Compare JsonArray with JsonVariant") {
 }
 
 TEST_CASE("Compare JsonArray with JsonVariantConst") {
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
 
   SECTION("Compare with unbound") {
     JsonArray array = doc.to<JsonArray>();
@@ -199,15 +199,15 @@ TEST_CASE("Compare JsonArray with JsonVariantConst") {
   }
 
   SECTION("Compare with identical array") {
-    JsonArray array = doc.add<JsonArray>();
+    JsonArray array = doc.createNestedArray();
     array.add(1);
     array.add("hello");
-    array.add<JsonObject>();
+    array.createNestedObject();
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonVariantConst variant = array2;
 
     CHECK(array == variant);
@@ -226,15 +226,15 @@ TEST_CASE("Compare JsonArray with JsonVariantConst") {
   }
 
   SECTION("Compare with different array") {
-    JsonArray array = doc.add<JsonArray>();
+    JsonArray array = doc.createNestedArray();
     array.add(1);
     array.add("hello1");
-    array.add<JsonObject>();
+    array.createNestedObject();
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello2");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonVariantConst variant = array2;
 
     CHECK(array != variant);
@@ -247,7 +247,7 @@ TEST_CASE("Compare JsonArray with JsonVariantConst") {
 }
 
 TEST_CASE("Compare JsonArray with JsonArrayConst") {
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
 
   SECTION("Compare with unbound") {
     JsonArray array = doc.to<JsonArray>();
@@ -292,15 +292,15 @@ TEST_CASE("Compare JsonArray with JsonArrayConst") {
   }
 
   SECTION("Compare with identical array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonArrayConst carray2 = array2;
 
     CHECK(array1 == carray2);
@@ -319,15 +319,15 @@ TEST_CASE("Compare JsonArray with JsonArrayConst") {
   }
 
   SECTION("Compare with different array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello1");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello2");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonArrayConst carray2 = array2;
 
     CHECK(array1 != carray2);
@@ -347,7 +347,7 @@ TEST_CASE("Compare JsonArray with JsonArrayConst") {
 }
 
 TEST_CASE("Compare JsonArrayConst with JsonArrayConst") {
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
 
   SECTION("Compare with unbound") {
     JsonArray array = doc.to<JsonArray>();
@@ -387,16 +387,16 @@ TEST_CASE("Compare JsonArrayConst with JsonArrayConst") {
   }
 
   SECTION("Compare with identical array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
     JsonArrayConst carray1 = array1;
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonArrayConst carray2 = array2;
 
     CHECK(carray1 == carray2);
@@ -408,16 +408,16 @@ TEST_CASE("Compare JsonArrayConst with JsonArrayConst") {
   }
 
   SECTION("Compare with different array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello1");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
     JsonArrayConst carray1 = array1;
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello2");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonArrayConst carray2 = array2;
 
     CHECK(carray1 != carray2);
@@ -430,7 +430,7 @@ TEST_CASE("Compare JsonArrayConst with JsonArrayConst") {
 }
 
 TEST_CASE("Compare JsonArrayConst with JsonVariant") {
-  JsonDocument doc;
+  StaticJsonDocument<256> doc;
 
   SECTION("Compare with self") {
     JsonArray array = doc.to<JsonArray>();
@@ -455,16 +455,16 @@ TEST_CASE("Compare JsonArrayConst with JsonVariant") {
   }
 
   SECTION("Compare with identical array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
     JsonArrayConst carray1 = array1;
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonVariant variant2 = array2;
 
     CHECK(carray1 == variant2);
@@ -483,16 +483,16 @@ TEST_CASE("Compare JsonArrayConst with JsonVariant") {
   }
 
   SECTION("Compare with different array") {
-    JsonArray array1 = doc.add<JsonArray>();
+    JsonArray array1 = doc.createNestedArray();
     array1.add(1);
     array1.add("hello1");
-    array1.add<JsonObject>();
+    array1.createNestedObject();
     JsonArrayConst carray1 = array1;
 
-    JsonArray array2 = doc.add<JsonArray>();
+    JsonArray array2 = doc.createNestedArray();
     array2.add(1);
     array2.add("hello2");
-    array2.add<JsonObject>();
+    array2.createNestedObject();
     JsonVariant variant2 = array2;
 
     CHECK(carray1 != variant2);

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -15,7 +15,7 @@ static void checkArray(JsonArray array, std::string expected) {
 }
 
 TEST_CASE("serializeJsonPretty(JsonArray)") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   JsonArray array = doc.to<JsonArray>();
 
   SECTION("Empty") {
@@ -43,8 +43,8 @@ TEST_CASE("serializeJsonPretty(JsonArray)") {
   }
 
   SECTION("EmptyNestedArrays") {
-    array.add<JsonArray>();
-    array.add<JsonArray>();
+    array.createNestedArray();
+    array.createNestedArray();
 
     checkArray(array,
                "[\r\n"
@@ -54,11 +54,11 @@ TEST_CASE("serializeJsonPretty(JsonArray)") {
   }
 
   SECTION("NestedArrays") {
-    JsonArray nested1 = array.add<JsonArray>();
+    JsonArray nested1 = array.createNestedArray();
     nested1.add(1);
     nested1.add(2);
 
-    JsonObject nested2 = array.add<JsonObject>();
+    JsonObject nested2 = array.createNestedObject();
     nested2["key"] = 3;
 
     checkArray(array,

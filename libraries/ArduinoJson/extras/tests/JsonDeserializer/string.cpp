@@ -1,15 +1,10 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_DECODE_UNICODE 1
 #include <ArduinoJson.h>
 #include <catch.hpp>
-
-#include "Allocators.hpp"
-
-using ArduinoJson::detail::sizeofArray;
-using ArduinoJson::detail::sizeofObject;
 
 TEST_CASE("Valid JSON strings value") {
   struct TestCase {
@@ -40,7 +35,7 @@ TEST_CASE("Valid JSON strings value") {
   };
   const size_t testCount = sizeof(testCases) / sizeof(testCases[0]);
 
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   for (size_t i = 0; i < testCount; i++) {
     const TestCase& testCase = testCases[i];
@@ -52,7 +47,7 @@ TEST_CASE("Valid JSON strings value") {
 }
 
 TEST_CASE("\\u0000") {
-  JsonDocument doc;
+  StaticJsonDocument<200> doc;
 
   DeserializationError err = deserializeJson(doc, "\"wx\\u0000yz\"");
   REQUIRE(err == DeserializationError::Ok);
@@ -73,7 +68,7 @@ TEST_CASE("Truncated JSON string") {
   const char* testCases[] = {"\"hello", "\'hello", "'\\u", "'\\u00", "'\\u000"};
   const size_t testCount = sizeof(testCases) / sizeof(testCases[0]);
 
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   for (size_t i = 0; i < testCount; i++) {
     const char* input = testCases[i];
@@ -88,7 +83,7 @@ TEST_CASE("Invalid JSON string") {
                              "'\\u000G'", "'\\u000/'", "'\\x1234'"};
   const size_t testCount = sizeof(testCases) / sizeof(testCases[0]);
 
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   for (size_t i = 0; i < testCount; i++) {
     const char* input = testCases[i];
@@ -97,102 +92,41 @@ TEST_CASE("Invalid JSON string") {
   }
 }
 
-TEST_CASE("Allocation of the key fails") {
-  TimebombAllocator timebomb(0);
-  SpyingAllocator spy(&timebomb);
-  JsonDocument doc(&spy);
+TEST_CASE("Not enough room to save the key") {
+  DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + 8);
 
-  SECTION("Quoted string, first member") {
+  SECTION("Quoted string") {
     REQUIRE(deserializeJson(doc, "{\"example\":1}") ==
+            DeserializationError::Ok);
+    REQUIRE(deserializeJson(doc, "{\"accuracy\":1}") ==
             DeserializationError::NoMemory);
-    REQUIRE(spy.log() == AllocatorLog{
-                             AllocateFail(sizeofStringBuffer()),
-                         });
-  }
-
-  SECTION("Quoted string, second member") {
-    timebomb.setCountdown(3);
     REQUIRE(deserializeJson(doc, "{\"hello\":1,\"world\"}") ==
-            DeserializationError::NoMemory);
-    REQUIRE(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
-                Allocate(sizeofPool()),
-                AllocateFail(sizeofStringBuffer()),
-                ReallocateFail(sizeofPool(), sizeofObject(1)),
-            });
+            DeserializationError::NoMemory);  // fails in the second string
   }
 
-  SECTION("Non-Quoted string, first member") {
-    REQUIRE(deserializeJson(doc, "{example:1}") ==
+  SECTION("Non-quoted string") {
+    REQUIRE(deserializeJson(doc, "{example:1}") == DeserializationError::Ok);
+    REQUIRE(deserializeJson(doc, "{accuracy:1}") ==
             DeserializationError::NoMemory);
-    REQUIRE(spy.log() == AllocatorLog{
-                             AllocateFail(sizeofStringBuffer()),
-                         });
-  }
-
-  SECTION("Non-Quoted string, second member") {
-    timebomb.setCountdown(3);
     REQUIRE(deserializeJson(doc, "{hello:1,world}") ==
-            DeserializationError::NoMemory);
-    REQUIRE(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
-                Allocate(sizeofPool()),
-                AllocateFail(sizeofStringBuffer()),
-                ReallocateFail(sizeofPool(), sizeofObject(1)),
-            });
+            DeserializationError::NoMemory);  // fails in the second string
   }
 }
 
-TEST_CASE("String allocation fails") {
-  SpyingAllocator spy(FailingAllocator::instance());
-  JsonDocument doc(&spy);
+TEST_CASE("Empty memory pool") {
+  // NOLINTNEXTLINE(clang-analyzer-optin.portability.UnixAPI)
+  DynamicJsonDocument doc(0);
 
   SECTION("Input is const char*") {
     REQUIRE(deserializeJson(doc, "\"hello\"") ==
             DeserializationError::NoMemory);
-    REQUIRE(spy.log() == AllocatorLog{
-                             AllocateFail(sizeofStringBuffer()),
-                         });
+    REQUIRE(deserializeJson(doc, "\"\"") == DeserializationError::NoMemory);
   }
-}
 
-TEST_CASE("Deduplicate values") {
-  SpyingAllocator spy;
-  JsonDocument doc(&spy);
-  deserializeJson(doc, "[\"example\",\"example\"]");
-
-  CHECK(doc[0].as<const char*>() == doc[1].as<const char*>());
-  REQUIRE(spy.log() ==
-          AllocatorLog{
-              Allocate(sizeofPool()),
-              Allocate(sizeofStringBuffer()),
-              Reallocate(sizeofStringBuffer(), sizeofString("example")),
-              Allocate(sizeofStringBuffer()),
-              Deallocate(sizeofStringBuffer()),
-              Reallocate(sizeofPool(), sizeofArray(2)),
-          });
-}
-
-TEST_CASE("Deduplicate keys") {
-  SpyingAllocator spy;
-  JsonDocument doc(&spy);
-  deserializeJson(doc, "[{\"example\":1},{\"example\":2}]");
-
-  const char* key1 = doc[0].as<JsonObject>().begin()->key().c_str();
-  const char* key2 = doc[1].as<JsonObject>().begin()->key().c_str();
-  CHECK(key1 == key2);
-
-  REQUIRE(spy.log() ==
-          AllocatorLog{
-              Allocate(sizeofPool()),
-              Allocate(sizeofStringBuffer()),
-              Reallocate(sizeofStringBuffer(), sizeofString("example")),
-              Allocate(sizeofStringBuffer()),
-              Deallocate(sizeofStringBuffer()),
-              Reallocate(sizeofPool(), sizeofArray(2) + 2 * sizeofObject(1)),
-          });
+  SECTION("Input is const char*") {
+    char hello[] = "\"hello\"";
+    REQUIRE(deserializeJson(doc, hello) == DeserializationError::Ok);
+    char empty[] = "\"hello\"";
+    REQUIRE(deserializeJson(doc, empty) == DeserializationError::Ok);
+  }
 }

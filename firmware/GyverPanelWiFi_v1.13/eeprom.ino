@@ -357,7 +357,7 @@ void saveDefaults() {
   putMaxBrightness(globalBrightness);
 
   putAutoplayTime(autoplayTime / 1000L);
-  putIdleTime(constrain(idleTime / 60L / 1000L, 0, 255));
+  putIdleTime(constrain((int16_t)(idleTime / 60L / 1000L), 0, 255));
 
   putUseNtp(useNtp);
   putTimeZone(timeZoneOffset);
@@ -405,6 +405,7 @@ void saveDefaults() {
   putEffectTextOverlayUsage(MC_LIFE, false);
   putEffectTextOverlayUsage(MC_IMAGE, false);
   putEffectTextOverlayUsage(MC_SLIDE, false);
+
   putEffectClockOverlayUsage(MC_CLOCK, false);
   putEffectClockOverlayUsage(MC_MAZE, false);
   putEffectClockOverlayUsage(MC_SNAKE, false);
@@ -848,7 +849,7 @@ bool getAutoplay() {
 
 void putAutoplayTime(uint32_t value) {
   if (value != getAutoplayTime()) {
-    EEPROMwrite(3, constrain(value / 1000UL, 0, 255));
+    EEPROMwrite(3, constrain((int16_t)(value / 1000UL), 0, 255));
   }
 }
 
@@ -860,7 +861,7 @@ uint32_t getAutoplayTime() {
 
 void putIdleTime(uint32_t value) {
   if (value != getIdleTime()) {
-    EEPROMwrite(4, constrain(value / 60 / 1000UL, 0, 255));
+    EEPROMwrite(4, constrain((int16_t)(value / 60 / 1000UL), 0, 255));
   }
 }
 
@@ -2114,7 +2115,7 @@ bool saveEepromToFile(String storage) {
   File file;
 
   saveSettings();
-  if (USE_SD == 0 || USE_SD == 1 && FS_AS_SD == 1) storage = "FS";
+  if (USE_SD == 0 || (USE_SD == 1 && FS_AS_SD == 1)) storage = "FS";
 
   DEBUG(F("Сохранение файла: "));
   DEBUGLN(storage + String(F(":/")) + fileName);
@@ -2206,7 +2207,7 @@ bool loadEepromFromFile(String storage) {
   uint16_t idx = 0;  
   File file;
 
-  if (USE_SD == 0 || USE_SD == 1 && FS_AS_SD == 1) storage = "FS";
+  if (USE_SD == 0 || (USE_SD == 1 && FS_AS_SD == 1)) storage = "FS";
 
   DEBUG(F("Загрузка файла: "));
   DEBUGLN(storage + String(F(":/")) + fileName);

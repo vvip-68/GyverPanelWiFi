@@ -1,7 +1,3 @@
-if(NOT DEFINED COVERAGE)
-	set(COVERAGE OFF)
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 	add_compile_options(
 		-pedantic
@@ -34,20 +30,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	if((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9) AND(NOT ${COVERAGE}))
+	if((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8) AND(NOT ${COVERAGE}))
 		add_compile_options(-g -Og)
-	else() # GCC 4.8
-		add_compile_options(
-			-g
-			-O0 # GCC 4.8 doesn't support -Og
-			-Wno-shadow  # allow the same name for a function parameter and a member functions
-			-Wp,-w  # Disable preprocessing warnings (see below)
-		)
-		# GCC 4.8 doesn't support __has_include, so we need to help him
-		add_definitions(
-			-DARDUINOJSON_ENABLE_STD_STRING=1
-			-DARDUINOJSON_ENABLE_STD_STREAM=1
-		)
+	else()
+		add_compile_options(-g -O0)
 	endif()
 
 	add_compile_options(
@@ -78,9 +64,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	add_compile_options(-stdlib=libc++)
-	link_libraries(c++ m)
-
 	if((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.0) AND(NOT ${COVERAGE}))
 		add_compile_options(-g -Og)
 	else()

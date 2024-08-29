@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -13,8 +13,9 @@ ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 template <typename T>
 struct StringAdapter<
     T,
-    enable_if_t<(string_traits<T>::has_cstr || string_traits<T>::has_data) &&
-                (string_traits<T>::has_length || string_traits<T>::has_size)>> {
+    typename enable_if<
+        (string_traits<T>::has_cstr || string_traits<T>::has_data) &&
+        (string_traits<T>::has_length || string_traits<T>::has_size)>::type> {
   typedef SizedRamString AdaptedString;
 
   static AdaptedString adapt(const T& s) {
@@ -23,24 +24,26 @@ struct StringAdapter<
 
  private:
   template <typename U>
-  static enable_if_t<string_traits<U>::has_size, size_t> get_size(const U& s) {
+  static typename enable_if<string_traits<U>::has_size, size_t>::type get_size(
+      const U& s) {
     return s.size();
   }
 
   template <typename U>
-  static enable_if_t<!string_traits<U>::has_size, size_t> get_size(const U& s) {
+  static typename enable_if<!string_traits<U>::has_size, size_t>::type get_size(
+      const U& s) {
     return s.length();
   }
 
   template <typename U>
-  static enable_if_t<string_traits<U>::has_data, const char*> get_data(
-      const U& s) {
+  static typename enable_if<string_traits<U>::has_data, const char*>::type
+  get_data(const U& s) {
     return s.data();
   }
 
   template <typename U>
-  static enable_if_t<!string_traits<U>::has_data, const char*> get_data(
-      const U& s) {
+  static typename enable_if<!string_traits<U>::has_data, const char*>::type
+  get_data(const U& s) {
     return s.c_str();
   }
 };

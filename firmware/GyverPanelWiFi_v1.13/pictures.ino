@@ -109,7 +109,7 @@ void initialisePictures() {
         animation_t weather = animations[weatherIndex];
         pictureWidth  = weather.frame_width;
         pictureHeight = weather.frame_height;        
-        FOR_j(j, MAX_FRAMES_COUNT) {
+        FOR_j(0, MAX_FRAMES_COUNT) {
           if (weather.frames[j] == NULL) break;
           pictureIndexMax = j + 1;
         }
@@ -291,9 +291,7 @@ void slideRoutine() {
 
   //  pic_fade  1 - гориз. от центра к краям; 2 - от краев к центру; 3 - от верха к низу; 4 - от низа к верху
   //            5 - верт. от центра к краям;  6 - от краев к центру; 7 - слева направо; 8 - справа налево
-  
-  CRGB color;
-  
+    
   if (loadingFlag) {
     // modeCode = MC_SLIDE;
     if (picture != NULL) { delete [] picture; }    

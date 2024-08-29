@@ -1,49 +1,117 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-#include "Allocators.hpp"
+using namespace Catch::Matchers;
 
-using ArduinoJson::detail::sizeofArray;
+TEST_CASE("deserializeJson(DynamicJsonDocument&)") {
+  DynamicJsonDocument doc(4096);
 
-TEST_CASE("deserializeJson() misc cases") {
-  SpyingAllocator spy;
-  JsonDocument doc(&spy);
+  SECTION("Edge cases") {
+    SECTION("null char*") {
+      DeserializationError err = deserializeJson(doc, static_cast<char*>(0));
 
-  SECTION("null") {
-    DeserializationError err = deserializeJson(doc, "null");
-    REQUIRE(err == DeserializationError::Ok);
-    REQUIRE(doc.is<float>() == false);
+      REQUIRE(err != DeserializationError::Ok);
+    }
+
+    SECTION("null const char*") {
+      DeserializationError err =
+          deserializeJson(doc, static_cast<const char*>(0));
+
+      REQUIRE(err != DeserializationError::Ok);
+    }
+
+    SECTION("Empty input") {
+      DeserializationError err = deserializeJson(doc, "");
+
+      REQUIRE(err == DeserializationError::EmptyInput);
+    }
+
+    SECTION("Only spaces") {
+      DeserializationError err = deserializeJson(doc, "  \t\n\r");
+
+      REQUIRE(err == DeserializationError::EmptyInput);
+    }
+
+    SECTION("issue #628") {
+      DeserializationError err = deserializeJson(doc, "null");
+      REQUIRE(err == DeserializationError::Ok);
+      REQUIRE(doc.is<float>() == false);
+    }
+
+    SECTION("Garbage") {
+      DeserializationError err = deserializeJson(doc, "%*$£¤");
+
+      REQUIRE(err == DeserializationError::InvalidInput);
+    }
   }
 
-  SECTION("true") {
-    DeserializationError err = deserializeJson(doc, "true");
+  SECTION("Booleans") {
+    SECTION("True") {
+      DeserializationError err = deserializeJson(doc, "true");
 
-    REQUIRE(err == DeserializationError::Ok);
-    REQUIRE(doc.is<bool>());
-    REQUIRE(doc.as<bool>() == true);
+      REQUIRE(err == DeserializationError::Ok);
+      REQUIRE(doc.is<bool>());
+      REQUIRE(doc.as<bool>() == true);
+    }
+
+    SECTION("False") {
+      DeserializationError err = deserializeJson(doc, "false");
+
+      REQUIRE(err == DeserializationError::Ok);
+      REQUIRE(doc.is<bool>());
+      REQUIRE(doc.as<bool>() == false);
+    }
   }
 
-  SECTION("false") {
-    DeserializationError err = deserializeJson(doc, "false");
+  SECTION("Premature null-terminator") {
+    SECTION("In escape sequence") {
+      DeserializationError err = deserializeJson(doc, "\"\\");
 
-    REQUIRE(err == DeserializationError::Ok);
-    REQUIRE(doc.is<bool>());
-    REQUIRE(doc.as<bool>() == false);
+      REQUIRE(err == DeserializationError::IncompleteInput);
+    }
+
+    SECTION("In double quoted string") {
+      DeserializationError err = deserializeJson(doc, "\"hello");
+
+      REQUIRE(err == DeserializationError::IncompleteInput);
+    }
+
+    SECTION("In single quoted string") {
+      DeserializationError err = deserializeJson(doc, "'hello");
+
+      REQUIRE(err == DeserializationError::IncompleteInput);
+    }
+  }
+
+  SECTION("Premature end of input") {
+    SECTION("In escape sequence") {
+      DeserializationError err = deserializeJson(doc, "\"\\n\"", 2);
+
+      REQUIRE(err == DeserializationError::IncompleteInput);
+    }
+
+    SECTION("In double quoted string") {
+      DeserializationError err = deserializeJson(doc, "\"hello\"", 6);
+
+      REQUIRE(err == DeserializationError::IncompleteInput);
+    }
+
+    SECTION("In single quoted string") {
+      DeserializationError err = deserializeJson(doc, "'hello'", 6);
+
+      REQUIRE(err == DeserializationError::IncompleteInput);
+    }
   }
 
   SECTION("Should clear the JsonVariant") {
     deserializeJson(doc, "[1,2,3]");
-    spy.clearLog();
-
     deserializeJson(doc, "{}");
 
     REQUIRE(doc.is<JsonObject>());
-    REQUIRE(spy.log() == AllocatorLog{
-                             Deallocate(sizeofArray(3)),
-                         });
+    REQUIRE(doc.memoryUsage() == JSON_OBJECT_SIZE(0));
   }
 }

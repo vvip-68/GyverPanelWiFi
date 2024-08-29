@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -9,7 +9,7 @@
 
 template <typename T>
 void checkValue(T expected) {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   JsonVariant variant = doc.to<JsonVariant>();
 
   variant.set(expected);
@@ -24,7 +24,7 @@ void checkReference(T& expected) {
 
 template <typename T>
 void checkNumericType() {
-  JsonDocument docMin, docMax;
+  DynamicJsonDocument docMin(4096), docMax(4096);
   JsonVariant variantMin = docMin.to<JsonVariant>();
   JsonVariant variantMax = docMax.to<JsonVariant>();
 
@@ -129,7 +129,7 @@ TEST_CASE("JsonVariant set()/get()") {
 #endif
 
   SECTION("CanStoreObject") {
-    JsonDocument doc;
+    DynamicJsonDocument doc(4096);
     JsonObject object = doc.to<JsonObject>();
 
     checkValue<JsonObject>(object);
@@ -137,7 +137,7 @@ TEST_CASE("JsonVariant set()/get()") {
 }
 
 TEST_CASE("volatile") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   JsonVariant variant = doc.to<JsonVariant>();
 
   SECTION("volatile bool") {  // issue #2029

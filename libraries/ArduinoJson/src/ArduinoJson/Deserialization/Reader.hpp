@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -19,7 +19,7 @@ struct Reader {
 
   int read() {
     // clang-format off
-    return source_->read();  // Error here? See https://arduinojson.org/v7/invalid-input/
+    return source_->read();  // Error here? See https://arduinojson.org/v6/invalid-input/
     // clang-format on
   }
 
@@ -62,8 +62,9 @@ ARDUINOJSON_END_PRIVATE_NAMESPACE
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TInput>
-Reader<remove_reference_t<TInput>> makeReader(TInput&& input) {
-  return Reader<remove_reference_t<TInput>>{detail::forward<TInput>(input)};
+Reader<typename remove_reference<TInput>::type> makeReader(TInput&& input) {
+  return Reader<typename remove_reference<TInput>::type>{
+      detail::forward<TInput>(input)};
 }
 
 template <typename TChar>

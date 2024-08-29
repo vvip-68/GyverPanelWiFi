@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -9,8 +9,8 @@
 // Here, we're just filling the holes
 
 TEST_CASE("Compare JsonVariant with value") {
-  JsonDocument doc;
-  JsonVariant a = doc.add<JsonVariant>();
+  StaticJsonDocument<256> doc;
+  JsonVariant a = doc.add();
 
   SECTION("null vs (char*)0") {
     char* b = 0;
@@ -37,9 +37,9 @@ TEST_CASE("Compare JsonVariant with value") {
 }
 
 TEST_CASE("Compare JsonVariant with JsonVariant") {
-  JsonDocument doc;
-  JsonVariant a = doc.add<JsonVariant>();
-  JsonVariant b = doc.add<JsonVariant>();
+  StaticJsonDocument<256> doc;
+  JsonVariant a = doc.add();
+  JsonVariant b = doc.add();
 
   SECTION("'abc' vs 'abc'") {
     a.set("abc");
@@ -104,42 +104,6 @@ TEST_CASE("Compare JsonVariant with JsonVariant") {
   SECTION("serialized('bcd') vs serialized('abc')") {
     a.set(serialized("bcd"));
     b.set(serialized("abc"));
-
-    CHECK(a != b);
-    CHECK(a > b);
-    CHECK(a >= b);
-    CHECK_FALSE(a < b);
-    CHECK_FALSE(a <= b);
-    CHECK_FALSE(a == b);
-  }
-
-  SECTION("MsgPackBinary('abc') vs MsgPackBinary('abc')") {
-    a.set(MsgPackBinary("abc", 4));
-    b.set(MsgPackBinary("abc", 4));
-
-    CHECK(a == b);
-    CHECK(a <= b);
-    CHECK(a >= b);
-    CHECK_FALSE(a != b);
-    CHECK_FALSE(a < b);
-    CHECK_FALSE(a > b);
-  }
-
-  SECTION("MsgPackBinary('abc') vs MsgPackBinary('bcd')") {
-    a.set(MsgPackBinary("abc", 4));
-    b.set(MsgPackBinary("bcd", 4));
-
-    CHECK(a != b);
-    CHECK(a < b);
-    CHECK(a <= b);
-    CHECK_FALSE(a == b);
-    CHECK_FALSE(a > b);
-    CHECK_FALSE(a >= b);
-  }
-
-  SECTION("MsgPackBinary('bcd') vs MsgPackBinary('abc')") {
-    a.set(MsgPackBinary("bcd", 4));
-    b.set(MsgPackBinary("abc", 4));
 
     CHECK(a != b);
     CHECK(a > b);

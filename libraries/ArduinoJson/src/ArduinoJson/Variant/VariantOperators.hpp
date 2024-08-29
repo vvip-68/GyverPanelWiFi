@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -31,8 +31,9 @@ struct VariantOperators : VariantOperatorTag {
   // float operator|(JsonVariant, float)
   // bool operator|(JsonVariant, bool)
   template <typename T>
-  friend enable_if_t<!IsVariant<T>::value && !is_array<T>::value, T> operator|(
-      const TVariant& variant, const T& defaultValue) {
+  friend
+      typename enable_if<!IsVariant<T>::value && !is_array<T>::value, T>::type
+      operator|(const TVariant& variant, const T& defaultValue) {
     if (variant.template is<T>())
       return variant.template as<T>();
     else
@@ -50,8 +51,8 @@ struct VariantOperators : VariantOperatorTag {
   //
   // JsonVariant operator|(JsonVariant, JsonVariant)
   template <typename T>
-  friend enable_if_t<IsVariant<T>::value, JsonVariantConst> operator|(
-      const TVariant& variant, T defaultValue) {
+  friend typename enable_if<IsVariant<T>::value, JsonVariantConst>::type
+  operator|(const TVariant& variant, T defaultValue) {
     if (variant)
       return variant;
     else
@@ -74,8 +75,9 @@ struct VariantOperators : VariantOperatorTag {
     return compare(lhs, rhs) == COMPARE_RESULT_EQUAL;
   }
   template <typename T>
-  friend enable_if_t<!is_base_of<VariantOperatorTag, T>::value, bool>
-  operator==(TVariant lhs, const T& rhs) {
+  friend
+      typename enable_if<!is_base_of<VariantOperatorTag, T>::value, bool>::type
+      operator==(TVariant lhs, const T& rhs) {
     return compare(lhs, rhs) == COMPARE_RESULT_EQUAL;
   }
 
@@ -95,8 +97,9 @@ struct VariantOperators : VariantOperatorTag {
     return compare(lhs, rhs) != COMPARE_RESULT_EQUAL;
   }
   template <typename T>
-  friend enable_if_t<!is_base_of<VariantOperatorTag, T>::value, bool>
-  operator!=(TVariant lhs, const T& rhs) {
+  friend
+      typename enable_if<!is_base_of<VariantOperatorTag, T>::value, bool>::type
+      operator!=(TVariant lhs, const T& rhs) {
     return compare(lhs, rhs) != COMPARE_RESULT_EQUAL;
   }
 
@@ -116,8 +119,9 @@ struct VariantOperators : VariantOperatorTag {
     return compare(lhs, rhs) == COMPARE_RESULT_LESS;
   }
   template <typename T>
-  friend enable_if_t<!is_base_of<VariantOperatorTag, T>::value, bool> operator<(
-      TVariant lhs, const T& rhs) {
+  friend
+      typename enable_if<!is_base_of<VariantOperatorTag, T>::value, bool>::type
+      operator<(TVariant lhs, const T& rhs) {
     return compare(lhs, rhs) == COMPARE_RESULT_LESS;
   }
 
@@ -137,8 +141,9 @@ struct VariantOperators : VariantOperatorTag {
     return (compare(lhs, rhs) & COMPARE_RESULT_LESS_OR_EQUAL) != 0;
   }
   template <typename T>
-  friend enable_if_t<!is_base_of<VariantOperatorTag, T>::value, bool>
-  operator<=(TVariant lhs, const T& rhs) {
+  friend
+      typename enable_if<!is_base_of<VariantOperatorTag, T>::value, bool>::type
+      operator<=(TVariant lhs, const T& rhs) {
     return (compare(lhs, rhs) & COMPARE_RESULT_LESS_OR_EQUAL) != 0;
   }
 
@@ -158,8 +163,9 @@ struct VariantOperators : VariantOperatorTag {
     return compare(lhs, rhs) == COMPARE_RESULT_GREATER;
   }
   template <typename T>
-  friend enable_if_t<!is_base_of<VariantOperatorTag, T>::value, bool> operator>(
-      TVariant lhs, const T& rhs) {
+  friend
+      typename enable_if<!is_base_of<VariantOperatorTag, T>::value, bool>::type
+      operator>(TVariant lhs, const T& rhs) {
     return compare(lhs, rhs) == COMPARE_RESULT_GREATER;
   }
 
@@ -179,8 +185,9 @@ struct VariantOperators : VariantOperatorTag {
     return (compare(lhs, rhs) & COMPARE_RESULT_GREATER_OR_EQUAL) != 0;
   }
   template <typename T>
-  friend enable_if_t<!is_base_of<VariantOperatorTag, T>::value, bool>
-  operator>=(TVariant lhs, const T& rhs) {
+  friend
+      typename enable_if<!is_base_of<VariantOperatorTag, T>::value, bool>::type
+      operator>=(TVariant lhs, const T& rhs) {
     return (compare(lhs, rhs) & COMPARE_RESULT_GREATER_OR_EQUAL) != 0;
   }
 };

@@ -1,111 +1,40 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <stdint.h>
 #include <catch.hpp>
 
-#include "Allocators.hpp"
-#include "Literals.hpp"
+TEST_CASE("JsonVariant::remove()") {
+  DynamicJsonDocument doc(4096);
+  JsonVariant var = doc.to<JsonVariant>();
 
-using ArduinoJson::detail::sizeofArray;
+  SECTION("remove(int)") {
+    var.add(1);
+    var.add(2);
+    var.add(3);
 
-TEST_CASE("JsonVariant::remove(int)") {
-  SpyingAllocator spy;
-  JsonDocument doc(&spy);
-
-  SECTION("release top level strings") {
-    doc.add("hello"_s);
-    doc.add("hello"_s);
-    doc.add("world"_s);
-
-    JsonVariant var = doc.as<JsonVariant>();
-    REQUIRE(var.as<std::string>() == "[\"hello\",\"hello\",\"world\"]");
-
-    spy.clearLog();
     var.remove(1);
-    REQUIRE(var.as<std::string>() == "[\"hello\",\"world\"]");
-    REQUIRE(spy.log() == AllocatorLog{});
 
-    spy.clearLog();
-    var.remove(1);
-    REQUIRE(var.as<std::string>() == "[\"hello\"]");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Deallocate(sizeofString("world")),
-                         });
-
-    spy.clearLog();
-    var.remove(0);
-    REQUIRE(var.as<std::string>() == "[]");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Deallocate(sizeofString("hello")),
-                         });
+    REQUIRE(var.as<std::string>() == "[1,3]");
   }
 
-  SECTION("release strings in nested array") {
-    doc[0][0] = "hello"_s;
+  SECTION("remove(const char *)") {
+    var["a"] = 1;
+    var["b"] = 2;
 
-    JsonVariant var = doc.as<JsonVariant>();
-    REQUIRE(var.as<std::string>() == "[[\"hello\"]]");
+    var.remove("a");
 
-    spy.clearLog();
-    var.remove(0);
-
-    REQUIRE(var.as<std::string>() == "[]");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Deallocate(sizeofString("hello")),
-                         });
+    REQUIRE(var.as<std::string>() == "{\"b\":2}");
   }
-}
 
-TEST_CASE("JsonVariant::remove(const char *)") {
-  JsonDocument doc;
-  JsonVariant var = doc.to<JsonVariant>();
+  SECTION("remove(std::string)") {
+    var["a"] = 1;
+    var["b"] = 2;
 
-  var["a"] = 1;
-  var["b"] = 2;
+    var.remove(std::string("b"));
 
-  var.remove("a");
-
-  REQUIRE(var.as<std::string>() == "{\"b\":2}");
-}
-
-TEST_CASE("JsonVariant::remove(std::string)") {
-  JsonDocument doc;
-  JsonVariant var = doc.to<JsonVariant>();
-
-  var["a"] = 1;
-  var["b"] = 2;
-
-  var.remove("b"_s);
-
-  REQUIRE(var.as<std::string>() == "{\"a\":1}");
-}
-
-TEST_CASE("JsonVariant::remove(JsonVariant) from object") {
-  JsonDocument doc;
-  JsonVariant var = doc.to<JsonVariant>();
-
-  var["a"] = "a";
-  var["b"] = 2;
-  var["c"] = "b";
-
-  var.remove(var["c"]);
-
-  REQUIRE(var.as<std::string>() == "{\"a\":\"a\",\"c\":\"b\"}");
-}
-
-TEST_CASE("JsonVariant::remove(JsonVariant) from array") {
-  JsonDocument doc;
-  JsonVariant var = doc.to<JsonVariant>();
-
-  var[0] = 3;
-  var[1] = 2;
-  var[2] = 1;
-
-  var.remove(var[2]);
-  var.remove(var[3]);  // noop
-
-  REQUIRE(var.as<std::string>() == "[3,1]");
+    REQUIRE(var.as<std::string>() == "{\"a\":1}");
+  }
 }

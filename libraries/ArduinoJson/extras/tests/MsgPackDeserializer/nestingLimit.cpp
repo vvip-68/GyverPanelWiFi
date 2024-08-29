@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -12,7 +12,7 @@
   REQUIRE(DeserializationError::TooDeep == expression);
 
 TEST_CASE("JsonDeserializer nesting") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   SECTION("Input = const char*") {
     SECTION("limit = 0") {

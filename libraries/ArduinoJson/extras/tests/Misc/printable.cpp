@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <Arduino.h>
@@ -7,10 +7,6 @@
 
 #define ARDUINOJSON_ENABLE_ARDUINO_STREAM 1
 #include <ArduinoJson.h>
-
-#include "Allocators.hpp"
-
-using ArduinoJson::detail::sizeofArray;
 
 struct PrintOneCharacterAtATime {
   static size_t printStringTo(const std::string& s, Print& p) {
@@ -52,9 +48,8 @@ struct PrintableString : public Printable {
 
 TEST_CASE("Printable") {
   SECTION("Doesn't overflow") {
-    SpyingAllocator spy;
-    JsonDocument doc(&spy);
-    const char* value = "example";
+    StaticJsonDocument<8> doc;
+    const char* value = "example";  // == 7 chars
 
     doc.set(666);  // to make sure we override the value
 
@@ -64,11 +59,8 @@ TEST_CASE("Printable") {
       CHECK(doc.as<std::string>() == value);
       CHECK(printable.totalBytesWritten() == 7);
       CHECK(doc.overflowed() == false);
-      CHECK(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("example")),
-            });
+      CHECK(doc.memoryUsage() == 8);
+      CHECK(doc.as<JsonVariant>().memoryUsage() == 8);
     }
 
     SECTION("Via Print::write(const char* size_t)") {
@@ -77,90 +69,58 @@ TEST_CASE("Printable") {
       CHECK(doc.as<std::string>() == value);
       CHECK(printable.totalBytesWritten() == 7);
       CHECK(doc.overflowed() == false);
-      CHECK(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("example")),
-            });
+      CHECK(doc.memoryUsage() == 8);
+      CHECK(doc.as<JsonVariant>().memoryUsage() == 8);
     }
   }
 
-  SECTION("First allocation fails") {
-    SpyingAllocator spy(FailingAllocator::instance());
-    JsonDocument doc(&spy);
-    const char* value = "hello world";
+  SECTION("Overflows early") {
+    StaticJsonDocument<8> doc;
+    const char* value = "hello world";  // > 8 chars
 
     doc.set(666);  // to make sure we override the value
 
     SECTION("Via Print::write(char)") {
       PrintableString<PrintOneCharacterAtATime> printable(value);
-
-      bool success = doc.set(printable);
-
-      CHECK(success == false);
+      CHECK(doc.set(printable) == false);
       CHECK(doc.isNull());
-      CHECK(printable.totalBytesWritten() == 0);
+      CHECK(printable.totalBytesWritten() == 8);
       CHECK(doc.overflowed() == true);
-      CHECK(spy.log() == AllocatorLog{
-                             AllocateFail(sizeofStringBuffer()),
-                         });
+      CHECK(doc.memoryUsage() == 0);
     }
 
     SECTION("Via Print::write(const char*, size_t)") {
       PrintableString<PrintAllAtOnce> printable(value);
-
-      bool success = doc.set(printable);
-
-      CHECK(success == false);
+      CHECK(doc.set(printable) == false);
       CHECK(doc.isNull());
       CHECK(printable.totalBytesWritten() == 0);
       CHECK(doc.overflowed() == true);
-      CHECK(spy.log() == AllocatorLog{
-                             AllocateFail(sizeofStringBuffer()),
-                         });
+      CHECK(doc.memoryUsage() == 0);
     }
   }
 
-  SECTION("Reallocation fails") {
-    TimebombAllocator timebomb(1);
-    SpyingAllocator spy(&timebomb);
-    JsonDocument doc(&spy);
-    const char* value = "Lorem ipsum dolor sit amet, cons";  // > 31 chars
+  SECTION("Overflows adding terminator") {
+    StaticJsonDocument<8> doc;
+    const char* value = "overflow";  // == 8 chars
 
     doc.set(666);  // to make sure we override the value
 
     SECTION("Via Print::write(char)") {
       PrintableString<PrintOneCharacterAtATime> printable(value);
-
-      bool success = doc.set(printable);
-
-      CHECK(success == false);
+      CHECK(doc.set(printable) == false);
       CHECK(doc.isNull());
-      CHECK(printable.totalBytesWritten() == 31);
+      CHECK(printable.totalBytesWritten() == 8);
       CHECK(doc.overflowed() == true);
-      CHECK(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                ReallocateFail(sizeofStringBuffer(), sizeofStringBuffer(2)),
-                Deallocate(sizeofStringBuffer()),
-            });
+      CHECK(doc.memoryUsage() == 0);
     }
 
     SECTION("Via Print::write(const char*, size_t)") {
       PrintableString<PrintAllAtOnce> printable(value);
-
-      bool success = doc.set(printable);
-
-      CHECK(success == false);
+      CHECK(doc.set(printable) == false);
       CHECK(doc.isNull());
-      CHECK(printable.totalBytesWritten() == 31);
+      CHECK(printable.totalBytesWritten() == 0);
       CHECK(doc.overflowed() == true);
-      CHECK(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                ReallocateFail(sizeofStringBuffer(), sizeofStringBuffer(2)),
-                Deallocate(sizeofStringBuffer()),
-            });
+      CHECK(doc.memoryUsage() == 0);
     }
   }
 
@@ -173,20 +133,12 @@ TEST_CASE("Printable") {
   }
 
   SECTION("String deduplication") {
-    SpyingAllocator spy;
-    JsonDocument doc(&spy);
+    StaticJsonDocument<128> doc;
     doc.add(PrintableString<PrintOneCharacterAtATime>("Hello World!"));
     doc.add(PrintableString<PrintAllAtOnce>("Hello World!"));
     REQUIRE(doc.size() == 2);
     CHECK(doc[0] == "Hello World!");
     CHECK(doc[1] == "Hello World!");
-    CHECK(spy.log() ==
-          AllocatorLog{
-              Allocate(sizeofPool()),
-              Allocate(sizeofStringBuffer()),
-              Reallocate(sizeofStringBuffer(), sizeofString("Hello World!")),
-              Allocate(sizeofStringBuffer()),
-              Deallocate(sizeofStringBuffer()),
-          });
+    CHECK(doc.memoryUsage() == JSON_ARRAY_SIZE(2) + 13);
   }
 }

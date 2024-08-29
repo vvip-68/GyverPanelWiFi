@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -20,7 +20,7 @@ static void checkObject(const JsonObject obj, const std::string& expected) {
 }
 
 TEST_CASE("serializeJson(JsonObject)") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   JsonObject obj = doc.to<JsonObject>();
 
   SECTION("EmptyObject") {
@@ -96,10 +96,10 @@ TEST_CASE("serializeJson(JsonObject)") {
   }
 
   SECTION("ThreeNestedArrays") {
-    JsonDocument b;
-    JsonDocument c;
+    DynamicJsonDocument b(4096);
+    DynamicJsonDocument c(4096);
 
-    obj["a"].to<JsonArray>();
+    obj.createNestedArray("a");
     obj["b"] = b.to<JsonArray>();
     obj["c"] = c.to<JsonArray>();
 
@@ -107,10 +107,10 @@ TEST_CASE("serializeJson(JsonObject)") {
   }
 
   SECTION("ThreeNestedObjects") {
-    JsonDocument b;
-    JsonDocument c;
+    DynamicJsonDocument b(4096);
+    DynamicJsonDocument c(4096);
 
-    obj["a"].to<JsonObject>();
+    obj.createNestedObject("a");
     obj["b"] = b.to<JsonObject>();
     obj["c"] = c.to<JsonObject>();
 

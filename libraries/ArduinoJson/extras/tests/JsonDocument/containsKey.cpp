@@ -1,14 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-#include "Literals.hpp"
-
 TEST_CASE("JsonDocument::containsKey()") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   SECTION("returns true on object") {
     doc["hello"] = "world";
@@ -25,7 +23,7 @@ TEST_CASE("JsonDocument::containsKey()") {
   SECTION("returns true when key is a std::string") {
     doc["hello"] = "world";
 
-    REQUIRE(doc.containsKey("hello"_s) == true);
+    REQUIRE(doc.containsKey(std::string("hello")) == true);
   }
 
   SECTION("returns false  on object") {
@@ -42,13 +40,5 @@ TEST_CASE("JsonDocument::containsKey()") {
 
   SECTION("returns false on null") {
     REQUIRE(doc.containsKey("hello") == false);
-  }
-
-  SECTION("support JsonVariant") {
-    doc["hello"] = "world";
-    doc["key"] = "hello";
-
-    REQUIRE(doc.containsKey(doc["key"]) == true);
-    REQUIRE(doc.containsKey(doc["foo"]) == false);
   }
 }

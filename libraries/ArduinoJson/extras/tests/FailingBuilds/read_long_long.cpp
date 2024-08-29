@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_USE_LONG_LONG 0
@@ -11,6 +11,6 @@
 
 ARDUINOJSON_ASSERT_INTEGER_TYPE_IS_SUPPORTED(long long)
 int main() {
-  JsonDocument doc;
+  DynamicJsonDocument doc(1024);
   doc["dummy"].as<long long>();
 }

@@ -1,17 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-#include "Allocators.hpp"
-
-using ArduinoJson::detail::sizeofArray;
-
 TEST_CASE("deserialize JSON array") {
-  SpyingAllocator spy;
-  JsonDocument doc(&spy);
+  DynamicJsonDocument doc(4096);
 
   SECTION("An empty array") {
     DeserializationError err = deserializeJson(doc, "[]");
@@ -249,71 +244,10 @@ TEST_CASE("deserialize JSON array") {
 
   SECTION("Should clear the JsonArray") {
     deserializeJson(doc, "[1,2,3,4]");
-    spy.clearLog();
-
     deserializeJson(doc, "[]");
-
     JsonArray arr = doc.as<JsonArray>();
+
     REQUIRE(arr.size() == 0);
-    REQUIRE(spy.log() == AllocatorLog{
-                             Deallocate(sizeofArray(4)),
-                         });
-  }
-}
-
-TEST_CASE("deserialize JSON array under memory constraints") {
-  TimebombAllocator timebomb(100);
-  SpyingAllocator spy(&timebomb);
-  JsonDocument doc(&spy);
-
-  SECTION("empty array requires no allocation") {
-    timebomb.setCountdown(0);
-    char input[] = "[]";
-
-    DeserializationError err = deserializeJson(doc, input);
-
-    REQUIRE(err == DeserializationError::Ok);
-  }
-
-  SECTION("allocation of pool list fails") {
-    timebomb.setCountdown(0);
-    char input[] = "[1]";
-
-    DeserializationError err = deserializeJson(doc, input);
-
-    REQUIRE(err == DeserializationError::NoMemory);
-    REQUIRE(doc.as<std::string>() == "[]");
-  }
-
-  SECTION("allocation of pool fails") {
-    timebomb.setCountdown(0);
-    char input[] = "[1]";
-
-    DeserializationError err = deserializeJson(doc, input);
-
-    REQUIRE(err == DeserializationError::NoMemory);
-    REQUIRE(doc.as<std::string>() == "[]");
-  }
-
-  SECTION("allocation of string fails in array") {
-    timebomb.setCountdown(1);
-    char input[] = "[0,\"hi!\"]";
-
-    DeserializationError err = deserializeJson(doc, input);
-
-    REQUIRE(err == DeserializationError::NoMemory);
-    REQUIRE(doc.as<std::string>() == "[0,null]");
-  }
-
-  SECTION("don't store space characters") {
-    deserializeJson(doc, "  [ \"1234567\" ] ");
-
-    REQUIRE(spy.log() ==
-            AllocatorLog{
-                Allocate(sizeofPool()),
-                Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("1234567")),
-                Reallocate(sizeofPool(), sizeofArray(1)),
-            });
+    REQUIRE(doc.memoryUsage() == JSON_ARRAY_SIZE(0));
   }
 }

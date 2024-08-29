@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 //
 // This example shows how to send a JSON document to a UDP socket.
@@ -17,7 +17,7 @@
 // $ ncat -ulp 8888
 // See https://nmap.org/ncat/
 //
-// https://arduinojson.org/v7/example/udp-beacon/
+// https://arduinojson.org/v6/example/udp-beacon/
 
 #include <ArduinoJson.h>
 #include <Ethernet.h>
@@ -32,8 +32,7 @@ EthernetUDP udp;
 void setup() {
   // Initialize serial port
   Serial.begin(9600);
-  while (!Serial)
-    continue;
+  while (!Serial) continue;
 
   // Initialize Ethernet libary
   if (!Ethernet.begin(mac)) {
@@ -47,10 +46,11 @@ void setup() {
 
 void loop() {
   // Allocate a temporary JsonDocument
-  JsonDocument doc;
+  // Use https://arduinojson.org/v6/assistant to compute the capacity.
+  StaticJsonDocument<500> doc;
 
   // Create the "analog" array
-  JsonArray analogValues = doc["analog"].to<JsonArray>();
+  JsonArray analogValues = doc.createNestedArray("analog");
   for (int pin = 0; pin < 6; pin++) {
     // Read the analog input
     int value = analogRead(pin);
@@ -60,7 +60,7 @@ void loop() {
   }
 
   // Create the "digital" array
-  JsonArray digitalValues = doc["digital"].to<JsonArray>();
+  JsonArray digitalValues = doc.createNestedArray("digital");
   for (int pin = 0; pin < 14; pin++) {
     // Read the digital input
     int value = digitalRead(pin);
@@ -90,7 +90,7 @@ void loop() {
 // ------------------
 //
 // EthernetUDP is an unbuffered stream, which is not optimal for ArduinoJson.
-// See: https://arduinojson.org/v7/how-to/improve-speed/
+// See: https://arduinojson.org/v6/how-to/improve-speed/
 
 // See also
 // --------

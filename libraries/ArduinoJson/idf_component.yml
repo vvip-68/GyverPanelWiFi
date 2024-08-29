@@ -1,9 +1,9 @@
-version: "7.1.0"
+version: "6.21.5"
 description: >-
   A simple and efficient JSON library for embedded C++.
-  ⭐ 6624 stars on GitHub!
-  Supports serialization, deserialization, MessagePack, streams, filtering, and more.
-  Fully tested and documented.
+  ArduinoJson supports ✔ serialization, ✔ deserialization, ✔ MessagePack, ✔ fixed allocation, ✔ zero-copy, ✔ streams, ✔ filtering, and more.
+  It is the most popular Arduino library on GitHub ❤❤❤❤❤.
+  Check out arduinojson.org for a comprehensive documentation.
 url: https://arduinojson.org/
 files:
   exclude:

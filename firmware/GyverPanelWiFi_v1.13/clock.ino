@@ -272,6 +272,12 @@ void drawClock(uint8_t hrs, uint8_t mins, bool dots, int8_t X, int8_t Y) {
     #endif
   }
 
+  // 12/24-часовой формат
+  if (time_h12) {
+    if (hrs > 12) hrs -= 12;
+    if (hrs == 0) hrs = 12;
+  }
+
   int8_t x = X;
 
   uint8_t h10 = hrs / 10;
@@ -775,7 +781,7 @@ void drawCalendar(uint8_t aday, uint8_t amnth, int16_t ayear, bool dots, int8_t 
       // Если год отображается - ширина равне максимальной ширине числа/месяца или года
       uint8_t realWidth = allow_two_row ? max(width_d, width_y ) : width_d;
 
-      uint8_t cx = realWidth == pWIDTH ? 0 : (0.51 + ((pWIDTH - realWidth) / 2.0));
+      cx = realWidth == pWIDTH ? 0 : (0.51 + ((pWIDTH - realWidth) / 2.0));
       if (pWIDTH - realWidth %2 == 1) cx++;
 
       bool double_dot = pWIDTH > 25;
@@ -871,8 +877,11 @@ void clockTicker() {
 
   if (isTurnedOff && needTurnOffClock && init_time) {
     #if (USE_TM1637 == 1)
-    display.displayByte(_empty, _empty, _empty, _empty);
-    display.point(false);
+      currDisplay[0] = _empty;
+      currDisplay[1] = _empty;
+      currDisplay[2] = _empty;
+      currDisplay[3] = _empty;
+      currDotState = false;
     #endif
     return;
   }
@@ -894,16 +903,20 @@ void clockTicker() {
     uint8_t prcBrightness = map8(globalBrightness,0,99);
     uint8_t m10 = getByteForDigit(prcBrightness / 10);
     uint8_t m01 = getByteForDigit(prcBrightness % 10);
-    display.displayByte(_b_, _r_, m10, m01);
-    display.point(false);
+    currDisplay[0] = _b_;
+    currDisplay[1] = _r_;
+    currDisplay[2] = m10;
+    currDisplay[3] = m01;
+    currDotState = false;
+    
   } else if (wifi_print_ip) {
     // Четырехкратное нажатие кнопки запускает отображение по частям текущего IP лампы  
     if (dotFlag && halfSec) {
-      if (wifi_print_idx<=3) {
-        String  ip = WiFi.localIP().toString();
+      if (wifi_print_idx <= 3) {
+        String ip(WiFi.localIP().toString());
         int16_t value = atoi(GetToken(ip, wifi_print_idx + 1, '.').c_str()); 
-        display.displayInt(value);
-        display.point(false);
+        display.encodeInt(value, currDisplay);
+        currDotState = false;
         wifi_print_idx++;
       } else {
         wifi_print_idx = 0; 
@@ -913,13 +926,25 @@ void clockTicker() {
   } else {
     // Если время еще не получено - отображать прочерки
     if (!init_time) {
-      if (halfSec) display.displayByte(_dash, _dash, _dash, _dash);
+      if (halfSec) {          
+        currDisplay[0] = _dash;
+        currDisplay[1] = _dash;
+        currDisplay[2] = _dash;
+        currDisplay[3] = _dash;
+      }
     } else if (!isAlarmStopped && (isPlayAlarmSound || isAlarming)) {
       // Сработал будильник (звук) - плавное мерцание текущего времени      
-      if (halfSec) display.displayClock(hour(),minute());
+      if (halfSec) {
+        uint8_t hh = hour();
+        if (time_h12) {
+          if (hh > 12) hh -= 12;
+          if (hh == 0) hh = 12;
+        }
+        display.encodeClock(hh, minute(), currDisplay);
+      }
       if (millis() - fade_time > 65) {
         fade_time = millis();
-        display.setBrightness(aCounter);        
+        currDisplayBrightness = aCounter;
         if (aDirection) aCounter++; else aCounter--;
         if (aCounter > 7) {
           aDirection = false;
@@ -932,24 +957,37 @@ void clockTicker() {
     } else {
       // Время получено - отображать часы:минуты  
       #if (USE_WEATHER == 1)
-      // RailWar Evgeny (C)
-      if (((useWeather > 0)) && weather_ok && (((second() + 10) % 30) >= 28)) {
-        uint8_t t = abs(temperature);
+      if (useWeather > 0 && init_weather && weather_ok && (((second() + 10) % 30) >= 28)) {
+        int8_t  th = temperature;
+        uint8_t t = abs(th);
         uint8_t atH = t / 10;
         uint8_t atL = t % 10;
-        display.point(false);
-        if (atH == 0)
-          display.displayByte(_empty, (temperature >= 0) ? _empty : _dash, display.encodeDigit(atL), _degree);
-        else
-          display.displayByte((temperature >= 0) ? _empty : _dash, display.encodeDigit(atH), display.encodeDigit(atL), _degree);
+        currDotState = false;
+        if (atH == 0) {            
+          currDisplay[0] = _empty;
+          currDisplay[1] = (th >= 0) ? _empty : _dash;
+          currDisplay[2] = display.encodeDigit(atL);
+          currDisplay[3] = _degree;
+        }
+        else {            
+          currDisplay[0] = (th >= 0) ? _empty : _dash;
+          currDisplay[1] = display.encodeDigit(atH);
+          currDisplay[2] = display.encodeDigit(atL);
+          currDisplay[3] = _degree;
+        }
       } else 
       #endif
       {
-        display.displayClock(hour(),minute());         
+        uint8_t hh = hour();
+        if (time_h12) {
+          if (hh > 12) hh -= 12;
+          if (hh == 0) hh = 12;
+        }
+        display.encodeClock(hh, minute(), currDisplay);
         // Отображение часов - разделительное двоеточие...
-        if (halfSec) display.point(dotFlag);
+        if (halfSec) currDotState = dotFlag;
       }
-      display.setBrightness(isTurnedOff ? 1 : 7);
+      currDisplayBrightness = isTurnedOff ? 1 : 7;
     }
   }
 #endif  
@@ -1218,7 +1256,7 @@ void checkAlarmTime() {
     // Во время работы будильника индикатор плавно мерцает.
     // После завершения работы - восстановить яркость индикатора
     #if (USE_TM1637 == 1)
-    display.setBrightness(7);
+      currDisplayBrightness = 7;
     #endif
     DEBUGLN(String(F("Будильник Авто-ВЫКЛ в ")) + padNum(h,2)+ ":" + padNum(m,2));
     
@@ -1293,8 +1331,8 @@ void stopAlarm() {
     // Во время работы будильника индикатор плавно мерцает.
     // После завершения работы - восстановить яркость индикатора
 
-    #if (USE_TM1637 == 1)
-    display.setBrightness(7);
+    #if (USE_TM1637 == 1)    
+      currDisplayBrightness = 7;
     #endif
 
     StopSound(1000);

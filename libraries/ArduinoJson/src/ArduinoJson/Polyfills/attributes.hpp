@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -7,30 +7,17 @@
 #ifdef _MSC_VER  // Visual Studio
 
 #  define FORCE_INLINE  // __forceinline causes C4714 when returning std::string
-
-#  ifndef ARDUINOJSON_DEPRECATED
-#    define ARDUINOJSON_DEPRECATED(msg) __declspec(deprecated(msg))
-#  endif
+#  define NO_INLINE __declspec(noinline)
 
 #elif defined(__GNUC__)  // GCC or Clang
 
 #  define FORCE_INLINE __attribute__((always_inline))
-
-#  ifndef ARDUINOJSON_DEPRECATED
-#    if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
-#      define ARDUINOJSON_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#    else
-#      define ARDUINOJSON_DEPRECATED(msg) __attribute__((deprecated))
-#    endif
-#  endif
+#  define NO_INLINE __attribute__((noinline))
 
 #else  // Other compilers
 
 #  define FORCE_INLINE
-
-#  ifndef ARDUINOJSON_DEPRECATED
-#    define ARDUINOJSON_DEPRECATED(msg)
-#  endif
+#  define NO_INLINE
 
 #endif
 

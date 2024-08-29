@@ -1,12 +1,10 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <stdio.h>
 #include <catch.hpp>
-
-#include "Literals.hpp"
 
 static void check(const JsonObject object, const char* expected_data,
                   size_t expected_len) {
@@ -30,7 +28,7 @@ static void check(const JsonObject object, const char (&expected_data)[N]) {
 //}
 
 TEST_CASE("serialize MsgPack object") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   JsonObject object = doc.to<JsonObject>();
 
   SECTION("empty") {
@@ -46,7 +44,7 @@ TEST_CASE("serialize MsgPack object") {
   SECTION("map 16") {
     for (int i = 0; i < 16; ++i) {
       char key[16];
-      snprintf(key, sizeof(key), "i%X", i);
+      sprintf(key, "i%X", i);
       object[key] = i;
     }
 
@@ -62,7 +60,7 @@ TEST_CASE("serialize MsgPack object") {
   //
   //   for (int i = 0; i < 65536; ++i) {
   //     char kv[16];
-  //     snprintf(kv, sizeof(kv), "%04x", i);
+  //     sprintf(kv, "%04x", i);
   //     object[kv] = kv;
   //     expected += '\xA4';
   //     expected += kv;
@@ -79,7 +77,7 @@ TEST_CASE("serialize MsgPack object") {
   }
 
   SECTION("serialized(std::string)") {
-    object["hello"] = serialized("\xDB\x00\x01\x00\x00"_s);
+    object["hello"] = serialized(std::string("\xDB\x00\x01\x00\x00", 5));
     check(object, "\x81\xA5hello\xDB\x00\x01\x00\x00");
   }
 }

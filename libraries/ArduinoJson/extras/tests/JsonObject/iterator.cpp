@@ -1,12 +1,14 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+using namespace Catch::Matchers;
+
 TEST_CASE("JsonObject::begin()/end()") {
-  JsonDocument doc;
+  StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
   JsonObject obj = doc.to<JsonObject>();
   obj["ab"] = 12;
   obj["cd"] = 34;
@@ -31,6 +33,41 @@ TEST_CASE("JsonObject::begin()/end()") {
 
   SECTION("null JsonObject") {
     JsonObject null;
+    REQUIRE(null.begin() == null.end());
+  }
+}
+
+TEST_CASE("JsonObjectConst::begin()/end()") {
+  StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+  JsonObject obj = doc.to<JsonObject>();
+  obj["ab"] = 12;
+  obj["cd"] = 34;
+
+  JsonObjectConst cobj = obj;
+
+  SECTION("Iteration") {
+    JsonObjectConst::iterator it = cobj.begin();
+    REQUIRE(cobj.end() != it);
+    REQUIRE(it->key() == "ab");
+    REQUIRE(12 == it->value());
+
+    ++it;
+    REQUIRE(cobj.end() != it);
+    JsonPairConst pair = *it;
+    REQUIRE(pair.key() == "cd");
+    REQUIRE(34 == pair.value());
+
+    ++it;
+    REQUIRE(cobj.end() == it);
+  }
+
+  SECTION("Dereferencing end() is safe") {
+    REQUIRE(cobj.end()->key().isNull());
+    REQUIRE(cobj.end()->value().isNull());
+  }
+
+  SECTION("null JsonObjectConst") {
+    JsonObjectConst null;
     REQUIRE(null.begin() == null.end());
   }
 }

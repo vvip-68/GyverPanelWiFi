@@ -97,46 +97,46 @@ bool getWeather() {
   } 
 
   // Нам не нужно доставать все данные из ответа. Задаем фильтр - это существенно уменьшит размер требуемой памяти 
-  StaticJsonDocument<200> filter;
-  String regId = useWeather == 1 ? String(regionID) : String(regionID2);
+StaticJsonDocument<200> filter;
+String regId = useWeather == 1 ? String(regionID) : String(regionID2);
+
+if (useWeather == 1) {
+  // Yandex
+  filter["clocks"][regId]["weather"]["temp"] = true;  // Достаём температуру - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
+  filter["clocks"][regId]["skyColor"] = true;         // Рекомендованный цвет фона
+  filter["clocks"][regId]["isNight"] = true;
+  filter["clocks"][regId]["weather"]["icon"] = true;  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+  filter["clocks"][regId]["name"] = true;             // Город
+  filter["clocks"][regId]["sunrise"] = true;          // Время рассвета
+  filter["clocks"][regId]["sunset"] = true;           // Время заката
+} else {
+  // OpenWeatherMap
+  filter["main"]["temp"] = true;                      // Температура -> main -> temp
+  filter["weather"][0]["icon"] = true;                // Достаём иконку -> weather[0] -> icon
+  filter["name"] = true;                              // Город
+  filter["weather"][0]["description"] = true;         // Строка погодных условий на языке, указаном в запросе
+  filter["weather"][0]["id"] = true;                  // Уточненный код погодных условий
+  filter["sys"]["sunrise"] = true;                    // Время рассвета
+  filter["sys"]["sunset"] = true;                     // Время заката    
+}
+
+// Parse JSON object
+DynamicJsonDocument jsn(512);
+DeserializationError json_error = deserializeJson(jsn, payload, DeserializationOption::Filter(filter));
+
+if (json_error) {
+  DEBUG(F("JSON не разобран: "));
+  DEBUGLN(json_error.c_str());
   
-  if (useWeather == 1) {
-    // Yandex
-    filter["clocks"][regId]["weather"]["temp"] = true;  // Достаём температуру - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
-    filter["clocks"][regId]["skyColor"] = true;         // Рекомендованный цвет фона
-    filter["clocks"][regId]["isNight"] = true;
-    filter["clocks"][regId]["weather"]["icon"] = true;  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
-    filter["clocks"][regId]["name"] = true;             // Город
-    filter["clocks"][regId]["sunrise"] = true;          // Время рассвета
-    filter["clocks"][regId]["sunset"] = true;           // Время заката
-  } else {
-    // OpenWeatherMap
-    filter["main"]["temp"] = true;                      // Температура -> main -> temp
-    filter["weather"][0]["icon"] = true;                // Достаём иконку -> weather[0] -> icon
-    filter["name"] = true;                              // Город
-    filter["weather"][0]["description"] = true;         // Строка погодных условий на языке, указаном в запросе
-    filter["weather"][0]["id"] = true;                  // Уточненный код погодных условий
-    filter["sys"]["sunrise"] = true;                    // Время рассвета
-    filter["sys"]["sunset"] = true;                     // Время заката    
-  }
-
-  // Parse JSON object
-  DynamicJsonDocument jsn(512);
-  DeserializationError json_error = deserializeJson(jsn, payload, DeserializationOption::Filter(filter));
-
-  if (json_error) {
-    DEBUG(F("JSON не разобран: "));
-    DEBUGLN(json_error.c_str());
-    
-    #if (USE_MQTT == 1)
-    doc["result"] = F("ERROR");
-    doc["status"] = F("json error");
-    serializeJson(jsn, out);      
-    SendMQTT(out, TOPIC_WTR);
-    #endif
-    
-    return false;
-  }
+  #if (USE_MQTT == 1)
+  doc["result"] = F("ERROR");
+  doc["status"] = F("json error");
+  serializeJson(jsn, out);      
+  SendMQTT(out, TOPIC_WTR);
+  #endif
+  
+  return false;
+}
 
   String town, sunrise, sunset;
   
@@ -785,7 +785,7 @@ void weatherRoutine() {
     // Нарисовать '+' или '-' если температура не 0
     // Горизонтальная черта - общая для '-' и '+'
     if (temperature != 0) {
-      bool dy = big_font ? 2 : 0;
+      uint8_t dy = big_font ? 2 : 0;
       temp_x -= 4;
       for(uint8_t i = 0; i < 3; i++) {
         drawPixelXY(getClockX(temp_x + i), temp_y + 2 + dy, color);      

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,11 +7,6 @@
 
 TEST_CASE("VariantData") {
   REQUIRE(std::is_standard_layout<ArduinoJson::detail::VariantData>::value ==
-          true);
-}
-
-TEST_CASE("StringNode") {
-  REQUIRE(std::is_standard_layout<ArduinoJson::detail::StringNode>::value ==
           true);
 }
 
@@ -23,7 +18,7 @@ TEST_CASE("JsonVariant from JsonArray") {
   }
 
   SECTION("JsonArray is not null") {
-    JsonDocument doc;
+    DynamicJsonDocument doc(4096);
     JsonArray arr = doc.to<JsonArray>();
     arr.add(12);
     arr.add(34);
@@ -45,7 +40,7 @@ TEST_CASE("JsonVariant from JsonObject") {
   }
 
   SECTION("JsonObject is not null") {
-    JsonDocument doc;
+    DynamicJsonDocument doc(4096);
     JsonObject obj = doc.to<JsonObject>();
     obj["a"] = 12;
     obj["b"] = 34;

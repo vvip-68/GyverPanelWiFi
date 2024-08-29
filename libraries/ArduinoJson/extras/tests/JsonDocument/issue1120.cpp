@@ -2,22 +2,20 @@
 
 #include <catch.hpp>
 
-#include "Literals.hpp"
-
 TEST_CASE("Issue #1120") {
-  JsonDocument doc;
+  StaticJsonDocument<500> doc;
   constexpr char str[] =
       "{\"contents\":[{\"module\":\"Packet\"},{\"module\":\"Analog\"}]}";
   deserializeJson(doc, str);
 
   SECTION("MemberProxy<std::string>::isNull()") {
     SECTION("returns false") {
-      auto value = doc["contents"_s];
+      auto value = doc[std::string("contents")];
       CHECK(value.isNull() == false);
     }
 
     SECTION("returns true") {
-      auto value = doc["zontents"_s];
+      auto value = doc[std::string("zontents")];
       CHECK(value.isNull() == true);
     }
   }
@@ -48,12 +46,12 @@ TEST_CASE("Issue #1120") {
 
   SECTION("MemberProxy<ElementProxy<MemberProxy>, std::string>::isNull()") {
     SECTION("returns false") {
-      auto value = doc["contents"][1]["module"_s];
+      auto value = doc["contents"][1][std::string("module")];
       CHECK(value.isNull() == false);
     }
 
     SECTION("returns true") {
-      auto value = doc["contents"][1]["zodule"_s];
+      auto value = doc["contents"][1][std::string("zodule")];
       CHECK(value.isNull() == true);
     }
   }

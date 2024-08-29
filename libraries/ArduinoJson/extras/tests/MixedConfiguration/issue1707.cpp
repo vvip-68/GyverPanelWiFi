@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #define ARDUINO
@@ -10,7 +10,7 @@
 #include <catch.hpp>
 
 TEST_CASE("Issue1707") {
-  JsonDocument doc;
+  StaticJsonDocument<128> doc;
 
   DeserializationError err = deserializeJson(doc, F("{\"hello\":12}"));
   REQUIRE(err == DeserializationError::Ok);

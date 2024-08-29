@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -16,11 +16,11 @@
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename A, typename B>
-using largest_type = conditional_t<(sizeof(A) > sizeof(B)), A, B>;
+struct choose_largest : conditional<(sizeof(A) > sizeof(B)), A, B> {};
 
 inline bool parseNumber(const char* s, VariantData& result) {
   typedef FloatTraits<JsonFloat> traits;
-  typedef largest_type<traits::mantissa_type, JsonUInt> mantissa_t;
+  typedef choose_largest<traits::mantissa_type, JsonUInt>::type mantissa_t;
   typedef traits::exponent_type exponent_t;
 
   ARDUINOJSON_ASSERT(s != 0);
@@ -147,6 +147,6 @@ template <typename T>
 inline T parseNumber(const char* s) {
   VariantData value;
   parseNumber(s, value);
-  return Converter<T>::fromJson(JsonVariantConst(&value, nullptr));
+  return Converter<T>::fromJson(JsonVariantConst(&value));
 }
 ARDUINOJSON_END_PRIVATE_NAMESPACE

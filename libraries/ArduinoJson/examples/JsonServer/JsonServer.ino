@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 //
 // This example shows how to implement an HTTP server that sends a JSON document
@@ -13,7 +13,7 @@
 //   "digital": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]
 // }
 //
-// https://arduinojson.org/v7/example/http-server/
+// https://arduinojson.org/v6/example/http-server/
 
 #include <ArduinoJson.h>
 #include <Ethernet.h>
@@ -25,8 +25,7 @@ EthernetServer server(80);
 void setup() {
   // Initialize serial port
   Serial.begin(9600);
-  while (!Serial)
-    continue;
+  while (!Serial) continue;
 
   // Initialize Ethernet libary
   if (!Ethernet.begin(mac)) {
@@ -53,14 +52,14 @@ void loop() {
   Serial.println(F("New client"));
 
   // Read the request (we ignore the content in this example)
-  while (client.available())
-    client.read();
+  while (client.available()) client.read();
 
   // Allocate a temporary JsonDocument
-  JsonDocument doc;
+  // Use https://arduinojson.org/v6/assistant to compute the capacity.
+  StaticJsonDocument<500> doc;
 
   // Create the "analog" array
-  JsonArray analogValues = doc["analog"].to<JsonArray>();
+  JsonArray analogValues = doc.createNestedArray("analog");
   for (int pin = 0; pin < 6; pin++) {
     // Read the analog input
     int value = analogRead(pin);
@@ -70,7 +69,7 @@ void loop() {
   }
 
   // Create the "digital" array
-  JsonArray digitalValues = doc["digital"].to<JsonArray>();
+  JsonArray digitalValues = doc.createNestedArray("digital");
   for (int pin = 0; pin < 14; pin++) {
     // Read the digital input
     int value = digitalRead(pin);
@@ -102,7 +101,7 @@ void loop() {
 // ------------------
 //
 // EthernetClient is an unbuffered stream, which is not optimal for ArduinoJson.
-// See: https://arduinojson.org/v7/how-to/improve-speed/
+// See: https://arduinojson.org/v6/how-to/improve-speed/
 
 // See also
 // --------

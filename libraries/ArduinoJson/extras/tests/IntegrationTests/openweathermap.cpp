@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -53,12 +53,12 @@ TEST_CASE("OpenWeatherMap") {
       "]}";
   // clang-format on
 
-  JsonDocument filter;
+  StaticJsonDocument<512> filter;
   filter["list"][0]["dt"] = true;
   filter["list"][0]["main"]["temp"] = true;
   filter["list"][0]["weather"][0]["description"] = true;
 
-  JsonDocument doc;
+  DynamicJsonDocument doc(16384);
 
   REQUIRE(
       deserializeJson(doc, input_json, DeserializationOption::Filter(filter)) ==

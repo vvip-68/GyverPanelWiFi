@@ -1,18 +1,17 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 //
 // This example shows how to use DeserializationOption::Filter
 //
-// https://arduinojson.org/v7/example/filter/
+// https://arduinojson.org/v6/example/filter/
 
 #include <ArduinoJson.h>
 
 void setup() {
   // Initialize serial port
   Serial.begin(9600);
-  while (!Serial)
-    continue;
+  while (!Serial) continue;
 
   // The huge input: an extract from OpenWeatherMap response
   auto input_json = F(
@@ -34,12 +33,12 @@ void setup() {
       "1000000,\"timezone\":0,\"sunrise\":1581492085,\"sunset\":1581527294}}");
 
   // The filter: it contains "true" for each value we want to keep
-  JsonDocument filter;
+  StaticJsonDocument<200> filter;
   filter["list"][0]["dt"] = true;
   filter["list"][0]["main"]["temp"] = true;
 
   // Deserialize the document
-  JsonDocument doc;
+  StaticJsonDocument<400> doc;
   deserializeJson(doc, input_json, DeserializationOption::Filter(filter));
 
   // Print the result

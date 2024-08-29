@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -10,8 +10,9 @@
 using namespace ArduinoJson::detail;
 
 static void testCodepoint(uint32_t codepoint, std::string expected) {
-  ResourceManager resources;
-  StringBuilder str(&resources);
+  char buffer[4096];
+  MemoryPool pool(buffer, 4096);
+  StringCopier str(&pool);
   str.startString();
 
   CAPTURE(codepoint);

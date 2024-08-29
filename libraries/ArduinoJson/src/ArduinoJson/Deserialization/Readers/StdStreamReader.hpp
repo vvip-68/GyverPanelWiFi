@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,7 +9,8 @@
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TSource>
-struct Reader<TSource, enable_if_t<is_base_of<std::istream, TSource>::value>> {
+struct Reader<TSource, typename enable_if<
+                           is_base_of<std::istream, TSource>::value>::type> {
  public:
   explicit Reader(std::istream& stream) : stream_(&stream) {}
 

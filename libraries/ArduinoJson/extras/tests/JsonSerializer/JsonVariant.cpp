@@ -1,16 +1,14 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 #include <limits>
 
-#include "Literals.hpp"
-
 template <typename T>
 void check(T value, const std::string& expected) {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
   doc.to<JsonVariant>().set(value);
   char buffer[256] = "";
   size_t returnValue = serializeJson(doc, buffer, sizeof(buffer));
@@ -32,42 +30,42 @@ TEST_CASE("serializeJson(JsonVariant)") {
   }
 
   SECTION("string") {
-    check("hello"_s, "\"hello\"");
+    check(std::string("hello"), "\"hello\"");
 
     SECTION("Escape quotation mark") {
-      check("hello \"world\""_s, "\"hello \\\"world\\\"\"");
+      check(std::string("hello \"world\""), "\"hello \\\"world\\\"\"");
     }
 
     SECTION("Escape reverse solidus") {
-      check("hello\\world"_s, "\"hello\\\\world\"");
+      check(std::string("hello\\world"), "\"hello\\\\world\"");
     }
 
     SECTION("Don't escape solidus") {
-      check("fifty/fifty"_s, "\"fifty/fifty\"");
+      check(std::string("fifty/fifty"), "\"fifty/fifty\"");
     }
 
     SECTION("Escape backspace") {
-      check("hello\bworld"_s, "\"hello\\bworld\"");
+      check(std::string("hello\bworld"), "\"hello\\bworld\"");
     }
 
     SECTION("Escape formfeed") {
-      check("hello\fworld"_s, "\"hello\\fworld\"");
+      check(std::string("hello\fworld"), "\"hello\\fworld\"");
     }
 
     SECTION("Escape linefeed") {
-      check("hello\nworld"_s, "\"hello\\nworld\"");
+      check(std::string("hello\nworld"), "\"hello\\nworld\"");
     }
 
     SECTION("Escape carriage return") {
-      check("hello\rworld"_s, "\"hello\\rworld\"");
+      check(std::string("hello\rworld"), "\"hello\\rworld\"");
     }
 
     SECTION("Escape tab") {
-      check("hello\tworld"_s, "\"hello\\tworld\"");
+      check(std::string("hello\tworld"), "\"hello\\tworld\"");
     }
 
     SECTION("NUL char") {
-      check("hello\0world"_s, "\"hello\\u0000world\"");
+      check(std::string("hello\0world", 11), "\"hello\\u0000world\"");
     }
   }
 
@@ -76,7 +74,7 @@ TEST_CASE("serializeJson(JsonVariant)") {
   }
 
   SECTION("SerializedValue<std::string>") {
-    check(serialized("[1,2]"_s), "[1,2]");
+    check(serialized(std::string("[1,2]")), "[1,2]");
   }
 
   SECTION("Double") {

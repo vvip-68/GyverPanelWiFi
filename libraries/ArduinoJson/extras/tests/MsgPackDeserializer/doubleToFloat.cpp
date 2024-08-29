@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -13,7 +13,7 @@ static void check(const char* input, T expected) {
   uint8_t* f = reinterpret_cast<uint8_t*>(&actual);
   const uint8_t* d = reinterpret_cast<const uint8_t*>(input);
   doubleToFloat(d, f);
-  fixEndianness(actual);
+  fixEndianess(actual);
   CHECK(actual == expected);
 }
 

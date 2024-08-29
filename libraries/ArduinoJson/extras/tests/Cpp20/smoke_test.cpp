@@ -4,7 +4,7 @@
 #include <string>
 
 TEST_CASE("C++20 smoke test") {
-  JsonDocument doc;
+  StaticJsonDocument<128> doc;
 
   deserializeJson(doc, "{\"hello\":\"world\"}");
   REQUIRE(doc["hello"] == "world");

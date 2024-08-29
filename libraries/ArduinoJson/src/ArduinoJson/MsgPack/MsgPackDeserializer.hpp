@@ -1,26 +1,26 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <ArduinoJson/Deserialization/deserialize.hpp>
-#include <ArduinoJson/Memory/ResourceManager.hpp>
-#include <ArduinoJson/Memory/StringBuffer.hpp>
-#include <ArduinoJson/MsgPack/endianness.hpp>
+#include <ArduinoJson/Memory/MemoryPool.hpp>
+#include <ArduinoJson/MsgPack/endianess.hpp>
 #include <ArduinoJson/MsgPack/ieee754.hpp>
 #include <ArduinoJson/Polyfills/type_traits.hpp>
 #include <ArduinoJson/Variant/VariantData.hpp>
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-template <typename TReader>
+template <typename TReader, typename TStringStorage>
 class MsgPackDeserializer {
  public:
-  MsgPackDeserializer(ResourceManager* resources, TReader reader)
-      : resources_(resources),
+  MsgPackDeserializer(MemoryPool* pool, TReader reader,
+                      TStringStorage stringStorage)
+      : pool_(pool),
         reader_(reader),
-        stringBuffer_(resources),
+        stringStorage_(stringStorage),
         foundSomething_(false) {}
 
   template <typename TFilter>
@@ -38,12 +38,10 @@ class MsgPackDeserializer {
       DeserializationOption::NestingLimit nestingLimit) {
     DeserializationError::Code err;
 
-    uint8_t header[5];
-    err = readBytes(header, 1);
+    uint8_t code = 0;  // TODO: why do we need to initialize this variable?
+    err = readByte(code);
     if (err)
       return err;
-
-    const uint8_t& code = header[0];
 
     foundSomething_ = true;
 
@@ -52,14 +50,6 @@ class MsgPackDeserializer {
     if (allowValue) {
       // callers pass a null pointer only when value must be ignored
       ARDUINOJSON_ASSERT(variant != 0);
-    }
-
-    if (code >= 0xcc && code <= 0xd3) {
-      auto width = uint8_t(1U << ((code - 0xcc) % 4));
-      if (allowValue)
-        return readInteger(variant, width, code >= 0xd0);
-      else
-        return skipBytes(width);
     }
 
     switch (code) {
@@ -71,10 +61,32 @@ class MsgPackDeserializer {
         return DeserializationError::InvalidInput;
 
       case 0xc2:
+        if (allowValue)
+          variant->setBoolean(false);
+        return DeserializationError::Ok;
+
       case 0xc3:
         if (allowValue)
-          variant->setBoolean(code == 0xc3);
+          variant->setBoolean(true);
         return DeserializationError::Ok;
+
+      case 0xc4:  // bin 8 (not supported)
+        return skipString<uint8_t>();
+
+      case 0xc5:  // bin 16 (not supported)
+        return skipString<uint16_t>();
+
+      case 0xc6:  // bin 32 (not supported)
+        return skipString<uint32_t>();
+
+      case 0xc7:  // ext 8 (not supported)
+        return skipExt<uint8_t>();
+
+      case 0xc8:  // ext 16 (not supported)
+        return skipExt<uint16_t>();
+
+      case 0xc9:  // ext 32 (not supported)
+        return skipExt<uint32_t>();
 
       case 0xca:
         if (allowValue)
@@ -87,97 +99,128 @@ class MsgPackDeserializer {
           return readDouble<double>(variant);
         else
           return skipBytes(8);
-    }
 
-    if (code <= 0x7f || code >= 0xe0) {  // fixint
-      if (allowValue)
-        variant->setInteger(static_cast<int8_t>(code));
-      return DeserializationError::Ok;
-    }
+      case 0xcc:
+        if (allowValue)
+          return readInteger<uint8_t>(variant);
+        else
+          return skipBytes(1);
 
-    uint8_t sizeBytes = 0;
-    size_t size = 0;
-    bool isExtension = code >= 0xc7 && code <= 0xc9;
+      case 0xcd:
+        if (allowValue)
+          return readInteger<uint16_t>(variant);
+        else
+          return skipBytes(2);
 
-    switch (code) {
-      case 0xc4:  // bin 8
-      case 0xc7:  // ext 8
-      case 0xd9:  // str 8
-        sizeBytes = 1;
-        break;
+      case 0xce:
+        if (allowValue)
+          return readInteger<uint32_t>(variant);
+        else
+          return skipBytes(4);
 
-      case 0xc5:  // bin 16
-      case 0xc8:  // ext 16
-      case 0xda:  // str 16
-      case 0xdc:  // array 16
-      case 0xde:  // map 16
-        sizeBytes = 2;
-        break;
+      case 0xcf:
+#if ARDUINOJSON_USE_LONG_LONG
+        if (allowValue)
+          return readInteger<uint64_t>(variant);
+        else
+          return skipBytes(8);
+#else
+        return skipBytes(8);  // not supported
+#endif
 
-      case 0xc6:  // bin 32
-      case 0xc9:  // ext 32
-      case 0xdb:  // str 32
-      case 0xdd:  // array 32
-      case 0xdf:  // map 32
-        sizeBytes = 4;
-        break;
-    }
+      case 0xd0:
+        if (allowValue)
+          return readInteger<int8_t>(variant);
+        else
+          return skipBytes(1);
 
-    if (code >= 0xd4 && code <= 0xd8) {  // fixext
-      size = size_t(1) << (code - 0xd4);
-      isExtension = true;
+      case 0xd1:
+        if (allowValue)
+          return readInteger<int16_t>(variant);
+        else
+          return skipBytes(2);
+
+      case 0xd2:
+        if (allowValue)
+          return readInteger<int32_t>(variant);
+        else
+          return skipBytes(4);
+
+      case 0xd3:
+#if ARDUINOJSON_USE_LONG_LONG
+        if (allowValue)
+          return readInteger<int64_t>(variant);
+        else
+          return skipBytes(8);  // not supported
+#else
+        return skipBytes(8);
+#endif
+
+      case 0xd4:  // fixext 1 (not supported)
+        return skipBytes(2);
+
+      case 0xd5:  // fixext 2 (not supported)
+        return skipBytes(3);
+
+      case 0xd6:  // fixext 4 (not supported)
+        return skipBytes(5);
+
+      case 0xd7:  // fixext 8 (not supported)
+        return skipBytes(9);
+
+      case 0xd8:  // fixext 16 (not supported)
+        return skipBytes(17);
+
+      case 0xd9:
+        if (allowValue)
+          return readString<uint8_t>(variant);
+        else
+          return skipString<uint8_t>();
+
+      case 0xda:
+        if (allowValue)
+          return readString<uint16_t>(variant);
+        else
+          return skipString<uint16_t>();
+
+      case 0xdb:
+        if (allowValue)
+          return readString<uint32_t>(variant);
+        else
+          return skipString<uint32_t>();
+
+      case 0xdc:
+        return readArray<uint16_t>(variant, filter, nestingLimit);
+
+      case 0xdd:
+        return readArray<uint32_t>(variant, filter, nestingLimit);
+
+      case 0xde:
+        return readObject<uint16_t>(variant, filter, nestingLimit);
+
+      case 0xdf:
+        return readObject<uint32_t>(variant, filter, nestingLimit);
     }
 
     switch (code & 0xf0) {
-      case 0x90:  // fixarray
-      case 0x80:  // fixmap
-        size = code & 0x0F;
-        break;
+      case 0x80:
+        return readObject(variant, code & 0x0F, filter, nestingLimit);
+
+      case 0x90:
+        return readArray(variant, code & 0x0F, filter, nestingLimit);
     }
 
-    switch (code & 0xe0) {
-      case 0xa0:  // fixstr
-        size = code & 0x1f;
-        break;
-    }
-
-    if (sizeBytes) {
-      err = readBytes(header + 1, sizeBytes);
-      if (err)
-        return err;
-
-      uint32_t size32 = 0;
-      for (uint8_t i = 0; i < sizeBytes; i++)
-        size32 = (size32 << 8) | header[i + 1];
-
-      size = size_t(size32);
-      if (size < size32)                        // integer overflow
-        return DeserializationError::NoMemory;  // (not testable on 32/64-bit)
-    }
-
-    // array 16, 32 and fixarray
-    if (code == 0xdc || code == 0xdd || (code & 0xf0) == 0x90)
-      return readArray(variant, size, filter, nestingLimit);
-
-    // map 16, 32 and fixmap
-    if (code == 0xde || code == 0xdf || (code & 0xf0) == 0x80)
-      return readObject(variant, size, filter, nestingLimit);
-
-    // str 8, 16, 32 and fixstr
-    if (code == 0xd9 || code == 0xda || code == 0xdb || (code & 0xe0) == 0xa0) {
+    if ((code & 0xe0) == 0xa0) {
       if (allowValue)
-        return readString(variant, size);
+        return readString(variant, code & 0x1f);
       else
-        return skipBytes(size);
+        return skipBytes(code & 0x1f);
     }
-
-    if (isExtension)
-      size++;  // to include the type
 
     if (allowValue)
-      return readRawString(variant, header, uint8_t(1 + sizeBytes), size);
-    else
-      return skipBytes(size);
+      variant->setInteger(static_cast<int8_t>(code));
+
+    return DeserializationError::Ok;
   }
 
   DeserializationError::Code readByte(uint8_t& value) {
@@ -188,7 +231,7 @@ class MsgPackDeserializer {
     return DeserializationError::Ok;
   }
 
-  DeserializationError::Code readBytes(void* p, size_t n) {
+  DeserializationError::Code readBytes(uint8_t* p, size_t n) {
     if (reader_.readBytes(reinterpret_cast<char*>(p), n) == n)
       return DeserializationError::Ok;
     return DeserializationError::IncompleteInput;
@@ -196,7 +239,7 @@ class MsgPackDeserializer {
 
   template <typename T>
   DeserializationError::Code readBytes(T& value) {
-    return readBytes(&value, sizeof(value));
+    return readBytes(reinterpret_cast<uint8_t*>(&value), sizeof(value));
   }
 
   DeserializationError::Code skipBytes(size_t n) {
@@ -207,45 +250,36 @@ class MsgPackDeserializer {
     return DeserializationError::Ok;
   }
 
-  DeserializationError::Code readInteger(VariantData* variant, uint8_t width,
-                                         bool isSigned) {
-    uint8_t buffer[8];
+  template <typename T>
+  DeserializationError::Code readInteger(T& value) {
+    DeserializationError::Code err;
 
-    auto err = readBytes(buffer, width);
+    err = readBytes(value);
     if (err)
       return err;
 
-    union {
-      int64_t signedValue;
-      uint64_t unsignedValue;
-    };
-
-    if (isSigned)
-      signedValue = static_cast<int8_t>(buffer[0]);  // propagate sign bit
-    else
-      unsignedValue = static_cast<uint8_t>(buffer[0]);
-
-    for (uint8_t i = 1; i < width; i++)
-      unsignedValue = (unsignedValue << 8) | buffer[i];
-
-    if (isSigned) {
-      auto truncatedValue = static_cast<JsonInteger>(signedValue);
-      if (truncatedValue == signedValue)
-        variant->setInteger(truncatedValue);
-      // else set null on overflow
-    } else {
-      auto truncatedValue = static_cast<JsonUInt>(unsignedValue);
-      if (truncatedValue == unsignedValue)
-        variant->setInteger(truncatedValue);
-      // else set null on overflow
-    }
+    fixEndianess(value);
 
     return DeserializationError::Ok;
   }
 
   template <typename T>
-  enable_if_t<sizeof(T) == 4, DeserializationError::Code> readFloat(
-      VariantData* variant) {
+  DeserializationError::Code readInteger(VariantData* variant) {
+    DeserializationError::Code err;
+    T value;
+
+    err = readInteger(value);
+    if (err)
+      return err;
+
+    variant->setInteger(value);
+
+    return DeserializationError::Ok;
+  }
+
+  template <typename T>
+  typename enable_if<sizeof(T) == 4, DeserializationError::Code>::type
+  readFloat(VariantData* variant) {
     DeserializationError::Code err;
     T value;
 
@@ -253,15 +287,15 @@ class MsgPackDeserializer {
     if (err)
       return err;
 
-    fixEndianness(value);
+    fixEndianess(value);
     variant->setFloat(value);
 
     return DeserializationError::Ok;
   }
 
   template <typename T>
-  enable_if_t<sizeof(T) == 8, DeserializationError::Code> readDouble(
-      VariantData* variant) {
+  typename enable_if<sizeof(T) == 8, DeserializationError::Code>::type
+  readDouble(VariantData* variant) {
     DeserializationError::Code err;
     T value;
 
@@ -269,15 +303,15 @@ class MsgPackDeserializer {
     if (err)
       return err;
 
-    fixEndianness(value);
+    fixEndianess(value);
     variant->setFloat(value);
 
     return DeserializationError::Ok;
   }
 
   template <typename T>
-  enable_if_t<sizeof(T) == 4, DeserializationError::Code> readDouble(
-      VariantData* variant) {
+  typename enable_if<sizeof(T) == 4, DeserializationError::Code>::type
+  readDouble(VariantData* variant) {
     DeserializationError::Code err;
     uint8_t i[8];  // input is 8 bytes
     T value;       // output is 4 bytes
@@ -288,10 +322,46 @@ class MsgPackDeserializer {
       return err;
 
     doubleToFloat(i, o);
-    fixEndianness(value);
+    fixEndianess(value);
     variant->setFloat(value);
 
     return DeserializationError::Ok;
+  }
+
+  template <typename T>
+  DeserializationError::Code readString(VariantData* variant) {
+    DeserializationError::Code err;
+    T size;
+
+    err = readInteger(size);
+    if (err)
+      return err;
+
+    return readString(variant, size);
+  }
+
+  template <typename T>
+  DeserializationError::Code readString() {
+    DeserializationError::Code err;
+    T size;
+
+    err = readInteger(size);
+    if (err)
+      return err;
+
+    return readString(size);
+  }
+
+  template <typename T>
+  DeserializationError::Code skipString() {
+    DeserializationError::Code err;
+    T size;
+
+    err = readInteger(size);
+    if (err)
+      return err;
+
+    return skipBytes(size);
   }
 
   DeserializationError::Code readString(VariantData* variant, size_t n) {
@@ -301,37 +371,42 @@ class MsgPackDeserializer {
     if (err)
       return err;
 
-    variant->setOwnedString(stringBuffer_.save());
+    variant->setString(stringStorage_.save());
     return DeserializationError::Ok;
   }
 
   DeserializationError::Code readString(size_t n) {
-    char* p = stringBuffer_.reserve(n);
-    if (!p)
+    DeserializationError::Code err;
+
+    stringStorage_.startString();
+    for (; n; --n) {
+      uint8_t c;
+
+      err = readBytes(c);
+      if (err)
+        return err;
+
+      stringStorage_.append(static_cast<char>(c));
+    }
+
+    if (!stringStorage_.isValid())
       return DeserializationError::NoMemory;
 
-    return readBytes(p, n);
+    return DeserializationError::Ok;
   }
 
-  DeserializationError::Code readRawString(VariantData* variant,
-                                           const void* header,
-                                           uint8_t headerSize, size_t n) {
-    auto totalSize = size_t(headerSize + n);
-    if (totalSize < n)                        // integer overflow
-      return DeserializationError::NoMemory;  // (not testable on 64-bit)
+  template <typename TSize, typename TFilter>
+  DeserializationError::Code readArray(
+      VariantData* variant, TFilter filter,
+      DeserializationOption::NestingLimit nestingLimit) {
+    DeserializationError::Code err;
+    TSize size;
 
-    char* p = stringBuffer_.reserve(totalSize);
-    if (!p)
-      return DeserializationError::NoMemory;
-
-    memcpy(p, header, headerSize);
-
-    auto err = readBytes(p + headerSize, n);
+    err = readInteger(size);
     if (err)
       return err;
 
-    variant->setRawString(stringBuffer_.save());
-    return DeserializationError::Ok;
+    return readArray(variant, size, filter, nestingLimit);
   }
 
   template <typename TFilter>
@@ -345,7 +420,7 @@ class MsgPackDeserializer {
 
     bool allowArray = filter.allowArray();
 
-    ArrayData* array;
+    CollectionData* array;
     if (allowArray) {
       ARDUINOJSON_ASSERT(variant != 0);
       array = &variant->toArray();
@@ -353,26 +428,40 @@ class MsgPackDeserializer {
       array = 0;
     }
 
-    TFilter elementFilter = filter[0U];
+    TFilter memberFilter = filter[0U];
 
     for (; n; --n) {
       VariantData* value;
 
-      if (elementFilter.allow()) {
+      if (memberFilter.allow()) {
         ARDUINOJSON_ASSERT(array != 0);
-        value = array->addElement(resources_);
+        value = array->addElement(pool_);
         if (!value)
           return DeserializationError::NoMemory;
       } else {
         value = 0;
       }
 
-      err = parseVariant(value, elementFilter, nestingLimit.decrement());
+      err = parseVariant(value, memberFilter, nestingLimit.decrement());
       if (err)
         return err;
     }
 
     return DeserializationError::Ok;
+  }
+
+  template <typename TSize, typename TFilter>
+  DeserializationError::Code readObject(
+      VariantData* variant, TFilter filter,
+      DeserializationOption::NestingLimit nestingLimit) {
+    DeserializationError::Code err;
+    TSize size;
+
+    err = readInteger(size);
+    if (err)
+      return err;
+
+    return readObject(variant, size, filter, nestingLimit);
   }
 
   template <typename TFilter>
@@ -384,7 +473,7 @@ class MsgPackDeserializer {
     if (nestingLimit.reached())
       return DeserializationError::TooDeep;
 
-    ObjectData* object;
+    CollectionData* object;
     if (filter.allowObject()) {
       ARDUINOJSON_ASSERT(variant != 0);
       object = &variant->toObject();
@@ -397,7 +486,7 @@ class MsgPackDeserializer {
       if (err)
         return err;
 
-      JsonString key = stringBuffer_.str();
+      JsonString key = stringStorage_.str();
       TFilter memberFilter = filter[key.c_str()];
       VariantData* member;
 
@@ -405,11 +494,16 @@ class MsgPackDeserializer {
         ARDUINOJSON_ASSERT(object != 0);
 
         // Save key in memory pool.
-        auto savedKey = stringBuffer_.save();
+        // This MUST be done before adding the slot.
+        key = stringStorage_.save();
 
-        member = object->addMember(savedKey, resources_);
-        if (!member)
+        VariantSlot* slot = object->addSlot(pool_);
+        if (!slot)
           return DeserializationError::NoMemory;
+
+        slot->setKey(key);
+
+        member = slot->data();
       } else {
         member = 0;
       }
@@ -433,24 +527,36 @@ class MsgPackDeserializer {
     if ((code & 0xe0) == 0xa0)
       return readString(code & 0x1f);
 
-    if (code >= 0xd9 && code <= 0xdb) {
-      uint8_t sizeBytes = uint8_t(1U << (code - 0xd9));
-      uint32_t size = 0;
-      for (uint8_t i = 0; i < sizeBytes; i++) {
-        err = readByte(code);
-        if (err)
-          return err;
-        size = (size << 8) | code;
-      }
-      return readString(size);
-    }
+    switch (code) {
+      case 0xd9:
+        return readString<uint8_t>();
 
-    return DeserializationError::InvalidInput;
+      case 0xda:
+        return readString<uint16_t>();
+
+      case 0xdb:
+        return readString<uint32_t>();
+
+      default:
+        return DeserializationError::InvalidInput;
+    }
   }
 
-  ResourceManager* resources_;
+  template <typename T>
+  DeserializationError::Code skipExt() {
+    DeserializationError::Code err;
+    T size;
+
+    err = readInteger(size);
+    if (err)
+      return err;
+
+    return skipBytes(size + 1U);
+  }
+
+  MemoryPool* pool_;
   TReader reader_;
-  StringBuffer stringBuffer_;
+  TStringStorage stringStorage_;
   bool foundSomething_;
 };
 
@@ -459,25 +565,20 @@ ARDUINOJSON_END_PRIVATE_NAMESPACE
 ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
 
 // Parses a MessagePack input and puts the result in a JsonDocument.
-// https://arduinojson.org/v7/api/msgpack/deserializemsgpack/
-template <typename TDestination, typename... Args>
-detail::enable_if_t<detail::is_deserialize_destination<TDestination>::value,
-                    DeserializationError>
-deserializeMsgPack(TDestination&& dst, Args&&... args) {
+// https://arduinojson.org/v6/api/msgpack/deserializemsgpack/
+template <typename... Args>
+DeserializationError deserializeMsgPack(JsonDocument& doc, Args&&... args) {
   using namespace detail;
-  return deserialize<MsgPackDeserializer>(detail::forward<TDestination>(dst),
-                                          detail::forward<Args>(args)...);
+  return deserialize<MsgPackDeserializer>(doc, detail::forward<Args>(args)...);
 }
 
 // Parses a MessagePack input and puts the result in a JsonDocument.
-// https://arduinojson.org/v7/api/msgpack/deserializemsgpack/
-template <typename TDestination, typename TChar, typename... Args>
-detail::enable_if_t<detail::is_deserialize_destination<TDestination>::value,
-                    DeserializationError>
-deserializeMsgPack(TDestination&& dst, TChar* input, Args&&... args) {
+// https://arduinojson.org/v6/api/msgpack/deserializemsgpack/
+template <typename TChar, typename... Args>
+DeserializationError deserializeMsgPack(JsonDocument& doc, TChar* input,
+                                        Args&&... args) {
   using namespace detail;
-  return deserialize<MsgPackDeserializer>(detail::forward<TDestination>(dst),
-                                          input,
+  return deserialize<MsgPackDeserializer>(doc, input,
                                           detail::forward<Args>(args)...);
 }
 

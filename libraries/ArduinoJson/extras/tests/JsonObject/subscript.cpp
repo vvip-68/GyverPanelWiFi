@@ -1,16 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-#include "Allocators.hpp"
-#include "Literals.hpp"
-
 TEST_CASE("JsonObject::operator[]") {
-  SpyingAllocator spy;
-  JsonDocument doc(&spy);
+  DynamicJsonDocument doc(4096);
   JsonObject obj = doc.to<JsonObject>();
 
   SECTION("int") {
@@ -51,11 +47,11 @@ TEST_CASE("JsonObject::operator[]") {
 
     REQUIRE(true == obj["hello"].is<const char*>());
     REQUIRE(false == obj["hello"].is<long>());
-    REQUIRE("h3110"_s == obj["hello"].as<const char*>());
+    REQUIRE(std::string("h3110") == obj["hello"].as<const char*>());
   }
 
   SECTION("array") {
-    JsonDocument doc2;
+    DynamicJsonDocument doc2(4096);
     JsonArray arr = doc2.to<JsonArray>();
 
     obj["hello"] = arr;
@@ -66,7 +62,7 @@ TEST_CASE("JsonObject::operator[]") {
   }
 
   SECTION("object") {
-    JsonDocument doc2;
+    DynamicJsonDocument doc2(4096);
     JsonObject obj2 = doc2.to<JsonObject>();
 
     obj["hello"] = obj2;
@@ -77,7 +73,7 @@ TEST_CASE("JsonObject::operator[]") {
   }
 
   SECTION("array subscript") {
-    JsonDocument doc2;
+    DynamicJsonDocument doc2(4096);
     JsonArray arr = doc2.to<JsonArray>();
     arr.add(42);
 
@@ -87,7 +83,7 @@ TEST_CASE("JsonObject::operator[]") {
   }
 
   SECTION("object subscript") {
-    JsonDocument doc2;
+    DynamicJsonDocument doc2(4096);
     JsonObject obj2 = doc2.to<JsonObject>();
     obj2["x"] = 42;
 
@@ -104,72 +100,56 @@ TEST_CASE("JsonObject::operator[]") {
 
   SECTION("should not duplicate const char*") {
     obj["hello"] = "world";
-    REQUIRE(spy.log() == AllocatorLog{Allocate(sizeofPool())});
+    const size_t expectedSize = JSON_OBJECT_SIZE(1);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should duplicate char* value") {
     obj["hello"] = const_cast<char*>("world");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should duplicate char* key") {
     obj[const_cast<char*>("hello")] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofString("hello")),
-                             Allocate(sizeofPool()),
-                         });
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should duplicate char* key&value") {
     obj[const_cast<char*>("hello")] = const_cast<char*>("world");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofString("hello")),
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + 2 * JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize <= doc.memoryUsage());
   }
 
   SECTION("should duplicate std::string value") {
-    obj["hello"] = "world"_s;
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
+    obj["hello"] = std::string("world");
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should duplicate std::string key") {
-    obj["hello"_s] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofString("hello")),
-                             Allocate(sizeofPool()),
-                         });
+    obj[std::string("hello")] = "world";
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should duplicate std::string key&value") {
-    obj["hello"_s] = "world"_s;
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofString("hello")),
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
+    obj[std::string("hello")] = std::string("world");
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + 2 * JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize <= doc.memoryUsage());
   }
 
   SECTION("should duplicate a non-static JsonString key") {
     obj[JsonString("hello", JsonString::Copied)] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofString("hello")),
-                             Allocate(sizeofPool()),
-                         });
+    const size_t expectedSize = JSON_OBJECT_SIZE(1) + JSON_STRING_SIZE(5);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should not duplicate a static JsonString key") {
     obj[JsonString("hello", JsonString::Linked)] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                         });
+    const size_t expectedSize = JSON_OBJECT_SIZE(1);
+    REQUIRE(expectedSize == doc.memoryUsage());
   }
 
   SECTION("should ignore null key") {
@@ -198,7 +178,7 @@ TEST_CASE("JsonObject::operator[]") {
 
     obj[vla] = "world";
 
-    REQUIRE("world"_s == obj["hello"]);
+    REQUIRE(std::string("world") == obj["hello"]);
   }
 
   SECTION("obj[str] = VLA") {  // issue #416
@@ -208,7 +188,7 @@ TEST_CASE("JsonObject::operator[]") {
 
     obj["hello"] = vla;
 
-    REQUIRE("world"_s == obj["hello"].as<const char*>());
+    REQUIRE(std::string("world") == obj["hello"].as<const char*>());
   }
 
   SECTION("obj.set(VLA, str)") {
@@ -218,7 +198,7 @@ TEST_CASE("JsonObject::operator[]") {
 
     obj[vla] = "world";
 
-    REQUIRE("world"_s == obj["hello"]);
+    REQUIRE(std::string("world") == obj["hello"]);
   }
 
   SECTION("obj.set(str, VLA)") {
@@ -228,7 +208,7 @@ TEST_CASE("JsonObject::operator[]") {
 
     obj["hello"].set(vla);
 
-    REQUIRE("world"_s == obj["hello"].as<const char*>());
+    REQUIRE(std::string("world") == obj["hello"].as<const char*>());
   }
 
   SECTION("obj[VLA]") {
@@ -239,23 +219,15 @@ TEST_CASE("JsonObject::operator[]") {
     deserializeJson(doc, "{\"hello\":\"world\"}");
 
     obj = doc.as<JsonObject>();
-    REQUIRE("world"_s == obj[vla]);
+    REQUIRE(std::string("world") == obj[vla]);
   }
 #endif
 
   SECTION("chain") {
-    obj["hello"]["world"] = 123;
+    obj.createNestedObject("hello")["world"] = 123;
 
     REQUIRE(123 == obj["hello"]["world"].as<int>());
     REQUIRE(true == obj["hello"]["world"].is<int>());
     REQUIRE(false == obj["hello"]["world"].is<bool>());
-  }
-
-  SECTION("JsonVariant") {
-    obj["hello"] = "world";
-    doc["key"] = "hello";
-
-    REQUIRE(obj[obj["key"]] == "world");
-    REQUIRE(obj[obj["foo"]] == nullptr);
   }
 }

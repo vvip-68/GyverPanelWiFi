@@ -1,22 +1,25 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("JsonObject::operator==()") {
-  JsonDocument doc1;
+  DynamicJsonDocument doc1(4096);
   JsonObject obj1 = doc1.to<JsonObject>();
+  JsonObjectConst obj1c = obj1;
 
-  JsonDocument doc2;
+  DynamicJsonDocument doc2(4096);
   JsonObject obj2 = doc2.to<JsonObject>();
+  JsonObjectConst obj2c = obj2;
 
   SECTION("should return false when objs differ") {
     obj1["hello"] = "coucou";
     obj2["world"] = 1;
 
     REQUIRE_FALSE(obj1 == obj2);
+    REQUIRE_FALSE(obj1c == obj2c);
   }
 
   SECTION("should return false when LHS has more elements") {
@@ -25,6 +28,7 @@ TEST_CASE("JsonObject::operator==()") {
     obj2["hello"] = "coucou";
 
     REQUIRE_FALSE(obj1 == obj2);
+    REQUIRE_FALSE(obj1c == obj2c);
   }
 
   SECTION("should return false when RKS has more elements") {
@@ -33,6 +37,7 @@ TEST_CASE("JsonObject::operator==()") {
     obj2["world"] = 666;
 
     REQUIRE_FALSE(obj1 == obj2);
+    REQUIRE_FALSE(obj1c == obj2c);
   }
 
   SECTION("should return true when objs equal") {
@@ -43,17 +48,20 @@ TEST_CASE("JsonObject::operator==()") {
     obj2["hello"] = "world";
 
     REQUIRE(obj1 == obj2);
+    REQUIRE(obj1c == obj2c);
   }
 
   SECTION("should return false when RHS is null") {
     JsonObject null;
 
     REQUIRE_FALSE(obj1 == null);
+    REQUIRE_FALSE(obj1c == null);
   }
 
   SECTION("should return false when LHS is null") {
     JsonObject null;
 
     REQUIRE_FALSE(null == obj2);
+    REQUIRE_FALSE(null == obj2c);
   }
 }

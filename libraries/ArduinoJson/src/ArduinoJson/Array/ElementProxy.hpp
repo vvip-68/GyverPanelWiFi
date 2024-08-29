@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,7 +9,7 @@
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 // A proxy class to get or set an element of an array.
-// https://arduinojson.org/v7/api/jsonarray/subscript/
+// https://arduinojson.org/v6/api/jsonarray/subscript/
 template <typename TUpstream>
 class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
                      public VariantOperators<ElementProxy<TUpstream>> {
@@ -22,40 +22,35 @@ class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
   ElementProxy(const ElementProxy& src)
       : upstream_(src.upstream_), index_(src.index_) {}
 
-  ElementProxy& operator=(const ElementProxy& src) {
+  FORCE_INLINE ElementProxy& operator=(const ElementProxy& src) {
     this->set(src);
     return *this;
   }
 
   template <typename T>
-  ElementProxy& operator=(const T& src) {
+  FORCE_INLINE ElementProxy& operator=(const T& src) {
     this->set(src);
     return *this;
   }
 
   template <typename T>
-  ElementProxy& operator=(T* src) {
+  FORCE_INLINE ElementProxy& operator=(T* src) {
     this->set(src);
     return *this;
   }
 
  private:
-  ResourceManager* getResourceManager() const {
-    return VariantAttorney::getResourceManager(upstream_);
+  FORCE_INLINE MemoryPool* getPool() const {
+    return VariantAttorney::getPool(upstream_);
   }
 
   FORCE_INLINE VariantData* getData() const {
-    return VariantData::getElement(
-        VariantAttorney::getData(upstream_), index_,
-        VariantAttorney::getResourceManager(upstream_));
+    return variantGetElement(VariantAttorney::getData(upstream_), index_);
   }
 
-  VariantData* getOrCreateData() const {
-    auto data = VariantAttorney::getOrCreateData(upstream_);
-    if (!data)
-      return nullptr;
-    return data->getOrAddElement(
-        index_, VariantAttorney::getResourceManager(upstream_));
+  FORCE_INLINE VariantData* getOrCreateData() const {
+    return variantGetOrAddElement(VariantAttorney::getOrCreateData(upstream_),
+                                  index_, VariantAttorney::getPool(upstream_));
   }
 
   TUpstream upstream_;

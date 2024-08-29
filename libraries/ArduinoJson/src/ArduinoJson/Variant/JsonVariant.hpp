@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,64 +9,67 @@
 ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
 
 // A reference to a value in a JsonDocument.
-// https://arduinojson.org/v7/api/jsonvariant/
+// https://arduinojson.org/v6/api/jsonvariant/
 class JsonVariant : public detail::VariantRefBase<JsonVariant>,
                     public detail::VariantOperators<JsonVariant> {
   friend class detail::VariantAttorney;
 
  public:
   // Creates an unbound reference.
-  JsonVariant() : data_(0), resources_(0) {}
+  JsonVariant() : data_(0), pool_(0) {}
 
   // INTERNAL USE ONLY
-  JsonVariant(detail::VariantData* data, detail::ResourceManager* resources)
-      : data_(data), resources_(resources) {}
+  JsonVariant(detail::MemoryPool* pool, detail::VariantData* data)
+      : data_(data), pool_(pool) {}
 
  private:
-  detail::ResourceManager* getResourceManager() const {
-    return resources_;
+  FORCE_INLINE detail::MemoryPool* getPool() const {
+    return pool_;
   }
 
-  detail::VariantData* getData() const {
+  FORCE_INLINE detail::VariantData* getData() const {
     return data_;
   }
 
-  detail::VariantData* getOrCreateData() const {
+  FORCE_INLINE detail::VariantData* getOrCreateData() const {
     return data_;
   }
 
   detail::VariantData* data_;
-  detail::ResourceManager* resources_;
+  detail::MemoryPool* pool_;
 };
-
-namespace detail {
-bool copyVariant(JsonVariant dst, JsonVariantConst src);
-}
 
 template <>
 struct Converter<JsonVariant> : private detail::VariantAttorney {
-  static void toJson(JsonVariantConst src, JsonVariant dst) {
-    copyVariant(dst, src);
+  static void toJson(JsonVariant src, JsonVariant dst) {
+    detail::variantCopyFrom(getData(dst), getData(src), getPool(dst));
   }
 
   static JsonVariant fromJson(JsonVariant src) {
     return src;
   }
 
+  static detail::InvalidConversion<JsonVariantConst, JsonVariant> fromJson(
+      JsonVariantConst);
+
   static bool checkJson(JsonVariant src) {
     auto data = getData(src);
     return !!data;
+  }
+
+  static bool checkJson(JsonVariantConst) {
+    return false;
   }
 };
 
 template <>
 struct Converter<JsonVariantConst> : private detail::VariantAttorney {
   static void toJson(JsonVariantConst src, JsonVariant dst) {
-    copyVariant(dst, src);
+    variantCopyFrom(getData(dst), getData(src), getPool(dst));
   }
 
   static JsonVariantConst fromJson(JsonVariantConst src) {
-    return JsonVariantConst(getData(src), getResourceManager(src));
+    return JsonVariantConst(getData(src));
   }
 
   static bool checkJson(JsonVariantConst src) {

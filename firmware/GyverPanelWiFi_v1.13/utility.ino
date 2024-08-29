@@ -585,7 +585,7 @@ uint32_t getColorInt(CRGB color) {
 // Вычисление значения яркости эффектов по отношению к общей яркости
 // Общая яркость регулируется через FastLEDsetBrightness(); 
 // Вычисленная яркость эффекта влияет на компонент яркости V в модели HCSV
-uint8_t getBrightnessCalculated(uint8_t brightness, uint8_t contrast) {
+uint8_t getBrightnessCalculated([[maybe_unused]]uint8_t brightness, [[maybe_unused]]uint8_t contrast) {
   // В данном варианте общая яркость не учитывается в расчете
   return map8(contrast, 16, 255);
 }

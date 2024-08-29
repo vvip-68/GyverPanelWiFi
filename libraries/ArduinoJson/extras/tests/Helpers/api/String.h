@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,14 +9,11 @@
 // Reproduces Arduino's String class
 class String {
  public:
-  String() = default;
-  String(const char* s) {
-    if (s)
-      str_.assign(s);
-  }
+  String() : _maxCapacity(1024) {}
+  explicit String(const char* s) : _str(s), _maxCapacity(1024) {}
 
   void limitCapacityTo(size_t maxCapacity) {
-    maxCapacity_ = maxCapacity;
+    _maxCapacity = maxCapacity;
   }
 
   unsigned char concat(const char* s) {
@@ -24,48 +21,45 @@ class String {
   }
 
   size_t length() const {
-    return str_.size();
+    return _str.size();
   }
 
   const char* c_str() const {
-    return str_.c_str();
+    return _str.c_str();
   }
 
   bool operator==(const char* s) const {
-    return str_ == s;
+    return _str == s;
   }
 
   String& operator=(const char* s) {
-    if (s)
-      str_.assign(s);
-    else
-      str_.clear();
+    _str.assign(s);
     return *this;
   }
 
   char operator[](unsigned int index) const {
-    if (index >= str_.size())
+    if (index >= _str.size())
       return 0;
-    return str_[index];
+    return _str[index];
   }
 
   friend std::ostream& operator<<(std::ostream& lhs, const ::String& rhs) {
-    lhs << rhs.str_;
+    lhs << rhs._str;
     return lhs;
   }
 
  protected:
   // This function is protected in most Arduino cores
   unsigned char concat(const char* s, size_t n) {
-    if (str_.size() + n > maxCapacity_)
+    if (_str.size() + n > _maxCapacity)
       return 0;
-    str_.append(s, n);
+    _str.append(s, n);
     return 1;
   }
 
  private:
-  std::string str_;
-  size_t maxCapacity_ = 1024;
+  std::string _str;
+  size_t _maxCapacity;
 };
 
 class StringSumHelper : public ::String {};

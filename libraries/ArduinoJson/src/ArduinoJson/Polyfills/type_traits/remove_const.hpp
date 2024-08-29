@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -17,8 +17,5 @@ template <typename T>
 struct remove_const<const T> {
   typedef T type;
 };
-
-template <typename T>
-using remove_const_t = typename remove_const<T>::type;
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

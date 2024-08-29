@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -32,7 +32,7 @@ bool canConvertFromJson(JsonVariantConst src, const Date&) {
 }  // namespace
 
 TEST_CASE("Custom converter with overloading") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   SECTION("convert JSON to Date") {
     doc["date"]["day"] = 2;
@@ -107,7 +107,7 @@ struct Converter<Complex> {
 }  // namespace ArduinoJson
 
 TEST_CASE("Custom converter with specialization") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   SECTION("convert JSON to Complex") {
     doc["value"]["real"] = 2;
@@ -139,4 +139,40 @@ TEST_CASE("Custom converter with specialization") {
     REQUIRE(doc["value"]["real"] == 19);
     REQUIRE(doc["value"]["imag"] == 3);
   }
+}
+
+TEST_CASE("ConverterNeedsWriteableRef") {
+  using namespace ArduinoJson::detail;
+  CHECK(ConverterNeedsWriteableRef<int>::value == false);
+  CHECK(ConverterNeedsWriteableRef<float>::value == false);
+  CHECK(ConverterNeedsWriteableRef<JsonVariant>::value == true);
+  CHECK(ConverterNeedsWriteableRef<JsonVariantConst>::value == false);
+  CHECK(ConverterNeedsWriteableRef<JsonObject>::value == true);
+  CHECK(ConverterNeedsWriteableRef<JsonObjectConst>::value == false);
+  CHECK(ConverterNeedsWriteableRef<JsonArray>::value == true);
+  CHECK(ConverterNeedsWriteableRef<JsonArrayConst>::value == false);
+}
+
+namespace ArduinoJson {
+void convertToJson(char c, JsonVariant var) {
+  char buf[] = {c, 0};
+  var.set(buf);
+}
+
+void convertFromJson(JsonVariantConst src, char& dst) {
+  auto p = src.as<const char*>();
+  dst = p ? p[0] : 0;
+}
+}  // namespace ArduinoJson
+
+TEST_CASE("Convert char to string") {  // issue #1922
+  StaticJsonDocument<64> doc;
+  doc.set('a');
+  REQUIRE(doc.as<std::string>() == "a");
+}
+
+TEST_CASE("Convert string to char") {  // issue #1963
+  StaticJsonDocument<64> doc;
+  doc.set("a");
+  REQUIRE(doc.as<char>() == 'a');
 }

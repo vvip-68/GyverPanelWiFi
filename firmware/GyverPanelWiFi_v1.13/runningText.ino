@@ -149,7 +149,7 @@ void drawLetter(uint8_t index, uint8_t letter, uint8_t modif, int16_t offset, ui
     uint16_t thisByte; // байт колонки i отображаемого символа шрифта
     uint16_t diasByte; // байт колонки i отображаемого диакритического символа
     int8_t   diasOffs; // смещение по Y отображения диакритического символа: diasOffs > 0 - позиция над основной буквой; diasOffs < 0 - позиция ниже основной буквы
-    uint16_t pn;       // номер пикселя в массиве leds[]
+    int32_t  pn;       // номер пикселя в массиве leds[]
     
     if (MIRR_V) {
       thisByte = getFont(letter, modif, LET_WIDTH - 1 - i);
@@ -2253,9 +2253,9 @@ tmElements_t ParseDateTime(String &str) {
   uint8_t  aday = day();
   uint8_t  amnth = month();
   uint16_t ayear = year();
-  uint8_t  hrs = hour();
-  uint8_t  mins = minute();
-  uint8_t  secs = second();
+//uint8_t  hrs = hour();
+//uint8_t  mins = minute();
+//uint8_t  secs = second();
 
   String s_date;
   String s_time;

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -100,8 +100,8 @@ class TextFormatter {
   }
 
   template <typename T>
-  enable_if_t<is_signed<T>::value> writeInteger(T value) {
-    typedef make_unsigned_t<T> unsigned_type;
+  typename enable_if<is_signed<T>::value>::type writeInteger(T value) {
+    typedef typename make_unsigned<T>::type unsigned_type;
     unsigned_type unsigned_value;
     if (value < 0) {
       writeRaw('-');
@@ -113,7 +113,7 @@ class TextFormatter {
   }
 
   template <typename T>
-  enable_if_t<is_unsigned<T>::value> writeInteger(T value) {
+  typename enable_if<is_unsigned<T>::value>::type writeInteger(T value) {
     char buffer[22];
     char* end = buffer + sizeof(buffer);
     char* begin = end;

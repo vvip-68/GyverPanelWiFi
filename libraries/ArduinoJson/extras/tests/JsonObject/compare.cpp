@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("Compare JsonObject with JsonObject") {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
 
   SECTION("Compare with unbound") {
     JsonObject object = doc.to<JsonObject>();
@@ -43,12 +43,12 @@ TEST_CASE("Compare JsonObject with JsonObject") {
   }
 
   SECTION("Compare with identical object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello";
     object1["c"][0] = false;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello";
     object2["c"][0] = false;
@@ -62,12 +62,12 @@ TEST_CASE("Compare JsonObject with JsonObject") {
   }
 
   SECTION("Compare with different object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello1";
     object1["c"][0] = false;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello2";
     object2["c"][0] = false;
@@ -82,7 +82,7 @@ TEST_CASE("Compare JsonObject with JsonObject") {
 }
 
 TEST_CASE("Compare JsonObject with JsonVariant") {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
 
   SECTION("Compare with self") {
     JsonObject object = doc.to<JsonObject>();
@@ -107,12 +107,12 @@ TEST_CASE("Compare JsonObject with JsonVariant") {
   }
 
   SECTION("Compare with identical object") {
-    JsonObject object = doc.add<JsonObject>();
+    JsonObject object = doc.createNestedObject();
     object["a"] = 1;
     object["b"] = "hello";
     object["c"][0] = false;
 
-    JsonVariant variant = doc.add<JsonObject>();
+    JsonVariant variant = doc.createNestedObject();
     variant["a"] = 1;
     variant["b"] = "hello";
     variant["c"][0] = false;
@@ -133,12 +133,12 @@ TEST_CASE("Compare JsonObject with JsonVariant") {
   }
 
   SECTION("Compare with different object") {
-    JsonObject object = doc.add<JsonObject>();
+    JsonObject object = doc.createNestedObject();
     object["a"] = 1;
     object["b"] = "hello1";
     object["c"][0] = false;
 
-    JsonVariant variant = doc.add<JsonObject>();
+    JsonVariant variant = doc.createNestedObject();
     variant["a"] = 1;
     variant["b"] = "hello2";
     variant["c"][0] = false;
@@ -153,7 +153,7 @@ TEST_CASE("Compare JsonObject with JsonVariant") {
 }
 
 TEST_CASE("Compare JsonObject with JsonVariantConst") {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
 
   SECTION("Compare with unbound") {
     JsonObject object = doc.to<JsonObject>();
@@ -199,12 +199,12 @@ TEST_CASE("Compare JsonObject with JsonVariantConst") {
   }
 
   SECTION("Compare with identical object") {
-    JsonObject object = doc.add<JsonObject>();
+    JsonObject object = doc.createNestedObject();
     object["a"] = 1;
     object["b"] = "hello";
     object["c"][0] = false;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello";
     object2["c"][0] = false;
@@ -226,12 +226,12 @@ TEST_CASE("Compare JsonObject with JsonVariantConst") {
   }
 
   SECTION("Compare with different object") {
-    JsonObject object = doc.add<JsonObject>();
+    JsonObject object = doc.createNestedObject();
     object["a"] = 1;
     object["b"] = "hello1";
     object["c"][0] = false;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello2";
     object2["c"][0] = false;
@@ -247,7 +247,7 @@ TEST_CASE("Compare JsonObject with JsonVariantConst") {
 }
 
 TEST_CASE("Compare JsonObject with JsonObjectConst") {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
 
   SECTION("Compare with unbound") {
     JsonObject object = doc.to<JsonObject>();
@@ -292,12 +292,12 @@ TEST_CASE("Compare JsonObject with JsonObjectConst") {
   }
 
   SECTION("Compare with identical object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello";
     object1["c"][0] = false;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello";
     object2["c"][0] = false;
@@ -319,12 +319,12 @@ TEST_CASE("Compare JsonObject with JsonObjectConst") {
   }
 
   SECTION("Compare with different object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello1";
     object1["c"][0] = false;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello2";
     object2["c"][0] = false;
@@ -347,7 +347,7 @@ TEST_CASE("Compare JsonObject with JsonObjectConst") {
 }
 
 TEST_CASE("Compare JsonObjectConst with JsonObjectConst") {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
 
   SECTION("Compare with unbound") {
     JsonObject object = doc.to<JsonObject>();
@@ -387,13 +387,13 @@ TEST_CASE("Compare JsonObjectConst with JsonObjectConst") {
   }
 
   SECTION("Compare with identical object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello";
     object1["c"][0] = false;
     JsonObjectConst carray1 = object1;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello";
     object2["c"][0] = false;
@@ -408,13 +408,13 @@ TEST_CASE("Compare JsonObjectConst with JsonObjectConst") {
   }
 
   SECTION("Compare with different object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello1";
     object1["c"][0] = false;
     JsonObjectConst carray1 = object1;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello2";
     object2["c"][0] = false;
@@ -430,7 +430,7 @@ TEST_CASE("Compare JsonObjectConst with JsonObjectConst") {
 }
 
 TEST_CASE("Compare JsonObjectConst with JsonVariant") {
-  JsonDocument doc;
+  StaticJsonDocument<512> doc;
 
   SECTION("Compare with self") {
     JsonObject object = doc.to<JsonObject>();
@@ -455,13 +455,13 @@ TEST_CASE("Compare JsonObjectConst with JsonVariant") {
   }
 
   SECTION("Compare with identical object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello";
     object1["c"][0] = false;
     JsonObjectConst carray1 = object1;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello";
     object2["c"][0] = false;
@@ -483,13 +483,13 @@ TEST_CASE("Compare JsonObjectConst with JsonVariant") {
   }
 
   SECTION("Compare with different object") {
-    JsonObject object1 = doc.add<JsonObject>();
+    JsonObject object1 = doc.createNestedObject();
     object1["a"] = 1;
     object1["b"] = "hello1";
     object1["c"][0] = false;
     JsonObjectConst carray1 = object1;
 
-    JsonObject object2 = doc.add<JsonObject>();
+    JsonObject object2 = doc.createNestedObject();
     object2["a"] = 1;
     object2["b"] = "hello2";
     object2["c"][0] = false;

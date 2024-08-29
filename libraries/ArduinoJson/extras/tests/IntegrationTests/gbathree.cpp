@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("Gbathree") {
-  JsonDocument doc;
+  DynamicJsonDocument doc(4096);
 
   DeserializationError error = deserializeJson(
       doc,
