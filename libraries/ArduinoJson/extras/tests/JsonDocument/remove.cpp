@@ -1,12 +1,14 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Literals.hpp"
+
 TEST_CASE("JsonDocument::remove()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("remove(int)") {
     doc.add(1);
@@ -31,7 +33,7 @@ TEST_CASE("JsonDocument::remove()") {
     doc["a"] = 1;
     doc["b"] = 2;
 
-    doc.remove(std::string("b"));
+    doc.remove("b"_s);
 
     REQUIRE(doc.as<std::string>() == "{\"a\":1}");
   }
@@ -41,7 +43,7 @@ TEST_CASE("JsonDocument::remove()") {
     doc["a"] = 1;
     doc["b"] = 2;
 
-    int i = 4;
+    size_t i = 4;
     char vla[i];
     strcpy(vla, "b");
     doc.remove(vla);
@@ -49,4 +51,25 @@ TEST_CASE("JsonDocument::remove()") {
     REQUIRE(doc.as<std::string>() == "{\"a\":1}");
   }
 #endif
+
+  SECTION("remove(JsonVariant) from object") {
+    doc["a"] = 1;
+    doc["b"] = 2;
+    doc["c"] = "b";
+
+    doc.remove(doc["c"]);
+
+    REQUIRE(doc.as<std::string>() == "{\"a\":1,\"c\":\"b\"}");
+  }
+
+  SECTION("remove(JsonVariant) from array") {
+    doc[0] = 3;
+    doc[1] = 2;
+    doc[2] = 1;
+
+    doc.remove(doc[2]);
+    doc.remove(doc[3]);  // noop
+
+    REQUIRE(doc.as<std::string>() == "[3,1]");
+  }
 }

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_USE_DOUBLE 0
@@ -9,7 +9,7 @@
 #include <ArduinoJson.hpp>
 #include <catch.hpp>
 
-using namespace ARDUINOJSON_NAMESPACE;
+using namespace ArduinoJson::detail;
 
 void checkFloat(const char* input, float expected) {
   CAPTURE(input);

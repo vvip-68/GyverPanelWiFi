@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,7 +7,7 @@
 #include <string>
 
 TEST_CASE("JsonObject::remove()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonObject obj = doc.to<JsonObject>();
   obj["a"] = 0;
   obj["b"] = 1;
@@ -51,7 +51,8 @@ TEST_CASE("JsonObject::remove()") {
     }
 
     SECTION("Remove last") {
-      it += 2;
+      ++it;
+      ++it;
       obj.remove(it);
       serializeJson(obj, result);
       REQUIRE("{\"a\":0,\"b\":1}" == result);
@@ -60,7 +61,7 @@ TEST_CASE("JsonObject::remove()") {
 
 #ifdef HAS_VARIABLE_LENGTH_ARRAY
   SECTION("key is a vla") {
-    int i = 16;
+    size_t i = 16;
     char vla[i];
     strcpy(vla, "b");
     obj.remove(vla);
@@ -78,5 +79,11 @@ TEST_CASE("JsonObject::remove()") {
   SECTION("remove by iterator on unbound reference") {
     JsonObject unboundObject;
     unboundObject.remove(unboundObject.begin());
+  }
+
+  SECTION("remove(JsonVariant)") {
+    obj["key"] = "b";
+    obj.remove(obj["key"]);
+    REQUIRE("{\"a\":0,\"c\":2,\"key\":\"b\"}" == doc.as<std::string>());
   }
 }

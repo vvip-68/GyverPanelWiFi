@@ -1,17 +1,20 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-static void eraseString(std::string &str) {
-  char *p = const_cast<char *>(str.c_str());
-  while (*p) *p++ = '*';
+#include "Literals.hpp"
+
+static void eraseString(std::string& str) {
+  char* p = const_cast<char*>(str.c_str());
+  while (*p)
+    *p++ = '*';
 }
 
 TEST_CASE("std::string") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("operator[]") {
     char json[] = "{\"key\":\"value\"}";
@@ -19,7 +22,7 @@ TEST_CASE("std::string") {
     deserializeJson(doc, json);
     JsonObject obj = doc.as<JsonObject>();
 
-    REQUIRE(std::string("value") == obj[std::string("key")]);
+    REQUIRE("value"_s == obj["key"_s]);
   }
 
   SECTION("operator[] const") {
@@ -28,41 +31,21 @@ TEST_CASE("std::string") {
     deserializeJson(doc, json);
     JsonObject obj = doc.as<JsonObject>();
 
-    REQUIRE(std::string("value") == obj[std::string("key")]);
-  }
-
-  SECTION("createNestedObject()") {
-    JsonObject obj = doc.to<JsonObject>();
-    std::string key = "key";
-    char json[64];
-    obj.createNestedObject(key);
-    eraseString(key);
-    serializeJson(doc, json, sizeof(json));
-    REQUIRE(std::string("{\"key\":{}}") == json);
-  }
-
-  SECTION("createNestedArray()") {
-    JsonObject obj = doc.to<JsonObject>();
-    std::string key = "key";
-    char json[64];
-    obj.createNestedArray(key);
-    eraseString(key);
-    serializeJson(doc, json, sizeof(json));
-    REQUIRE(std::string("{\"key\":[]}") == json);
+    REQUIRE("value"_s == obj["key"_s]);
   }
 
   SECTION("containsKey()") {
     char json[] = "{\"key\":\"value\"}";
     deserializeJson(doc, json);
     JsonObject obj = doc.as<JsonObject>();
-    REQUIRE(true == obj.containsKey(std::string("key")));
+    REQUIRE(true == obj.containsKey("key"_s));
   }
 
   SECTION("remove()") {
     JsonObject obj = doc.to<JsonObject>();
     obj["key"] = "value";
 
-    obj.remove(std::string("key"));
+    obj.remove("key"_s);
 
     REQUIRE(0 == obj.size());
   }
@@ -72,7 +55,7 @@ TEST_CASE("std::string") {
     JsonObject obj = doc.to<JsonObject>();
     obj[key] = "world";
     eraseString(key);
-    REQUIRE(std::string("world") == obj["hello"]);
+    REQUIRE("world"_s == obj["hello"]);
   }
 
   SECTION("operator[], set value") {
@@ -80,30 +63,6 @@ TEST_CASE("std::string") {
     JsonObject obj = doc.to<JsonObject>();
     obj["hello"] = value;
     eraseString(value);
-    REQUIRE(std::string("world") == obj["hello"]);
-  }
-
-  SECTION("memoryUsage() increases when adding a new key") {
-    std::string key1("hello"), key2("world");
-    JsonObject obj = doc.to<JsonObject>();
-
-    obj[key1] = 1;
-    size_t sizeBefore = doc.memoryUsage();
-    obj[key2] = 2;
-    size_t sizeAfter = doc.memoryUsage();
-
-    REQUIRE(sizeAfter - sizeBefore >= key2.size());
-  }
-
-  SECTION("memoryUsage() remains when adding the same key") {
-    std::string key("hello");
-    JsonObject obj = doc.to<JsonObject>();
-
-    obj[key] = 1;
-    size_t sizeBefore = doc.memoryUsage();
-    obj[key] = 2;
-    size_t sizeAfter = doc.memoryUsage();
-
-    REQUIRE(sizeBefore == sizeAfter);
+    REQUIRE("world"_s == obj["hello"]);
   }
 }

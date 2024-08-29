@@ -96,9 +96,33 @@ bool getWeather() {
     return false;
   } 
 
+  // Нам не нужно доставать все данные из ответа. Задаем фильтр - это существенно уменьшит размер требуемой памяти 
+  StaticJsonDocument<200> filter;
+  String regId = useWeather == 1 ? String(regionID) : String(regionID2);
+  
+  if (useWeather == 1) {
+    // Yandex
+    filter["clocks"][regId]["weather"]["temp"] = true;  // Достаём температуру - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> temp
+    filter["clocks"][regId]["skyColor"] = true;         // Рекомендованный цвет фона
+    filter["clocks"][regId]["isNight"] = true;
+    filter["clocks"][regId]["weather"]["icon"] = true;  // Достаём иконку - Четвёртый уровень вложенности пары ключ/значение clocks -> значение RegionID -> weather -> icon
+    filter["clocks"][regId]["name"] = true;             // Город
+    filter["clocks"][regId]["sunrise"] = true;          // Время рассвета
+    filter["clocks"][regId]["sunset"] = true;           // Время заката
+  } else {
+    // OpenWeatherMap
+    filter["main"]["temp"] = true;                      // Температура -> main -> temp
+    filter["weather"][0]["icon"] = true;                // Достаём иконку -> weather[0] -> icon
+    filter["name"] = true;                              // Город
+    filter["weather"][0]["description"] = true;         // Строка погодных условий на языке, указаном в запросе
+    filter["weather"][0]["id"] = true;                  // Уточненный код погодных условий
+    filter["sys"]["sunrise"] = true;                    // Время рассвета
+    filter["sys"]["sunset"] = true;                     // Время заката    
+  }
+
   // Parse JSON object
-  DynamicJsonDocument jsn(1500);
-  DeserializationError json_error = deserializeJson(jsn, payload);
+  DynamicJsonDocument jsn(512);
+  DeserializationError json_error = deserializeJson(jsn, payload, DeserializationOption::Filter(filter));
 
   if (json_error) {
     DEBUG(F("JSON не разобран: "));
@@ -107,14 +131,13 @@ bool getWeather() {
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
     doc["status"] = F("json error");
-    serializeJson(doc, out);      
+    serializeJson(jsn, out);      
     SendMQTT(out, TOPIC_WTR);
     #endif
     
     return false;
   }
 
-  String regId = useWeather == 1 ? String(regionID) : String(regionID2);
   String town, sunrise, sunset;
   
   if (useWeather == 1) {

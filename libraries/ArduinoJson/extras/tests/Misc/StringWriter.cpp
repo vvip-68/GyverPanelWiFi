@@ -1,14 +1,18 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
-#define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
+#include <Arduino.h>
+
 #define ARDUINOJSON_STRING_BUFFER_SIZE 5
 #include <ArduinoJson.h>
+
 #include <catch.hpp>
+
+#include "Literals.hpp"
 #include "custom_string.hpp"
 
-using namespace ARDUINOJSON_NAMESPACE;
+using namespace ArduinoJson::detail;
 
 template <typename StringWriter>
 static size_t print(StringWriter& writer, const char* s) {
@@ -33,13 +37,13 @@ void common_tests(StringWriter& writer, const String& output) {
 
   SECTION("OneString") {
     REQUIRE(4 == print(writer, "ABCD"));
-    REQUIRE(std::string("ABCD") == output);
+    REQUIRE("ABCD"_s == output);
   }
 
   SECTION("TwoStrings") {
     REQUIRE(4 == print(writer, "ABCD"));
     REQUIRE(4 == print(writer, "EFGH"));
-    REQUIRE(std::string("ABCDEFGH") == output);
+    REQUIRE("ABCDEFGH"_s == output);
   }
 }
 
@@ -65,7 +69,7 @@ TEST_CASE("Writer<std::string>") {
 
 TEST_CASE("Writer<String>") {
   ::String output;
-  Writer< ::String> writer(output);
+  Writer<::String> writer(output);
 
   SECTION("write(char)") {
     SECTION("writes to temporary buffer") {
@@ -135,24 +139,10 @@ TEST_CASE("Writer<custom_string>") {
   REQUIRE("ABCD" == output);
 }
 
-TEST_CASE("IsWriteableString") {
-  SECTION("std::string") {
-    REQUIRE(IsWriteableString<std::string>::value == true);
-  }
-
-  SECTION("custom_string") {
-    REQUIRE(IsWriteableString<custom_string>::value == true);
-  }
-
-  SECTION("basic_string<wchar_t>") {
-    REQUIRE(IsWriteableString<std::basic_string<wchar_t> >::value == false);
-  }
-}
-
 TEST_CASE("serializeJson(doc, String)") {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   doc["hello"] = "world";
-  ::String output;
+  ::String output = "erase me";
 
   SECTION("sufficient capacity") {
     serializeJson(doc, output);

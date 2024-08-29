@@ -1,24 +1,27 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-static void eraseString(std::string &str) {
-  char *p = const_cast<char *>(str.c_str());
-  while (*p) *p++ = '*';
+#include "Literals.hpp"
+
+static void eraseString(std::string& str) {
+  char* p = const_cast<char*>(str.c_str());
+  while (*p)
+    *p++ = '*';
 }
 
 TEST_CASE("std::string") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
 
   SECTION("add()") {
     std::string value("hello");
     array.add(value);
     eraseString(value);
-    REQUIRE(std::string("hello") == array[0]);
+    REQUIRE("hello"_s == array[0]);
   }
 
   SECTION("operator[]") {
@@ -26,6 +29,6 @@ TEST_CASE("std::string") {
     array.add("hello");
     array[0] = value;
     eraseString(value);
-    REQUIRE(std::string("world") == array[0]);
+    REQUIRE("world"_s == array[0]);
   }
 }

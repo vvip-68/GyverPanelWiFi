@@ -1,16 +1,18 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-using namespace ARDUINOJSON_NAMESPACE;
+#include "Literals.hpp"
+
+typedef ArduinoJson::detail::ElementProxy<JsonDocument&> ElementProxy;
 
 TEST_CASE("ElementProxy::add()") {
-  DynamicJsonDocument doc(4096);
-  doc.addElement();
-  ElementProxy<JsonDocument&> ep = doc[0];
+  JsonDocument doc;
+  doc.add<JsonVariant>();
+  ElementProxy ep = doc[0];
 
   SECTION("add(int)") {
     ep.add(42);
@@ -34,9 +36,9 @@ TEST_CASE("ElementProxy::add()") {
 }
 
 TEST_CASE("ElementProxy::clear()") {
-  DynamicJsonDocument doc(4096);
-  doc.addElement();
-  ElementProxy<JsonDocument&> ep = doc[0];
+  JsonDocument doc;
+  doc.add<JsonVariant>();
+  ElementProxy ep = doc[0];
 
   SECTION("size goes back to zero") {
     ep.add(42);
@@ -54,7 +56,7 @@ TEST_CASE("ElementProxy::clear()") {
 }
 
 TEST_CASE("ElementProxy::operator==()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("1 vs 1") {
     doc.add(1);
@@ -94,9 +96,9 @@ TEST_CASE("ElementProxy::operator==()") {
 }
 
 TEST_CASE("ElementProxy::remove()") {
-  DynamicJsonDocument doc(4096);
-  doc.addElement();
-  ElementProxy<JsonDocument&> ep = doc[0];
+  JsonDocument doc;
+  doc.add<JsonVariant>();
+  ElementProxy ep = doc[0];
 
   SECTION("remove(int)") {
     ep.add(1);
@@ -121,7 +123,7 @@ TEST_CASE("ElementProxy::remove()") {
     ep["a"] = 1;
     ep["b"] = 2;
 
-    ep.remove(std::string("b"));
+    ep.remove("b"_s);
 
     REQUIRE(ep.as<std::string>() == "{\"a\":1}");
   }
@@ -131,7 +133,7 @@ TEST_CASE("ElementProxy::remove()") {
     ep["a"] = 1;
     ep["b"] = 2;
 
-    int i = 4;
+    size_t i = 4;
     char vla[i];
     strcpy(vla, "b");
     ep.remove(vla);
@@ -142,8 +144,8 @@ TEST_CASE("ElementProxy::remove()") {
 }
 
 TEST_CASE("ElementProxy::set()") {
-  DynamicJsonDocument doc(4096);
-  ElementProxy<JsonDocument&> ep = doc[0];
+  JsonDocument doc;
+  ElementProxy ep = doc[0];
 
   SECTION("set(int)") {
     ep.set(42);
@@ -167,9 +169,9 @@ TEST_CASE("ElementProxy::set()") {
 }
 
 TEST_CASE("ElementProxy::size()") {
-  DynamicJsonDocument doc(4096);
-  doc.addElement();
-  ElementProxy<JsonDocument&> ep = doc[0];
+  JsonDocument doc;
+  doc.add<JsonVariant>();
+  ElementProxy ep = doc[0];
 
   SECTION("returns 0") {
     REQUIRE(ep.size() == 0);
@@ -189,8 +191,8 @@ TEST_CASE("ElementProxy::size()") {
 }
 
 TEST_CASE("ElementProxy::operator[]") {
-  DynamicJsonDocument doc(4096);
-  ElementProxy<JsonDocument&> ep = doc[1];
+  JsonDocument doc;
+  ElementProxy ep = doc[1];
 
   SECTION("set member") {
     ep["world"] = 42;
@@ -203,4 +205,30 @@ TEST_CASE("ElementProxy::operator[]") {
 
     REQUIRE(doc.as<std::string>() == "[null,[null,null,42]]");
   }
+}
+
+TEST_CASE("ElementProxy cast to JsonVariantConst") {
+  JsonDocument doc;
+  doc[0] = "world";
+
+  const ElementProxy ep = doc[0];
+
+  JsonVariantConst var = ep;
+
+  CHECK(var.as<std::string>() == "world");
+}
+
+TEST_CASE("ElementProxy cast to JsonVariant") {
+  JsonDocument doc;
+  doc[0] = "world";
+
+  ElementProxy ep = doc[0];
+
+  JsonVariant var = ep;
+
+  CHECK(var.as<std::string>() == "world");
+
+  var.set("toto");
+
+  CHECK(doc.as<std::string>() == "[\"toto\"]");
 }

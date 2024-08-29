@@ -1,18 +1,19 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <ArduinoJson/Serialization/Writers/DummyWriter.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-template <template <typename> class TSerializer, typename TSource>
-size_t measure(const TSource &source) {
+template <template <typename> class TSerializer>
+size_t measure(ArduinoJson::JsonVariantConst source) {
   DummyWriter dp;
-  TSerializer<DummyWriter> serializer(dp);
-  return source.accept(serializer);
+  TSerializer<DummyWriter> serializer(
+      dp, VariantAttorney::getResourceManager(source));
+  return VariantData::accept(VariantAttorney::getData(source), serializer);
 }
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

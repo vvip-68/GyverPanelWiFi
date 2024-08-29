@@ -1,32 +1,31 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include <ArduinoJson/Polyfills/type_traits.hpp>
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-namespace ARDUINOJSON_NAMESPACE {
+template <typename TString, typename Enable = void>
+struct StringAdapter;
 
-template <typename T, bool bounded = false, typename Enable = void>
-class StringAdapter;
+template <typename TString, typename Enable = void>
+struct SizedStringAdapter;
 
-template <typename T>
-inline StringAdapter<T, false> adaptString(const T& str) {
-  return StringAdapter<T, false>(str);
+template <typename TString>
+typename StringAdapter<TString>::AdaptedString adaptString(const TString& s) {
+  return StringAdapter<TString>::adapt(s);
 }
 
-template <typename T>
-inline StringAdapter<T, true> adaptString(const T& str, size_t sz) {
-  return StringAdapter<T, true>(str, sz);
+template <typename TChar>
+typename StringAdapter<TChar*>::AdaptedString adaptString(TChar* p) {
+  return StringAdapter<TChar*>::adapt(p);
 }
 
-template <typename T, typename Enable = void>
-struct IsString : false_type {};
+template <typename TChar>
+typename SizedStringAdapter<TChar*>::AdaptedString adaptString(TChar* p,
+                                                               size_t n) {
+  return SizedStringAdapter<TChar*>::adapt(p, n);
+}
 
-template <typename T>
-struct IsString<
-    T, typename make_void<typename StringAdapter<T>::storage_policy>::type>
-    : true_type {};
-
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

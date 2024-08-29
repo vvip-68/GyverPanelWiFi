@@ -1,13 +1,14 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright Benoit Blanchon 2014-2021
+# Copyright © 2014-2024, Benoit BLANCHON
 # MIT License
 
 add_executable(MiscTests
 	arithmeticCompare.cpp
 	conflicts.cpp
-	deprecated.cpp
 	FloatParts.cpp
+	issue1967.cpp
 	JsonString.cpp
+	NoArduinoHeader.cpp
 	printable.cpp
 	Readers.cpp
 	StringAdapters.cpp
@@ -25,5 +26,5 @@ add_test(Misc MiscTests)
 
 set_tests_properties(Misc
 	PROPERTIES
-		LABELS 		"Catch"
+		LABELS "Catch"
 )

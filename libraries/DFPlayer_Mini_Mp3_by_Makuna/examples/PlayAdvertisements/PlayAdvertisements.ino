@@ -7,7 +7,6 @@
 // sd:/01/001.mp3 - the song to play, the longer the better
 // sd:/advert/0001.mp3 - the advertisement to interrupt the song, keep it short
 
-#include <SoftwareSerial.h>
 #include <DFMiniMp3.h>
 
 // forward declare the notify class, just the name
@@ -50,27 +49,27 @@ public:
     }
     Serial.println(action);
   }
-  static void OnError(DfMp3& mp3, uint16_t errorCode)
+  static void OnError([[maybe_unused]] DfMp3& mp3, uint16_t errorCode)
   {
     // see DfMp3_Error for code meaning
     Serial.println();
     Serial.print("Com Error ");
     Serial.println(errorCode);
   }
-  static void OnPlayFinished(DfMp3& mp3, DfMp3_PlaySources source, uint16_t track)
+  static void OnPlayFinished([[maybe_unused]] DfMp3& mp3, [[maybe_unused]] DfMp3_PlaySources source, uint16_t track)
   {
     Serial.print("Play finished for #");
     Serial.println(track);  
   }
-  static void OnPlaySourceOnline(DfMp3& mp3, DfMp3_PlaySources source)
+  static void OnPlaySourceOnline([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "online");
   }
-  static void OnPlaySourceInserted(DfMp3& mp3, DfMp3_PlaySources source)
+  static void OnPlaySourceInserted([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "inserted");
   }
-  static void OnPlaySourceRemoved(DfMp3& mp3, DfMp3_PlaySources source)
+  static void OnPlaySourceRemoved([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "removed");
   }

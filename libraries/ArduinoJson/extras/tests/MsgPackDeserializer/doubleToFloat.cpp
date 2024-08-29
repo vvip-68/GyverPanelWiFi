@@ -1,11 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-using namespace ARDUINOJSON_NAMESPACE;
+using namespace ArduinoJson::detail;
 
 template <typename T>
 static void check(const char* input, T expected) {
@@ -13,7 +13,7 @@ static void check(const char* input, T expected) {
   uint8_t* f = reinterpret_cast<uint8_t*>(&actual);
   const uint8_t* d = reinterpret_cast<const uint8_t*>(input);
   doubleToFloat(d, f);
-  fixEndianess(actual);
+  fixEndianness(actual);
   CHECK(actual == expected);
 }
 

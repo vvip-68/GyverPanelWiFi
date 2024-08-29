@@ -1,28 +1,33 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include "type_traits.hpp"
 
-namespace ARDUINOJSON_NAMESPACE {
-template <typename T>
-inline void swap(T& a, T& b) {
-  T t(a);
-  a = b;
-  b = t;
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
+
+using nullptr_t = decltype(nullptr);
+
+template <class T>
+T&& forward(remove_reference_t<T>& t) noexcept {
+  return static_cast<T&&>(t);
 }
 
-#if ARDUINOJSON_HAS_RVALUE_REFERENCES
-template <typename T>
-typename remove_reference<T>::type&& move(T&& t) {
-  return static_cast<typename remove_reference<T>::type&&>(t);
+template <class T>
+remove_reference_t<T>&& move(T&& t) {
+  return static_cast<remove_reference_t<T>&&>(t);
 }
-#else
-template <typename T>
-T& move(T& t) {
-  return t;
+
+// Polyfull for std::swap
+// Don't use the name "swap" because it makes calls ambiguous for types in the
+// detail namespace
+template <class T>
+void swap_(T& a, T& b) {
+  T tmp = move(a);
+  a = move(b);
+  b = move(tmp);
 }
-#endif
-}  // namespace ARDUINOJSON_NAMESPACE
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

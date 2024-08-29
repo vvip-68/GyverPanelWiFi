@@ -1,166 +1,156 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#if __cplusplus >= 201103L
-#  define ARDUINOJSON_HAS_LONG_LONG 1
-#  define ARDUINOJSON_HAS_RVALUE_REFERENCES 1
-#else
-#  define ARDUINOJSON_HAS_LONG_LONG 0
-#  define ARDUINOJSON_HAS_RVALUE_REFERENCES 0
-#endif
-
-#ifndef ARDUINOJSON_HAS_NULLPTR
-#  if __cplusplus >= 201103L
-#    define ARDUINOJSON_HAS_NULLPTR 1
-#  else
-#    define ARDUINOJSON_HAS_NULLPTR 0
-#  endif
-#endif
-
-#if defined(_MSC_VER) && !ARDUINOJSON_HAS_LONG_LONG
-#  define ARDUINOJSON_HAS_INT64 1
-#else
-#  define ARDUINOJSON_HAS_INT64 0
-#endif
-
-// Small or big machine?
-#ifndef ARDUINOJSON_EMBEDDED_MODE
-#  if defined(ARDUINO)                /* Arduino*/                 \
-      || defined(__IAR_SYSTEMS_ICC__) /* IAR Embedded Workbench */ \
-      || defined(__XC)                /* MPLAB XC compiler */      \
-      || defined(__ARMCC_VERSION)     /* Keil ARM Compiler */      \
-      || defined(__NIOS2__)           /* Altera Nios II EDS */     \
-      || defined(__AVR)               /* Atmel AVR8/GNU C Compiler */
-#    define ARDUINOJSON_EMBEDDED_MODE 1
-#  else
-#    define ARDUINOJSON_EMBEDDED_MODE 0
-#  endif
-#endif
-
-// Auto enable std::stream if the right headers are here and no conflicting
-// macro is defined
-#if !defined(ARDUINOJSON_ENABLE_STD_STREAM) && defined(__has_include)
-#  if __has_include(<istream>) && \
+// Support std::istream and std::ostream
+// https://arduinojson.org/v7/config/enable_std_stream/
+#ifndef ARDUINOJSON_ENABLE_STD_STREAM
+#  ifdef __has_include
+#    if __has_include(<istream>) && \
     __has_include(<ostream>) && \
     !defined(min) && \
     !defined(max)
-#    define ARDUINOJSON_ENABLE_STD_STREAM 1
+#      define ARDUINOJSON_ENABLE_STD_STREAM 1
+#    else
+#      define ARDUINOJSON_ENABLE_STD_STREAM 0
+#    endif
 #  else
-#    define ARDUINOJSON_ENABLE_STD_STREAM 0
+#    ifdef ARDUINO
+#      define ARDUINOJSON_ENABLE_STD_STREAM 0
+#    else
+#      define ARDUINOJSON_ENABLE_STD_STREAM 1
+#    endif
 #  endif
 #endif
 
-// Auto enable std::string if the right header is here and no conflicting
-// macro is defined
-#if !defined(ARDUINOJSON_ENABLE_STD_STRING) && defined(__has_include)
-#  if __has_include(<string>) && !defined(min) && !defined(max)
-#    define ARDUINOJSON_ENABLE_STD_STRING 1
+// Support std::string
+// https://arduinojson.org/v7/config/enable_std_string/
+#ifndef ARDUINOJSON_ENABLE_STD_STRING
+#  ifdef __has_include
+#    if __has_include(<string>) && !defined(min) && !defined(max)
+#      define ARDUINOJSON_ENABLE_STD_STRING 1
+#    else
+#      define ARDUINOJSON_ENABLE_STD_STRING 0
+#    endif
 #  else
-#    define ARDUINOJSON_ENABLE_STD_STRING 0
+#    ifdef ARDUINO
+#      define ARDUINOJSON_ENABLE_STD_STRING 0
+#    else
+#      define ARDUINOJSON_ENABLE_STD_STRING 1
+#    endif
 #  endif
 #endif
 
+// Support for std::string_view
 #ifndef ARDUINOJSON_ENABLE_STRING_VIEW
 #  ifdef __has_include
 #    if __has_include(<string_view>) && __cplusplus >= 201703L
 #      define ARDUINOJSON_ENABLE_STRING_VIEW 1
+#    else
+#      define ARDUINOJSON_ENABLE_STRING_VIEW 0
 #    endif
+#  else
+#    define ARDUINOJSON_ENABLE_STRING_VIEW 0
 #  endif
 #endif
-#ifndef ARDUINOJSON_ENABLE_STRING_VIEW
-#  define ARDUINOJSON_ENABLE_STRING_VIEW 0
+
+// Store floating-point values with float (0) or double (1)
+// https://arduinojson.org/v7/config/use_double/
+#ifndef ARDUINOJSON_USE_DOUBLE
+#  define ARDUINOJSON_USE_DOUBLE 1
 #endif
 
-#if ARDUINOJSON_EMBEDDED_MODE
-
-// Store floats by default to reduce the memory usage (issue #134)
-#  ifndef ARDUINOJSON_USE_DOUBLE
-#    define ARDUINOJSON_USE_DOUBLE 0
+// Pointer size: a heuristic to set sensible defaults
+#ifndef ARDUINOJSON_SIZEOF_POINTER
+#  if defined(__SIZEOF_POINTER__)
+#    define ARDUINOJSON_SIZEOF_POINTER __SIZEOF_POINTER__
+#  elif defined(_WIN64) && _WIN64
+#    define ARDUINOJSON_SIZEOF_POINTER 8  // 64 bits
+#  else
+#    define ARDUINOJSON_SIZEOF_POINTER 4  // assume 32 bits otherwise
 #  endif
+#endif
 
-// Store longs by default, because they usually match the size of a float.
-#  ifndef ARDUINOJSON_USE_LONG_LONG
+// Store integral values with long (0) or long long (1)
+// https://arduinojson.org/v7/config/use_long_long/
+#ifndef ARDUINOJSON_USE_LONG_LONG
+#  if ARDUINOJSON_SIZEOF_POINTER >= 4  // 32 & 64 bits systems
+#    define ARDUINOJSON_USE_LONG_LONG 1
+#  else
 #    define ARDUINOJSON_USE_LONG_LONG 0
 #  endif
-
-// Embedded systems usually don't have std::string
-#  ifndef ARDUINOJSON_ENABLE_STD_STRING
-#    define ARDUINOJSON_ENABLE_STD_STRING 0
-#  endif
-
-// Embedded systems usually don't have std::stream
-#  ifndef ARDUINOJSON_ENABLE_STD_STREAM
-#    define ARDUINOJSON_ENABLE_STD_STREAM 0
-#  endif
+#endif
 
 // Limit nesting as the stack is likely to be small
-#  ifndef ARDUINOJSON_DEFAULT_NESTING_LIMIT
-#    define ARDUINOJSON_DEFAULT_NESTING_LIMIT 10
+// https://arduinojson.org/v7/config/default_nesting_limit/
+#ifndef ARDUINOJSON_DEFAULT_NESTING_LIMIT
+#  define ARDUINOJSON_DEFAULT_NESTING_LIMIT 10
+#endif
+
+// Number of bytes to store a slot id
+// https://arduinojson.org/v7/config/slot_id_size/
+#ifndef ARDUINOJSON_SLOT_ID_SIZE
+#  if ARDUINOJSON_SIZEOF_POINTER <= 2
+//   8-bit and 16-bit archs => up to 255 slots
+#    define ARDUINOJSON_SLOT_ID_SIZE 1
+#  elif ARDUINOJSON_SIZEOF_POINTER == 4
+//   32-bit arch => up to 65535 slots
+#    define ARDUINOJSON_SLOT_ID_SIZE 2
+#  else
+//   64-bit arch => up to 4294967295 slots
+#    define ARDUINOJSON_SLOT_ID_SIZE 4
 #  endif
+#endif
 
-// Number of bits to store the pointer to next node
-// (saves RAM but limits the number of values in a document)
-#  ifndef ARDUINOJSON_SLOT_OFFSET_SIZE
-#    if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ == 2
-// Address space == 16-bit => max 127 values
-#      define ARDUINOJSON_SLOT_OFFSET_SIZE 1
-#    else
-// Address space > 16-bit => max 32767 values
-#      define ARDUINOJSON_SLOT_OFFSET_SIZE 2
-#    endif
+// Capacity of each variant pool (in slots)
+#ifndef ARDUINOJSON_POOL_CAPACITY
+#  if ARDUINOJSON_SIZEOF_POINTER <= 2
+#    define ARDUINOJSON_POOL_CAPACITY 16  // 128 bytes
+#  elif ARDUINOJSON_SIZEOF_POINTER == 4
+#    define ARDUINOJSON_POOL_CAPACITY 64  // 1024 bytes
+#  else
+#    define ARDUINOJSON_POOL_CAPACITY 128  // 3072 bytes
 #  endif
+#endif
 
-#else  // ARDUINOJSON_EMBEDDED_MODE
+// Initial capacity of the pool list
+#ifndef ARDUINOJSON_INITIAL_POOL_COUNT
+#  define ARDUINOJSON_INITIAL_POOL_COUNT 4
+#endif
 
-// On a computer we have plenty of memory so we can use doubles
-#  ifndef ARDUINOJSON_USE_DOUBLE
-#    define ARDUINOJSON_USE_DOUBLE 1
+// Automatically call shrinkToFit() from deserializeXxx()
+// Disabled by default on 8-bit platforms because it's not worth the increase in
+// code size
+#ifndef ARDUINOJSON_AUTO_SHRINK
+#  if ARDUINOJSON_SIZEOF_POINTER <= 2
+#    define ARDUINOJSON_AUTO_SHRINK 0
+#  else
+#    define ARDUINOJSON_AUTO_SHRINK 1
 #  endif
+#endif
 
-// Use long long when available
-#  ifndef ARDUINOJSON_USE_LONG_LONG
-#    if ARDUINOJSON_HAS_LONG_LONG || ARDUINOJSON_HAS_INT64
-#      define ARDUINOJSON_USE_LONG_LONG 1
-#    else
-#      define ARDUINOJSON_USE_LONG_LONG 0
-#    endif
+// Number of bytes to store the length of a string
+// https://arduinojson.org/v7/config/string_length_size/
+#ifndef ARDUINOJSON_STRING_LENGTH_SIZE
+#  if ARDUINOJSON_SIZEOF_POINTER <= 2
+#    define ARDUINOJSON_STRING_LENGTH_SIZE 1  // up to 255 characters
+#  else
+#    define ARDUINOJSON_STRING_LENGTH_SIZE 2  // up to 65535 characters
 #  endif
-
-// On a computer, we can use std::string
-#  ifndef ARDUINOJSON_ENABLE_STD_STRING
-#    define ARDUINOJSON_ENABLE_STD_STRING 1
-#  endif
-
-// On a computer, we can assume std::stream
-#  ifndef ARDUINOJSON_ENABLE_STD_STREAM
-#    define ARDUINOJSON_ENABLE_STD_STREAM 1
-#  endif
-
-// On a computer, the stack is large so we can increase nesting limit
-#  ifndef ARDUINOJSON_DEFAULT_NESTING_LIMIT
-#    define ARDUINOJSON_DEFAULT_NESTING_LIMIT 50
-#  endif
-
-// Number of bits to store the pointer to next node
-#  ifndef ARDUINOJSON_SLOT_OFFSET_SIZE
-#    define ARDUINOJSON_SLOT_OFFSET_SIZE 4
-#  endif
-
-#endif  // ARDUINOJSON_EMBEDDED_MODE
+#endif
 
 #ifdef ARDUINO
 
-#  include <Arduino.h>
-
 // Enable support for Arduino's String class
+// https://arduinojson.org/v7/config/enable_arduino_string/
 #  ifndef ARDUINOJSON_ENABLE_ARDUINO_STRING
 #    define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
 #  endif
 
 // Enable support for Arduino's Stream class
+// https://arduinojson.org/v7/config/enable_arduino_stream/
 #  ifndef ARDUINOJSON_ENABLE_ARDUINO_STREAM
 #    define ARDUINOJSON_ENABLE_ARDUINO_STREAM 1
 #  endif
@@ -170,14 +160,22 @@
 #    define ARDUINOJSON_ENABLE_ARDUINO_PRINT 1
 #  endif
 
+// Enable support for PROGMEM
+// https://arduinojson.org/v7/config/enable_progmem/
+#  ifndef ARDUINOJSON_ENABLE_PROGMEM
+#    define ARDUINOJSON_ENABLE_PROGMEM 1
+#  endif
+
 #else  // ARDUINO
 
 // Disable support for Arduino's String class
+// https://arduinojson.org/v7/config/enable_arduino_string/
 #  ifndef ARDUINOJSON_ENABLE_ARDUINO_STRING
 #    define ARDUINOJSON_ENABLE_ARDUINO_STRING 0
 #  endif
 
 // Disable support for Arduino's Stream class
+// https://arduinojson.org/v7/config/enable_arduino_stream/
 #  ifndef ARDUINOJSON_ENABLE_ARDUINO_STREAM
 #    define ARDUINOJSON_ENABLE_ARDUINO_STREAM 0
 #  endif
@@ -187,44 +185,51 @@
 #    define ARDUINOJSON_ENABLE_ARDUINO_PRINT 0
 #  endif
 
+// Enable PROGMEM support on AVR only
+// https://arduinojson.org/v7/config/enable_progmem/
+#  ifndef ARDUINOJSON_ENABLE_PROGMEM
+#    ifdef __AVR__
+#      define ARDUINOJSON_ENABLE_PROGMEM 1
+#    else
+#      define ARDUINOJSON_ENABLE_PROGMEM 0
+#    endif
+#  endif
+
 #endif  // ARDUINO
 
-#ifndef ARDUINOJSON_ENABLE_PROGMEM
-#  if defined(PROGMEM) && defined(pgm_read_byte) && defined(pgm_read_dword) && \
-      defined(pgm_read_ptr) && defined(pgm_read_float)
-#    define ARDUINOJSON_ENABLE_PROGMEM 1
-#  else
-#    define ARDUINOJSON_ENABLE_PROGMEM 0
-#  endif
-#endif
-
 // Convert unicode escape sequence (\u0123) to UTF-8
+// https://arduinojson.org/v7/config/decode_unicode/
 #ifndef ARDUINOJSON_DECODE_UNICODE
 #  define ARDUINOJSON_DECODE_UNICODE 1
 #endif
 
 // Ignore comments in input
+// https://arduinojson.org/v7/config/enable_comments/
 #ifndef ARDUINOJSON_ENABLE_COMMENTS
 #  define ARDUINOJSON_ENABLE_COMMENTS 0
 #endif
 
 // Support NaN in JSON
+// https://arduinojson.org/v7/config/enable_nan/
 #ifndef ARDUINOJSON_ENABLE_NAN
 #  define ARDUINOJSON_ENABLE_NAN 0
 #endif
 
 // Support Infinity in JSON
+// https://arduinojson.org/v7/config/enable_infinity/
 #ifndef ARDUINOJSON_ENABLE_INFINITY
 #  define ARDUINOJSON_ENABLE_INFINITY 0
 #endif
 
 // Control the exponentiation threshold for big numbers
 // CAUTION: cannot be more that 1e9 !!!!
+// https://arduinojson.org/v7/config/positive_exponentiation_threshold/
 #ifndef ARDUINOJSON_POSITIVE_EXPONENTIATION_THRESHOLD
 #  define ARDUINOJSON_POSITIVE_EXPONENTIATION_THRESHOLD 1e7
 #endif
 
 // Control the exponentiation threshold for small numbers
+// https://arduinojson.org/v7/config/negative_exponentiation_threshold/
 #ifndef ARDUINOJSON_NEGATIVE_EXPONENTIATION_THRESHOLD
 #  define ARDUINOJSON_NEGATIVE_EXPONENTIATION_THRESHOLD 1e-5
 #endif
@@ -252,10 +257,6 @@
 #  define ARDUINOJSON_TAB "  "
 #endif
 
-#ifndef ARDUINOJSON_ENABLE_STRING_DEDUPLICATION
-#  define ARDUINOJSON_ENABLE_STRING_DEDUPLICATION 1
-#endif
-
 #ifndef ARDUINOJSON_STRING_BUFFER_SIZE
 #  define ARDUINOJSON_STRING_BUFFER_SIZE 32
 #endif
@@ -268,7 +269,7 @@
 #  endif
 #endif
 
-#if ARDUINOJSON_HAS_NULLPTR && defined(nullptr)
+#if defined(nullptr)
 #  error nullptr is defined as a macro. Remove the faulty #define or #undef nullptr
 // See https://github.com/bblanchon/ArduinoJson/issues/1355
 #endif

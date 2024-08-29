@@ -1,14 +1,28 @@
-#include <ArduinoJson.h>
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2024, Benoit BLANCHON
+// MIT License
 
+// we expect ArduinoJson.h to include <string_view>
+// but we don't want it to included accidentally
+#undef ARDUINO
+#define ARDUINOJSON_ENABLE_STD_STREAM 0
+#define ARDUINOJSON_ENABLE_STD_STRING 0
+
+#include <ArduinoJson.h>
 #include <catch.hpp>
-#include <string_view>
+
+#include "Allocators.hpp"
+#include "Literals.hpp"
 
 #if !ARDUINOJSON_ENABLE_STRING_VIEW
 #  error ARDUINOJSON_ENABLE_STRING_VIEW must be set to 1
 #endif
 
+using ArduinoJson::detail::sizeofArray;
+
 TEST_CASE("string_view") {
-  StaticJsonDocument<128> doc;
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
   JsonVariant variant = doc.to<JsonVariant>();
 
   SECTION("deserializeJson()") {
@@ -19,7 +33,7 @@ TEST_CASE("string_view") {
 
   SECTION("JsonDocument::set()") {
     doc.set(std::string_view("123", 2));
-    REQUIRE(doc.as<std::string>() == "12");
+    REQUIRE(doc.as<std::string_view>() == "12");
   }
 
   SECTION("JsonDocument::operator[]() const") {
@@ -53,10 +67,15 @@ TEST_CASE("string_view") {
 
   SECTION("String deduplication") {
     doc.add(std::string_view("example one", 7));
-    REQUIRE(doc.memoryUsage() == JSON_ARRAY_SIZE(1) + 8);
-
     doc.add(std::string_view("example two", 7));
-    REQUIRE(doc.memoryUsage() == JSON_ARRAY_SIZE(2) + 8);
+    doc.add(std::string_view("example\0tree", 12));
+    doc.add(std::string_view("example\0tree and a half", 12));
+
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("example")),
+                             Allocate(sizeofString("example tree")),
+                         });
   }
 
   SECTION("as<std::string_view>()") {
@@ -72,18 +91,23 @@ TEST_CASE("string_view") {
     REQUIRE(doc["s"].is<std::string_view>() == true);
     REQUIRE(doc["i"].is<std::string_view>() == false);
   }
+
+  SECTION("String containing NUL") {
+    doc.set("hello\0world"_s);
+    REQUIRE(doc.as<std::string_view>().size() == 11);
+    REQUIRE(doc.as<std::string_view>() == std::string_view("hello\0world", 11));
+  }
 }
 
-using ARDUINOJSON_NAMESPACE::adaptString;
+using ArduinoJson::detail::adaptString;
 
 TEST_CASE("StringViewAdapter") {
   std::string_view str("bravoXXX", 5);
   auto adapter = adaptString(str);
 
-  CHECK(adapter.compare(NULL) > 0);
-  CHECK(adapter.compare("alpha") > 0);
-  CHECK(adapter.compare("bravo") == 0);
-  CHECK(adapter.compare("charlie") < 0);
+  CHECK(stringCompare(adapter, adaptString("alpha", 5)) > 0);
+  CHECK(stringCompare(adapter, adaptString("bravo", 5)) == 0);
+  CHECK(stringCompare(adapter, adaptString("charlie", 7)) < 0);
 
   CHECK(adapter.size() == 5);
 }

@@ -1,14 +1,17 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 #include "CustomReader.hpp"
+#include "Literals.hpp"
+
+using ArduinoJson::detail::sizeofObject;
 
 TEST_CASE("deserializeMsgPack(const std::string&)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("should accept const string") {
     const std::string input("\x92\x01\x02");
@@ -19,8 +22,7 @@ TEST_CASE("deserializeMsgPack(const std::string&)") {
   }
 
   SECTION("should accept temporary string") {
-    DeserializationError err =
-        deserializeMsgPack(doc, std::string("\x92\x01\x02"));
+    DeserializationError err = deserializeMsgPack(doc, "\x92\x01\x02"_s);
 
     REQUIRE(err == DeserializationError::Ok);
   }
@@ -33,12 +35,11 @@ TEST_CASE("deserializeMsgPack(const std::string&)") {
 
     JsonArray array = doc.as<JsonArray>();
     REQUIRE(err == DeserializationError::Ok);
-    REQUIRE(std::string("hello") == array[0]);
+    REQUIRE("hello"_s == array[0]);
   }
 
   SECTION("should accept a zero in input") {
-    DeserializationError err =
-        deserializeMsgPack(doc, std::string("\x92\x00\x02", 3));
+    DeserializationError err = deserializeMsgPack(doc, "\x92\x00\x02"_s);
 
     REQUIRE(err == DeserializationError::Ok);
     JsonArray arr = doc.as<JsonArray>();
@@ -48,10 +49,10 @@ TEST_CASE("deserializeMsgPack(const std::string&)") {
 }
 
 TEST_CASE("deserializeMsgPack(std::istream&)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("should accept a zero in input") {
-    std::istringstream input(std::string("\x92\x00\x02", 3));
+    std::istringstream input("\x92\x00\x02"_s);
 
     DeserializationError err = deserializeMsgPack(doc, input);
 
@@ -72,11 +73,11 @@ TEST_CASE("deserializeMsgPack(std::istream&)") {
 
 #ifdef HAS_VARIABLE_LENGTH_ARRAY
 TEST_CASE("deserializeMsgPack(VLA)") {
-  int i = 16;
+  size_t i = 16;
   char vla[i];
   memcpy(vla, "\xDE\x00\x01\xA5Hello\xA5world", 15);
 
-  StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc;
+  JsonDocument doc;
   DeserializationError err = deserializeMsgPack(doc, vla);
 
   REQUIRE(err == DeserializationError::Ok);
@@ -84,7 +85,7 @@ TEST_CASE("deserializeMsgPack(VLA)") {
 #endif
 
 TEST_CASE("deserializeMsgPack(CustomReader)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   CustomReader reader("\x92\xA5Hello\xA5world");
   DeserializationError err = deserializeMsgPack(doc, reader);
 

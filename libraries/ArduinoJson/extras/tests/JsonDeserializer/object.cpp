@@ -1,12 +1,17 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Allocators.hpp"
+
+using ArduinoJson::detail::sizeofObject;
+
 TEST_CASE("deserialize JSON object") {
-  DynamicJsonDocument doc(4096);
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
 
   SECTION("An empty object") {
     DeserializationError err = deserializeJson(doc, "{}");
@@ -100,7 +105,7 @@ TEST_CASE("deserialize JSON object") {
       REQUIRE(obj["key"] == "value");
     }
 
-    SECTION("Before the colon") {
+    SECTION("Before the comma") {
       DeserializationError err =
           deserializeJson(doc, "{\"key1\":\"value1\" ,\"key2\":\"value2\"}");
       JsonObject obj = doc.as<JsonObject>();
@@ -112,9 +117,9 @@ TEST_CASE("deserialize JSON object") {
       REQUIRE(obj["key2"] == "value2");
     }
 
-    SECTION("After the colon") {
+    SECTION("After the comma") {
       DeserializationError err =
-          deserializeJson(doc, "{\"key1\":\"value1\" ,\"key2\":\"value2\"}");
+          deserializeJson(doc, "{\"key1\":\"value1\", \"key2\":\"value2\"}");
       JsonObject obj = doc.as<JsonObject>();
 
       REQUIRE(err == DeserializationError::Ok);
@@ -277,23 +282,104 @@ TEST_CASE("deserialize JSON object") {
       DeserializationError err = deserializeJson(doc, "{a:{b:{c:1}},a:2}");
 
       REQUIRE(err == DeserializationError::Ok);
+      REQUIRE(doc.as<std::string>() == "{\"a\":2}");
+      REQUIRE(spy.log() ==
+              AllocatorLog{
+                  Allocate(sizeofStringBuffer()),
+                  Reallocate(sizeofStringBuffer(), sizeofString("a")),
+                  Allocate(sizeofPool()),
+                  Allocate(sizeofStringBuffer()),
+                  Reallocate(sizeofStringBuffer(), sizeofString("b")),
+                  Allocate(sizeofStringBuffer()),
+                  Reallocate(sizeofStringBuffer(), sizeofString("c")),
+                  Allocate(sizeofStringBuffer()),
+                  Deallocate(sizeofString("b")),
+                  Deallocate(sizeofString("c")),
+                  Deallocate(sizeofStringBuffer()),
+                  Reallocate(sizeofPool(), sizeofObject(2) + sizeofObject(1)),
+              });
+    }
+
+    SECTION("Repeated key with zero copy mode") {  // issue #1697
+      char input[] = "{a:{b:{c:1}},a:2}";
+      DeserializationError err = deserializeJson(doc, input);
+
+      REQUIRE(err == DeserializationError::Ok);
       REQUIRE(doc["a"] == 2);
+    }
+
+    SECTION("NUL in keys") {  // we don't support NULs in keys
+      DeserializationError err =
+          deserializeJson(doc, "{\"x\\u0000a\":1,\"x\\u0000b\":2}");
+
+      REQUIRE(err == DeserializationError::Ok);
+      REQUIRE(doc.as<std::string>() == "{\"x\":2}");
     }
   }
 
   SECTION("Should clear the JsonObject") {
     deserializeJson(doc, "{\"hello\":\"world\"}");
+    spy.clearLog();
+
     deserializeJson(doc, "{}");
-    JsonObject obj = doc.as<JsonObject>();
 
     REQUIRE(doc.is<JsonObject>());
-    REQUIRE(obj.size() == 0);
-    REQUIRE(doc.memoryUsage() == JSON_OBJECT_SIZE(0));
+    REQUIRE(doc.size() == 0);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Deallocate(sizeofObject(1)),
+                             Deallocate(sizeofString("hello")),
+                             Deallocate(sizeofString("world")),
+                         });
   }
 
   SECTION("Issue #1335") {
     std::string json("{\"a\":{},\"b\":{}}");
     deserializeJson(doc, json);
     CHECK(doc.as<std::string>() == json);
+  }
+}
+
+TEST_CASE("deserialize JSON object under memory constraints") {
+  TimebombAllocator timebomb(1024);
+  JsonDocument doc(&timebomb);
+
+  SECTION("empty object requires no allocation") {
+    timebomb.setCountdown(0);
+    char input[] = "{}";
+
+    DeserializationError err = deserializeJson(doc, input);
+
+    REQUIRE(err == DeserializationError::Ok);
+    REQUIRE(doc.as<std::string>() == "{}");
+  }
+
+  SECTION("key allocation fails") {
+    timebomb.setCountdown(0);
+    char input[] = "{\"a\":1}";
+
+    DeserializationError err = deserializeJson(doc, input);
+
+    REQUIRE(err == DeserializationError::NoMemory);
+    REQUIRE(doc.as<std::string>() == "{}");
+  }
+
+  SECTION("pool allocation fails") {
+    timebomb.setCountdown(2);
+    char input[] = "{\"a\":1}";
+
+    DeserializationError err = deserializeJson(doc, input);
+
+    REQUIRE(err == DeserializationError::NoMemory);
+    REQUIRE(doc.as<std::string>() == "{}");
+  }
+
+  SECTION("string allocation fails") {
+    timebomb.setCountdown(3);
+    char input[] = "{\"a\":\"b\"}";
+
+    DeserializationError err = deserializeJson(doc, input);
+
+    REQUIRE(err == DeserializationError::NoMemory);
+    REQUIRE(doc.as<std::string>() == "{\"a\":null}");
   }
 }

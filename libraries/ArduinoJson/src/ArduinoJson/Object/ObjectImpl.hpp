@@ -1,69 +1,45 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include <ArduinoJson/Array/ArrayRef.hpp>
-#include <ArduinoJson/Object/ObjectRef.hpp>
+#include <ArduinoJson/Object/ObjectData.hpp>
+#include <ArduinoJson/Variant/VariantCompare.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-template <typename TObject>
-template <typename TString>
-inline ArrayRef ObjectShortcuts<TObject>::createNestedArray(
-    const TString& key) const {
-  return impl()->getOrAddMember(key).template to<ArrayRef>();
+template <typename TAdaptedString>
+inline VariantData* ObjectData::getMember(
+    TAdaptedString key, const ResourceManager* resources) const {
+  return findKey(key, resources).data();
 }
 
-template <typename TObject>
-template <typename TChar>
-inline ArrayRef ObjectShortcuts<TObject>::createNestedArray(TChar* key) const {
-  return impl()->getOrAddMember(key).template to<ArrayRef>();
+template <typename TAdaptedString>
+VariantData* ObjectData::getOrAddMember(TAdaptedString key,
+                                        ResourceManager* resources) {
+  auto it = findKey(key, resources);
+  if (!it.done())
+    return it.data();
+  return addMember(key, resources);
 }
 
-template <typename TObject>
-template <typename TString>
-inline ObjectRef ObjectShortcuts<TObject>::createNestedObject(
-    const TString& key) const {
-  return impl()->getOrAddMember(key).template to<ObjectRef>();
+template <typename TAdaptedString>
+inline ObjectData::iterator ObjectData::findKey(
+    TAdaptedString key, const ResourceManager* resources) const {
+  if (key.isNull())
+    return iterator();
+  for (auto it = createIterator(resources); !it.done(); it.next(resources)) {
+    if (stringEquals(key, adaptString(it.key())))
+      return it;
+  }
+  return iterator();
 }
 
-template <typename TObject>
-template <typename TChar>
-inline ObjectRef ObjectShortcuts<TObject>::createNestedObject(
-    TChar* key) const {
-  return impl()->getOrAddMember(key).template to<ObjectRef>();
+template <typename TAdaptedString>
+inline void ObjectData::removeMember(TAdaptedString key,
+                                     ResourceManager* resources) {
+  remove(findKey(key, resources), resources);
 }
 
-template <typename TObject>
-template <typename TString>
-inline typename enable_if<IsString<TString>::value, bool>::type
-ObjectShortcuts<TObject>::containsKey(const TString& key) const {
-  return !impl()->getMember(key).isUndefined();
-}
-
-template <typename TObject>
-template <typename TChar>
-inline typename enable_if<IsString<TChar*>::value, bool>::type
-ObjectShortcuts<TObject>::containsKey(TChar* key) const {
-  return !impl()->getMember(key).isUndefined();
-}
-
-template <typename TObject>
-template <typename TString>
-inline typename enable_if<IsString<TString*>::value,
-                          MemberProxy<TObject, TString*> >::type
-ObjectShortcuts<TObject>::operator[](TString* key) const {
-  return MemberProxy<TObject, TString*>(*impl(), key);
-}
-
-template <typename TObject>
-template <typename TString>
-inline typename enable_if<IsString<TString>::value,
-                          MemberProxy<TObject, TString> >::type
-ObjectShortcuts<TObject>::operator[](const TString& key) const {
-  return MemberProxy<TObject, TString>(*impl(), key);
-}
-
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

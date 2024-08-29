@@ -8,7 +8,6 @@
 // sd:/mp3/0002.mp3
 // sd:/mp3/0003.mp3
 
-#include <SoftwareSerial.h>
 #include <DFMiniMp3.h>
 
 // forward declare the notify class, just the name
@@ -51,27 +50,36 @@ public:
     }
     Serial.println(action);
   }
-  static void OnError(DfMp3& mp3, uint16_t errorCode)
+  static void OnError([[maybe_unused]] DfMp3& mp3, uint16_t errorCode)
   {
     // see DfMp3_Error for code meaning
     Serial.println();
     Serial.print("Com Error ");
     Serial.println(errorCode);
   }
-  static void OnPlayFinished(DfMp3& mp3, DfMp3_PlaySources source, uint16_t track)
+  static void OnPlayFinished([[maybe_unused]] DfMp3& mp3, [[maybe_unused]] DfMp3_PlaySources source, uint16_t track)
   {
     Serial.print("Play finished for #");
     Serial.println(track);  
+
+    // start next track
+    track += 1;
+    // this example will just start back over with 1 after track 3
+    if (track > 3) 
+    {
+      track = 1;
+    }
+    dfmp3.playMp3FolderTrack(track);  // sd:/mp3/0001.mp3, sd:/mp3/0002.mp3, sd:/mp3/0003.mp3
   }
-  static void OnPlaySourceOnline(DfMp3& mp3, DfMp3_PlaySources source)
+  static void OnPlaySourceOnline([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "online");
   }
-  static void OnPlaySourceInserted(DfMp3& mp3, DfMp3_PlaySources source)
+  static void OnPlaySourceInserted([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "inserted");
   }
-  static void OnPlaySourceRemoved(DfMp3& mp3, DfMp3_PlaySources source)
+  static void OnPlaySourceRemoved([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "removed");
   }
@@ -95,6 +103,9 @@ void setup()
   Serial.println(count);
   
   Serial.println("starting...");
+
+  // start the first track playing
+  dfmp3.playMp3FolderTrack(1);  // sd:/mp3/0001.mp3
 }
 
 void waitMilliseconds(uint16_t msWait)
@@ -113,18 +124,5 @@ void waitMilliseconds(uint16_t msWait)
 
 void loop() 
 {
-  Serial.println("track 1"); 
-  dfmp3.playMp3FolderTrack(1);  // sd:/mp3/0001.mp3
-  
-  waitMilliseconds(5000);
-  
-  Serial.println("track 2"); 
-  dfmp3.playMp3FolderTrack(2); // sd:/mp3/0002.mp3
-  
-  waitMilliseconds(5000);
-  
-  Serial.println("track 3");
-  dfmp3.playMp3FolderTrack(3); // sd:/mp3/0002.mp3
-  
-  waitMilliseconds(5000); 
+  waitMilliseconds(100);
 }

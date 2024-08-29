@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -8,19 +8,35 @@
 #include <ArduinoJson/Polyfills/preprocessor.hpp>
 #include <ArduinoJson/version.hpp>
 
-#ifndef ARDUINOJSON_NAMESPACE
+#ifndef ARDUINOJSON_VERSION_NAMESPACE
 
-#  define ARDUINOJSON_NAMESPACE                                               \
-    ARDUINOJSON_CONCAT4(                                                      \
-        ARDUINOJSON_CONCAT4(ArduinoJson, ARDUINOJSON_VERSION_MAJOR,           \
-                            ARDUINOJSON_VERSION_MINOR,                        \
-                            ARDUINOJSON_VERSION_REVISION),                    \
-        _,                                                                    \
-        ARDUINOJSON_HEX_DIGIT(                                                \
-            ARDUINOJSON_ENABLE_PROGMEM, ARDUINOJSON_USE_LONG_LONG,            \
-            ARDUINOJSON_USE_DOUBLE, ARDUINOJSON_ENABLE_STRING_DEDUPLICATION), \
-        ARDUINOJSON_HEX_DIGIT(                                                \
-            ARDUINOJSON_ENABLE_NAN, ARDUINOJSON_ENABLE_INFINITY,              \
-            ARDUINOJSON_ENABLE_COMMENTS, ARDUINOJSON_DECODE_UNICODE))
+#  define ARDUINOJSON_VERSION_NAMESPACE                               \
+    ARDUINOJSON_CONCAT5(                                              \
+        ARDUINOJSON_VERSION_MACRO,                                    \
+        ARDUINOJSON_BIN2ALPHA(ARDUINOJSON_ENABLE_PROGMEM,             \
+                              ARDUINOJSON_USE_LONG_LONG,              \
+                              ARDUINOJSON_USE_DOUBLE, 1),             \
+        ARDUINOJSON_BIN2ALPHA(                                        \
+            ARDUINOJSON_ENABLE_NAN, ARDUINOJSON_ENABLE_INFINITY,      \
+            ARDUINOJSON_ENABLE_COMMENTS, ARDUINOJSON_DECODE_UNICODE), \
+        ARDUINOJSON_SLOT_ID_SIZE, ARDUINOJSON_STRING_LENGTH_SIZE)
 
 #endif
+
+#define ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE \
+  namespace ArduinoJson {                  \
+  inline namespace ARDUINOJSON_VERSION_NAMESPACE {
+
+#define ARDUINOJSON_END_PUBLIC_NAMESPACE \
+  }                                      \
+  }
+
+#define ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE        \
+  namespace ArduinoJson {                          \
+  inline namespace ARDUINOJSON_VERSION_NAMESPACE { \
+  namespace detail {
+
+#define ARDUINOJSON_END_PRIVATE_NAMESPACE \
+  }                                       \
+  }                                       \
+  }

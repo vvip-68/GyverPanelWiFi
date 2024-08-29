@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -9,7 +9,7 @@
 
 template <typename T>
 void checkValue(T expected) {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonVariant variant = doc.to<JsonVariant>();
 
   variant.set(expected);
@@ -17,14 +17,14 @@ void checkValue(T expected) {
 }
 
 template <typename T>
-void checkReference(T &expected) {
+void checkReference(T& expected) {
   JsonVariant variant = expected;
-  REQUIRE(expected == variant.as<T &>());
+  REQUIRE(expected == variant.as<T&>());
 }
 
 template <typename T>
 void checkNumericType() {
-  DynamicJsonDocument docMin(4096), docMax(4096);
+  JsonDocument docMin, docMax;
   JsonVariant variantMin = docMin.to<JsonVariant>();
   JsonVariant variantMax = docMax.to<JsonVariant>();
 
@@ -46,10 +46,10 @@ TEST_CASE("JsonVariant set()/get()") {
 #endif
 
   SECTION("Null") {
-    checkValue<const char *>(NULL);
+    checkValue<const char*>(NULL);
   }
   SECTION("const char*") {
-    checkValue<const char *>("hello");
+    checkValue<const char*>("hello");
   }
   SECTION("std::string") {
     checkValue<std::string>("hello");
@@ -129,7 +129,7 @@ TEST_CASE("JsonVariant set()/get()") {
 #endif
 
   SECTION("CanStoreObject") {
-    DynamicJsonDocument doc(4096);
+    JsonDocument doc;
     JsonObject object = doc.to<JsonObject>();
 
     checkValue<JsonObject>(object);
@@ -137,8 +137,15 @@ TEST_CASE("JsonVariant set()/get()") {
 }
 
 TEST_CASE("volatile") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonVariant variant = doc.to<JsonVariant>();
+
+  SECTION("volatile bool") {  // issue #2029
+    volatile bool f = true;
+    variant.set(f);
+    CHECK(variant.is<bool>() == true);
+    CHECK(variant.as<bool>() == true);
+  }
 
   SECTION("volatile int") {
     volatile int f = 42;

@@ -25,6 +25,8 @@ License along with DFMiniMp3.  If not, see
 -------------------------------------------------------------------------*/
 #pragma once
 
+
+
 enum DfMp3_Error
 {
     // from device
@@ -100,6 +102,15 @@ struct DfMp3_Packet_WithCheckSum
     uint8_t lowByteCheckSum;
     uint8_t endCode;
 };
+
+// 7E FF 06 0F 00 01 01 EF
+// 0	->	7E is start code
+// 1	->	FF is version
+// 2	->	06 is length
+// 3	->	0F is command
+// 4	->	00 is no receive
+// 5~6	->	01 01 is argument
+// 7	->	EF is end code
 struct DfMp3_Packet_WithoutCheckSum
 {
     uint8_t startCode;
@@ -112,38 +123,45 @@ struct DfMp3_Packet_WithoutCheckSum
     uint8_t endCode;
 };
 
-
-uint16_t calcChecksum(const DfMp3_Packet_WithCheckSum& packet)
+class Mp3ChipBase
 {
-    uint16_t sum = 0xFFFF;
-    for (const uint8_t* packetByte = &(packet.version); packetByte != &(packet.hiByteCheckSum); packetByte++) {
-        sum -= *packetByte;
+private:
+    static uint16_t calcChecksum(const DfMp3_Packet_WithCheckSum& packet)
+    {
+        uint16_t sum = 0xFFFF;
+        for (const uint8_t* packetByte = &(packet.version); packetByte != &(packet.hiByteCheckSum); packetByte++)
+        {
+            sum -= *packetByte;
+        }
+        return sum + 1;
     }
-    return sum + 1;
-}
 
-void setChecksum(DfMp3_Packet_WithCheckSum* out)
+public:
+    static void setChecksum(DfMp3_Packet_WithCheckSum* out)
+    {
+        uint16_t sum = calcChecksum(*out);
+
+        out->hiByteCheckSum = (sum >> 8);
+        out->lowByteCheckSum = (sum & 0xff);
+    }
+
+    static bool validateChecksum(const DfMp3_Packet_WithCheckSum& in)
+    {
+        uint16_t sum = calcChecksum(in);
+        return (sum == ((static_cast<uint16_t>(in.hiByteCheckSum) << 8) | in.lowByteCheckSum));
+    }
+};
+
+class Mp3ChipMH2024K16SS : public Mp3ChipBase 
 {
-    uint16_t sum = calcChecksum(*out);
-
-    out->hiByteCheckSum = (sum >> 8);
-    out->lowByteCheckSum = (sum & 0xff);
-}
-
-bool validateChecksum(const DfMp3_Packet_WithCheckSum& in)
-{
-    uint16_t sum = calcChecksum(in);
-    return (sum == static_cast<uint16_t>((in.hiByteCheckSum << 8) | in.lowByteCheckSum));
-}
-
-class Mp3ChipMH2024K16SS {
 public:
     static const bool SendCheckSum = false;
 
     typedef DfMp3_Packet_WithoutCheckSum SendPacket;
     typedef DfMp3_Packet_WithCheckSum ReceptionPacket;
 
-    static const SendPacket generatePacket(uint8_t command, uint16_t arg) {
+    static const SendPacket generatePacket(uint8_t command, uint16_t arg) 
+    {
         return {
             0x7E,
             0xFF,
@@ -156,14 +174,16 @@ public:
     }
 };
 
-class Mp3ChipOriginal {
+class Mp3ChipOriginal : public Mp3ChipBase 
+{
 public:
     static const bool SendCheckSum = true;
 
     typedef DfMp3_Packet_WithCheckSum SendPacket;
     typedef DfMp3_Packet_WithCheckSum ReceptionPacket;
 
-    static const SendPacket generatePacket(uint8_t command, uint16_t arg) {
+    static const SendPacket generatePacket(uint8_t command, uint16_t arg) 
+    {
         SendPacket packet = {
                 0x7E,
                 0xFF,
@@ -241,7 +261,7 @@ public:
     // track number must be four digits, zero padded
     void playFolderTrack16(uint8_t folder, uint16_t track)
     {
-        uint16_t arg = (((uint16_t)folder) << 12) | track;
+        uint16_t arg = (static_cast<uint16_t>(folder) << 12) | track;
         sendPacket(0x14, arg);
     }
 
@@ -289,7 +309,7 @@ public:
     // 0- 30
     void setVolume(uint8_t volume)
     {
-        sendPacket(0x06, volume);
+        sendPacket(0x06, volume, 100);
     }
 
     uint8_t getVolume()
@@ -331,6 +351,12 @@ public:
         sendPacket(0x17, folder);
     }
 
+    // not well supported, use at your own risk
+    void setPlaybackMode(DfMp3_PlaybackMode mode)
+    {
+        sendPacket(0x08, mode);
+    }
+
     DfMp3_PlaybackMode getPlaybackMode()
     {
         drainResponses();
@@ -367,12 +393,17 @@ public:
 
     void sleep()
     {
-        sendPacket(0x0a);
+        sendPacket(0x0a, 0, 1000);
+    }
+
+    void awake()
+    {
+        sendPacket(0x0b, 0, 1000);
     }
 
     void reset()
     {
-        sendPacket(0x0c, 0, 600);
+        sendPacket(0x0c, 0, 1500);
         _isOnline = false;
     }
 
@@ -493,6 +524,12 @@ private:
             delay(1);
         }
 
+#ifdef DfMiniMp3Debug
+        DfMiniMp3Debug.print("OUT ");
+        printRawPacket(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet));
+        DfMiniMp3Debug.println();
+#endif
+
         _lastSendSpace = sendSpaceNeeded;
         _serial.write(reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
 
@@ -540,15 +577,21 @@ private:
             return false;
         }
 
-        if (!validateChecksum(in))
+        if (!T_CHIP_VARIANT::validateChecksum(in))
         {
             // checksum failed, corrupted packet
             *argument = DfMp3_Error_PacketChecksum;
             return false;
         }
 
+#ifdef DfMiniMp3Debug
+        DfMiniMp3Debug.print("IN ");
+        printRawPacket(reinterpret_cast<const uint8_t*>(&in), sizeof(in));
+        DfMiniMp3Debug.println();
+#endif
+
         *command = in.command;
-        *argument = ((in.hiByteArgument << 8) | in.lowByteArgument);
+        *argument = ((static_cast<uint16_t>(in.hiByteArgument) << 8) | in.lowByteArgument);
 
         return true;
     }
@@ -625,4 +668,19 @@ private:
 
         return 0;
     }
+
+#ifdef DfMiniMp3Debug
+    void printRawPacket(const uint8_t* data, size_t dataSize)
+    {
+        char formated[8];
+        const uint8_t* end = data + dataSize;
+
+        while (data < end)
+        {
+            sprintf(formated, " %02x", *data);
+            DfMiniMp3Debug.print(formated);
+            data++;
+        }
+    }
+#endif
 };

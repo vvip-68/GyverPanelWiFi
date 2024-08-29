@@ -1,9 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
+
+#include "Literals.hpp"
 
 #if defined(__clang__)
 #  define CONFLICTS_WITH_BUILTIN_OPERATOR
@@ -13,7 +15,7 @@ TEST_CASE("unsigned char[]") {
   SECTION("deserializeJson()") {
     unsigned char input[] = "{\"a\":42}";
 
-    StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc;
+    JsonDocument doc;
     DeserializationError err = deserializeJson(doc, input);
 
     REQUIRE(err == DeserializationError::Ok);
@@ -22,7 +24,7 @@ TEST_CASE("unsigned char[]") {
   SECTION("deserializeMsgPack()") {
     unsigned char input[] = "\xDE\x00\x01\xA5Hello\xA5world";
 
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     DeserializationError err = deserializeMsgPack(doc, input);
 
     REQUIRE(err == DeserializationError::Ok);
@@ -30,7 +32,7 @@ TEST_CASE("unsigned char[]") {
 
   SECTION("serializeMsgPack(unsigned char[])") {
     unsigned char buffer[32];
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     doc["hello"] = "world";
 
     size_t n = serializeMsgPack(doc, buffer);
@@ -41,7 +43,7 @@ TEST_CASE("unsigned char[]") {
 
   SECTION("serializeMsgPack(unsigned char*)") {
     unsigned char buffer[32];
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     doc["hello"] = "world";
 
     size_t n = serializeMsgPack(doc, buffer, sizeof(buffer));
@@ -52,7 +54,7 @@ TEST_CASE("unsigned char[]") {
 
   SECTION("serializeJson(unsigned char[])") {
     unsigned char buffer[32];
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     doc["hello"] = "world";
 
     size_t n = serializeJson(doc, buffer);
@@ -63,7 +65,7 @@ TEST_CASE("unsigned char[]") {
 
   SECTION("serializeJson(unsigned char*)") {
     unsigned char buffer[32];
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     doc["hello"] = "world";
 
     size_t n = serializeJson(doc, buffer, sizeof(buffer));
@@ -74,7 +76,7 @@ TEST_CASE("unsigned char[]") {
 
   SECTION("serializeJsonPretty(unsigned char[])") {
     unsigned char buffer[32];
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     doc["hello"] = "world";
 
     size_t n = serializeJsonPretty(doc, buffer);
@@ -84,7 +86,7 @@ TEST_CASE("unsigned char[]") {
 
   SECTION("serializeJsonPretty(unsigned char*)") {
     unsigned char buffer[32];
-    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    JsonDocument doc;
     doc["hello"] = "world";
 
     size_t n = serializeJsonPretty(doc, buffer, sizeof(buffer));
@@ -93,7 +95,7 @@ TEST_CASE("unsigned char[]") {
   }
 
   SECTION("JsonVariant") {
-    DynamicJsonDocument doc(4096);
+    JsonDocument doc;
 
     SECTION("set") {
       unsigned char value[] = "42";
@@ -111,7 +113,7 @@ TEST_CASE("unsigned char[]") {
       deserializeJson(doc, "{\"hello\":\"world\"}");
       JsonVariant variant = doc.as<JsonVariant>();
 
-      REQUIRE(std::string("world") == variant[key]);
+      REQUIRE("world"_s == variant[key]);
     }
 #endif
 
@@ -122,7 +124,7 @@ TEST_CASE("unsigned char[]") {
       deserializeJson(doc, "{\"hello\":\"world\"}");
       const JsonVariant variant = doc.as<JsonVariant>();
 
-      REQUIRE(std::string("world") == variant[key]);
+      REQUIRE("world"_s == variant[key]);
     }
 #endif
 
@@ -156,28 +158,28 @@ TEST_CASE("unsigned char[]") {
     SECTION("operator[]") {
       unsigned char key[] = "hello";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
       obj[key] = "world";
 
-      REQUIRE(std::string("world") == obj["hello"]);
+      REQUIRE("world"_s == obj["hello"]);
     }
 
     SECTION("JsonObject::operator[] const") {
       unsigned char key[] = "hello";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       deserializeJson(doc, "{\"hello\":\"world\"}");
 
       JsonObject obj = doc.as<JsonObject>();
-      REQUIRE(std::string("world") == obj[key]);
+      REQUIRE("world"_s == obj[key]);
     }
 #endif
 
     SECTION("containsKey()") {
       unsigned char key[] = "hello";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       deserializeJson(doc, "{\"hello\":\"world\"}");
       JsonObject obj = doc.as<JsonObject>();
       REQUIRE(true == obj.containsKey(key));
@@ -186,28 +188,12 @@ TEST_CASE("unsigned char[]") {
     SECTION("remove()") {
       unsigned char key[] = "hello";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       deserializeJson(doc, "{\"hello\":\"world\"}");
       JsonObject obj = doc.as<JsonObject>();
       obj.remove(key);
 
       REQUIRE(0 == obj.size());
-    }
-
-    SECTION("createNestedArray()") {
-      unsigned char key[] = "hello";
-
-      DynamicJsonDocument doc(4096);
-      JsonObject obj = doc.to<JsonObject>();
-      obj.createNestedArray(key);
-    }
-
-    SECTION("createNestedObject()") {
-      unsigned char key[] = "hello";
-
-      DynamicJsonDocument doc(4096);
-      JsonObject obj = doc.to<JsonObject>();
-      obj.createNestedObject(key);
     }
   }
 
@@ -215,21 +201,21 @@ TEST_CASE("unsigned char[]") {
     SECTION("operator=") {  // issue #416
       unsigned char value[] = "world";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
       obj["hello"] = value;
 
-      REQUIRE(std::string("world") == obj["hello"]);
+      REQUIRE("world"_s == obj["hello"]);
     }
 
     SECTION("set()") {
       unsigned char value[] = "world";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       JsonObject obj = doc.to<JsonObject>();
       obj["hello"].set(value);
 
-      REQUIRE(std::string("world") == obj["hello"]);
+      REQUIRE("world"_s == obj["hello"]);
     }
   }
 
@@ -237,11 +223,11 @@ TEST_CASE("unsigned char[]") {
     SECTION("add()") {
       unsigned char value[] = "world";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       JsonArray arr = doc.to<JsonArray>();
       arr.add(value);
 
-      REQUIRE(std::string("world") == arr[0]);
+      REQUIRE("world"_s == arr[0]);
     }
   }
 
@@ -249,23 +235,23 @@ TEST_CASE("unsigned char[]") {
     SECTION("set()") {
       unsigned char value[] = "world";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       JsonArray arr = doc.to<JsonArray>();
       arr.add("hello");
       arr[0].set(value);
 
-      REQUIRE(std::string("world") == arr[0]);
+      REQUIRE("world"_s == arr[0]);
     }
 
     SECTION("operator=") {
       unsigned char value[] = "world";
 
-      DynamicJsonDocument doc(4096);
+      JsonDocument doc;
       JsonArray arr = doc.to<JsonArray>();
       arr.add("hello");
       arr[0] = value;
 
-      REQUIRE(std::string("world") == arr[0]);
+      REQUIRE("world"_s == arr[0]);
     }
   }
 }

@@ -1,24 +1,24 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <stddef.h>  // size_t
 
-#include <ArduinoJson/Collection/CollectionData.hpp>
-#include <ArduinoJson/Numbers/Float.hpp>
-#include <ArduinoJson/Numbers/Integer.hpp>
+#include <ArduinoJson/Array/ArrayData.hpp>
+#include <ArduinoJson/Numbers/JsonFloat.hpp>
+#include <ArduinoJson/Numbers/JsonInteger.hpp>
+#include <ArduinoJson/Object/ObjectData.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 enum {
   VALUE_MASK = 0x7F,
 
   OWNED_VALUE_BIT = 0x01,
   VALUE_IS_NULL = 0,
-  VALUE_IS_LINKED_RAW = 0x02,
-  VALUE_IS_OWNED_RAW = 0x03,
+  VALUE_IS_RAW_STRING = 0x03,
   VALUE_IS_LINKED_STRING = 0x04,
   VALUE_IS_OWNED_STRING = 0x05,
 
@@ -38,21 +38,18 @@ enum {
   OWNED_KEY_BIT = 0x80
 };
 
-struct RawData {
-  const char *data;
-  size_t size;
+union VariantContent {
+  VariantContent() {}
+
+  JsonFloat asFloat;
+  bool asBoolean;
+  JsonUInt asUnsignedInteger;
+  JsonInteger asSignedInteger;
+  ArrayData asArray;
+  ObjectData asObject;
+  CollectionData asCollection;
+  const char* asLinkedString;
+  struct StringNode* asOwnedString;
 };
 
-union VariantContent {
-  Float asFloat;
-  bool asBoolean;
-  UInt asUnsignedInteger;
-  Integer asSignedInteger;
-  CollectionData asCollection;
-  const char *asString;
-  struct {
-    const char *data;
-    size_t size;
-  } asRaw;
-};
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

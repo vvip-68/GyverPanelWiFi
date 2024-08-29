@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,22 +9,24 @@
 
 #include <ArduinoJson/Json/EscapeSequence.hpp>
 #include <ArduinoJson/Numbers/FloatParts.hpp>
-#include <ArduinoJson/Numbers/Integer.hpp>
+#include <ArduinoJson/Numbers/JsonInteger.hpp>
 #include <ArduinoJson/Polyfills/assert.hpp>
 #include <ArduinoJson/Polyfills/attributes.hpp>
 #include <ArduinoJson/Polyfills/type_traits.hpp>
 #include <ArduinoJson/Serialization/CountingDecorator.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TWriter>
 class TextFormatter {
  public:
-  explicit TextFormatter(TWriter writer) : _writer(writer) {}
+  explicit TextFormatter(TWriter writer) : writer_(writer) {}
+
+  TextFormatter& operator=(const TextFormatter&) = delete;
 
   // Returns the number of bytes sent to the TWriter implementation.
   size_t bytesWritten() const {
-    return _writer.count();
+    return writer_.count();
   }
 
   void writeBoolean(bool value) {
@@ -34,10 +36,19 @@ class TextFormatter {
       writeRaw("false");
   }
 
-  void writeString(const char *value) {
+  void writeString(const char* value) {
     ARDUINOJSON_ASSERT(value != NULL);
     writeRaw('\"');
-    while (*value) writeChar(*value++);
+    while (*value)
+      writeChar(*value++);
+    writeRaw('\"');
+  }
+
+  void writeString(const char* value, size_t n) {
+    ARDUINOJSON_ASSERT(value != NULL);
+    writeRaw('\"');
+    while (n--)
+      writeChar(*value++);
     writeRaw('\"');
   }
 
@@ -46,8 +57,10 @@ class TextFormatter {
     if (specialChar) {
       writeRaw('\\');
       writeRaw(specialChar);
-    } else {
+    } else if (c) {
       writeRaw(c);
+    } else {
+      writeRaw("\\u0000");
     }
   }
 
@@ -87,8 +100,8 @@ class TextFormatter {
   }
 
   template <typename T>
-  typename enable_if<is_signed<T>::value>::type writeInteger(T value) {
-    typedef typename make_unsigned<T>::type unsigned_type;
+  enable_if_t<is_signed<T>::value> writeInteger(T value) {
+    typedef make_unsigned_t<T> unsigned_type;
     unsigned_type unsigned_value;
     if (value < 0) {
       writeRaw('-');
@@ -100,10 +113,10 @@ class TextFormatter {
   }
 
   template <typename T>
-  typename enable_if<is_unsigned<T>::value>::type writeInteger(T value) {
+  enable_if_t<is_unsigned<T>::value> writeInteger(T value) {
     char buffer[22];
-    char *end = buffer + sizeof(buffer);
-    char *begin = end;
+    char* end = buffer + sizeof(buffer);
+    char* begin = end;
 
     // write the string in reverse order
     do {
@@ -118,8 +131,8 @@ class TextFormatter {
   void writeDecimals(uint32_t value, int8_t width) {
     // buffer should be big enough for all digits and the dot
     char buffer[16];
-    char *end = buffer + sizeof(buffer);
-    char *begin = end;
+    char* end = buffer + sizeof(buffer);
+    char* begin = end;
 
     // write the string in reverse order
     while (width--) {
@@ -132,31 +145,29 @@ class TextFormatter {
     writeRaw(begin, end);
   }
 
-  void writeRaw(const char *s) {
-    _writer.write(reinterpret_cast<const uint8_t *>(s), strlen(s));
+  void writeRaw(const char* s) {
+    writer_.write(reinterpret_cast<const uint8_t*>(s), strlen(s));
   }
 
-  void writeRaw(const char *s, size_t n) {
-    _writer.write(reinterpret_cast<const uint8_t *>(s), n);
+  void writeRaw(const char* s, size_t n) {
+    writer_.write(reinterpret_cast<const uint8_t*>(s), n);
   }
 
-  void writeRaw(const char *begin, const char *end) {
-    _writer.write(reinterpret_cast<const uint8_t *>(begin),
+  void writeRaw(const char* begin, const char* end) {
+    writer_.write(reinterpret_cast<const uint8_t*>(begin),
                   static_cast<size_t>(end - begin));
   }
 
   template <size_t N>
   void writeRaw(const char (&s)[N]) {
-    _writer.write(reinterpret_cast<const uint8_t *>(s), N - 1);
+    writer_.write(reinterpret_cast<const uint8_t*>(s), N - 1);
   }
   void writeRaw(char c) {
-    _writer.write(static_cast<uint8_t>(c));
+    writer_.write(static_cast<uint8_t>(c));
   }
 
  protected:
-  CountingDecorator<TWriter> _writer;
-
- private:
-  TextFormatter &operator=(const TextFormatter &);  // cannot be assigned
+  CountingDecorator<TWriter> writer_;
 };
-}  // namespace ARDUINOJSON_NAMESPACE
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

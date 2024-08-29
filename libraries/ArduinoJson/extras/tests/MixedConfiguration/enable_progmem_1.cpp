@@ -1,8 +1,6 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
-
-#include "progmem_emulation.hpp"
 
 #define ARDUINOJSON_ENABLE_PROGMEM 1
 #include <ArduinoJson.h>
@@ -10,7 +8,7 @@
 #include <catch.hpp>
 
 TEST_CASE("Flash strings") {
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
 
   SECTION("deserializeJson()") {
     DeserializationError err = deserializeJson(doc, F("{'hello':'world'}"));
@@ -52,6 +50,14 @@ TEST_CASE("Flash strings") {
   }
 }
 
+TEST_CASE("parseNumber()") {  // tables are in Flash
+  using ArduinoJson::detail::parseNumber;
+
+  CHECK(parseNumber<float>("1") == 1.f);
+  CHECK(parseNumber<float>("1.23") == 1.23f);
+  CHECK(parseNumber<float>("-1.23e34") == -1.23e34f);
+}
+
 TEST_CASE("strlen_P") {
   CHECK(strlen_P(PSTR("")) == 0);
   CHECK(strlen_P(PSTR("a")) == 1);
@@ -87,7 +93,7 @@ TEST_CASE("memcpy_P") {
 }
 
 TEST_CASE("BoundedReader<const __FlashStringHelper*>") {
-  using namespace ARDUINOJSON_NAMESPACE;
+  using namespace ArduinoJson::detail;
 
   SECTION("read") {
     BoundedReader<const __FlashStringHelper*> reader(F("\x01\xFF"), 2);
@@ -127,7 +133,7 @@ TEST_CASE("BoundedReader<const __FlashStringHelper*>") {
 }
 
 TEST_CASE("Reader<const __FlashStringHelper*>") {
-  using namespace ARDUINOJSON_NAMESPACE;
+  using namespace ArduinoJson::detail;
 
   SECTION("read()") {
     Reader<const __FlashStringHelper*> reader(F("\x01\xFF\x00\x12"));

@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright Benoit Blanchon 2014-2021
+# Copyright © 2014-2024, Benoit BLANCHON
 # MIT License
 
 add_executable(JsonVariantTests
@@ -8,26 +8,27 @@ add_executable(JsonVariantTests
 	clear.cpp
 	compare.cpp
 	containsKey.cpp
-	copy.cpp
 	converters.cpp
-	createNested.cpp
+	copy.cpp
 	is.cpp
 	isnull.cpp
-	memoryUsage.cpp
 	misc.cpp
 	nesting.cpp
+	nullptr.cpp
 	or.cpp
 	overflow.cpp
 	remove.cpp
 	set.cpp
+	size.cpp
+	stl_containers.cpp
 	subscript.cpp
 	types.cpp
-	undefined.cpp
+	unbound.cpp
 )
 
 add_test(JsonVariant JsonVariantTests)
 
 set_tests_properties(JsonVariant
 	PROPERTIES
-		LABELS 		"Catch"
+		LABELS "Catch"
 )

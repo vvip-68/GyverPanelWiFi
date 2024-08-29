@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright Benoit Blanchon 2014-2021
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_USE_LONG_LONG 0
@@ -9,11 +9,7 @@
 #  error This test requires sizeof(long) < 8
 #endif
 
-#if !ARDUINOJSON_HAS_LONG_LONG
-#  error This test requires C++11
-#endif
-
 int main() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   doc["dummy"] = static_cast<long long>(42);
 }
