@@ -1269,7 +1269,7 @@ void starsRoutine() {
         // Стороны лучей
         star_color = CHSV(color, sat, fadeBrightness);
         bool useXRay = random8(0, 50) % 2 == 0;
-        if (drawRays == 3 || drawRays == 4 && useXRay) {
+        if (drawRays == 3 || (drawRays == 4 && useXRay)) {
           // Тип - X
           idx = getPixelNumber(x+1, y+1); 
           if (idx >= 0) leds[idx] = star_color;
@@ -1279,7 +1279,7 @@ void starsRoutine() {
           if (idx >= 0) leds[idx] = star_color;
           idx = getPixelNumber(x-1, y-1); 
           if (idx >= 0) leds[idx] = star_color;              
-        } else if (drawRays == 2 || drawRays == 4 && !useXRay) {
+        } else if (drawRays == 2 || (drawRays == 4 && !useXRay)) {
           // Тип - крест +
           idx = getPixelNumber(x+1, y); 
           if (idx >= 0) leds[idx] = star_color;

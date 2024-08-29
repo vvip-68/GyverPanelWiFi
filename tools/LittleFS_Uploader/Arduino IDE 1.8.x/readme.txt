@@ -1,4 +1,4 @@
-Плагин для Arduino IDE - загрузчик файлов в файловую систему LittleFS микроконтроллера ESP8266
+Плагин для Arduino IDE 1.8.х.- загрузчик файлов в файловую систему LittleFS микроконтроллера ESP8266
 
 https://github.com/earlephilhower/arduino-esp8266littlefs-plugin
 

@@ -393,10 +393,21 @@
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
   #include <ESP8266mDNS.h>
+  #if (USE_WEATHER == 1)
+    #include <ESP8266HTTPClient.h>
+  #endif
 #endif
 
 #if defined(ESP32)
+  #include <WiFi.h>
   #include <ESPmDNS.h>
+  #if (USE_WEATHER == 1)
+    #include <HTTPClient.h>
+  #endif
+#endif
+
+#if (USE_MQTT == 1 || USE_WEATHER == 1)
+  #include <WiFiClient.h>
 #endif
 
 #if (USE_MQTT == 1)

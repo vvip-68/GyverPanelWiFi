@@ -1,10 +1,14 @@
 
 #if (USE_WEATHER == 1)     
 
-bool getWeather() {
+bool getWeather() { 
+
+  // 28.07.2024 Яндекс.Погода перестал отдавать погоду по http, ответ доступен толко по https
+  // Обращение по протоколу https требует бОльшего количества оперативной памяти, которой на контроллере просто нет.
+  // Решение подсказал пользователь Сотнег с форума https://community.alexgyver.ru/ -- использовать сервис http://www.http2https.com/
   
   // Yandex.ru:          https://yandex.ru/time/sync.json?geo=62
-  // OpenWeatherMap.com: http://api.openweathermap.org/data/2.5/weather?id=1502026&lang=ru&units=metric&appid=6a4ba421859c9f4166697758b68d889b
+  // OpenWeatherMap.com: https://api.openweathermap.org/data/2.5/weather?id=1502026&lang=ru&units=metric&appid=6a4ba421859c9f4166697758b68d889b
 
   // Пока включена отладка позиционирования часов - запросы на температуру не выполнять
   if (debug_hours >= 0 && debug_mins >= 0) return true;
@@ -14,63 +18,91 @@ bool getWeather() {
   DEBUGLN();
   DEBUGLN(F("Запрос текущей погоды"));
 
-  if (useWeather == 1) {
-    if (!w_client.connect("yandex.com",443)) return false;                    // Устанавливаем соединение с указанным хостом (Порт 443 для https)
-    // Отправляем запрос
-    w_client.println(String(F("GET /time/sync.json?geo=")) + String(regionID) + String(F(" HTTP/1.1\r\nHost: yandex.com\r\n\r\n"))); 
-  } else if (useWeather == 2) {
-    if (!w_client.connect("api.openweathermap.org",80)) return false;         // Устанавливаем соединение с указанным хостом (Порт 80 для http)
-    // Отправляем запрос    
-    w_client.println(String(F("GET /data/2.5/weather?id=")) + String(regionID2) + String(F("&units=metric&lang=ru&appid=")) + String(WEATHER_API_KEY) + String(F(" HTTP/1.1\r\nHost: api.openweathermap.org\r\n\r\n")));     
-  }  
-
   #if (USE_MQTT == 1)
   DynamicJsonDocument doc(384);
   String out;
   doc["act"] = F("WEATHER");
   doc["region"] = useWeather == 1 ? regionID : regionID2;
   #endif
-  
-  // Проверяем статус запроса
-  char status[32] = {0};
-  w_client.readBytesUntil('\r', status, sizeof(status));
-  // It should be "HTTP/1.0 200 OK" or "HTTP/1.1 200 OK"
-  if (strcmp(status + 9, "200 OK") != 0) {
+
+  bool   error = false;
+
+  String payload;
+  String status(25);
+
+  WiFiClient *w_client = new WiFiClient; 
+
+  if (w_client) 
+  {
+
+    {
+      HTTPClient http;
+
+      //String request = "http://www.http2https.com/https://yandex.ru/time/sync.json?geo=62";
+      //String request = "http://api.openweathermap.org/data/2.5/weather?id=1502026&lang=ru&units=metric&appid=6a4ba421859c9f4166697758b68d889b";
+
+      String request(150);
+
+      if (useWeather == 1) {
+        request = F("http://www.http2https.com/https://yandex.ru/time/sync.json?geo="); request += String(regionID); 
+      } else if (useWeather == 2) {
+        request = F("http://api.openweathermap.org/data/2.5/weather?id="); request += String(regionID2); request += F("&units=metric&lang=ru&appid="); request += WEATHER_API_KEY;     
+      }  
+
+      if (http.begin(*w_client, request.c_str())) {
+        // start connection and send HTTP header
+        int httpCode = http.GET();
+        // httpCode will be negative on error
+        if (httpCode > 0) {
+          // HTTP header has been send and Server response header has been handled
+          // file found at server
+          if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+            payload = http.getString();
+          } else {
+            error = true;
+            status = F("unexpected answer");    // http.errorToString(httpCode)
+          }
+        } else {
+          error = true;
+          status = F("connection error");
+        }
+
+        http.end();
+      } else {
+        error = true;
+        status = F("connection error");
+      }
+    }
+
+    w_client->stop();    
+    delete w_client;
+
+  } else {
+    status = F("connection error");
+    error = true;
+  }
+
+  if (error) {
     DEBUG(F("Ошибка сервера погоды: "));
     DEBUGLN(status);
     
     #if (USE_MQTT == 1)
-    doc["result"] = F("ERROR");
-    doc["status"] = status;
-    serializeJson(doc, out);      
-    SendMQTT(out, TOPIC_WTR);
+      doc["result"] = F("ERROR");
+      doc["status"] = status;
+      serializeJson(doc, out);      
+      SendMQTT(out, TOPIC_WTR);
     #endif    
 
     return false;
   } 
 
-    // Пропускаем заголовки                                                                
-  char endOfHeaders[] = "\r\n\r\n";                                       // Системные заголовки ответа сервера отделяются от остального содержимого двойным переводом строки
-  if (!w_client.find(endOfHeaders)) {                                       // Отбрасываем системные заголовки ответа сервера
-    DEBUGLN(F("Нераспознанный ответ сервера погоды"));             // Если ответ сервера не содержит системных заголовков, значит что-то пошло не так
-
-    #if (USE_MQTT == 1)
-    doc["result"] = F("ERROR");
-    doc["status"] = F("unexpected answer");
-    serializeJson(doc, out);      
-    SendMQTT(out, TOPIC_WTR);
-    #endif
-
-    return false;                                                         // и пора прекращать всё это дело
-  }
-
   // Parse JSON object
   DynamicJsonDocument jsn(1500);
-  DeserializationError error = deserializeJson(jsn, w_client);
+  DeserializationError json_error = deserializeJson(jsn, payload);
 
-  if (error) {
+  if (json_error) {
     DEBUG(F("JSON не разобран: "));
-    DEBUGLN(error.c_str());
+    DEBUGLN(json_error.c_str());
     
     #if (USE_MQTT == 1)
     doc["result"] = F("ERROR");
@@ -81,8 +113,6 @@ bool getWeather() {
     
     return false;
   }
-
-  w_client.stop();
 
   String regId = useWeather == 1 ? String(regionID) : String(regionID2);
   String town, sunrise, sunset;

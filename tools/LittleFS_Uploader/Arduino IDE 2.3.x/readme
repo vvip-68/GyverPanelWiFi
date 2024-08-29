@@ -1,0 +1,13 @@
+LittleFS uploader for ESP8266 compatible with Arduino IDE 2.3.x or higher.
+
+https://github.com/earlephilhower/arduino-littlefs-upload
+
+Для загрузки файловой системы необходимо сделать следующее:
+
+1. Скачать файл плагина по ссылке: https://github.com/earlephilhower/arduino-littlefs-upload/releases/download/
+   или взять уже скачанный файл из этой папки
+2. Разместить его в указанном месте: C:\Users\<username>\.arduinoIDE\plugins\
+3. Запустить Arduino IDE 2.3.x, нажать одновременно [Ctrl] + [Shift] + [P], 
+   затем выбрать в появившемся меню "Upload LittleFS to Pico/ESP8266/Esp32".
+   Начните мечатать в строке поиска 'Upload' и фильтр поможет найти плагин
+
