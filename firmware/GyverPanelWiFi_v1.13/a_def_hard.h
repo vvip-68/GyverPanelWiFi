@@ -394,6 +394,8 @@
 
 // ************** ИСПОЛЬЗУЕМЫЕ БИБЛИОТЕКИ ****************
 
+#include "core_version.h"
+
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
   #include <ESP8266mDNS.h>
