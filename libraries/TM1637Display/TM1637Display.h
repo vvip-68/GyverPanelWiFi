@@ -49,9 +49,9 @@ public:
   void display(uint8_t DispData[]);
   void display(uint8_t bit0, uint8_t bit1, uint8_t bit2, uint8_t bit3);
   void displayClock(uint8_t hrs, uint8_t mins);
+  void encodeClock(uint8_t hrs, uint8_t mins, uint8_t *digits, bool toSegment = true);
   void displayInt(int value);
-  // выводит часы и минуты
-
+  void encodeInt(int value, uint8_t *digits, bool toSegment = true);
   //! Sets the brightness of the display.
   //! Устанавливает яркость дисплея.
   //!

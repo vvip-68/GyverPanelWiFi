@@ -53,8 +53,6 @@ void loadDirectory() {
 
   String   file_name, fn;
   uint32_t file_size;
-  float    fsize;
-  uint8_t  sz = 0;
   String   fs_name;  
   
   #if (USE_SD == 1 && FS_AS_SD == 0)
@@ -330,7 +328,10 @@ void sdcardRoutine() {
     DEBUG(F("Загрузка файла эффекта: '"));
     DEBUG(fileName);
 
-    bool error = false;
+    #if (USE_MQTT == 1)
+      bool error = false;
+    #endif
+
     String out;
 
     if (fxdata) fxdata.close();
@@ -345,7 +346,9 @@ void sdcardRoutine() {
       DEBUGLN(F("' -> ok"));
     } else {
       DEBUGLN(F("' -> ошибка"));
-      error = true;
+      #if (USE_MQTT == 1)
+        error = true;
+      #endif
     }
 
     #if (USE_MQTT == 1)

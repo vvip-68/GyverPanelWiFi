@@ -807,7 +807,7 @@ uint8_t getEffectContrast(uint8_t effect) {
 void putEffectContrast(uint8_t effect, uint8_t contrast) {
   if (effect >= MAX_EFFECT) return;
   if (contrast != getEffectContrast(effect)) {
-    effectContrast[effect] = constrain(contrast,10,255);
+    effectContrast[effect] = constrain((int16_t)contrast,10,255);
     EEPROMwrite(EFFECT_EEPROM + effect*5 + 4, effectContrast[effect]);
   }  
 }
@@ -1033,10 +1033,10 @@ uint8_t getAlarmMinute(uint8_t day) {
 
 void putAlarmTime(uint8_t day, uint8_t hour, uint8_t minute) { 
   if (hour != getAlarmHour(day)) {
-    EEPROMwrite(40 + 2 * (day - 1), constrain(hour, 0, 23));
+    EEPROMwrite(40 + 2 * (day - 1), constrain((int16_t)hour, 0, 23));
   }
   if (minute != getAlarmMinute(day)) {
-    EEPROMwrite(40 + 2 * (day - 1) + 1, constrain(minute, 0, 59));
+    EEPROMwrite(40 + 2 * (day - 1) + 1, constrain((int16_t)minute, 0, 59));
   }
 }
 

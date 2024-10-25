@@ -830,7 +830,7 @@ void checkIdleState() {
          (showTextNow && (specialTextEffect >= 0))       // Воспроизводится бегущая строка на фоне указанного эффекта
          #if (USE_SD == 1)
          // Для файла с SD-карты - если указан режим ожидания проигрывания файла до конца, а файл еще не проигрался - не менять эффект
-         || (thisMode == MC_SDCARD && (wait_play_finished && !play_file_finished || loadingFlag))
+         || (thisMode == MC_SDCARD && ((wait_play_finished && !play_file_finished) || loadingFlag))
          #endif
       )
       {        

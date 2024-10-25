@@ -90,36 +90,31 @@ void TM1637Display::display(uint8_t DispData[])
   setSegments(SegData);
 }
 
-/*
-void TM1637Display::displayClock(uint8_t hrs, uint8_t mins) {
+void TM1637Display::encodeClock(uint8_t hrs, uint8_t mins, uint8_t *digits, bool toSegment) {
   if (hrs > 99 || mins > 99) return;
-  uint8_t disp_time[4];
-  if ((hrs / 10) == 0) disp_time[0] = TM1637Display::encodeDigit(10);
-  else disp_time[0] = TM1637Display::encodeDigit((hrs / 10));
-  disp_time[1] = TM1637Display::encodeDigit(hrs % 10);
-  disp_time[2] = TM1637Display::encodeDigit(mins / 10);
-  disp_time[3] = TM1637Display::encodeDigit(mins % 10);
-////*  TM1637Display::setSegments(disp_time);
-  TM1637Display::display(disp_time);
-}
-*/
-
-void TM1637Display::displayClock(uint8_t hrs, uint8_t mins) {
-  if (hrs > 99 || mins > 99) return;
-  uint8_t disp_time[4];
-  if ((hrs / 10) == 0) disp_time[0] = 16;  // Вставляем пустой символ " "
-  else disp_time[0] = (hrs / 10);
-  disp_time[1] = hrs % 10;
-  disp_time[2] = mins / 10;
-  disp_time[3] = mins % 10;
-  TM1637Display::display(disp_time);
+  if ((hrs / 10) == 0) digits[0] = 16;  // Вставляем пустой символ " "
+  else digits[0] = (hrs / 10);
+  digits[1] = hrs % 10;
+  digits[2] = mins / 10;
+  digits[3] = mins % 10;
+  if (toSegment) {
+    for (byte i = 0; i < 4; i ++) {
+      digits[i] = digitToSegment[digits[i]];
+    }
+  }
 }
 
-void TM1637Display::displayInt(int value) {
+void TM1637Display::displayClock(uint8_t hrs, uint8_t mins) {
+  if (hrs > 99 || mins > 99) return;
+  uint8_t digits[4];
+  TM1637Display::encodeClock(hrs, mins, digits, false);
+  TM1637Display::display(digits);
+}
+
+
+void TM1637Display::encodeInt(int value, uint8_t *digits, bool toSegment) {
   if (value > 9999 || value < -999) return;
   boolean negative = false;
-  boolean neg_flag = false;
-  byte digits[4];
   if (value < 0) negative = true; 
   value = abs(value); 
   digits[0] = (int)value / 1000;        // количесто тысяч в числе
@@ -147,6 +142,18 @@ void TM1637Display::displayInt(int value) {
       }
     }
   }
+
+  if (toSegment) {
+    for (byte i = 0; i < 4; i ++) {
+      digits[i] = digitToSegment[digits[i]];
+    }
+  }
+}
+
+void TM1637Display::displayInt(int value) {
+  if (value > 9999 || value < -999) return;
+  uint8_t digits[4];
+  TM1637Display::encodeInt(value, digits, false);
   TM1637Display::display(digits);
 }
 

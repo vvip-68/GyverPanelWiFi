@@ -196,7 +196,7 @@ void set_thisMode(int8_t value) {
 
   valid = (value >= 0 && value < MAX_EFFECT);
 
-  bool old_UE;
+  bool old_UE = false;
   String keySE = "SE", keyBE = "BE", keyUT = "UT", keyUC = "UC", old_SQ, old_SS, old_SE, old_BE, old_UT, old_UC;
 
   if (valid) {

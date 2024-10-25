@@ -176,7 +176,7 @@ void process() {
             getWeatherInProgress = false;
             weather_cnt++;
             refresh_weather = true; weather_t = 0;
-            if (init_weather && weather_cnt >= 10) {
+            if (init_weather && weather_cnt >= TRY_GET_WEATHER_CNT) {
               DEBUGLN(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
               init_weather = false;
@@ -197,11 +197,11 @@ void process() {
           if (timeToGetWeather) { weather_cnt = 0; weather_t = 0; refresh_weather = true; }
           // weather_t - время последней отправки запроса. Запрашивать погоду если weather_t обнулено или если последний (неудачный) запрос произошел не менее чем минуту назад
           // иначе слишком частые запросы нарушают коммуникацию с приложением - устройство все время блокирующе запрашивает данные с сервера погоды
-          if (timeToGetWeather || (refresh_weather && (weather_t == 0 || (millis() - weather_t > 60000)) && (weather_cnt < 10 || !init_weather))) {            
+          if (timeToGetWeather || (refresh_weather && (weather_t == 0 || (millis() - weather_t > 60000)) && (weather_cnt < TRY_GET_WEATHER_CNT || !init_weather))) {            
             weather_t = millis();
             getWeatherInProgress = true;
             getWeather();
-            if (weather_cnt >= 10) {
+            if (weather_cnt >= TRY_GET_WEATHER_CNT) {
               if (init_weather) {
                 udp.flush();
               } else {
@@ -2572,7 +2572,7 @@ void sendPageParams(uint8_t page, eSources src) {
   
   switch (page) { 
     case 1:  // Настройки
-      str = getStateString("UP|FM|AL|W|H|DM|PS|PD|IT|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
+      str = getStateString("UP|FM|AL|W|H|VR|DM|PS|PD|IT|RM|PW|BR|WU|WT|WR|WS|WC|WN|WZ|SD|FS|EE");
       break;
     case 2:  // Эффекты
       str = getStateString("UP|FM|AL|EF|EN|UE|UT|UC|SE|SS|BE|SQ");
@@ -2840,6 +2840,15 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return String(pHEIGHT);
     }
     return str + "H:" + String(pHEIGHT);
+  }
+
+  // Версия прошивки
+  if (key == "VR") {
+    if (value) {
+      value->set(FIRMWARE_VER);
+      return FIRMWARE_VER;
+    }
+    return str + "VR:[" + String(FIRMWARE_VER) + "]";
   }
 
   // Программное вкл/выкл устройства
@@ -4463,7 +4472,6 @@ void setRandomMode() {
 
 #if (USE_SD == 1)  
 void updateSdCardFileIndex() {
-  int8_t file_idx;
   if (effectScaleParam2[MC_SDCARD] == 0) {
     sf_file_idx = random16(0,countFiles);
   } else if (effectScaleParam2[MC_SDCARD] == 1) {

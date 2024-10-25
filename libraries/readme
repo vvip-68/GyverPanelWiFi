@@ -1,12 +1,2 @@
-Библиотеки скопировать в папку установки ардуино в подпапку libraries
-
-
-Исходники библиотек:
-GyverLibs:    https://github.com/AlexGyver/GyverLibs
-Time:         https://github.com/PaulStoffregen/Time
-MP3 DFPlayer: https://github.com/DFRobot/DFRobotDFPlayerMini
-
-Внимание!!! 
-Библиотека PubSubClient 2.8 немного изменена - увеличен таймаут ожидания ответа 
-на запрос ping через заданный keepAlive с повторной отправкой запроса, иначе
-происходят слишком частые разрывы связи с сервером mqtt
+Библиотеки скопировать в папку "Мои документы", в подпапку Arduino/libraries
+Обычно физический путь к папке - C:/Users/<user>/Documents/Arduino/libraries

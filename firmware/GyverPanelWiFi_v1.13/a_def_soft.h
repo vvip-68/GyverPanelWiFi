@@ -90,6 +90,10 @@
 #define WEATHER_REGION_OWTH 1502026  // Код региона погоды по OpenWeatherMap
 #endif
 
+// На каком языке сервер погоды должен вернуть погодные условия
+static const char WTR_LANG_YA[]  = "ru";      // Яндекс.Погода - кажется понимает только "ru" и "en"
+static const char WTR_LANG_OWM[] = "ru";      // OpenWeatherMap = 2-[ бкувенный код языка - ru,en,de,fr,it и так далее. Если язык не знает - возвращает как для en
+
 // Список и порядок эффектов, передаваемый в приложение на смартфоне. Данный список попадает в комбобокс выбора, 
 // чей индекс передается из приложения в контроллер матрицы для выбора, поэтому порядок должен соответствовать 
 // списку эффектов, определенному ниже
@@ -482,31 +486,32 @@ char     ntpServerName[31] = "";            // Используемый серв
 bool     init_weather = false;              // Флаг: true - погода получена; false - погода не получена / не актуальна
 
 #if (USE_WEATHER == 1)
-uint8_t  useWeather = 1;                    // Использовать получение текущей погоды с погодного сервера 0 - не использовать; 1 - Yandex; 2 - OpenWeatherMap
-uint32_t regionID = WEATHER_REGION_YDX;     // Код региона по Yandex
-uint32_t regionID2 = WEATHER_REGION_OWTH;   // Код региона по OpenWeatherMap
-String   skyColor;                          // Рекомендованный цвет фона погоды
-String   weather;                           // Состояние - "Ясно", "Облачно", "Дождь" и т.д.
-String   dayTime;                           // "Темное время суток" / "Светлое время суток"
-bool     isNight;                           // день / ночь
-int8_t   temperature;                       // Текущая температура 
-int16_t  weather_code;                      // код погодных условий для OpenWeatherMap
+  #define TRY_GET_WEATHER_CNT 2             // 2 попытки получить погоду. Если не удалось - отложить до следующего интервала
+  uint8_t  useWeather = 1;                  // Использовать получение текущей погоды с погодного сервера 0 - не использовать; 1 - Yandex; 2 - OpenWeatherMap
+  uint32_t regionID = WEATHER_REGION_YDX;   // Код региона по Yandex
+  uint32_t regionID2 = WEATHER_REGION_OWTH; // Код региона по OpenWeatherMap
+  String   skyColor;                        // Рекомендованный цвет фона погоды
+  String   weather;                         // Состояние - "Ясно", "Облачно", "Дождь" и т.д.
+  String   dayTime;                         // "Темное время суток" / "Светлое время суток"
+  bool     isNight;                         // день / ночь
+  int8_t   temperature;                     // Текущая температура 
+  int16_t  weather_code;                    // код погодных условий для OpenWeatherMap
 
-String   icon;                              // код иконки, содержит зашифрованный статус погодных условий 
-uint32_t weather_t = 0;                     // Время, прошедшее с запроса данных с сервера погоды (таймаут)
-uint8_t  weather_cnt = 0;                   // Счетчик попыток получить данные от сервера
-uint32_t weather_time;                      // Время последнего получения погоды;
-uint8_t  weatherActualityDuration = 2;      // Какой период времени в часах после получения погоды считать ее актуальной (на случай, если сервер перестал отвечать)
-uint16_t SYNC_WEATHER_PERIOD = 15;          // Период обновления информации о текущей погоде в минутах по умолчанию
-uint8_t  refresh_weather = true;            // Флаг: пришло время очередного получения погоды с сервера
-bool     getWeatherInProgress = false;      // Запрос погоды сервера в процессе выполнения
-bool     weather_ok = true;                 // Погода получена
+  String   icon;                            // код иконки, содержит зашифрованный статус погодных условий 
+  uint32_t weather_t = 0;                   // Время, прошедшее с запроса данных с сервера погоды (таймаут)
+  uint8_t  weather_cnt = 0;                 // Счетчик попыток получить данные от сервера
+  uint32_t weather_time;                    // Время последнего получения погоды;
+  uint8_t  weatherActualityDuration = 2;    // Какой период времени в часах после получения погоды считать ее актуальной (на случай, если сервер перестал отвечать)
+  uint16_t SYNC_WEATHER_PERIOD = 15;        // Период обновления информации о текущей погоде в минутах по умолчанию
+  uint8_t  refresh_weather = true;          // Флаг: пришло время очередного получения погоды с сервера
+  bool     getWeatherInProgress = false;    // Запрос погоды сервера в процессе выполнения
+  bool     weather_ok = true;               // Погода получена
 
-// API-идентификатор сервиса получения погоды - смотрите раздел Wiki - Настройка получения информации о погоде
-// https://github.com/vvip-68/GyverPanelWiFi/wiki/Настройка-получения-информации-о-погоде
-#ifndef  WEATHER_API_KEY
-#define  WEATHER_API_KEY "6a4ba421859c9f4166697758b68d889b"
-#endif
+  // API-идентификатор сервиса получения погоды - смотрите раздел Wiki - Настройка получения информации о погоде
+  // https://github.com/vvip-68/GyverPanelWiFi/wiki/Настройка-получения-информации-о-погоде
+  #ifndef  OWM_WEATHER_API_KEY
+  #define  OWM_WEATHER_API_KEY "6a4ba421859c9f4166697758b68d889b"
+  #endif
 #endif
 
 bool     useTemperatureColor = true;        // Для дневных часов: true - выводить температуру специальным цветом, в зависимости от значения температуры; 0 - не использовать градации цвета
@@ -551,23 +556,31 @@ class    Mp3Notify;
 
 #if defined(ESP32)
 
-#if (DFPLAYER_TYPE == 0)
-typedef  DFMiniMp3<HardwareSerial, Mp3Notify, Mp3ChipOriginal> DfMp3;
-#endif
-#if (DFPLAYER_TYPE == 1)
-typedef  DFMiniMp3<HardwareSerial, Mp3Notify, Mp3ChipMH2024K16SS> DfMp3;
-#endif
-#define mp3Serial Serial2
+  #if (DFPLAYER_TYPE == 0)
+    typedef  DFMiniMp3<HardwareSerial, Mp3Notify, Mp3ChipOriginal> DfMp3;
+  #endif
+  #if (DFPLAYER_TYPE == 1)
+    typedef  DFMiniMp3<HardwareSerial, Mp3Notify, Mp3ChipMH2024K16SS> DfMp3;
+  #endif
+
+  // ESP32S2 и ESP32C3 - на аппаратный Serial1, остальные - на aggfhfnysqSerial2
+  #if CONFIG_IDF_TARGET_ESP32S2
+    #define mp3Serial Serial1
+  #elif CONFIG_IDF_TARGET_ESP32C3
+    #define mp3Serial Serial1
+  #else
+    #define mp3Serial Serial2
+  #endif
 
 #else
 
-#if (DFPLAYER_TYPE == 0)
-typedef  DFMiniMp3<SoftwareSerial, Mp3Notify, Mp3ChipOriginal> DfMp3;
-#endif
-#if (DFPLAYER_TYPE == 1)
-typedef  DFMiniMp3<SoftwareSerial, Mp3Notify, Mp3ChipMH2024K16SS> DfMp3;
-#endif
-SoftwareSerial mp3Serial;
+  #if (DFPLAYER_TYPE == 0)
+    typedef  DFMiniMp3<SoftwareSerial, Mp3Notify, Mp3ChipOriginal> DfMp3;
+  #endif
+  #if (DFPLAYER_TYPE == 1)
+    typedef  DFMiniMp3<SoftwareSerial, Mp3Notify, Mp3ChipMH2024K16SS> DfMp3;
+  #endif
+  SoftwareSerial mp3Serial;
 
 #endif
 

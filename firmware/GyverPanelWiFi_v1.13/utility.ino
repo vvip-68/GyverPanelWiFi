@@ -815,3 +815,61 @@ String getDateTimeString(time_t t) {
 bool LEAP_YEAR(uint16_t Y) {
   return ((1970+(Y))>0) && !((1970+(Y))%4) && ( ((1970+(Y))%100) || !((1970+(Y))%400) );
 }
+
+String MCUTypeEx() {
+  
+  // ESP32 поддерживается следующих версий (и у всех у них свой набор доступных пинови их назначение по GPIO):
+  // ESP32                   https://github.com/espressif/arduino-esp32/blob/master/variants/esp32/pins_arduino.h
+  // ESP32-S2                https://github.com/espressif/arduino-esp32/blob/master/variants/esp32s2/pins_arduino.h
+  // ESP32-S2-mini           https://github.com/espressif/arduino-esp32/blob/master/variants/lolin_s2_mini/pins_arduino.h
+  // ESP32-S3                https://github.com/espressif/arduino-esp32/blob/master/variants/esp32s3/pins_arduino.h
+  // ESP32-S3-mini           https://github.com/espressif/arduino-esp32/blob/master/variants/lolin_s3_mini/pins_arduino.h
+  // ESP32-C3                https://github.com/espressif/arduino-esp32/blob/master/variants/esp32c3/pins_arduino.h
+
+  #if defined(ESP32)
+    #if (CONFIG_IDF_TARGET_ESP32)
+      return F("ESP32-WROOM-D32 / ESP32-D1-MINI");
+    #elif (CONFIG_IDF_TARGET_ESP32S2)
+      //  MCU      TX   RX   SDA  SCL  SS  MOSI MISO SCK
+      //  S2       43   44    8    9   34   35   37   36
+      //  S2-mini  39   37    33   35  12   11    9    8
+      #if defined(USB_PRODUCT)
+        return USB_PRODUCT;            // LOLIN-S2-MINI
+      #elif (SCL == 35)   
+        return F("LOLIN-S2-MINI");
+      #else
+        return F("ESP32-S2");
+      #endif
+    #elif (CONFIG_IDF_TARGET_ESP32S3)
+      //  MCU      TX   RX   SDA  SCL  SS  MOSI MISO SCK
+      //  S3       43   44    8    9   10   11   13   12
+      //  S3-mini  43   44    35  36   10   11   13   12
+      #if (SCL == 36)
+        return F("ESP32-S3-MINI");
+      #else
+        return F("ESP32-S3");
+      #endif
+    #elif (CONFIG_IDF_TARGET_ESP32C3)
+      //  MCU      TX   RX   SDA  SCL  SS  MOSI MISO SCK
+      //  C3       21   20    8    9   7     6    5    4
+      //  C3-mini  21   20    8   10   5     4    3    2
+      #if (SCL == 10)
+        return F("ESP32-C3-SUPERMINI");
+      #else
+        return F("ESP32-C3");
+      #endif
+    #else
+      return F("ESP32");
+    #endif
+  #elif defined(ESP8266) 
+    #if defined(ESP8266_NODEMCU)  
+      return F("ESP8266 NodeMCU");
+    #elif defined(ESP8266_WEMOS)
+      return F("ESP8266 Wemos d1 mini");
+    #else
+      return F("ESP8266");
+    #endif
+  #else  
+    return F("Unknown");
+  #endif
+}
