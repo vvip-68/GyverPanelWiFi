@@ -30,7 +30,7 @@ void runningText() {
   fillString(text);
 }
 
-void fillString(String text) {
+void fillString(const String &text) {
   if (loadingTextFlag) {
     offset = pWIDTH;   // перемотка в правый край
     // modeCode = MC_TEXT;
@@ -405,7 +405,7 @@ int8_t getDiasOffset(uint8_t font, uint8_t modif) {
 
 // Получить / установить настройки отображения очередного текста бегущей строки
 // Если нет строк, готовых к отображению (например все строки отключены) - вернуть false - 'нет готовых строк'
-bool prepareNextText(String text) {  
+bool prepareNextText(const String& text) {  
   // Если есть активная строка текущего момента - отображать ее 
   int8_t nextIdx = momentTextIdx >= 0 ? momentTextIdx : nextTextLineIdx;
 
@@ -566,7 +566,7 @@ int8_t getNextLine(int8_t currentIdx) {
 }
 
 // Выполнить разбор строки на наличие макросов, применить указанные настройки
-String processMacrosInText(const String text) {  
+String processMacrosInText(const String& text) {  
 
   String textLine = text;
   /*   
@@ -1049,10 +1049,10 @@ String processMacrosInText(const String text) {
 
 // Обработать макросы даты в строке
 // textLine - строка, содержащая макросы
-String processDateMacrosInText(const String text) {
+String processDateMacrosInText(const String& text) {
 
   String textLine = text;
-  
+
   /* -------------------------------------------------------------
    Эти форматы содержат строку, зависящую от текущего времени.
    Оставить эти форматы как есть в строке - они будут обрабатываться на каждом проходе, подставляя текущее время
@@ -1158,7 +1158,7 @@ String processDateMacrosInText(const String text) {
   uint8_t  secs = second();
   bool     am = isAM();
   bool     pm = isPM();
-  int8_t   idx, idx2;
+  int16_t  idx, idx2;
 
   int8_t   wd = weekday()-1;  // day of the week, Sunday is day 0   
   if (wd == 0) wd = 7;        // Sunday is day 7, Monday is day 1;
@@ -1322,7 +1322,7 @@ String processDateMacrosInText(const String text) {
     // "{R10.10.2023 7:00#N}" 
     idx = textLine.indexOf("{R");
     if (idx >= 0) {
-            
+
       // Если время  события уже наступило и в строке указана строка-заместитель для отображения ПОСЛЕ наступления события - показывать эту строку
       // Если замены строки после наступления события нет - textLine будет пустой - отображать нечего
       // Строка замены снова может содержать метки времени - поэтому отправить проверку / замену на второй круг
@@ -1367,6 +1367,10 @@ String processDateMacrosInText(const String text) {
 
         tmElements_t tm = ParseDateTime(str);
         t_event = makeTime(tm);
+
+        // Установить текущее время для отладки
+        //tm = {45, 59, 22, 0, 31, 12, (uint8_t)CalendarYrToTm(2024)}; 
+        //t_now = makeTime(tm);
 
         /*
         DEBUGLN("------------------------------------");
@@ -1471,17 +1475,29 @@ String processDateMacrosInText(const String text) {
         // Если осталось меньше-равно 7 дней - отображать дни и часы
         // Если осталось больше 7 дней - отображать дни
 
-        if (restDays == 0 && restHours == 0 && restMinutes == 0)
-          tmp = String(restSeconds) + WriteSeconds(restSeconds);
-        else if (restDays == 0 && restHours == 0 && restMinutes > 0)
-          tmp = String(restMinutes) + WriteMinutes(restMinutes);
-        else if (restDays == 0 && restHours > 0 && restMinutes > 0)
-          tmp = String(restHours) + WriteHours(restHours) + " " + String(restMinutes) + WriteMinutes(restMinutes);
-        else if (restDays > 0 && restDays <= 7 && restHours > 0)
-          tmp = String(restDays) + WriteDays(restDays) + " " + String(restHours) + WriteHours(restHours);
-        else  
-          tmp = String(restDays) + WriteDays(restDays);
-
+        // Когда, реально, скажем, осталось 22 дня и 2 часа - гугль на вопрос "Сколько осталось до ..." пишет не 22, а 23
+        // Будем следовать методике расчета гугля - если осталось более 7 дней - пишем на 1 больше
+        // Если осталось менее 7 целых дней - там уже начнут выводиться часы. При выводе часов не округляем количество дней в большую сторону
+        if (restDays > 7) restDays++; 
+        if ((restDays > 0 || restHours > 0 || restMinutes > 0) && restMinutes < 59 && restSeconds > 30) restMinutes++;
+        
+        String tmp;
+        if (restDays == 0 && restHours == 0 && restMinutes == 0) { 
+          tmp += restSeconds; tmp += WriteSeconds(restSeconds); 
+        } else if (restDays == 0 && restHours == 0 && restMinutes > 0){ 
+          tmp += restMinutes; tmp += WriteMinutes(restMinutes); 
+        } else if (restDays == 0 && restHours > 0 && restMinutes > 0) { 
+          tmp += restHours; tmp += WriteHours(restHours); tmp += ' '; tmp += restMinutes; tmp += WriteMinutes(restMinutes); 
+        } else if (restDays == 0 && restHours > 0 && restMinutes == 0) { 
+          tmp += restHours; tmp += WriteHours(restHours); 
+        } else if (restDays > 0 && restDays <= 7 && restHours > 0) { 
+          //  0..29 минут - прибавлять час, потом не надо
+          // Чтобы в 22:10 посалось 'До Нового года 7 дней 2 часа', a в 22:40 - 'До Нового года 7 дней 1 час'
+          if (restHours < 23 && restMinutes > 30) restHours++; 
+          tmp += restDays; tmp += WriteDays(restDays); tmp += ' '; tmp += restHours; tmp += WriteHours(restHours); 
+        } else { 
+          tmp += restDays; tmp += WriteDays(restDays); 
+        }
         textLine = textLine.substring(0, insertPoint) + tmp + textLine.substring(insertPoint);
       }
     }
@@ -1527,17 +1543,29 @@ String processDateMacrosInText(const String text) {
         // Если осталось меньше-равно 7 дней - отображать дни и часы
         // Если осталось больше 7 дней - отображать дни
         
+        // Когда, реально, скажем, осталось 22 дня и 2 часа - гугль на вопрос "Сколько осталось до ..." пишет не 22, а 23
+        // Будем следовать методике расчета гугля - если осталось более 7 дней - пишем на 1 больше
+        // Если осталось менее 7 целых дней - там уже начнут выводиться часы. При выводе часов не округляем количество дней в большую сторону
+        if (restDays > 7) restDays++; 
+        if ((restDays > 0 || restHours > 0 || restMinutes > 0) && restMinutes < 59 && restSeconds > 30) restMinutes++;
+        
         String tmp;
-        if (restDays == 0 && restHours == 0 && restMinutes == 0)
-          { tmp += restSeconds; tmp += WriteSeconds(restSeconds); }
-        else if (restDays == 0 && restHours == 0 && restMinutes > 0)
-          { tmp += restMinutes; tmp += WriteMinutes(restMinutes); }
-        else if (restDays == 0 && restHours > 0 && restMinutes > 0)
-          { tmp += restHours; tmp += WriteHours(restHours); tmp += ' '; tmp += restMinutes; tmp += WriteMinutes(restMinutes); }
-        else if (restDays > 0 && restDays <= 7 && restHours > 0)
-          { tmp += restDays; tmp += WriteDays(restDays); tmp += ' '; tmp += restHours; tmp += WriteHours(restHours); }
-        else  
-          { tmp += restDays; tmp += WriteDays(restDays); }
+        if (restDays == 0 && restHours == 0 && restMinutes == 0) { 
+          tmp += restSeconds; tmp += WriteSeconds(restSeconds); 
+        } else if (restDays == 0 && restHours == 0 && restMinutes > 0){ 
+          tmp += restMinutes; tmp += WriteMinutes(restMinutes); 
+        } else if (restDays == 0 && restHours > 0 && restMinutes > 0) { 
+          tmp += restHours; tmp += WriteHours(restHours); tmp += ' '; tmp += restMinutes; tmp += WriteMinutes(restMinutes); 
+        } else if (restDays == 0 && restHours > 0 && restMinutes == 0) { 
+          tmp += restHours; tmp += WriteHours(restHours); 
+        } else if (restDays > 0 && restDays <= 7 && restHours > 0) { 
+          //  0..29 минут - прибавлять час, потом не надо
+          // Чтобы в 22:10 посалось 'До Нового года 7 дней 2 часа', a в 22:40 - 'До Нового года 7 дней 1 час'
+          if (restHours < 23 && restMinutes > 30) restHours++; 
+          tmp += restDays; tmp += WriteDays(restDays); tmp += ' '; tmp += restHours; tmp += WriteHours(restHours); 
+        } else { 
+          tmp += restDays; tmp += WriteDays(restDays); 
+        }
           
         String tl_str(textLine.substring(0, insertPoint)); tl_str += tmp; tl_str += textLine.substring(insertPoint);         
         textLine = tl_str;
@@ -1566,17 +1594,17 @@ String processDateMacrosInText(const String text) {
     if (textLine.indexOf("{D}") >= 0 || textLine.indexOf("{D:") >= 0 || textLine.indexOf("{R") >= 0 || textLine.indexOf("{P") >= 0 || textLine.indexOf("{S") >= 0) continue;
 
     // Если при разборе строка помечена как многоцветная - обработать макросы цвета 
-    if (textHasMultiColor) {                                 
+    if (textHasMultiColor) {   
       textLine = processColorMacros(textLine);
     }
     
     break;
   }
-
+  
   return textLine;
 }
 
-String substitureDateMacros(const String txt) {  
+String substitureDateMacros(const String& txt) {  
   String str = txt;
   str.replace("DD", "~1~");
   str.replace("dd", "~2~");
@@ -1589,7 +1617,7 @@ String substitureDateMacros(const String txt) {
   return str;
 }
 
-String unsubstitureDateMacros(const String txt) {  
+String unsubstitureDateMacros(const String& txt) {  
   String str = txt;
   str.replace("~1~", "DD");
   str.replace("~2~", "dd");
@@ -1603,7 +1631,7 @@ String unsubstitureDateMacros(const String txt) {
 }
 
 // Обработать макросы цвета в строке, в случае если строка многоцветная
-String processColorMacros(const String txt) {
+String processColorMacros(const String& txt) {
 
   String text = txt;
   // Обнулить массивы позиций цвета и самого цвета
@@ -1658,7 +1686,7 @@ String processColorMacros(const String txt) {
 }
 
 // Проверка содержит ли эта строка множественное задание цвета
-bool checkIsTextMultiColor(const String text) {
+bool checkIsTextMultiColor(const String& text) {
 
   // Строка не содержит макроса цвета
   int16_t idx = text.indexOf("{C"), idx_first = idx;
@@ -2066,7 +2094,7 @@ void checkMomentText() {
 // Проверить текст, содержащий макрос {S}
 // Возвращает true - если дата в макросе после расшифровки совпадает с текущей датой - текст можно отображать
 // Если дата не совпадает - текст отображать сегодня нельзя - еще не пришло (или уже прошло) время для этого текста
-bool forThisDate(String text) {
+bool forThisDate(const String& pText) {
   /*
      text - в общем случае - "{S01.01.**** 7:00:00#01.01.**** 19:00:00}" - содержит даты начала и конца, разделенные символом "#"
      Дата как правило имеет формат "ДД.ММ.ГГГГ ЧЧ:MM:СС"; В дате День может быть замене на "**" - текущий день, месяц - "**" - текущий месяц, год - "****" - текущий год или "***+" - следующий год
@@ -2086,8 +2114,10 @@ bool forThisDate(String text) {
   bool   ok = false;
   String str;
   int16_t idx2;
-  
+  String text(pText);
+
   int16_t idx = text.indexOf("{S");
+
   while (idx >= 0) {
     // Строка с событием проверки текущей даты - выводится только при совпадении текущей даты с указанной (вычисленной по маске)
     // Проверка строки производится раньше при решении какую строку показывать в getNextLine(). Если сюда попали - значит строка 
@@ -2138,7 +2168,7 @@ bool forThisDate(String text) {
   return ok;
 }
 
-void extractMacroSDates(String text) {
+void extractMacroSDates(const String& text) {
 
   // Text - в общем случае - "01.01.**** 7:00:00#01.01.**** 19:00:00" - содержит даты начала и конца, разделенные символом "#"
   // Дата как правило имеет формат "ДД.ММ.ГГГГ ЧЧ:MM:СС"; В дате День может быть замене на "**" - текущий день, месяц - "**" - текущий месяц, год - "****" - текущий год или "***+" - следующий год
@@ -2248,7 +2278,7 @@ bool isFirstLineControl() {
   return isControlLine;  
 }
 
-tmElements_t ParseDateTime(String &str) {
+tmElements_t ParseDateTime(const String& str) {
 
   uint8_t  aday = day();
   uint8_t  amnth = month();

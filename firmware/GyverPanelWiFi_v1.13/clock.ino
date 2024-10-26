@@ -93,6 +93,7 @@ void parseNTP() {
   }
 
   setTime(t);  
+  
   // этот вызов нужен, чтобы отработали сопутствующие установке времени процедуры
   setCurrentTime(hour(),minute(),second(),day(),month(),year());
 
