@@ -179,7 +179,6 @@ void process() {
             if (init_weather && weather_cnt >= TRY_GET_WEATHER_CNT) {
               DEBUGLN(F("Не удалось установить соединение с сервером погоды."));  
               refresh_weather = false;
-              init_weather = false;
               
               #if (USE_MQTT == 1)
               DynamicJsonDocument doc(256);

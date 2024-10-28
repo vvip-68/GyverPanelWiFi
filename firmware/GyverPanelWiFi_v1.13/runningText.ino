@@ -514,7 +514,7 @@ int8_t getNextLine(int8_t currentIdx) {
         textLastTime = millis();
       } else {
         uint8_t att = 0;
-        uint8_t idx = random8(0,cnt - 1);
+        uint8_t idx = random8(0, cnt-1);
         // Выбрать случайную строку. Если выбранная совпадает с текущей - выбрать другую.
         // Если другой нет (в массиве одна строка) - показать её
         while (arr[idx] == nextLineIdx && att < cnt) {
@@ -1369,7 +1369,7 @@ String processDateMacrosInText(const String& text) {
         t_event = makeTime(tm);
 
         // Установить текущее время для отладки
-        //tm = {45, 59, 22, 0, 31, 12, (uint8_t)CalendarYrToTm(2024)}; 
+        //tm = {45, 59, 22, 0, 31, 12, (uint8_t)CalendarYrToTm(2024)};
         //t_now = makeTime(tm);
 
         /*
@@ -1479,7 +1479,14 @@ String processDateMacrosInText(const String& text) {
         // Будем следовать методике расчета гугля - если осталось более 7 дней - пишем на 1 больше
         // Если осталось менее 7 целых дней - там уже начнут выводиться часы. При выводе часов не округляем количество дней в большую сторону
         if (restDays > 7) restDays++; 
-        if ((restDays > 0 || restHours > 0 || restMinutes > 0) && restMinutes < 59 && restSeconds > 30) restMinutes++;
+
+        // Остаток выводить по отображаемому времени. Даже если реальное время 22:59:59 - то есть "1 час 0 минут [1 сек]" - 
+        // на экране отображается 22:59 без секунд, а значит выводить "1 час 1 минута"
+        if (!(restDays == 0 && restHours == 0 && restMinutes == 0) && restSeconds != 0) {
+          restMinutes++;
+          if (restMinutes == 60) { restMinutes = 0; restHours++;}
+          if (restHours == 24) {restHours = 0; restDays++;}
+        }
         
         String tmp;
         if (restDays == 0 && restHours == 0 && restMinutes == 0) { 
@@ -1547,8 +1554,15 @@ String processDateMacrosInText(const String& text) {
         // Будем следовать методике расчета гугля - если осталось более 7 дней - пишем на 1 больше
         // Если осталось менее 7 целых дней - там уже начнут выводиться часы. При выводе часов не округляем количество дней в большую сторону
         if (restDays > 7) restDays++; 
-        if ((restDays > 0 || restHours > 0 || restMinutes > 0) && restMinutes < 59 && restSeconds > 30) restMinutes++;
         
+        // Остаток выводить по отображаемому времени. Даже если реальное время 22:59:59 - то есть "1 час 0 минут [1 сек]" - 
+        // на экране отображается 22:59 без секунд, а значит выводить "1 час 1 минута"
+        if (!(restDays == 0 && restHours == 0 && restMinutes == 0) && restSeconds != 0) {
+          restMinutes++;
+          if (restMinutes == 60) { restMinutes = 0; restHours++;}
+          if (restHours == 24) {restHours = 0; restDays++;}
+        }
+
         String tmp;
         if (restDays == 0 && restHours == 0 && restMinutes == 0) { 
           tmp += restSeconds; tmp += WriteSeconds(restSeconds); 
