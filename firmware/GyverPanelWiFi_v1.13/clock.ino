@@ -380,7 +380,7 @@ void drawClock(uint8_t hrs, uint8_t mins, bool dots, int8_t X, int8_t Y) {
       // Если скроллинг часов отключим - центрируем конгломерат часов и температуры на матрице
       // Если скроллинг есть - рисуем как есть в переданной позиции X
       if (clockScrollSpeed >= 240) X = 0;      
-              
+          
       // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
       if (h10 > 0) {
         x += (h10 == 1 ? -1 : 0);        
@@ -394,7 +394,7 @@ void drawClock(uint8_t hrs, uint8_t mins, bool dots, int8_t X, int8_t Y) {
       
       // Если матрица 23 или 24 - пробел ДО одинарных точек не рисовать)
       if (pWIDTH < 25) x--;
-              
+
       if (dots) {
         // Для ширины матрицы в 25 колонок - рисовать одинарные точки разделения часов/минут, если больше - сдвоенные
         drawPixelXY(getClockX(X + x), Y + 1, clockLED[2]);         
@@ -588,7 +588,7 @@ void drawTemperature(int8_t X) {
   if (isNightClock) 
     color = useTemperatureColorNight ? (temperature < -3 ? nightClockBrightness : (temperature > 3 ? nightClockBrightness << 16 : nightClockBrightness << 16 | nightClockBrightness << 8 | nightClockBrightness)) : getNightClockColorByIndex(nightClockColor);
   else
-    color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : clockLED[0]; 
+    color = useTemperatureColor ? CRGB(getTemperatureColor(temperature)) : clockLED[0]; 
 
   if (c_size == 1) {
     // Отрисовка температуры в малых часах

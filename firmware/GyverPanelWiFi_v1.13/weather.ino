@@ -511,27 +511,16 @@ void decodeWeather3() {
 }
 
 // Строка цвета, соответствующая температуре
-String getTemperatureColor(int8_t temp) {
-  String s_color;
-  if      (temp <= -30)
-    s_color = cold_less_30;
-  else if (temp <= -20)
-    s_color = cold_29_20;
-  else if (temp <= -10)
-    s_color = cold_19_10;
-  else if (temp <= -4)
-    s_color = cold_9_4;
-  else if (temp <=  3)
-    s_color = zero_3_3;
-  else if (temp <=  9)
-    s_color = hot_4_9;
-  else if (temp <= 19)
-    s_color = hot_10_19;
-  else if (temp <= 29)
-    s_color = hot_20_29;
-  else
-    s_color = hot_30_great;
-  return s_color;
+int getTemperatureColor(int8_t temp) {
+  if (temp <= -30) return cold_less_30;
+  if (temp <= -20) return cold_29_20;
+  if (temp <= -10) return cold_19_10;
+  if (temp <= -4)  return cold_9_4;
+  if (temp <=  3)  return zero_3_3;
+  if (temp <=  9)  return hot_4_9;
+  if (temp <= 19)  return hot_10_19;
+  if (temp <= 29)  return hot_20_29;
+  return hot_30_great;  
 }
 
 // Получить индекс иконки в массиве иконок погоды
@@ -806,7 +795,7 @@ void weatherRoutine() {
   if (useWeather > 0 && init_weather) {
     
     // Получить цвет отображения значения температуры
-    CRGB color = useTemperatureColor ? CRGB(HEXtoInt(getTemperatureColor(temperature))) : CRGB::White;
+    CRGB color = useTemperatureColor ? CRGB(getTemperatureColor(temperature)) : CRGB::White;
     int16_t temp_x = weather_text_x + temp_width;
     int16_t temp_y = weather_text_y;
     

@@ -382,6 +382,8 @@ void FastLEDshow() {
   // Если выводить на матрицу чаще 5 мс - она мерцает
   if (millis() - prevTimer > 5) {
      FastLED.show();
+     yield();
+     // DEBUGLOG(printf, "dur: %d ms\n", millis() - prevTimer);
      prevTimer = millis();
   }
 }

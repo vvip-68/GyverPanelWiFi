@@ -982,7 +982,7 @@ String processMacrosInText(const String& text) {
       String s_color = "";
 
       if (useTemperatureColor) {
-        s_color = "{C" + getTemperatureColor(temperature) + "}";
+        s_color = "{C#" + IntToHex(getTemperatureColor(temperature)) + "}";
       }
       
       textLine.replace("{WT}", s_color + s_temperature);
