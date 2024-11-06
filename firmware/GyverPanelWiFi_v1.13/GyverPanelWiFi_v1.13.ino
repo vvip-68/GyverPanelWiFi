@@ -8,7 +8,7 @@
 // https://raw.githubusercontent.com/esp8266/esp8266.github.io/master/stable/package_esp8266com_index.json
 // https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
-#define FIRMWARE_VER F("WiFiPanel v.1.13.2024.1031")
+#define FIRMWARE_VER F("WiFiPanel v.1.13.2024.1106")
 
 // -------------------------------------------------------------------------------------------------------
 //
@@ -62,7 +62,7 @@
 //          esp32.menu.PartitionScheme.default_1_4MB.upload.maximum_size=1441792
 //       - Скопировать файл default_1_4MB.csv в папку C:\Users\[ИМЯ пользователя]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.14\tools\partitions
 //       - В Arduino IDE 2.x в меню "Инструменты" не появится новый вариант PartitionScheme, пока мы не удалим скешированную папку приложения, для этого 
-//         необходимо удалить папку C:\Users\[ИМЯ пользователя]\AppData\Roaming\arduino-ide\
+//         необходимо удалить папку C:\Users\[ИМЯ пользователя]\AppData\Roaming\arduino-ide
 //       - Перезапустить Arduino и выбрать в настройка размер памяти 4M with spiffs (1.408MB APP/1.152MB SPIFFS)
 //
 //   Сам CSV-файл разметки находится в проекте, в папке Wiki/OTA/mikewap83 - default_1_4MB.zip
@@ -185,7 +185,7 @@
 //     esp32.menu.PartitionScheme.default_1_4MB.upload.maximum_size=1441792
 // - Скопировать файл default_1_4MB.csv в папку C:\Users\[ИМЯ пользователя]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.14\tools\partitions
 // - В Arduino IDE 2.x в меню "Инструменты" не появится новый вариант PartitionScheme, пока мы не удалим скешированную папку приложения, для этого 
-//   необходимо удалить папку C:\Users\[ИМЯ пользователя]\AppData\Roaming\arduino-ide\
+//   необходимо удалить папку C:\Users\[ИМЯ пользователя]\AppData\Roaming\arduino-ide
 // - Перезапустить Arduino и выбрать в настройка размер памяти 4M with spiffs (1.408MB APP/1.152MB SPIFFS)
 // Сам CSV-файл разметки находится в проекте, в папке Wiki/OTA/mikewap83 - default_1_4MB.zip
 //

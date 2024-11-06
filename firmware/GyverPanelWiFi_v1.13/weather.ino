@@ -124,7 +124,7 @@ bool getWeather() {
       } else {
         error = true;
         status = F("connection error");
-        DEBUGLOG(printf, "[%s] Unable to connect", protocol);
+        DEBUGLOG(printf, "[%s] Unable to connect", protocol.c_str());
       }
     }
 
@@ -421,10 +421,8 @@ void decodeWeather(){
   else if (ico == F("skc"))             set_weather(F("ясно"));  
 }
 
-void decodeWeather2(){  
-  bool hasDay   = icon.endsWith("d");
-  bool hasNight = icon.endsWith("n");
-  
+void decodeWeather2() {  
+
   dayTime = isNight ? F("Темное время суток") : F("Светлое время суток");
 
   // Расшифровка погоды при указании в запросе "&lang=ru" сразу возвращается на нужном языке и нет
