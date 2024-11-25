@@ -3451,6 +3451,16 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
     return str + "TM:" + String(USE_TM1637 == 1);
   }
 
+  // Сколько минут звучит будильник, если его не отключили
+  // Если нат плеера - это время свечения матрицы после рассвета
+  if (key == "MD") {
+    if (value) {
+      value->set(alarmDuration);
+      return String(alarmDuration);
+    }
+    return str + "MD:" + String(alarmDuration); 
+  }
+
 #if (USE_MP3 == 1)
   // Использовать звук будильника
   if (key == "MU") {
@@ -3459,15 +3469,6 @@ String getStateValue(String &key, int8_t effect, JsonVariant* value = nullptr) {
       return String(useAlarmSound); 
     }
     return str + "MU:" + String(useAlarmSound); 
-  }
-
-  // Сколько минут звучит будильник, если его не отключили
-  if (key == "MD") {
-    if (value) {
-      value->set(alarmDuration);
-      return String(alarmDuration);
-    }
-    return str + "MD:" + String(alarmDuration); 
   }
 
   // Максимальная громкость будильника
