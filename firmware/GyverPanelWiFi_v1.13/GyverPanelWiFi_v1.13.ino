@@ -774,6 +774,12 @@ void startWiFi(uint32_t waitTime) {
       DEBUG(F(" -> DCHP "));
     }              
 
+    FastLED.clear();
+    int8_t width = constrain(pWIDTH / 3, 4, 9);
+    int8_t offset_x = (pWIDTH - width) / 2;
+    int8_t y = pHEIGHT / 2;
+    int8_t cnt2 = 0, dir = 1;
+
     WiFi.begin(ssid.c_str(), pass.c_str());
   
     // Проверка соединения (таймаут 180 секунд, прерывается при необходимости нажатием кнопки)
@@ -784,9 +790,11 @@ void startWiFi(uint32_t waitTime) {
     uint32_t start_wifi_check = millis();
     uint32_t last_wifi_check = 0;
     int16_t  cnt = 0;
+    uint8_t  cnt1 = 0;
+
     while (!(stop_waiting || wifi_connected)) {
       delay(1);
-      if (millis() - last_wifi_check > 250) {
+      if (millis() - last_wifi_check > 100) {
         last_wifi_check = millis();
         set_wifi_connected(WiFi.status() == WL_CONNECTED); 
         if (wifi_connected) {
@@ -808,11 +816,26 @@ void startWiFi(uint32_t waitTime) {
           }
           break;
         }
-        if (cnt % 50 == 0) {
-          DEBUGLN();
+
+        if (cnt1++ > 3) {
+          cnt1 = 0; cnt++;
+          if (cnt > 0 && (cnt % 50 == 0)) {
+            DEBUGLN();
+          }
+          DEBUG('.');                  
         }
+        
         DEBUG(".");
         cnt++;
+
+        fadeToBlackBy(leds, NUM_LEDS, 35);
+        drawPixelXY(offset_x + cnt2, y, CRGB::Green);
+        if (dir > 0) {
+          if (cnt2++ >= width) dir = -1;
+        } else {
+          if (cnt2-- < 0) dir = 1;
+        }
+        FastLED.show();
       }
       if (millis() - start_wifi_check > waitTime) {
         // Время ожидания подключения к сети вышло
