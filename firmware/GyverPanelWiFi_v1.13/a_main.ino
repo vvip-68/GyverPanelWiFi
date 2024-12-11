@@ -4266,8 +4266,7 @@ void sendAcknowledge(eSources src) {
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*) replyBuffer, reply.length()+1);
     udp.endPacket();
-    DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
-    
+    DEBUGLN(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));    
   }
 }
 

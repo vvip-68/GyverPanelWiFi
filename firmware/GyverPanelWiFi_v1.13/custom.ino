@@ -454,6 +454,8 @@ void processEffect(uint8_t aMode) {
     case MC_IMAGE:               animationRoutine(); break;
     case MC_SLIDE:               slideRoutine(); break;
     case MC_FIREWORKS:           fireworksRoutine(); break;
+    case MC_PRIZMATA2:           prizmata2Routine(); break;
+    case MC_SHADOWS2:            shadows2Routine(); break;
 
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutine(); break;
@@ -542,7 +544,9 @@ void releaseEffectResources(uint8_t aMode) {
     case MC_IMAGE:               break;
     case MC_SLIDE:               slideRoutineRelease(); break;
     case MC_FIREWORKS:           fireworksRoutineRelease(); break;
-
+    case MC_PRIZMATA2:           break;
+    case MC_SHADOWS2:            break;
+    
     #if (USE_SD == 1)
     case MC_SDCARD:              sdcardRoutineRelease(); break;
     #endif
@@ -715,7 +719,8 @@ void setTimersForMode(uint8_t aMode) {
     if (aMode == MC_PAINTBALL || aMode == MC_SWIRL || aMode == MC_FLICKER || aMode == MC_PACIFICA || 
         aMode == MC_SHADOWS || aMode == MC_PRIZMATA || aMode == MC_FIRE2 ||
         aMode == MC_WEATHER || aMode == MC_LIFE || aMode == MC_ARKANOID || aMode == MC_TETRIS || 
-        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2 || aMode == MC_IMAGE || aMode == MC_SLIDE || aMode == MC_FIREWORKS 
+        aMode == MC_PATTERNS || aMode == MC_STARS || aMode == MC_STARS2 || aMode == MC_IMAGE || 
+        aMode == MC_PRIZMATA2 || aMode == MC_SHADOWS2 || aMode == MC_SLIDE || aMode == MC_FIREWORKS 
         ) {      
       if (aMode == MC_PATTERNS) {
          uint8_t variant = map8(getEffectScaleParamValue(MC_PATTERNS),0,4);
@@ -733,6 +738,12 @@ void setTimersForMode(uint8_t aMode) {
         effectTimer.setInterval(50);
         gameTimer.setInterval(efSpeed);  
       } else 
+      if (aMode == MC_PRIZMATA2) {
+        effectTimer.setInterval(map8(efSpeed,1,40));
+      } else
+      if (aMode == MC_SHADOWS2) {
+        effectTimer.setInterval(map8(efSpeed,1,40));
+      } else
       if (aMode == MC_FIREWORKS) {
         effectTimer.setInterval(map8(efSpeed,10,40));
       } else {

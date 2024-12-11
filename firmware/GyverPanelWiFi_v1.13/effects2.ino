@@ -73,6 +73,10 @@ void fireworksRoutine() {
 
       if (effectBrightnessFaded >= effectBrightness) effectBrightnessFaded = effectBrightness;
 
+      #ifndef LINEARBLEND_NOWRAP
+      #define LINEARBLEND_NOWRAP LINEARBLEND
+      #endif
+
       if      (firework[i].the_figMode == 0) drawCircleBlend    (firework[i].the_figX, firework[i].the_figY, firework[i].the_figSize, ColorFromPalette( myRainbow_p, firework[i].the_figHue, (firework[i].the_figSize > firework[i].the_figSizeMax / 2) ? effectBrightness - effectBrightnessFaded : effectBrightness, LINEARBLEND_NOWRAP));
       else if (firework[i].the_figMode == 1) drawSnowflakesBlend(firework[i].the_figX, firework[i].the_figY, firework[i].the_figSize, ColorFromPalette( myRainbow_p, firework[i].the_figHue, (firework[i].the_figSize > firework[i].the_figSizeMax / 2) ? effectBrightness - effectBrightnessFaded : effectBrightness, LINEARBLEND_NOWRAP));
 
@@ -160,4 +164,87 @@ void drawCircleBlend(int x0, int y0, int figSize, CRGB color) {
     }
 
   }
+}
+
+// *************************** Поток / Полосы **************************
+
+// По мотивам предложенного пользователем Zordog  
+
+uint8_t gCurrentGradientPaletteNumber = 0;
+
+CRGBPalette16 gCurrentGradientPalette; 
+CRGBPalette16 gTargetGradientPalette;
+
+CRGB draw_color = CRGB::White;
+
+void prizmata2Routine() {
+  processStreamRoutine(1);
+}
+
+void shadows2Routine() {
+  processStreamRoutine(2);
+}
+
+void processStreamRoutine(uint8_t aType) {
+  
+  if (loadingFlag) {
+    // modeCode = MC_PRIZMATA2;
+    // modeCode = MC_SHADOWS2;
+    loadingFlag = false;
+    switch (aType) {
+      case 1:
+        gCurrentGradientPaletteNumber = random8(gGradientPrizmataPaletteCount);
+        gCurrentGradientPalette = gGradientPrizmataPalettes[ gCurrentGradientPaletteNumber ]; // CRGB::Black
+        gCurrentGradientPaletteNumber = random8(gGradientPrizmataPaletteCount);
+        gTargetGradientPalette = gGradientPrizmataPalettes[ gCurrentGradientPaletteNumber ];
+        break;
+      case 2:
+        gCurrentGradientPaletteNumber = random8(gGradientShadowsPaletteCount);
+        gCurrentGradientPalette = gGradientShadowsPalettes[ gCurrentGradientPaletteNumber ]; // CRGB::Black
+        gCurrentGradientPaletteNumber = random8(gGradientShadowsPaletteCount);
+        gTargetGradientPalette = gGradientShadowsPalettes[ gCurrentGradientPaletteNumber ];
+        break;
+    }        
+    FastLED.clear();
+  }
+
+  uint8_t effectBrightness = getBrightnessCalculated(globalBrightness, getEffectContrastValue(thisMode));
+  uint8_t sinbpm = thisMode == MC_PRIZMATA2 ? map8(getEffectScaleParamValue(thisMode),1,242) : map8(getEffectScaleParamValue(thisMode),1,212);
+    
+  EVERY_N_SECONDS(12) { chooseNextPalette(aType); }
+  EVERY_N_MILLISECONDS(10) { nblendPaletteTowardPalette( gCurrentGradientPalette, gTargetGradientPalette, 12); }
+  
+  // Сдвигаем всю матрицу на одну строку вниз
+  shiftDown();
+
+  // Изменяем узор эффекта
+  for (uint8_t x = 0; x < pWIDTH; x++) {
+    switch (aType) {
+      case 1: {
+          // "Поток"
+          uint8_t y = beatsin8(sinbpm + x, 0, pWIDTH - 1);
+          drawPixelXY(y, pHEIGHT - 1, ColorFromPalette(gCurrentGradientPalette, x * pWIDTH / 2, effectBrightness));
+        }
+        break;
+      case 2: {
+          // Тени-2
+          drawPixelXY(x, pHEIGHT - 1, ColorFromPalette(gCurrentGradientPalette, beatsin8(sinbpm + x, 0, 242), effectBrightness));
+        }
+        break;
+    }
+  }
+
+}
+
+void chooseNextPalette(uint8_t aType) {
+    switch (aType) {
+      case 1:
+        gCurrentGradientPaletteNumber = random8(gGradientPrizmataPaletteCount);
+        gTargetGradientPalette = gGradientPrizmataPalettes[ gCurrentGradientPaletteNumber ];
+        break;
+      case 2:
+        gCurrentGradientPaletteNumber = random8(gGradientShadowsPaletteCount);
+        gTargetGradientPalette = gGradientShadowsPalettes[ gCurrentGradientPaletteNumber ];
+        break;
+    }
 }

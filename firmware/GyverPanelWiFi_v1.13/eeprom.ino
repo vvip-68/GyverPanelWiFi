@@ -405,6 +405,8 @@ void saveDefaults() {
   putEffectTextOverlayUsage(MC_LIFE, false);
   putEffectTextOverlayUsage(MC_IMAGE, false);
   putEffectTextOverlayUsage(MC_SLIDE, false);
+  //putEffectTextOverlayUsage(MC_PRIZMATA2, false);
+  //putEffectTextOverlayUsage(MC_SHADOWS2, false);
 
   putEffectClockOverlayUsage(MC_CLOCK, false);
   putEffectClockOverlayUsage(MC_MAZE, false);
@@ -415,6 +417,8 @@ void saveDefaults() {
   putEffectClockOverlayUsage(MC_LIFE, false);
   putEffectClockOverlayUsage(MC_IMAGE, false);
   putEffectClockOverlayUsage(MC_SLIDE, false);
+  //putEffectClockOverlayUsage(MC_PRIZMATA2, false);
+  //putEffectClockOverlayUsage(MC_SHADOWS2, false);
 
   putClockScrollSpeed(250);
   putTextScrollSpeed(186);
