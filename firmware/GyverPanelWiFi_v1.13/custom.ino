@@ -381,8 +381,12 @@ void FastLEDshow() {
   #endif
   // Если выводить на матрицу чаще 5 мс - она мерцает
   if (millis() - prevTimer > 5) {
+     
      FastLED.show();
-     yield();
+     #if defined(ESP8266) // Почему-то на ESP8266 часто вместо выврда на матрицу просто мерцает первый светодиод
+     FastLED.show();      // В issues FastLED пишут что это случается у многих. Объяснений нет, но говорят часто помогает
+     #endif               // пнуть вывод на матрицу второй раз сразу же после первого
+     
      // DEBUGLOG(printf, "dur: %d ms\n", millis() - prevTimer);
      prevTimer = millis();
   }
