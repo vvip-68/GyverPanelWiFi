@@ -490,6 +490,6 @@
   #ifndef D9
     #define D9  3
     #define D10 1
-    #define ESP8266_ЦУЬЩЫ
+    #define ESP8266_WEMOS
   #endif
 #endif
